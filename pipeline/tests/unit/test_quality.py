@@ -59,7 +59,7 @@ def test_schema_error_counts_per_path(cfg: AreaConfig) -> None:
     errs = prefixed(r.errors, "schema:")
     assert len(errs) == 1
     assert "briefTitle" in errs[0]
-    assert "2" in errs[0]
+    assert "2 study(ies)" in errs[0]
     assert "NCT00000001" in errs[0] and "NCT00000002" in errs[0]
     assert not r.ok
 
@@ -245,3 +245,55 @@ def test_id_listing_is_capped(cfg: AreaConfig) -> None:
     r = check(studies, normalize([make_study("NCT99999999")], ALIASES), None, cfg)
     msg = prefixed(r.errors, "schema:")[0]
     assert "and 3 more" in msg
+
+
+def _null_id_tables(studies: list[dict[str, Any]], null_idx: list[int]) -> Tables:
+    t = normalize(studies, ALIASES)
+    ids = [None if i in null_idx else v for i, v in enumerate(t.trial["nct_id"].to_list())]
+    return Tables(
+        trial=t.trial.with_columns(pl.Series("nct_id", ids, dtype=pl.Utf8)),
+        condition=t.condition,
+        intervention=t.intervention,
+        sponsor=t.sponsor,
+        site=t.site,
+        outcome=t.outcome,
+    )
+
+
+def test_schema_count_three(cfg: AreaConfig) -> None:
+    studies = [
+        make_study(f"NCT0000000{i}", **{"identificationModule.briefTitle": DELETE})
+        for i in range(1, 4)
+    ]
+    r = check(studies, normalize([make_study("NCT09999999")], ALIASES), None, cfg)
+    assert "3 study(ies)" in prefixed(r.errors, "schema:")[0]
+    assert "2 study(ies)" not in prefixed(r.errors, "schema:")[0]
+
+
+def test_null_id_date_order_error_labelled(cfg: AreaConfig) -> None:
+    s = make_study(
+        **{
+            "statusModule.startDateStruct": {"date": "2024-06", "type": "ACTUAL"},
+            "statusModule.completionDateStruct": {"date": "2023-01", "type": "ACTUAL"},
+        },
+    )
+    r = check([s], _null_id_tables([s], [0]), None, cfg)
+    assert "<row 0>" in prefixed(r.errors, "date_order:")[0]
+
+
+def test_two_null_ids_not_duplicate(cfg: AreaConfig) -> None:
+    studies = [make_study("NCT00000001"), make_study("NCT00000002")]
+    r = check(studies, _null_id_tables(studies, [0, 1]), None, cfg)
+    assert prefixed(r.errors, "duplicate:") == []
+    assert len(prefixed(r.errors, "null_rate:")) >= 1
+
+
+def test_null_id_estimated_date_warning(cfg: AreaConfig) -> None:
+    s = make_study(
+        **{
+            "statusModule.startDateStruct": {"date": "2024-06", "type": "ACTUAL"},
+            "statusModule.completionDateStruct": {"date": "2023-01", "type": "ESTIMATED"},
+        },
+    )
+    r = check([s], _null_id_tables([s], [0]), None, cfg)
+    assert "<row 0>" in prefixed(r.warnings, "date_order_estimated:")[0]

@@ -98,14 +98,15 @@ def _check_nulls(trial: pl.DataFrame, cfg: AreaConfig, report: QualityReport) ->
 def _check_dates(trial: pl.DataFrame, report: QualityReport) -> None:
     errors: list[str] = []
     estimated: list[str] = []
-    for row in trial.iter_rows(named=True):
+    for i, row in enumerate(trial.iter_rows(named=True)):
+        label = row["nct_id"] or f"<row {i}>"
         start, end = row["start_date"], row["completion_date"]
         if start is None or end is None or end >= start:
             continue
         if row["start_date_type"] == "ACTUAL" and row["completion_date_type"] == "ACTUAL":
-            errors.append(row["nct_id"])
+            errors.append(label)
         else:
-            estimated.append(row["nct_id"])
+            estimated.append(label)
     if errors:
         report.errors.append(
             f"date_order: completion before start (both ACTUAL) in {len(errors)} trials: "
@@ -136,7 +137,12 @@ def check(
     _check_nulls(trial, cfg, report)
     _check_dates(trial, report)
 
-    dups = trial.filter(pl.col("nct_id").is_duplicated())["nct_id"].unique().sort().to_list()
+    dups = (
+        trial.filter(pl.col("nct_id").is_not_null() & pl.col("nct_id").is_duplicated())["nct_id"]
+        .unique()
+        .sort()
+        .to_list()
+    )
     if dups:
         report.errors.append(f"duplicate: {len(dups)} repeated nct_id: {_ids(dups)}")
 
