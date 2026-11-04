@@ -32,7 +32,7 @@ markers = [
     "live: tests that hit the real ClinicalTrials.gov API",
     "recorded: tests that need fixtures recorded by scripts/record_fixtures.py",
 ]
-addopts = "-m 'not live and not recorded'"
+addopts = "-m 'not live'"
 
 [tool.ruff]
 line-length = 100
