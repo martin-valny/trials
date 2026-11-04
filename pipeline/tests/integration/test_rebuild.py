@@ -65,7 +65,8 @@ def test_rebuild_equals_incremental_after_a_failed_day(
     assert log["data_timestamp"].to_list() == [TS1, TS2, TS4]
     assert log["started_at"].to_list() == [datetime(2026, 3, d) for d in (1, 2, 4)]
     assert log["changes_detected"].to_list() == [0, 4, 1]
-    assert log["rows_ingested"].to_list() == [14, 14, 14]
+    n1, n2 = len(day1_studies(cfg)), len(day2_studies(cfg))
+    assert log["rows_ingested"].to_list() == [n1, n2, n2]
     assert json.loads(log["warnings"][0]) == []
     meta = json.loads((site / "meta.json").read_text())
     assert meta["data_timestamp"] == TS4
@@ -178,4 +179,5 @@ def test_failed_snapshots_are_not_replayed(env: Env, cfg: AreaConfig, tmp_path: 
     store, _ = rebuilt(env, tmp_path)
 
     assert store.snapshots()["snapshot_date"].unique().to_list() == [D1]
-    assert store.snapshots().filter(pl.col("snapshot_date") == D1).height == 12
+    expected = len(relevant_ids(cfg, day1_studies(cfg)))
+    assert store.snapshots().filter(pl.col("snapshot_date") == D1).height == expected

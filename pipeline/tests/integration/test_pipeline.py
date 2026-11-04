@@ -409,8 +409,9 @@ def test_each_stage_logs_one_json_line(
         assert isinstance(ln["duration_s"], float)
         assert isinstance(ln["warnings"], list)
     by_stage = {ln["stage"]: ln for ln in lines}
-    assert by_stage["fetch"]["rows"] == 14
-    assert by_stage["filter_relevant"]["rows"] == 12
+    studies = day1_studies(cfg)
+    assert by_stage["fetch"]["rows"] == len(studies)
+    assert by_stage["filter_relevant"]["rows"] == len(relevant_ids(cfg, studies))
 
 
 def test_failed_stage_logs_its_error(
@@ -428,7 +429,7 @@ def test_failed_stage_logs_its_error(
 def test_snapshot_is_gzip_jsonl(env: Env, cfg: AreaConfig) -> None:
     env.run(FakeClient(TS1, day1_studies(cfg)), D1)
     with gzip.open(env.raw_dir / "2026-03-01.jsonl.gz", "rt") as f:
-        assert len(f.read().splitlines()) == 14
+        assert len(f.read().splitlines()) == len(day1_studies(cfg))
 
 
 def test_store_path_is_untouched_when_raw_dir_is_relative(
