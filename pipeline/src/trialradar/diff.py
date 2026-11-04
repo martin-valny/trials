@@ -8,7 +8,8 @@ from typing import Any
 import polars as pl
 
 from trialradar.config import AreaConfig
-from trialradar.tracked import TrackedState, to_json, tracked_hash
+from trialradar.textnorm import norm_key
+from trialradar.tracked import TrackedState, outcome_key, to_json, tracked_hash
 
 TRIAL_CHANGE_SCHEMA: dict[str, pl.DataType] = {
     "nct_id": pl.Utf8(),
@@ -24,6 +25,8 @@ TRIAL_CHANGE_SCHEMA: dict[str, pl.DataType] = {
 
 _DATE_FIELDS = frozenset({"start_date", "primary_completion_date", "completion_date"})
 _SLIP_FIELDS = frozenset({"primary_completion_date", "completion_date"})
+_KEYED_LISTS = frozenset({"conditions", "interventions", "site_countries"})
+_OUTCOME_LISTS = frozenset({"primary_outcomes", "secondary_outcomes"})
 
 # Reason strings are fixed identifiers consumed downstream; they keep their
 # default-threshold wording ("20pct", "90d") even when the thresholds in
@@ -32,6 +35,15 @@ _R_STATUS = "status_change"
 _R_PRIMARY = "primary_endpoint_change"
 _R_ENROLL = "enrollment_change_ge_20pct"
 _R_SLIP = "date_slip_ge_90d"
+
+
+def _same(field: str, old: Any, new: Any) -> bool:
+    """Equality used for change detection: list fields compare by key sets."""
+    if field in _KEYED_LISTS:
+        return {norm_key(v) for v in old or []} == {norm_key(v) for v in new or []}
+    if field in _OUTCOME_LISTS:
+        return {outcome_key(p) for p in old or []} == {outcome_key(p) for p in new or []}
+    return to_json(old) == to_json(new)
 
 
 def _is_int(v: Any) -> bool:
@@ -114,14 +126,15 @@ def diff(
                 rows.append(_row(nct, "_tracked", None, to_json("added"), day, registry))
                 continue
             old_s, new_s = prev[nct], curr[nct]
-            # Fast path: the hash covers the whole dict, so equal hashes mean equal states.
+            # Fast path: the hash covers the whole (display) dict, so equal hashes mean
+            # equal states. Unequal hashes may still be cosmetic-only; _same decides.
             if tracked_hash(old_s) == tracked_hash(new_s):
                 continue
             for field in sorted(old_s.keys() & new_s.keys() & tracked):
                 old, new = old_s[field], new_s[field]
-                old_json, new_json = to_json(old), to_json(new)
-                if old_json == new_json:
+                if _same(field, old, new):
                     continue
+                old_json, new_json = to_json(old), to_json(new)
                 delta = _delta_days(old, new) if field in _DATE_FIELDS else None
                 reason = _reason(field, old, new, delta, cfg)
                 rows.append(_row(nct, field, old_json, new_json, day, registry, delta, reason))

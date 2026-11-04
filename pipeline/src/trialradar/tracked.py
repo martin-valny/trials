@@ -5,12 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any
 
 from trialradar.tables import Tables
-from trialradar.textnorm import norm_key
+from trialradar.textnorm import norm_key, norm_text
 
 TrackedState = dict[str, dict[str, Any]]
 """NCT ID -> {tracked field -> JSON-serialisable value}."""
@@ -40,6 +40,41 @@ def _date_value(row: dict[str, Any], prefix: str) -> dict[str, Any] | None:
     }
 
 
+def _display_list(values: Iterable[str | None]) -> list[str]:
+    """Display strings de-duplicated by ``norm_key``, sorted by key.
+
+    When several variants share a key the lexicographically smallest is kept, so
+    the result does not depend on input order.
+    """
+    best: dict[str, str] = {}
+    for v in values:
+        text = norm_text(v)
+        if text is None:
+            continue
+        key = norm_key(text)
+        if key not in best or text < best[key]:
+            best[key] = text
+    return [best[k] for k in sorted(best)]
+
+
+def outcome_key(pair: Sequence[str | None]) -> tuple[str, str]:
+    """Comparison key of a stored ``[measure, time_frame]`` pair."""
+    return (norm_key(pair[0] or ""), norm_key(pair[1] or ""))
+
+
+def _outcome_pairs(rows: Iterable[dict[str, Any]]) -> list[list[str | None]]:
+    """``[measure, time_frame]`` display pairs de-duplicated and sorted by key."""
+    best: dict[tuple[str, str], tuple[str, str]] = {}
+    shown: dict[tuple[str, str], list[str | None]] = {}
+    for o in rows:
+        pair = [norm_text(o["measure"]), norm_text(o["time_frame"])]
+        key = outcome_key(pair)
+        order = (pair[0] or "", pair[1] or "")
+        if key not in best or order < best[key]:
+            best[key], shown[key] = order, pair
+    return [shown[k] for k in sorted(shown)]
+
+
 def _group(df_rows: list[dict[str, Any]]) -> defaultdict[str, list[dict[str, Any]]]:
     out: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in df_rows:
@@ -50,9 +85,10 @@ def _group(df_rows: list[dict[str, Any]]) -> defaultdict[str, list[dict[str, Any
 def tracked_state(tables: Tables, fields: Sequence[str]) -> TrackedState:
     """Build the comparable state for every trial, restricted to ``fields``.
 
-    List fields are sorted, de-duplicated and case/whitespace-normalised with
-    ``norm_key`` so cosmetic edits and reordering never register as changes.
-    Scalars are kept exactly as ``normalize`` produced them.
+    List fields hold readable display text (``norm_text`` form, original casing),
+    de-duplicated and sorted by ``norm_key``; ``diff`` compares them by key, so
+    cosmetic edits and reordering never register as changes. Scalars are kept
+    exactly as ``normalize`` produced them.
     """
     wanted = set(fields)
     conditions = _group(tables.condition.to_dicts())
@@ -69,21 +105,12 @@ def tracked_state(tables: Tables, fields: Sequence[str]) -> TrackedState:
         for prefix in _DATES:
             full[prefix] = _date_value(row, prefix)
         for kind in ("primary", "secondary"):
-            pairs = {
-                (norm_key(o["measure"] or ""), norm_key(o["time_frame"] or ""))
-                for o in trial_outcomes
-                if o["kind"] == kind
-            }
-            full[f"{kind}_outcomes"] = [list(p) for p in sorted(pairs)]
-        full["interventions"] = sorted(
-            {k for i in interventions[nct] if (k := norm_key(i["name_normalized"] or ""))}
-        )
-        full["conditions"] = sorted(
-            {k for c in conditions[nct] if (k := norm_key(c["condition"] or ""))}
-        )
-        full["site_countries"] = sorted(
-            {norm_key(s["country"]) for s in sites[nct] if s["country"]}
-        )
+            full[f"{kind}_outcomes"] = _outcome_pairs(
+                o for o in trial_outcomes if o["kind"] == kind
+            )
+        full["interventions"] = _display_list(i["name_normalized"] for i in interventions[nct])
+        full["conditions"] = _display_list(c["condition"] for c in conditions[nct])
+        full["site_countries"] = _display_list(s["country"] for s in sites[nct])
         full["site_count"] = len(sites[nct])
         state[nct] = {k: v for k, v in full.items() if k in wanted}
     return state

@@ -31,11 +31,11 @@ def test_tracked_state_base_study_values() -> None:
         "precision": "month",
         "type": "ESTIMATED",
     }
-    assert s["primary_outcomes"] == [["annualized relapse rate", "48 weeks"]]
-    assert s["secondary_outcomes"] == [["disability progression", "96 weeks"]]
-    assert s["interventions"] == ["example drug"]
-    assert s["conditions"] == ["multiple sclerosis"]
-    assert s["site_countries"] == ["united states"]
+    assert s["primary_outcomes"] == [["Annualized relapse rate", "48 weeks"]]
+    assert s["secondary_outcomes"] == [["Disability progression", "96 weeks"]]
+    assert s["interventions"] == ["Example Drug"]
+    assert s["conditions"] == ["Multiple Sclerosis"]
+    assert s["site_countries"] == ["United States"]
     assert s["site_count"] == 1
 
 
@@ -67,11 +67,11 @@ def test_tracked_state_lists_sorted_unique_and_normalised() -> None:
         }
     )
     s = state_of(study)[NCT]
-    assert s["conditions"] == ["ms", "multiple sclerosis", "myasthenia gravis"]
-    assert s["interventions"] == ["alpha", "zeta"]
-    assert s["site_countries"] == ["france", "germany"]
+    assert s["conditions"] == ["MS", "multiple sclerosis", "Myasthenia Gravis"]
+    assert s["interventions"] == ["ALPHA", "Zeta"]
+    assert s["site_countries"] == ["France", "Germany"]
     assert s["site_count"] == 4
-    assert s["primary_outcomes"] == [["a", ""], ["b", "1 year"]]
+    assert s["primary_outcomes"] == [["A", None], ["B", "1 year"]]
 
 
 def test_tracked_state_missing_values() -> None:
@@ -112,3 +112,26 @@ def test_tracked_hash_stable_under_key_order() -> None:
     assert len(tracked_hash(a)) == 64
     assert tracked_hash(a) != tracked_hash({**a, "x": 2})
     assert tracked_hash({"s": "é"}) != tracked_hash({"s": "e"})
+
+
+def test_tracked_state_variants_collapse_to_smallest() -> None:
+    variants = ["multiple sclerosis", "Multiple Sclerosis", "MULTIPLE  SCLEROSIS"]
+    for order in (variants, list(reversed(variants))):
+        s = state_of(make_study(**{"conditionsModule.conditions": order}))[NCT]
+        assert s["conditions"] == ["MULTIPLE SCLEROSIS"]
+    s = state_of(
+        make_study(
+            **{
+                "contactsLocationsModule.locations": [
+                    {"country": "united states"},
+                    {"country": "United States"},
+                ],
+                "outcomesModule.primaryOutcomes": [
+                    {"measure": "edss", "timeFrame": "48 Weeks"},
+                    {"measure": "EDSS", "timeFrame": "48 weeks"},
+                ],
+            }
+        )
+    )[NCT]
+    assert s["site_countries"] == ["United States"]
+    assert s["primary_outcomes"] == [["EDSS", "48 weeks"]]

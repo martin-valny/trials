@@ -12,7 +12,7 @@ from trialradar import diff as diff_mod
 from trialradar.config import TRACKED_FIELDS, AreaConfig
 from trialradar.diff import TRIAL_CHANGE_SCHEMA, diff
 from trialradar.normalize import normalize
-from trialradar.tracked import TrackedState, tracked_state
+from trialradar.tracked import TrackedState, tracked_hash, tracked_state
 
 ALIASES = REPO_ROOT / "config" / "aliases"
 NCT = "NCT00000001"
@@ -91,6 +91,64 @@ def test_cosmetic_text_changes_emit_nothing(cfg: AreaConfig) -> None:
     assert run(prev, curr, cfg).height == 0
 
 
+def test_cosmetic_display_change_alters_hash_but_emits_nothing(cfg: AreaConfig) -> None:
+    prev = state(
+        make_study(
+            **{
+                "conditionsModule.conditions": ["Multiple Sclerosis"],
+                "armsInterventionsModule.interventions": [{"type": "DRUG", "name": "Drug A"}],
+                "contactsLocationsModule.locations": [{"country": "United States"}],
+                "outcomesModule.primaryOutcomes": [
+                    {"measure": "EDSS score", "timeFrame": "1 year"}
+                ],
+                "outcomesModule.secondaryOutcomes": [{"measure": "MRI lesions", "timeFrame": None}],
+            }
+        )
+    )
+    curr = state(
+        make_study(
+            **{
+                "conditionsModule.conditions": ["multiple sclerosis"],
+                "armsInterventionsModule.interventions": [{"type": "DRUG", "name": "DRUG\u00a0a"}],
+                "contactsLocationsModule.locations": [{"country": "UNITED STATES"}],
+                "outcomesModule.primaryOutcomes": [
+                    {"measure": "edss  Score", "timeFrame": "1 YEAR"}
+                ],
+                "outcomesModule.secondaryOutcomes": [{"measure": "mri lesions", "timeFrame": ""}],
+            }
+        )
+    )
+    assert prev != curr
+    assert tracked_hash(prev[NCT]) != tracked_hash(curr[NCT])
+    assert run(prev, curr, cfg).height == 0
+
+
+def test_condition_change_shows_original_casing(cfg: AreaConfig) -> None:
+    curr = st(**{"conditionsModule.conditions": ["multiple sclerosis", "NMOSD"]})
+    row = only(run(st(), curr, cfg), "conditions")
+    assert json.loads(row["old_value"]) == ["Multiple Sclerosis"]
+    assert json.loads(row["new_value"]) == ["multiple sclerosis", "NMOSD"]
+    curr = st(**{"conditionsModule.conditions": ["Multiple Sclerosis", "NMOSD"]})
+    row = only(run(st(), curr, cfg), "conditions")
+    assert row["new_value"] == '["Multiple Sclerosis","NMOSD"]'
+
+
+def test_country_change_keeps_casing(cfg: AreaConfig) -> None:
+    curr = st(
+        **{
+            "contactsLocationsModule.locations": [
+                {"country": "United States"},
+                {"country": "Germany"},
+            ]
+        }
+    )
+    out = run(st(), curr, cfg)
+    row = only(out, "site_countries")
+    assert row["old_value"] == '["United States"]'
+    assert row["new_value"] == '["Germany","United States"]'
+    assert out["field"].to_list() == ["site_count", "site_countries"]
+
+
 def test_lead_sponsor_case_change_is_a_change(cfg: AreaConfig) -> None:
     curr = st(**{"sponsorCollaboratorsModule.leadSponsor": {"name": "EXAMPLE PHARMA"}})
     row = only(run(st(), curr, cfg), "lead_sponsor")
@@ -121,7 +179,8 @@ def test_primary_outcome_change_is_notable(cfg: AreaConfig) -> None:
     row = only(run(st(), curr, cfg), "primary_outcomes")
     assert row["notable"] is True
     assert row["notable_reason"] == "primary_endpoint_change"
-    assert json.loads(row["new_value"]) == [["edss", "48 weeks"]]
+    assert json.loads(row["new_value"]) == [["EDSS", "48 weeks"]]
+    assert json.loads(row["old_value"]) == [["Annualized relapse rate", "48 weeks"]]
 
 
 def test_secondary_outcome_change_not_notable(cfg: AreaConfig) -> None:
