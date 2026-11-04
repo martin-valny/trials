@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -18,6 +19,7 @@ from trialradar.tables import Tables
 WINDOWS: tuple[int, ...] = (1, 7, 30)
 _STUDY_URL = "https://clinicaltrials.gov/study/"
 _TRIAL_FILE = re.compile(r"NCT\d+\.json")
+_NCT_ID = re.compile(r"NCT\d+")
 _DATE_FIELDS = ("start_date", "primary_completion_date", "completion_date")
 
 
@@ -26,8 +28,13 @@ def _write_json(path: Path, doc: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(doc, sort_keys=True, ensure_ascii=False, separators=(",", ":")) + "\n"
     tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    os.replace(tmp, path)
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            tmp.unlink()
+        raise
 
 
 def _iso(d: date | None) -> str | None:
@@ -146,6 +153,8 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
         last_success_at = started.isoformat(timespec="seconds") + "Z"
         data_timestamp = row["data_timestamp"]
         warnings = json.loads(row["warnings"]) if row["warnings"] else []
+        if not isinstance(warnings, list) or not all(isinstance(w, str) for w in warnings):
+            raise ValueError("run_log column 'warnings' must be a JSON list of strings")
     return {
         "area": cfg.name,
         "conditions": [c.label for c in cfg.conditions],
@@ -167,6 +176,9 @@ def export(
 ) -> None:
     """Write the site JSON views for ``day`` into ``out_dir``."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
+    for nct in current:
+        if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
+            raise ValueError(f"invalid nct_id {nct!r}: expected NCT followed by digits")
     items = _change_items(changes, current)
 
     for n in WINDOWS:
@@ -184,7 +196,7 @@ def export(
     for nct, doc in docs.items():
         _write_json(trials_dir / f"{nct}.json", doc)
     for p in trials_dir.iterdir():
-        if _TRIAL_FILE.fullmatch(p.name) and p.stem not in docs:
+        if _TRIAL_FILE.fullmatch(p.name) and p.is_file() and p.stem not in docs:
             p.unlink()
 
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

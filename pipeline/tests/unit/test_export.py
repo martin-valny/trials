@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -378,3 +379,40 @@ def test_sample20(tmp_path: Path, cfg: AreaConfig) -> None:
         doc = load(f)
         assert set(doc) == TRIAL_KEYS
         assert doc["nct_id"] == f.stem
+
+
+def test_write_json_failure_leaves_no_tmp(
+    tmp_path: Path, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(*a: Any, **k: Any) -> None:
+        raise OSError("disk")
+
+    monkeypatch.setattr("trialradar.export.os.replace", boom)
+    with pytest.raises(OSError):
+        run(tmp_path, [], cfg=cfg)
+    assert not list(tmp_path.rglob("*.tmp"))
+
+
+@pytest.mark.parametrize("bad", ["../evil", "NCT12/3", "NCT1\n", "nct1"])
+def test_invalid_nct_id_rejected(tmp_path: Path, cfg: AreaConfig, bad: str) -> None:
+    tables = small_tables()
+    tables = replace(tables, trial=tables.trial.with_columns(nct_id=pl.lit(bad)))
+    out = tmp_path / "out"
+    with pytest.raises(ValueError, match="NCT"):
+        run(out, [], tables=tables, cfg=cfg)
+    assert not (tmp_path / "evil.json").exists()
+    assert not list(tmp_path.rglob("*evil*"))
+    assert not (out / "trials").exists() or not list((out / "trials").iterdir())
+
+
+@pytest.mark.parametrize("raw", ['{"a": 1}', '"str"', "[1, 2]", "5"])
+def test_meta_warnings_must_be_list_of_strings(tmp_path: Path, cfg: AreaConfig, raw: str) -> None:
+    with pytest.raises(ValueError, match="warnings"):
+        run(tmp_path, [], log=runlog([{"warnings": raw}]), cfg=cfg)
+
+
+def test_stale_sweep_skips_directories(tmp_path: Path, cfg: AreaConfig) -> None:
+    trials = tmp_path / "trials"
+    (trials / "NCT1.json").mkdir(parents=True)
+    run(tmp_path, [], cfg=cfg)
+    assert (trials / "NCT1.json").is_dir()
