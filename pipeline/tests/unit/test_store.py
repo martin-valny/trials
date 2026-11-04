@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -12,12 +13,12 @@ from conftest import REPO_ROOT
 from trialradar import store as store_mod
 from trialradar.diff import TRIAL_CHANGE_SCHEMA
 from trialradar.normalize import normalize
-from trialradar.store import RUN_LOG_SCHEMA, SNAPSHOT_SCHEMA, Store
+from trialradar.store import RUN_LOG_SCHEMA, SNAPSHOT_SCHEMA, Store, StoreError, _read_state_dir
 from trialradar.tables import SCHEMAS, Tables
 
 ALIASES = REPO_ROOT / "config" / "aliases"
 SAMPLE = REPO_ROOT / "pipeline" / "tests" / "fixtures" / "studies" / "sample20.jsonl"
-D1, D2, D3 = date(2026, 1, 1), date(2026, 1, 2), date(2026, 1, 3)
+D1, D2, D3, D4, D5 = (date(2026, 1, d) for d in range(1, 6))
 
 
 @pytest.fixture(scope="module")
@@ -182,17 +183,6 @@ def test_crash_while_writing_leaves_old_state(
     assert not [p for p in tmp_path.iterdir() if p.name.startswith(".")]
 
 
-def test_half_written_current_is_ignored(tmp_path: Path) -> None:
-    s = Store(tmp_path)
-    s.save_state(tables_with(1), D1, "t1")
-    s.save_state(tables_with(2), D2, "t2")
-    (tmp_path / "current" / "state.json").unlink()  # tables present, state missing
-    got = s.state_before(D3)
-    assert got is not None and got[1] == D1
-    (tmp_path / "previous" / "site.parquet").unlink()  # previous now incomplete too
-    assert s.state_before(D3) is None
-
-
 def test_crash_between_swaps_falls_back_to_previous(tmp_path: Path) -> None:
     s = Store(tmp_path)
     s.save_state(tables_with(1), D1, "t1")
@@ -285,3 +275,78 @@ def test_writes_use_temp_and_replace(tmp_path: Path, monkeypatch: pytest.MonkeyP
     s.save_state(tables_with(1), D1, "t")
     assert "run_log.parquet" in seen and "current" in seen
     assert not [p for p in tmp_path.rglob(".*") if p.is_file()]
+
+
+def _same_day_crash(tmp_path: Path) -> Store:
+    s = Store(tmp_path)
+    s.save_state(tables_with(2), D2, "t2")
+    s.save_state(tables_with(3), D3, "t3")
+    os.replace(tmp_path / "current", tmp_path / ".state-old")
+    return s
+
+
+def _dirs(tmp_path: Path) -> list[str]:
+    return sorted(p.name for p in tmp_path.iterdir() if p.name.startswith(".state-"))
+
+
+def test_crashed_swap_state_before_uses_state_old(tmp_path: Path) -> None:
+    s = _same_day_crash(tmp_path)
+    got = s.state_before(D4)
+    assert got is not None and got[1] == D3 and got[0].trial.height == 3
+    got = s.state_before(D3)
+    assert got is not None and got[1] == D2 and got[0].trial.height == 2
+
+
+def test_crashed_swap_then_next_day_save(tmp_path: Path) -> None:
+    s = _same_day_crash(tmp_path)
+    s.save_state(tables_with(4), D4, "t4")
+    assert _dirs(tmp_path) == []
+    got = s.state_before(D4)
+    assert got is not None and got[1] == D3 and got[0].trial.height == 3
+    got = s.state_before(D5)
+    assert got is not None and got[1] == D4 and got[0].trial.height == 4
+
+
+def test_crashed_swap_then_same_day_retry(tmp_path: Path) -> None:
+    s = _same_day_crash(tmp_path)
+    s.save_state(tables_with(7), D3, "t3b")
+    assert _dirs(tmp_path) == []
+    got = s.state_before(D3)
+    assert got is not None and got[1] == D2 and got[0].trial.height == 2
+    got = s.state_before(D4)
+    assert got is not None and got[1] == D3 and got[0].trial.height == 7
+
+
+def test_crashed_swap_rewind_check_sees_healed_current(tmp_path: Path) -> None:
+    s = _same_day_crash(tmp_path)
+    with pytest.raises(ValueError):
+        s.save_state(tables_with(1), D2, "t")
+    got = s.state_before(D4)
+    assert got is not None and got[1] == D3
+
+
+@pytest.mark.parametrize("damage", ["parquet", "state_json"])
+def test_corrupt_current_raises(tmp_path: Path, damage: str) -> None:
+    s = Store(tmp_path)
+    s.save_state(tables_with(1), D1, "t1")
+    s.save_state(tables_with(2), D2, "t2")
+    if damage == "parquet":
+        (tmp_path / "current" / "site.parquet").unlink()
+    else:
+        (tmp_path / "current" / "state.json").write_text("garbage{")
+    before = sorted(p.name for p in (tmp_path / "previous").iterdir())
+    with pytest.raises(StoreError, match="rebuild"):
+        s.state_before(D3)
+    with pytest.raises(StoreError, match="rebuild"):
+        s.save_state(tables_with(3), D3, "t3")
+    assert sorted(p.name for p in (tmp_path / "previous").iterdir()) == before
+    got = _read_state_dir(tmp_path / "previous")
+    assert got is not None and got[1] == D1
+
+
+def test_first_run(tmp_path: Path) -> None:
+    s = Store(tmp_path / "fresh")
+    assert s.state_before(D1) is None
+    s.save_state(tables_with(1), D1, "t1")
+    got = s.state_before(D2)
+    assert got is not None and got[1] == D1

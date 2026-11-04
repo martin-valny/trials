@@ -53,6 +53,11 @@ RUN_LOG_SCHEMA: dict[str, pl.DataType] = {
 
 _TABLE_NAMES = [f.name for f in fields(Tables)]
 _STATE_FILE = "state.json"
+_OLD_DIR = ".state-old"
+
+
+class StoreError(RuntimeError):
+    """The on-disk state is corrupt and cannot be used."""
 
 
 def _write_parquet(df: pl.DataFrame, path: Path) -> None:
@@ -114,25 +119,47 @@ class Store:
     # ----- state -----
 
     def state_before(self, day: date) -> tuple[Tables, date] | None:
-        for name in ("current", "previous"):
-            found = _read_state_dir(self.root / name)
-            if found is not None and found[1] < day:
-                return found[0], found[1]
-        return None
+        """Newest fully valid state strictly before ``day``.
+
+        Candidates are ``current/``, ``.state-old`` (the previous current,
+        left behind if a same-day overwrite crashed mid-swap) and
+        ``previous/``; ties prefer that order.  A present-but-corrupt
+        ``current/`` raises StoreError; a missing one is not an error.
+        """
+        self._require_current_valid()
+        best: tuple[Tables, date] | None = None
+        for directory in (self.root / "current", self.root / _OLD_DIR, self.root / "previous"):
+            found = _read_state_dir(directory)
+            if found is not None and found[1] < day and (best is None or found[1] > best[1]):
+                best = (found[0], found[1])
+        return best
+
+    def _require_current_valid(self) -> None:
+        current = self.root / "current"
+        if current.exists() and _read_state_dir(current) is None:
+            raise StoreError(
+                f"{current} is corrupt or incomplete; run `trialradar rebuild` "
+                "from the raw snapshots to regenerate the state"
+            )
 
     def save_state(self, tables: Tables, day: date, data_timestamp: str) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         current, previous = self.root / "current", self.root / "previous"
+        old = self.root / _OLD_DIR
+        # Self-heal a crashed same-day swap: the newest committed state is in .state-old.
+        if not current.exists() and _read_state_dir(old) is not None:
+            os.replace(old, current)
+        self._require_current_valid()
         existing = _read_state_dir(current)
         existing_date = existing[1] if existing else None
         if existing_date is not None and existing_date > day:
             raise ValueError(f"refusing to rewind state from {existing_date} to {day}")
 
-        for stray in self.root.glob(".state-*"):
+        for stray in self.root.glob(".state-new-*"):
             shutil.rmtree(stray, ignore_errors=True)
 
         new = Path(tempfile.mkdtemp(dir=self.root, prefix=".state-new-"))
-        old = self.root / ".state-old"
+        moved_aside = False
         try:
             for name in _TABLE_NAMES:
                 _write_parquet(getattr(tables, name), new / f"{name}.parquet")
@@ -143,15 +170,24 @@ class Store:
             if existing_date is not None and existing_date < day:
                 shutil.rmtree(previous, ignore_errors=True)
                 os.replace(current, previous)
-            elif current.exists():
-                # Same day (or unreadable current): replace current only.
+            elif existing_date is not None:
+                # Same day: replace current only.  A leftover .state-old is older
+                # than the valid current, so it is superseded and may go.
+                shutil.rmtree(old, ignore_errors=True)
                 os.replace(current, old)
-            os.replace(new, current)
+                moved_aside = True
+            try:
+                os.replace(new, current)
+            except BaseException:
+                if moved_aside and not current.exists():
+                    os.replace(old, current)
+                raise
         except BaseException:
             shutil.rmtree(new, ignore_errors=True)
             raise
         _fsync_dir(self.root)
-        shutil.rmtree(old, ignore_errors=True)
+        if moved_aside:
+            shutil.rmtree(old, ignore_errors=True)
 
     # ----- history -----
 
@@ -182,10 +218,10 @@ class Store:
         _check_schema(changes, TRIAL_CHANGE_SCHEMA, "changes")
         _check_schema(snapshots, SNAPSHOT_SCHEMA, "snapshots")
         merged_changes = pl.concat(
-            [self.changes().filter(pl.col("detected_date") != day), changes]
+            [self.changes().filter(pl.col("detected_date").ne_missing(day)), changes]
         ).sort(["nct_id", "field", "detected_date"], maintain_order=True)
         merged_snaps = pl.concat(
-            [self.snapshots().filter(pl.col("snapshot_date") != day), snapshots]
+            [self.snapshots().filter(pl.col("snapshot_date").ne_missing(day)), snapshots]
         ).sort(["snapshot_date", "nct_id"], maintain_order=True)
         self._write_history("trial_change", merged_changes)
         self._write_history("trial_snapshot", merged_snaps)
