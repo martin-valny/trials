@@ -1,0 +1,181 @@
+"""``rebuild`` replays raw snapshots and must reproduce the incremental history."""
+
+from __future__ import annotations
+
+import json
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
+
+import polars as pl
+import pytest
+
+from trialradar import pipeline
+from trialradar.config import AreaConfig
+from trialradar.pipeline import rebuild
+from trialradar.store import Store
+
+from .conftest import Env, FakeClient, day1_studies, day2_studies, nct, relevant_ids, tree_bytes
+from .test_pipeline import D1, D2, D3, TS1, TS2, TS3, drop_study
+
+D4 = date(2026, 3, 4)
+TS4 = "2026-03-04T06:00:00"
+
+
+def day3_studies(cfg: AreaConfig) -> list[dict[str, Any]]:
+    studies = day2_studies(cfg)
+    for s in studies:
+        if nct(s) == "NCT90000005":
+            s["protocolSection"]["designModule"]["enrollmentInfo"]["count"] = 150
+    return studies
+
+
+def rebuilt(env: Env, tmp_path: Path) -> tuple[Store, Path]:
+    root, site = tmp_path / "rebuilt-data", tmp_path / "rebuilt-site"
+    rebuild(env.cfg, root, env.raw_dir, site, env.aliases_dir)
+    return Store(root), site
+
+
+def assert_same_history(a: Store, b: Store) -> None:
+    assert a.changes().equals(b.changes())
+    assert a.snapshots().equals(b.snapshots())
+
+
+def assert_same_site(a: Path, b: Path) -> None:
+    assert tree_bytes(a, exclude=("meta.json",)) == tree_bytes(b, exclude=("meta.json",))
+
+
+def test_rebuild_equals_incremental_after_a_failed_day(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    bad = day3_studies(cfg)
+    drop_study(bad, "NCT90000006", ("identificationModule", "briefTitle"))
+    assert env.run(FakeClient(TS3, bad), D3).status == "failed"
+    assert env.run(FakeClient(TS4, day3_studies(cfg)), D4).status == "success"
+
+    store, site = rebuilt(env, tmp_path)
+
+    assert_same_history(store, env.store)
+    assert env.store.changes().height == 5  # 4 on day 2, 1 enrollment change on day 4
+    assert_same_site(site, env.site_dir)
+    log = store.run_log()
+    assert log["status"].to_list() == ["success"] * 3
+    assert log["data_timestamp"].to_list() == [TS1, TS2, TS4]
+    assert log["started_at"].to_list() == [datetime(2026, 3, d) for d in (1, 2, 4)]
+    assert log["changes_detected"].to_list() == [0, 4, 1]
+    assert log["rows_ingested"].to_list() == [14, 14, 14]
+    assert json.loads(log["warnings"][0]) == []
+    meta = json.loads((site / "meta.json").read_text())
+    assert meta["data_timestamp"] == TS4
+    assert meta["generated_for"] == D4.isoformat()
+    assert meta["last_success_at"] == "2026-03-04T00:00:00Z"
+
+
+def test_rebuild_after_force_rerun_and_export_failure(
+    env: Env, cfg: AreaConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    with monkeypatch.context() as m:
+        m.setattr(pipeline, "export", lambda *a, **k: (_ for _ in ()).throw(OSError("x")))
+        assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "failed"
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2, force=True)
+
+    store, site = rebuilt(env, tmp_path)
+
+    assert_same_history(store, env.store)
+    assert_same_site(site, env.site_dir)
+
+
+def test_rebuild_honours_an_accepted_drop(env: Env, cfg: AreaConfig, tmp_path: Path) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    studies = day1_studies(cfg)
+    small = [s for s in studies if nct(s) in relevant_ids(cfg, studies)[:6]]
+    assert env.run(FakeClient(TS2, small), D2).status == "failed"
+    assert env.run(FakeClient(TS2, small), D2, accept_drop=True).status == "success"
+
+    store, site = rebuilt(env, tmp_path)
+
+    assert_same_history(store, env.store)
+    assert store.changes().height == 6
+    assert_same_site(site, env.site_dir)
+
+
+def test_rebuild_in_place_reproduces_the_store(env: Env, cfg: AreaConfig) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    changes, snaps = env.store.changes(), env.store.snapshots()
+    (env.store_root / "current" / "trial.parquet").write_bytes(b"corrupt")
+    (env.store_root / ".git").mkdir()
+    (env.store_root / ".git" / "HEAD").write_text("ref: refs/heads/data\n")
+
+    rebuild(env.cfg, env.store_root, env.raw_dir, env.site_dir, env.aliases_dir)
+
+    assert env.store.changes().equals(changes)
+    assert env.store.snapshots().equals(snaps)
+    assert env.store.state_before(date(2026, 3, 3)) is not None
+    assert env.store.run_log()["status"].to_list() == ["success", "success"]
+    # Only store-owned entries are wiped: an enclosing git checkout survives.
+    assert (env.store_root / ".git" / "HEAD").exists()
+
+
+def test_rebuild_on_missing_or_empty_raw_dir_is_a_no_op(tmp_path: Path, cfg: AreaConfig) -> None:
+    store_root, site = tmp_path / "data", tmp_path / "site"
+    rebuild(cfg, store_root, tmp_path / "missing", site)
+    (tmp_path / "empty").mkdir()
+    rebuild(cfg, store_root, tmp_path / "empty", site)
+    assert not site.exists()
+    assert Store(store_root).run_log().height == 0
+    assert Store(store_root).state_before(date(2100, 1, 1)) is None
+
+
+def test_rebuild_skips_unreadable_and_failing_days(
+    env: Env, cfg: AreaConfig, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    expected = env.store.changes()
+    (env.raw_dir / "2026-03-03.jsonl.gz").write_bytes(b"not gzip")
+    bad = day2_studies(cfg)
+    drop_study(bad, "NCT90000006", ("statusModule", "overallStatus"))
+    from trialradar.snapshot import write_snapshot
+
+    write_snapshot(env.raw_dir, D4, bad)  # bypassed the gate somehow; no sidecar
+    capsys.readouterr()
+
+    store, _ = rebuilt(env, tmp_path)
+
+    assert store.changes().equals(expected)
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    skips = [ln for ln in lines if ln["stage"] == "rebuild_skip"]
+    assert [s["day"] for s in skips] == ["2026-03-03", "2026-03-04"]
+    assert any("schema:" in w for w in skips[1]["warnings"])
+    assert store.run_log()["data_timestamp"].to_list() == [TS1, TS2]
+
+
+def test_rebuild_without_sidecar_uses_empty_timestamp(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    (env.raw_dir / "2026-03-01.meta.json").unlink()
+
+    store, site = rebuilt(env, tmp_path)
+
+    assert store.run_log()["data_timestamp"].to_list() == [""]
+    assert store.snapshots().equals(env.store.snapshots())
+    assert json.loads((site / "meta.json").read_text())["data_timestamp"] == ""
+
+
+def test_failed_snapshots_are_not_replayed(env: Env, cfg: AreaConfig, tmp_path: Path) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    bad = day2_studies(cfg)
+    drop_study(bad, "NCT90000006", ("identificationModule", "briefTitle"))
+    env.run(FakeClient(TS2, bad), D2)
+    assert (env.raw_dir / "2026-03-02.failed.jsonl.gz").exists()
+
+    store, _ = rebuilt(env, tmp_path)
+
+    assert store.snapshots()["snapshot_date"].unique().to_list() == [D1]
+    assert store.snapshots().filter(pl.col("snapshot_date") == D1).height == 12

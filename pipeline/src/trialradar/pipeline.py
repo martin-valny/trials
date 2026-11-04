@@ -34,7 +34,7 @@ from trialradar.diff import diff
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.relevance import filter_relevant
-from trialradar.snapshot import write_snapshot
+from trialradar.snapshot import list_snapshots, read_snapshot, write_snapshot
 from trialradar.store import RUN_LOG_SCHEMA, Store, _write_text
 from trialradar.tables import Tables
 from trialradar.textnorm import Aliases, load_alias_set
@@ -339,3 +339,72 @@ def _record_failure(
     with suppress(Exception), _stage("run_log", status="failed") as info:
         store.append_run(row)
         info["rows"], info["warnings"] = 1, json.loads(row["warnings"])
+
+
+# ----- rebuild -----
+
+
+def _wipe_store(root: Path) -> None:
+    for name in _STORE_ENTRIES:
+        shutil.rmtree(root / name, ignore_errors=True)
+    for stray in root.glob(".state-new-*"):
+        shutil.rmtree(stray, ignore_errors=True)
+
+
+def rebuild(
+    cfg: AreaConfig,
+    store_root: Path,
+    raw_dir: Path,
+    site_dir: Path,
+    aliases_dir: Path | None = None,
+) -> None:
+    """Regenerate the store from the raw snapshots, then export the last replayed day.
+
+    Days replay in date order through the same gate as ``run`` (honouring an
+    ``accept_drop`` recorded in the sidecar); a day that fails it is skipped with
+    a ``rebuild_skip`` log line. Each replayed day gets a synthetic ``success``
+    run_log row. Only store-owned entries under ``store_root`` are removed.
+    Errors writing the store or site propagate."""
+    aliases_dir = aliases_dir if aliases_dir is not None else cfg.aliases_dir
+    aliases = load_alias_set(aliases_dir)
+    _wipe_store(store_root)
+    store = Store(store_root)
+    prev: Tables | None = None
+    last: tuple[Tables, date] | None = None
+    for day, path in list_snapshots(raw_dir):
+        t0 = time.monotonic()
+        meta = _read_sidecar(path)
+        try:
+            with _stage("read_snapshot", day=day.isoformat()) as info:
+                raw = read_snapshot(path)
+                info["rows"] = len(raw)
+            relevant, tables = _prepare(raw, cfg, aliases_dir)
+            prev_count = (prev.trial.height or None) if prev else None
+            accepted = meta.get("accept_drop") is True
+            _gate(raw, relevant, tables, prev_count, cfg, accepted)
+        except Exception as exc:  # noqa: BLE001 - an unusable day is skipped, not fatal
+            errors = exc.errors if isinstance(exc, DataError) else [_describe(exc)]
+            with _stage("rebuild_skip", day=day.isoformat()) as info:
+                info["rows"], info["warnings"] = 0, errors
+            continue
+        changes, snaps = _changes(prev, tables, cfg, aliases, day)
+        timestamp = str(meta.get("data_timestamp") or "")
+        _persist(store, tables, day, timestamp, changes, snaps)
+        started = datetime(day.year, day.month, day.day)
+        row = _run_row(
+            f"rebuild-{day.isoformat()}",
+            started,
+            t0,
+            "success",
+            timestamp,
+            len(raw),
+            changes.height,
+            [],
+        )
+        store.append_run(row)
+        prev, last = tables, (tables, day)
+    if last is not None:
+        tables, day = last
+        with _stage("export", day=day.isoformat()) as info:
+            export(tables, store.changes(), store.run_log(), cfg, day, site_dir)
+            info["rows"] = tables.trial.height
