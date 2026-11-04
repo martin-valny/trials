@@ -24,20 +24,37 @@ def write_snapshot(raw_dir: Path, day: date, studies: Iterable[dict[str, Any]]) 
     fd, tmp_name = tempfile.mkstemp(dir=raw_dir, prefix=f".{target.name}.", suffix=".tmp")
     tmp = Path(tmp_name)
     try:
-        with (
-            os.fdopen(fd, "wb") as raw,
-            gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz,
-            io.TextIOWrapper(gz, encoding="utf-8", newline="\n") as text,
-        ):
-            for study in studies:
-                text.write(json.dumps(study, ensure_ascii=False, separators=(",", ":")))
-                text.write("\n")
+        with os.fdopen(fd, "wb") as raw:
+            with (
+                gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz,
+                io.TextIOWrapper(gz, encoding="utf-8", newline="\n") as text,
+            ):
+                for study in studies:
+                    text.write(json.dumps(study, ensure_ascii=False, separators=(",", ":")))
+                    text.write("\n")
+            raw.flush()
+            os.fsync(raw.fileno())
         os.replace(tmp, target)
     except BaseException:
         with contextlib.suppress(FileNotFoundError):
             tmp.unlink()
         raise
+    _fsync_dir(raw_dir)
     return target
+
+
+def _fsync_dir(directory: Path) -> None:
+    """Best-effort fsync of a directory so the rename is durable."""
+    try:
+        dir_fd = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(dir_fd)
+    except OSError:
+        pass
+    finally:
+        os.close(dir_fd)
 
 
 def read_snapshot(path: Path) -> list[dict[str, Any]]:

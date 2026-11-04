@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import stat
 from datetime import date
 from pathlib import Path
 
@@ -41,6 +43,26 @@ def test_deterministic_bytes(tmp_path: Path) -> None:
     a = write_snapshot(tmp_path / "a", DAY, [make_study()])
     b = write_snapshot(tmp_path / "b", DAY, [make_study()])
     assert a.read_bytes() == b.read_bytes()
+    assert a.read_bytes()[4:8] == b"\x00\x00\x00\x00"  # gzip header mtime field
+
+
+def test_fsync_temp_file_before_replace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list[str] = []
+    real_fsync, real_replace = os.fsync, os.replace
+
+    def fsync(fd: int) -> None:
+        kind = "file" if stat.S_ISREG(os.fstat(fd).st_mode) else "dir"
+        events.append(f"fsync-{kind}")
+        real_fsync(fd)
+
+    def replace(src: str | Path, dst: str | Path) -> None:
+        events.append("replace")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "fsync", fsync)
+    monkeypatch.setattr(os, "replace", replace)
+    write_snapshot(tmp_path, DAY, [make_study()])
+    assert events == ["fsync-file", "replace", "fsync-dir"]
 
 
 def test_creates_missing_dir_and_empty_snapshot(tmp_path: Path) -> None:
