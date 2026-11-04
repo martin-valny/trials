@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,7 @@ from trialradar.tables import SCHEMAS, Tables
 
 ALIASES = REPO_ROOT / "config" / "aliases"
 SAMPLE = REPO_ROOT / "pipeline" / "tests" / "fixtures" / "studies" / "sample20.jsonl"
-D1, D2, D3, D4, D5 = (date(2026, 1, d) for d in range(1, 6))
+D1, D2, D3, D4, D5, D6 = (date(2026, 1, d) for d in range(1, 7))
 
 
 @pytest.fixture(scope="module")
@@ -350,3 +351,46 @@ def test_first_run(tmp_path: Path) -> None:
     s.save_state(tables_with(1), D1, "t1")
     got = s.state_before(D2)
     assert got is not None and got[1] == D1
+
+
+def _stale_old_leftover(tmp_path: Path) -> Store:
+    """current = D3b, plus a superseded .state-old = D3a (same date, older content)."""
+    s = Store(tmp_path)
+    s.save_state(tables_with(2), D2, "t2")
+    s.save_state(tables_with(4), D3, "t3b")  # same-day overwrite: current is D3b
+    # rebuild the leftover: D3a content as .state-old next to the real current
+    fake = Store(tmp_path / "fake")
+    fake.save_state(tables_with(3), D3, "t3a")
+    shutil.copytree(tmp_path / "fake" / "current", tmp_path / ".state-old")
+    shutil.rmtree(tmp_path / "fake")
+    return s
+
+
+def test_stale_state_old_ignored_by_state_before(tmp_path: Path) -> None:
+    s = _stale_old_leftover(tmp_path)
+    got = s.state_before(D4)
+    assert got is not None and got[1] == D3 and got[0].trial.height == 4
+    got = s.state_before(D3)  # tie D3a/previous must not pick the stale copy
+    assert got is not None and got[1] == D2 and got[0].trial.height == 2
+
+
+def test_stale_state_old_removed_on_save(tmp_path: Path) -> None:
+    s = _stale_old_leftover(tmp_path)
+    s.save_state(tables_with(5), D4, "t4")
+    assert _dirs(tmp_path) == []
+    prev = _read_state_dir(tmp_path / "previous")
+    assert prev is not None and prev[1] == D3 and prev[0].trial.height == 4
+
+
+def test_crashed_rotation_recovers_from_previous(tmp_path: Path) -> None:
+    s = _stale_old_leftover(tmp_path)
+    s.save_state(tables_with(5), D4, "t4")
+    # simulate crash in the D5 rotation: previous removed, current -> previous, nothing else
+    shutil.rmtree(tmp_path / "previous")
+    os.replace(tmp_path / "current", tmp_path / "previous")
+    assert _dirs(tmp_path) == []
+    got = s.state_before(D6)
+    assert got is not None and got[1] == D4 and got[0].trial.height == 5
+    s.save_state(tables_with(6), D6, "t6")
+    prev = _read_state_dir(tmp_path / "previous")
+    assert prev is None or prev[1] == D4

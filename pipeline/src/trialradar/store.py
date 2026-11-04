@@ -128,7 +128,12 @@ class Store:
         """
         self._require_current_valid()
         best: tuple[Tables, date] | None = None
-        for directory in (self.root / "current", self.root / _OLD_DIR, self.root / "previous"):
+        # .state-old is a recovery copy only while current/ is missing; next to
+        # a valid current it is superseded and ignored.
+        candidates = [self.root / "current", self.root / _OLD_DIR, self.root / "previous"]
+        if (self.root / "current").exists():
+            candidates.remove(self.root / _OLD_DIR)
+        for directory in candidates:
             found = _read_state_dir(directory)
             if found is not None and found[1] < day and (best is None or found[1] > best[1]):
                 best = (found[0], found[1])
@@ -150,6 +155,9 @@ class Store:
         if not current.exists() and _read_state_dir(old) is not None:
             os.replace(old, current)
         self._require_current_valid()
+        if current.exists():
+            # A valid current supersedes any .state-old (left by a completed swap).
+            shutil.rmtree(old, ignore_errors=True)
         existing = _read_state_dir(current)
         existing_date = existing[1] if existing else None
         if existing_date is not None and existing_date > day:
@@ -171,9 +179,7 @@ class Store:
                 shutil.rmtree(previous, ignore_errors=True)
                 os.replace(current, previous)
             elif existing_date is not None:
-                # Same day: replace current only.  A leftover .state-old is older
-                # than the valid current, so it is superseded and may go.
-                shutil.rmtree(old, ignore_errors=True)
+                # Same day: replace current only.
                 os.replace(current, old)
                 moved_aside = True
             try:
