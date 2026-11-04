@@ -124,6 +124,7 @@ def check(
     tables: Tables,
     prev_trial_count: int | None,
     cfg: AreaConfig,
+    fetched_count: int | None = None,
 ) -> QualityReport:
     report = QualityReport()
     _check_schema(raw, report)
@@ -148,10 +149,24 @@ def check(
 
     if prev_trial_count is not None and prev_trial_count > 0:
         drop = (prev_trial_count - n) / prev_trial_count
-        if drop > cfg.thresholds.row_drop_warn:
+        th = cfg.thresholds
+        if drop > th.row_drop_error:
+            report.errors.append(
+                f"row_drop_error: trial count fell from {prev_trial_count} to {n} "
+                f"({drop:.1%} > {th.row_drop_error:.1%})"
+            )
+        elif drop > th.row_drop_warn:
             report.warnings.append(
                 f"row_drop: trial count fell from {prev_trial_count} to {n} "
-                f"({drop:.1%} > {cfg.thresholds.row_drop_warn:.1%})"
+                f"({drop:.1%} > {th.row_drop_warn:.1%})"
+            )
+
+    if fetched_count is not None and fetched_count > 0:
+        share = n / fetched_count
+        if share < cfg.thresholds.min_relevant_share:
+            report.warnings.append(
+                f"off_topic: only {n} of {fetched_count} fetched studies are relevant "
+                f"({share:.1%} < {cfg.thresholds.min_relevant_share:.1%})"
             )
 
     unknown = sorted(

@@ -297,3 +297,58 @@ def test_null_id_estimated_date_warning(cfg: AreaConfig) -> None:
     )
     r = check([s], _null_id_tables([s], [0]), None, cfg)
     assert "<row 0>" in prefixed(r.warnings, "date_order_estimated:")[0]
+
+
+# --- large drop error and off-topic share -------------------------------------
+
+
+def test_row_drop_exactly_error_threshold_is_warning(cfg: AreaConfig) -> None:
+    r = run(_many(75), cfg, prev=100)
+    assert prefixed(r.errors, "row_drop_error:") == []
+    assert len(prefixed(r.warnings, "row_drop:")) == 1
+    assert r.ok
+
+
+def test_row_drop_above_error_threshold_is_error(cfg: AreaConfig) -> None:
+    r = run(_many(749), cfg, prev=1000)  # 25.1%
+    assert len(prefixed(r.errors, "row_drop_error:")) == 1
+    assert prefixed(r.warnings, "row_drop:") == []  # no double report
+    assert not r.ok
+
+
+def test_row_drop_exactly_warn_threshold_silent(cfg: AreaConfig) -> None:
+    r = run(_many(90), cfg, prev=100)
+    assert r.errors == [] and r.warnings == []
+
+
+def test_row_drop_error_needs_positive_prev(cfg: AreaConfig) -> None:
+    assert prefixed(run(_many(1), cfg, prev=0).errors, "row_drop_error:") == []
+    assert prefixed(run(_many(1), cfg, prev=None).errors, "row_drop_error:") == []
+
+
+def test_empty_preempts_row_drop_error(cfg: AreaConfig) -> None:
+    r = check([], Tables.empty(), 100, cfg)
+    assert prefixed(r.errors, "row_drop_error:") == []
+    assert len(prefixed(r.errors, "empty:")) == 1
+
+
+def _share(cfg: AreaConfig, current: int, fetched: int | None) -> QualityReport:
+    studies = _many(current)
+    return check(studies, normalize(studies, ALIASES), None, cfg, fetched)
+
+
+def test_off_topic_exactly_half_silent(cfg: AreaConfig) -> None:
+    assert prefixed(_share(cfg, 5, 10).warnings, "off_topic:") == []
+
+
+def test_off_topic_below_half_warns(cfg: AreaConfig) -> None:
+    r = _share(cfg, 4, 10)
+    warns = prefixed(r.warnings, "off_topic:")
+    assert len(warns) == 1
+    assert "4" in warns[0] and "10" in warns[0] and "40.0%" in warns[0]
+    assert r.ok
+
+
+def test_off_topic_silent_without_fetched_count(cfg: AreaConfig) -> None:
+    assert prefixed(_share(cfg, 1, None).warnings, "off_topic:") == []
+    assert prefixed(_share(cfg, 1, 0).warnings, "off_topic:") == []
