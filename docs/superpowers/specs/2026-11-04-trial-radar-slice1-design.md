@@ -169,8 +169,17 @@ Unmatched values pass through with whitespace collapsed.
   - date slip with `delta_days` ≥ 90 on `primary_completion_date` or `completion_date`
 - **Baseline:** when no previous state exists, record state and emit zero changes.
 - **Idempotency:** re-running for a date already processed deletes that date's
-  `trial_change`, `trial_snapshot` and `run_log` rows before writing, and diffs against the
-  last state strictly before that date.
+  `trial_change` and `trial_snapshot` rows before writing, and diffs against the
+  last state strictly before that date. `run_log` is an append-only audit log (every
+  attempt, including `failed` and `skipped`, adds a row); the latest `success` row defines
+  the freshness shown in `meta.json`.
+- **Raw snapshots are the source of truth.** A fetched snapshot is staged and promoted to
+  `raw/YYYY-MM-DD.jsonl.gz` (with a `.meta.json` sidecar) only after the store write
+  succeeds; a snapshot from a run that fails the data gate is quarantined as
+  `*.failed.*`. A run for a date earlier than the stored state is refused before fetching.
+  Snapshots hold every study fetched; the relevance filter (conditions, keywords and MeSH
+  terms matched as whole phrases against the configured synonyms) is applied afterwards, so
+  `rebuild` can replay history under a changed rule.
 
 ---
 
