@@ -75,7 +75,7 @@ def test_non_matching_excluded(cfg: AreaConfig) -> None:
 def test_missing_and_malformed_do_not_raise(cfg: AreaConfig) -> None:
     assert not is_relevant({}, cfg)
     assert not is_relevant({"protocolSection": None}, cfg)
-    assert not is_relevant(make_study(**{"conditionsModule": DELETE}), cfg)
+    assert not is_relevant(make_study(conditionsModule=DELETE), cfg)
     assert not is_relevant(make_study(**{"conditionsModule.conditions": None}), cfg)
     assert not is_relevant(make_study(**{"conditionsModule.conditions": "multiple sclerosis"}), cfg)
     study = make_study(**{"conditionsModule.conditions": [None, 3, {"a": 1}]})
