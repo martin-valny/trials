@@ -85,7 +85,7 @@ def _stage(name: str, **extra: Any) -> Iterator[dict[str, Any]]:
     try:
         yield info
     except BaseException as exc:
-        error = exc.errors[0] if isinstance(exc, DataError) and exc.errors else _describe(exc)
+        error = str(exc) if isinstance(exc, DataError) else _describe(exc)
         raise
     finally:
         line: dict[str, Any] = {
