@@ -10,7 +10,7 @@ from datetime import date
 from typing import Any
 
 from trialradar.tables import Tables
-from trialradar.textnorm import norm_key, norm_text
+from trialradar.textnorm import Aliases, apply_alias, norm_key, norm_text
 
 TrackedState = dict[str, dict[str, Any]]
 """NCT ID -> {tracked field -> JSON-serialisable value}."""
@@ -82,18 +82,27 @@ def _group(df_rows: list[dict[str, Any]]) -> defaultdict[str, list[dict[str, Any
     return out
 
 
-def tracked_state(tables: Tables, fields: Sequence[str]) -> TrackedState:
+def tracked_state(
+    tables: Tables, fields: Sequence[str], aliases: Aliases | None = None
+) -> TrackedState:
     """Build the comparable state for every trial, restricted to ``fields``.
 
     List fields hold readable display text (``norm_text`` form, original casing),
     de-duplicated and sorted by ``norm_key``; ``diff`` compares them by key, so
     cosmetic edits and reordering never register as changes. Scalars are kept
     exactly as ``normalize`` produced them.
+
+    With ``aliases`` the lead sponsor and intervention names are re-derived from the
+    stored raw names using those (current) aliases, so editing an alias file never
+    shows up as a change; without it the stored normalised names are used.
     """
     wanted = set(fields)
     conditions = _group(tables.condition.to_dicts())
     interventions = _group(tables.intervention.to_dicts())
     sites = _group(tables.site.to_dicts())
+    leads = {
+        r["nct_id"]: r["name"] for r in reversed(tables.sponsor.to_dicts()) if r["role"] == "lead"
+    }
     outcomes = _group(tables.outcome.to_dicts())
 
     state: TrackedState = {}
@@ -108,7 +117,14 @@ def tracked_state(tables: Tables, fields: Sequence[str]) -> TrackedState:
             full[f"{kind}_outcomes"] = _outcome_pairs(
                 o for o in trial_outcomes if o["kind"] == kind
             )
-        full["interventions"] = _display_list(i["name_normalized"] for i in interventions[nct])
+        if aliases is not None:
+            lead = leads.get(nct)
+            if lead is not None:
+                full["lead_sponsor"] = apply_alias(lead, aliases.sponsor) or None
+            names = (apply_alias(i["name"], aliases.intervention) for i in interventions[nct])
+        else:
+            names = (i["name_normalized"] for i in interventions[nct])
+        full["interventions"] = _display_list(names)
         full["conditions"] = _display_list(c["condition"] for c in conditions[nct])
         full["site_countries"] = _display_list(s["country"] for s in sites[nct])
         full["site_count"] = len(sites[nct])

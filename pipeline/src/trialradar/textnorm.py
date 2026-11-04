@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 import re
 import unicodedata
+from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -42,7 +44,27 @@ def load_aliases(path: Path) -> dict[str, str]:
     return aliases
 
 
-def apply_alias(name: str, aliases: dict[str, str]) -> str:
+@dataclass(frozen=True)
+class Aliases:
+    """Current sponsor and intervention alias maps (keys are ``norm_key`` forms)."""
+
+    sponsor: Mapping[str, str]
+    intervention: Mapping[str, str]
+
+    @classmethod
+    def empty(cls) -> Aliases:
+        return cls(sponsor={}, intervention={})
+
+
+def load_alias_set(aliases_dir: Path) -> Aliases:
+    """Load ``sponsor.csv`` and ``intervention.csv`` from ``aliases_dir``."""
+    return Aliases(
+        sponsor=load_aliases(aliases_dir / "sponsor.csv"),
+        intervention=load_aliases(aliases_dir / "intervention.csv"),
+    )
+
+
+def apply_alias(name: str, aliases: Mapping[str, str]) -> str:
     """Mapped value for ``name`` or its whitespace-normalised form."""
     return aliases.get(norm_key(name)) or norm_text(name) or ""
 
