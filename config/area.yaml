@@ -1,13 +1,13 @@
 name: neuroimmunology
 conditions:
   - label: Multiple sclerosis
-    synonyms: ["multiple sclerosis", "MS", "relapsing remitting multiple sclerosis"]
+    synonyms: ["multiple sclerosis", "relapsing remitting multiple sclerosis"]
   - label: NMOSD
-    synonyms: ["neuromyelitis optica", "NMOSD", "Devic"]
+    synonyms: ["neuromyelitis optica", "NMOSD"]
   - label: MOGAD
     synonyms: ["MOG antibody disease", "MOGAD", "myelin oligodendrocyte glycoprotein"]
   - label: Myasthenia gravis
-    synonyms: ["myasthenia gravis", "MG"]
+    synonyms: ["myasthenia gravis"]
   - label: CIDP
     synonyms: ["chronic inflammatory demyelinating polyneuropathy", "CIDP"]
   - label: Autoimmune encephalitis
@@ -34,5 +34,7 @@ thresholds:
   enrollment_rel_change: 0.20
   date_slip_days: 90
   row_drop_warn: 0.10
+  row_drop_error: 0.25
+  min_relevant_share: 0.5
   max_null_rate: 0.0
 aliases_dir: aliases

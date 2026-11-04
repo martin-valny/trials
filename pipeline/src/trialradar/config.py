@@ -6,7 +6,14 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 TRACKED_FIELDS: tuple[str, ...] = (
     "overall_status",
@@ -44,7 +51,17 @@ class Thresholds(_Strict):
     enrollment_rel_change: float = 0.20
     date_slip_days: int = 90
     row_drop_warn: float = 0.10
+    row_drop_error: float = 0.25
+    min_relevant_share: float = 0.5
     max_null_rate: float = 0.0
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Thresholds:
+        if not 0 < self.row_drop_warn <= self.row_drop_error <= 1:
+            raise ValueError("require 0 < row_drop_warn <= row_drop_error <= 1")
+        if not 0 <= self.min_relevant_share <= 1:
+            raise ValueError("min_relevant_share must be within [0, 1]")
+        return self
 
 
 class AreaConfig(_Strict):
