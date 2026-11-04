@@ -131,17 +131,17 @@ def test_invalid_config_rejected(tmp_path, patch): ...  # write repo yaml merged
 
 ### Task 2: Record real API fixtures (needs network to clinicaltrials.gov)
 
-Run after Task 5 (it adds realism tests against `normalize`) and before Task 10 (whose integration test consumes `sample20.jsonl`). Tasks 1 and 3–9 need no network. If the session cannot reach `clinicaltrials.gov`, run it via the `record-fixtures.yml` workflow and commit the downloaded artifact. **Do not hand-write these fixtures.**
+Run after Task 1 and before Task 10 (whose integration test consumes `sample20.jsonl`). Tasks 1 and 3–9 need no network. If the session cannot reach `clinicaltrials.gov`, run it via the `record-fixtures.yml` workflow and commit the downloaded artifact. **Do not hand-write these fixtures.**
 
 **Files:**
 - Create: `pipeline/scripts/record_fixtures.py`, `.github/workflows/record-fixtures.yml`, `pipeline/tests/fixtures/studies/*.json`, `pipeline/tests/fixtures/http/version.json`
-- Test: `pipeline/tests/unit/test_fixtures_present.py`, `pipeline/tests/unit/test_normalize_recorded.py`
+- Test: `pipeline/tests/unit/test_fixtures_present.py`, `pipeline/tests/unit/test_record_predicates.py`
 
 **Interfaces:**
 - Produces: `tests/fixtures/studies/<label>.json` (single raw study each) for labels `month_date`, `multi_phase`, `no_sites`, `no_enrollment`, `terminated_with_reason`, `many_sites`, plus `tests/fixtures/studies/sample20.jsonl` (20 raw studies) and `tests/fixtures/http/version.json`.
 
 - [ ] **Step 1: Write failing test** asserting each labelled file exists, parses, has `protocolSection.identificationModule.nctId`, and that each satisfies its predicate (e.g. `month_date`: `startDateStruct.date` matches `^\d{4}-\d{2}$`; `no_sites`: no `contactsLocationsModule.locations`; `multi_phase`: `len(phases) >= 2`; `terminated_with_reason`: status `TERMINATED` and `whyStopped` present). `sample20.jsonl` has 20 lines with distinct NCT IDs.
-  Also in `test_normalize_recorded.py`: `month_date.json` normalises to precision `"month"`, first of month; every line of `sample20.jsonl` normalises (20 trial rows, schemas match `SCHEMAS`) and passes `quality.check` with no errors.
+  Also `test_record_predicates.py`: each selection predicate in `record_fixtures.py` accepts a matching `make_study(...)` and rejects a non-matching one (no network). `test_fixtures_present.py` is committed together with the recorded fixtures, never before, so CI never goes red waiting on a recording.
 - [ ] **Step 2:** Run → FAIL (missing files).
 - [ ] **Step 3: Implement `record_fixtures.py`** — uses plain httpx with `build_params`-equivalent inline params from `config/area.yaml` (keep it standalone; it runs once), pages through up to 3,000 studies, picks the first study matching each predicate, writes files. `record-fixtures.yml`: `workflow_dispatch`, runs the script, uploads `pipeline/tests/fixtures/` as artifact.
 - [ ] **Step 4:** Run the script (locally or via the workflow, then unpack the artifact) and re-run the test → PASS.
@@ -206,7 +206,7 @@ def test_timeout_is_30s(): ...                        # default client construct
 - Test: `pipeline/tests/unit/test_textnorm.py`, `pipeline/tests/unit/test_normalize.py`
 
 **Interfaces:**
-- Consumes: `make_study` (Task 1). Uses only built studies; recorded-fixture tests live in Task 2.
+- Consumes: `make_study` (Task 1). Uses only built studies; recorded-fixture tests live in Task 7.
 - Produces:
   - `norm_text(s: str | None) -> str | None` — NFKC, replace NBSP, strip, collapse internal whitespace. Returns `None` for `None`/empty.
   - `norm_key(s: str) -> str` — `norm_text(s).casefold()`.
@@ -290,7 +290,7 @@ def test_tracked_hash_stable_under_key_order(): ...
 
 Errors (exact message prefixes, used by tests): `"schema:"` — a raw study lacks `protocolSection.identificationModule.nctId`, `...briefTitle`, or `...statusModule.overallStatus`; `"null_rate:"` — null share of `nct_id`, `title`, `overall_status` exceeds `max_null_rate`; `"date_order:"` — completion < start with both `ACTUAL`; `"duplicate:"` — repeated `nct_id` in `trial`; `"empty:"` — zero trials. Warnings: `"row_drop:"` (drop > `row_drop_warn`), `"unknown_status:"`, `"date_order_estimated:"`.
 
-- [ ] **Step 1: Failing tests:** one passing and one failing case per error and warning above; a clean `sample20` run → `ok` and no warnings; first run (`prev_trial_count=None`) emits no `row_drop`; drop of exactly 10% is not a warning, 10.1% is.
+- [ ] **Step 1: Failing tests:** add `test_normalize_recorded.py`: `month_date.json` normalises to precision `"month"`, first of month; every line of `sample20.jsonl` normalises (20 trial rows, schemas match `SCHEMAS`) and passes `quality.check` with no errors. In `test_quality.py`: one passing and one failing case per error and warning above; a clean `sample20` run → `ok` and no warnings; first run (`prev_trial_count=None`) emits no `row_drop`; drop of exactly 10% is not a warning, 10.1% is.
 - [ ] **Step 2:** Run → FAIL. **Step 3:** Implement. **Step 4:** Run → PASS.
 - [ ] **Step 5: Commit** `feat: data quality checks`.
 
