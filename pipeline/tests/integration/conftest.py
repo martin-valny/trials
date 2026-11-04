@@ -1,8 +1,8 @@
 """Integration fixtures: a fake CT.gov client and a deterministic multi-day study set.
 
-The base set is the in-area part of ``sample20.jsonl`` (via the relevance filter),
-topped up with ``make_study`` clones to at least ``MIN_RELEVANT`` trials, plus two
-off-topic studies that must reach the raw snapshot but never the tables or site.
+The base set is a FIXED number (``REAL_COUNT``) of in-area studies from
+``sample20.jsonl`` (via the relevance filter) plus a FIXED set of ``make_study``
+clones, so it does not depend on what a re-recording contains, plus two off-topic studies that must reach the raw snapshot but never the tables or site.
 """
 
 from __future__ import annotations
@@ -23,7 +23,8 @@ from trialradar.relevance import filter_relevant
 from trialradar.store import Store
 
 SAMPLE = REPO_ROOT / "pipeline" / "tests" / "fixtures" / "studies" / "sample20.jsonl"
-MIN_RELEVANT = 12
+REAL_COUNT = 6
+CLONE_COUNT = 8
 OFF_TOPIC = ("NCT98000001", "NCT98000002")
 # Clones with fixed roles in the day-2 edits.
 STATUS_EDIT = "NCT90000001"
@@ -53,12 +54,12 @@ def off_topic(nct_id: str) -> dict[str, Any]:
 
 def day1_studies(cfg: AreaConfig) -> list[dict[str, Any]]:
     sample = [json.loads(line) for line in SAMPLE.read_text(encoding="utf-8").splitlines() if line]
-    relevant = filter_relevant(sample, cfg)
-    clones = [clone(f"NCT9000000{i}") for i in range(1, 5)]
-    i = 5
-    while len(relevant) + len(clones) < MIN_RELEVANT:
-        clones.append(clone(f"NCT900000{i:02d}"))
-        i += 1
+    in_area = filter_relevant(sample, cfg)
+    assert len(in_area) >= REAL_COUNT, (
+        f"sample20.jsonl has only {len(in_area)} in-area studies; need {REAL_COUNT}"
+    )
+    relevant = in_area[:REAL_COUNT]
+    clones = [clone(f"NCT9000000{i}") for i in range(1, CLONE_COUNT + 1)]
     return relevant + clones + [off_topic(n) for n in OFF_TOPIC]
 
 

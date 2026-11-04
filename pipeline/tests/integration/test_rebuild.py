@@ -93,14 +93,16 @@ def test_rebuild_after_force_rerun_and_export_failure(
 def test_rebuild_honours_an_accepted_drop(env: Env, cfg: AreaConfig, tmp_path: Path) -> None:
     env.run(FakeClient(TS1, day1_studies(cfg)), D1)
     studies = day1_studies(cfg)
-    small = [s for s in studies if nct(s) in relevant_ids(cfg, studies)[:6]]
+    keep = relevant_ids(cfg, studies)[:6]
+    small = [s for s in studies if nct(s) in keep]
+    removed = len(relevant_ids(cfg, studies)) - len(keep)
     assert env.run(FakeClient(TS2, small), D2).status == "failed"
     assert env.run(FakeClient(TS2, small), D2, accept_drop=True).status == "success"
 
     store, site = rebuilt(env, tmp_path)
 
     assert_same_history(store, env.store)
-    assert store.changes().height == 6
+    assert store.changes().height == removed
     assert_same_site(site, env.site_dir)
 
 

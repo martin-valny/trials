@@ -22,8 +22,10 @@ def assert_schemas(tables: Tables) -> None:
 
 def test_month_date_recorded() -> None:
     study = json.loads((STUDIES / "month_date.json").read_text())
+    raw_date = study["protocolSection"]["statusModule"]["startDateStruct"]["date"]
+    year, month = (int(x) for x in raw_date.split("-"))
     row = normalize([study], ALIASES).trial.row(0, named=True)
-    assert row["start_date"] == date(2013, 10, 1)
+    assert row["start_date"] == date(year, month, 1)
     assert row["start_date_precision"] == "month"
     assert row["start_date_type"] is None
 
