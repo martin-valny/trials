@@ -9,11 +9,19 @@ from collections.abc import Iterable, Sequence
 from datetime import date
 from typing import Any
 
+import polars as pl
+
 from trialradar.tables import Tables
 from trialradar.textnorm import Aliases, apply_alias, norm_key, norm_text
 
 TrackedState = dict[str, dict[str, Any]]
 """NCT ID -> {tracked field -> JSON-serialisable value}."""
+
+SNAPSHOT_SCHEMA: dict[str, pl.DataType] = {
+    "nct_id": pl.Utf8(),
+    "snapshot_date": pl.Date(),
+    "tracked_hash": pl.Utf8(),
+}
 
 _SCALARS = ("overall_status", "why_stopped", "enrollment", "enrollment_type", "lead_sponsor")
 _DATES = ("start_date", "primary_completion_date", "completion_date")
@@ -130,3 +138,22 @@ def tracked_state(
         full["site_count"] = len(sites[nct])
         state[nct] = {k: v for k, v in full.items() if k in wanted}
     return state
+
+
+def registry_dates(tables: Tables) -> dict[str, date]:
+    """NCT ID -> registry last-update-post date, for trials that have one."""
+    trial = tables.trial
+    return {
+        nct: d
+        for nct, d in zip(trial["nct_id"].to_list(), trial["last_update_post_date"].to_list())
+        if d is not None
+    }
+
+
+def snapshot_frame(state: TrackedState, day: date) -> pl.DataFrame:
+    """``trial_snapshot`` rows for ``day``: one per trial, sorted by NCT ID."""
+    rows = [
+        {"nct_id": nct, "snapshot_date": day, "tracked_hash": tracked_hash(state[nct])}
+        for nct in sorted(state)
+    ]
+    return pl.DataFrame(rows, schema=SNAPSHOT_SCHEMA)

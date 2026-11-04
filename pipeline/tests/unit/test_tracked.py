@@ -328,3 +328,43 @@ def test_aliases_do_not_mask_real_raw_change(tmp_path: Path, cfg: AreaConfig, fi
     day = date(2026, 11, 4)
     out = diff(prev, curr, {NCT: day}, cfg, day)
     assert out.filter(pl.col("field") == field).height == 1
+
+
+# ----- shared run/rebuild helpers -----
+
+
+def test_registry_dates_maps_last_update_post_date() -> None:
+    from trialradar.tracked import registry_dates
+
+    tables = normalize(
+        [
+            make_study("NCT00000001"),
+            make_study("NCT00000002", **{"statusModule.lastUpdatePostDateStruct": DELETE}),
+        ],
+        ALIASES,
+    )
+    assert registry_dates(tables) == {"NCT00000001": date(2025, 1, 15)}
+
+
+def test_snapshot_frame_schema_and_hashes() -> None:
+    from trialradar.store import SNAPSHOT_SCHEMA as STORE_SCHEMA
+    from trialradar.tracked import SNAPSHOT_SCHEMA, snapshot_frame
+
+    state = state_of(make_study("NCT00000002"), make_study("NCT00000001"))
+    df = snapshot_frame(state, date(2026, 1, 2))
+    assert STORE_SCHEMA is SNAPSHOT_SCHEMA
+    assert dict(df.schema) == SNAPSHOT_SCHEMA
+    assert df["nct_id"].to_list() == ["NCT00000001", "NCT00000002"]
+    assert df["snapshot_date"].to_list() == [date(2026, 1, 2)] * 2
+    assert df["tracked_hash"].to_list() == [
+        tracked_hash(state["NCT00000001"]),
+        tracked_hash(state["NCT00000002"]),
+    ]
+
+
+def test_snapshot_frame_empty_state() -> None:
+    from trialradar.tracked import SNAPSHOT_SCHEMA, snapshot_frame
+
+    df = snapshot_frame({}, date(2026, 1, 2))
+    assert df.height == 0
+    assert dict(df.schema) == SNAPSHOT_SCHEMA

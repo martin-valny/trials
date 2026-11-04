@@ -69,13 +69,19 @@ def _label(study: dict[str, Any], index: int) -> str:
     return str(nct) if nct else f"<study #{index}>"
 
 
-def _check_schema(raw: Sequence[dict[str, Any]], report: QualityReport) -> None:
+def check_raw(raw: Sequence[dict[str, Any]]) -> list[str]:
+    """``schema:`` errors for required raw paths that are missing or empty.
+
+    Safe to run before ``normalize`` (which raises on a missing ``nctId``).
+    """
+    errors: list[str] = []
     for path in _REQUIRED_PATHS:
         missing = [_label(s, i) for i, s in enumerate(raw) if _get(s, path) in (None, "")]
         if missing:
-            report.errors.append(
+            errors.append(
                 f"schema: {len(missing)} study(ies) missing {'.'.join(path)}: {_ids(missing)}"
             )
+    return errors
 
 
 def _check_nulls(trial: pl.DataFrame, cfg: AreaConfig, report: QualityReport) -> None:
@@ -127,7 +133,7 @@ def check(
     fetched_count: int | None = None,
 ) -> QualityReport:
     report = QualityReport()
-    _check_schema(raw, report)
+    report.errors.extend(check_raw(raw))
 
     trial = tables.trial
     n = trial.height

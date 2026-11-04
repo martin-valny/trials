@@ -32,12 +32,7 @@ import polars as pl
 from trialradar.diff import TRIAL_CHANGE_SCHEMA
 from trialradar.snapshot import _fsync_dir
 from trialradar.tables import SCHEMAS, Tables
-
-SNAPSHOT_SCHEMA: dict[str, pl.DataType] = {
-    "nct_id": pl.Utf8(),
-    "snapshot_date": pl.Date(),
-    "tracked_hash": pl.Utf8(),
-}
+from trialradar.tracked import SNAPSHOT_SCHEMA
 
 # started_at is a naive datetime that is always UTC (no tz attached).
 RUN_LOG_SCHEMA: dict[str, pl.DataType] = {
@@ -50,6 +45,8 @@ RUN_LOG_SCHEMA: dict[str, pl.DataType] = {
     "changes_detected": pl.Int64(),
     "warnings": pl.Utf8(),  # JSON-encoded list
 }
+
+__all__ = ["RUN_LOG_SCHEMA", "SNAPSHOT_SCHEMA", "Store", "StoreError"]
 
 _TABLE_NAMES = [f.name for f in fields(Tables)]
 _STATE_FILE = "state.json"

@@ -352,3 +352,26 @@ def test_off_topic_below_half_warns(cfg: AreaConfig) -> None:
 def test_off_topic_silent_without_fetched_count(cfg: AreaConfig) -> None:
     assert prefixed(_share(cfg, 1, None).warnings, "off_topic:") == []
     assert prefixed(_share(cfg, 1, 0).warnings, "off_topic:") == []
+
+
+def test_check_raw_returns_only_schema_errors() -> None:
+    from trialradar.quality import check_raw
+
+    assert check_raw([make_study("NCT00000001")]) == []
+    bad = [
+        make_study("NCT00000001", **{"identificationModule.briefTitle": DELETE}),
+        make_study("NCT00000002", **{"identificationModule.nctId": DELETE}),
+    ]
+    errors = check_raw(bad)
+    assert len(errors) == 2
+    assert all(e.startswith("schema: ") for e in errors)
+    assert "NCT00000001" in errors[1] and "briefTitle" in errors[1]
+    assert "nctId" in errors[0] and "<study #1>" in errors[0]
+
+
+def test_check_raw_matches_check_schema_errors(cfg: AreaConfig) -> None:
+    from trialradar.quality import check_raw
+
+    bad = [make_study("NCT00000001", **{"statusModule.overallStatus": DELETE})]
+    report = check(bad, normalize([make_study("NCT00000001")], ALIASES), None, cfg)
+    assert [e for e in report.errors if e.startswith("schema:")] == check_raw(bad)
