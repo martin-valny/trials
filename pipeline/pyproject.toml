@@ -31,8 +31,9 @@ testpaths = ["tests"]
 markers = [
     "live: tests that hit the real ClinicalTrials.gov API",
     "recorded: tests that need fixtures recorded by scripts/record_fixtures.py",
+    "recorded_fresh: checks only valid on fixtures recorded with the relevance filter",
 ]
-addopts = "-m 'not live'"
+addopts = "-m 'not live and not recorded_fresh'"
 
 [tool.ruff]
 line-length = 100

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from types import ModuleType
 
 from conftest import DELETE, REPO_ROOT, make_study
@@ -15,6 +16,7 @@ def _load_script() -> ModuleType:
     spec = importlib.util.spec_from_file_location("record_fixtures", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # dataclasses resolve annotations via sys.modules
     spec.loader.exec_module(module)
     return module
 
@@ -91,3 +93,35 @@ def test_params_come_from_config() -> None:
         assert f"AREA[Phase]{phase}" in adv
     assert params["pageSize"] == 1000
     assert params["format"] == "json"
+
+
+def _off_topic(nct: str, **extra: object) -> dict[str, object]:
+    return make_study(nct, **{"conditionsModule.conditions": ["Healthy"], **extra})
+
+
+def test_select_skips_non_relevant_studies() -> None:
+    cfg = load_config(REPO_ROOT / "config" / "area.yaml")
+    studies = [
+        # would satisfy no_sites and no_enrollment, but is off-topic
+        _off_topic(
+            "NCT00000009",
+            **{"contactsLocationsModule.locations": DELETE, "designModule.enrollmentInfo": DELETE},
+        ),
+        make_study("NCT00000001"),
+        make_study("NCT00000001"),  # duplicate
+        make_study("NCT00000002", **{"contactsLocationsModule.locations": DELETE}),
+    ]
+    sel = rf.select_studies(iter(studies), cfg)
+    assert sel.fetched == 3
+    assert sel.relevant == 2
+    assert [rf._nct_id(s) for s in sel.sample] == ["NCT00000001", "NCT00000002"]
+    assert rf._nct_id(sel.found["no_sites"]) == "NCT00000002"
+    assert "no_enrollment" not in sel.found
+
+
+def test_select_stops_at_sample_size_and_labels() -> None:
+    cfg = load_config(REPO_ROOT / "config" / "area.yaml")
+    studies = (make_study(f"NCT{i:08d}") for i in range(1, 100))
+    sel = rf.select_studies(studies, cfg, max_studies=30)
+    assert len(sel.sample) == rf.SAMPLE_SIZE
+    assert sel.relevant == 30  # no labels all found, so it reads up to max_studies

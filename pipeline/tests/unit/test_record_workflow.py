@@ -30,7 +30,7 @@ def test_permissions() -> None:
 
 
 def test_validates_recorded_fixtures() -> None:
-    assert any("pytest -m recorded" in s.get("run", "") for s in _steps())
+    assert any('pytest -m "recorded or recorded_fresh"' in s.get("run", "") for s in _steps())
 
 
 def test_commit_step_tolerates_no_changes() -> None:

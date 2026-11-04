@@ -2,7 +2,8 @@
 
 Run from ``pipeline/`` (needs network access to clinicaltrials.gov):
 ``uv run python scripts/record_fixtures.py``. Exits non-zero if any label finds no
-match within MAX_STUDIES studies, or if fewer than MIN_DISTINCT distinct studies were seen.
+match within MAX_STUDIES relevant studies, or if fewer than MIN_DISTINCT distinct relevant
+studies were seen. Only studies passing the relevance filter are ever selected.
 """
 
 from __future__ import annotations
@@ -11,13 +12,15 @@ import json
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import httpx
 
 from trialradar.config import AreaConfig, load_config
+from trialradar.relevance import is_relevant
 
 BASE_URL = "https://clinicaltrials.gov/api/v2"
 PAGE_SIZE = 1000
@@ -114,33 +117,55 @@ def _nct_id(study: Study) -> str:
     return str(_section(study, "identificationModule")["nctId"])
 
 
+@dataclass
+class Selection:
+    found: dict[str, Study] = field(default_factory=dict)
+    sample: list[Study] = field(default_factory=list)
+    fetched: int = 0
+    relevant: int = 0
+
+
+def select_studies(
+    studies: Iterable[Study], cfg: AreaConfig, max_studies: int = MAX_STUDIES
+) -> Selection:
+    """Pick labelled fixtures and the sample from distinct, in-area studies only."""
+    sel = Selection()
+    seen: set[str] = set()
+    for study in studies:
+        nct = _nct_id(study)
+        if nct in seen:
+            continue
+        seen.add(nct)
+        sel.fetched += 1
+        if not is_relevant(study, cfg):
+            continue
+        sel.relevant += 1
+        if len(sel.sample) < SAMPLE_SIZE:
+            sel.sample.append(study)
+        for label, predicate in PREDICATES.items():
+            if label not in sel.found and predicate(study):
+                sel.found[label] = study
+        if sel.relevant >= max_studies or (
+            len(sel.found) == len(PREDICATES) and len(sel.sample) >= SAMPLE_SIZE
+        ):
+            break
+    return sel
+
+
 def main() -> int:
     cfg = load_config(CONFIG_PATH)
     params = build_params(cfg)
-    found: dict[str, Study] = {}
-    sample: list[Study] = []
-    seen: set[str] = set()
     with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
         version = _get(client, "/version")
-        for study in iter_studies(client, params):
-            nct = _nct_id(study)
-            if nct in seen:
-                continue
-            seen.add(nct)
-            if len(sample) < SAMPLE_SIZE:
-                sample.append(study)
-            for label, predicate in PREDICATES.items():
-                if label not in found and predicate(study):
-                    found[label] = study
-            if len(seen) >= MAX_STUDIES or (
-                len(found) == len(PREDICATES) and len(sample) >= SAMPLE_SIZE
-            ):
-                break
+        sel = select_studies(iter_studies(client, params), cfg)
+    found, sample = sel.found, sel.sample
 
     missing = sorted(set(PREDICATES) - set(found))
-    if missing or len(seen) < MIN_DISTINCT:
+    if missing or sel.relevant < MIN_DISTINCT:
         print(
-            f"FAILED: no match for {missing}; distinct studies seen: {len(seen)}", file=sys.stderr
+            f"FAILED: no match for {missing}; distinct relevant studies seen: {sel.relevant} "
+            f"(of {sel.fetched} fetched)",
+            file=sys.stderr,
         )
         return 1
 
@@ -152,7 +177,10 @@ def main() -> int:
         (studies_dir / f"{label}.json").write_text(json.dumps(study, indent=2) + "\n")
     (studies_dir / "sample20.jsonl").write_text("".join(json.dumps(s) + "\n" for s in sample))
     (http_dir / "version.json").write_text(json.dumps(version, indent=2) + "\n")
-    print(f"Recorded {len(found)} labelled studies, {len(sample)} samples from {len(seen)} seen.")
+    print(
+        f"Recorded {len(found)} labelled studies, {len(sample)} samples from "
+        f"{sel.relevant} relevant of {sel.fetched} fetched."
+    )
     return 0
 
 
