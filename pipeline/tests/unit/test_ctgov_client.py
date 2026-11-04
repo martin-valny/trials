@@ -11,7 +11,7 @@ import pytest
 from conftest import REPO_ROOT, make_study
 
 from trialradar.config import AreaConfig
-from trialradar.ctgov.client import CtGovClient, CtGovError
+from trialradar.ctgov.client import MAX_PAGES, CtGovClient, CtGovError
 
 Handler = Callable[[httpx.Request], httpx.Response]
 
@@ -161,3 +161,86 @@ def test_data_timestamp() -> None:
 def test_timeout_is_30s() -> None:
     client = CtGovClient()
     assert client._http.timeout == httpx.Timeout(30)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"protocolSection": {"identificationModule": {}}},
+        {"protocolSection": {"identificationModule": {"nctId": ""}}},
+        {"protocolSection": {}},
+        {},
+    ],
+)
+def test_study_without_nct_id_raises(cfg: AreaConfig, bad: dict[str, Any]) -> None:
+    client = _client(lambda req: _page(make_study(), bad))
+    with pytest.raises(CtGovError, match=r"page 1.*index 1"):
+        list(client.iter_studies(cfg))
+
+
+@pytest.mark.parametrize("content", [b"<html>nope", b"[1, 2]", b'"str"'])
+def test_non_object_or_invalid_json_body_raises(cfg: AreaConfig, content: bytes) -> None:
+    calls = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, content=content)
+
+    client = _client(handler)
+    with pytest.raises(CtGovError):
+        client.data_timestamp()
+    with pytest.raises(CtGovError):
+        list(client.iter_studies(cfg))
+    assert calls == 2  # no retries
+
+
+@pytest.mark.parametrize("body", [{}, {"dataTimestamp": ""}, {"dataTimestamp": 5}])
+def test_version_without_data_timestamp_raises(body: dict[str, Any]) -> None:
+    client = _client(lambda req: httpx.Response(200, json=body))
+    with pytest.raises(CtGovError, match="dataTimestamp"):
+        client.data_timestamp()
+
+
+@pytest.mark.parametrize("body", [{}, {"studies": None}, {"studies": {"a": 1}}, {"studies": "x"}])
+def test_studies_missing_or_not_list_raises(cfg: AreaConfig, body: dict[str, Any]) -> None:
+    client = _client(lambda req: httpx.Response(200, json=body))
+    with pytest.raises(CtGovError, match="studies"):
+        list(client.iter_studies(cfg))
+
+
+def test_repeated_page_token_raises(cfg: AreaConfig) -> None:
+    calls = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return _page(make_study(), token="a" if calls == 1 else "b" if calls == 2 else "a")
+
+    with pytest.raises(CtGovError, match="repeated"):
+        list(_client(handler).iter_studies(cfg))
+    assert calls == 3
+
+
+def test_page_cap_raises(cfg: AreaConfig) -> None:
+    calls = 0
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return _page(make_study(), token=f"t{calls}")
+
+    with pytest.raises(CtGovError, match="100 pages"):
+        list(_client(handler).iter_studies(cfg))
+    assert calls == MAX_PAGES
+
+
+@pytest.mark.parametrize(
+    ("header", "expected"),
+    [("1e9", 60.0), ("inf", 1.0), ("nan", 1.0), ("-5", 1.0), ("soon", 1.0), ("0", 0.0)],
+)
+def test_retry_after_is_sanitised(cfg: AreaConfig, header: str, expected: float) -> None:
+    responses = iter([httpx.Response(429, headers={"Retry-After": header}), _page(make_study())])
+    delays: list[float] = []
+    list(_client(lambda req: next(responses), delays).iter_studies(cfg))
+    assert delays == [expected]
