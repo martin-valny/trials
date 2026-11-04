@@ -1,119 +1,128 @@
 {
   "protocolSection": {
     "identificationModule": {
-      "nctId": "NCT01765556",
+      "nctId": "NCT05571631",
       "orgStudyIdInfo": {
-        "id": "GO28054"
+        "id": "7181-GOA"
       },
-      "secondaryIdInfos": [
-        {
-          "id": "2012-003143-29",
-          "type": "EUDRACT_NUMBER"
-        }
-      ],
       "organization": {
-        "fullName": "Hoffmann-La Roche",
-        "class": "INDUSTRY"
+        "fullName": "Dokuz Eylul University",
+        "class": "OTHER"
       },
-      "briefTitle": "A Pharmacokinetics Study to Investigate the Effect of Ketoconazole on Vemurafenib in Patients With BRAFV600 Mutation-Positive Metastatic Melanoma",
-      "officialTitle": "A Phase I, Open-Label, Multicenter, Three-Period, One-Sequence Study To Investigate The Effect Of Ketoconazole On The Pharmacokinetics Of A Single Oral Dose Of 960 Mg Of Vemurafenib"
+      "briefTitle": "Effect of Arm Ergometer Exercise Training on Upper Extremity Function in People With Multiple Sclerosis.",
+      "officialTitle": "Investigation of the Effect of the Combination of Arm Ergometer Exercise and Balance Training on Upper Extremity Function in People With Multiple Sclerosis"
     },
     "statusModule": {
-      "statusVerifiedDate": "2016-11",
-      "overallStatus": "WITHDRAWN",
+      "statusVerifiedDate": "2022-10",
+      "overallStatus": "UNKNOWN",
+      "lastKnownStatus": "NOT_YET_RECRUITING",
       "expandedAccessInfo": {
         "hasExpandedAccess": false
       },
       "startDateStruct": {
-        "date": "2013-10"
+        "date": "2022-10-15",
+        "type": "ESTIMATED"
       },
       "primaryCompletionDateStruct": {
-        "date": "2013-10",
+        "date": "2024-09-15",
         "type": "ESTIMATED"
       },
       "completionDateStruct": {
-        "date": "2013-10",
+        "date": "2024-11-15",
         "type": "ESTIMATED"
       },
-      "studyFirstSubmitDate": "2013-01-09",
-      "studyFirstSubmitQcDate": "2013-01-09",
+      "studyFirstSubmitDate": "2022-10-05",
+      "studyFirstSubmitQcDate": "2022-10-05",
       "studyFirstPostDateStruct": {
-        "date": "2013-01-10",
-        "type": "ESTIMATED"
+        "date": "2022-10-07",
+        "type": "ACTUAL"
       },
-      "lastUpdateSubmitDate": "2016-11-01",
+      "lastUpdateSubmitDate": "2022-10-05",
       "lastUpdatePostDateStruct": {
-        "date": "2016-11-02",
-        "type": "ESTIMATED"
+        "date": "2022-10-07",
+        "type": "ACTUAL"
       }
     },
     "sponsorCollaboratorsModule": {
       "responsibleParty": {
-        "type": "SPONSOR"
+        "type": "PRINCIPAL_INVESTIGATOR",
+        "investigatorFullName": "Serkan Ozakbas",
+        "investigatorTitle": "Prof. Dr.",
+        "investigatorAffiliation": "Dokuz Eylul University"
       },
       "leadSponsor": {
-        "name": "Hoffmann-La Roche",
-        "class": "INDUSTRY"
+        "name": "Dokuz Eylul University",
+        "class": "OTHER"
       }
     },
+    "oversightModule": {
+      "oversightHasDmc": false,
+      "isFdaRegulatedDrug": false,
+      "isFdaRegulatedDevice": false
+    },
     "descriptionModule": {
-      "briefSummary": "This open-label, multi-center, three-period, one sequence study will investigate the effect of ketoconazole on the pharmacokinetics of vemurafenib in patients with unresectable BRAFV600-mutation positive metastatic melanoma or other malignant tumor type that harbors a V600-activating mutation of BRAF without acceptable standard treatment options. Patients will receive a single dose of vemurafenib in Periods A and C and multiple doses of ketoconazole in Periods B and C. Eligible patients will have the option to continue treatment with vemurafenib as part of an extension study (NCT01739764). The anticipated time on study treatment is approximately 19 days."
+      "briefSummary": "This study will investigate the effects of a 12-week arm ergometer exercise and balance training on upper extremity function in persons with multiple sclerosis.",
+      "detailedDescription": "Multiple sclerosis (MS) is an inflammatory, demyelinating, neurodegenerative disease of the central nervous system of unknown etiology. The most common clinical signs and symptoms are motor dysfunction, fatigue, spasticity, impaired mobility, cognitive impairment, chronic pain, depression, decreased quality of life, and bladder and bowel dysfunction. 66% of people with MS (pwMS) have impaired upper extremity function.\n\nAs a result of the deterioration in upper extremity function, the performance of many daily living activities affects performance. As a result of this influence, there is a decrease in the functional independence of pwMS, quality of life and participation in activities in the community.\n\nAnother common symptom that reduces quality of life, independence, and participation in pwMS is balance disorder, seen in 75% of cases. Abnormality in balance control occurs due to lack of postural stability, limitation of stability limits, slowness to return to the starting position during bending and reaching activities. During interaction with the environment in daily life, proprioceptive inputs from the extremities and subsequent proper trunk control enable the person to keep the center of gravity on the support surface at rest and in activity. In this way, proximal stability is provided and tasks that require participation in daily life with distal mobility are performed. It is necessary to manage these progressive symptoms associated with the disease in order to increase the quality of life of pwMS, increase the rate of participation in society and maintain this increase.\n\nExercise training represents an existing behavioral treatment approach to safely manage many functional, symptomatic and quality-of-life outcomes in MS. Current literature reports that aerobic exercise has a positive effect on important parameters such as balance, fatigue, walking, quality of life, and pain in pwMS. At the same time, aerobic exercise training with arm ergometry allows pwMS to improve their upper extremity function. Apart from these, the literature has separately examined the effects of exercise training on upper extremity function and balance in pwMS, and positive effects have been shared separately. However, the relationship between these two important issues and the effect of exercise training on this relationship have not been examined.\n\nThe aim of the study is to examine the effects of exercise training on upper extremity function and balance in pwMS.\n\nPersons who followed by the outpatient Multiple Sclerosis Clinic of Dokuz Eyl\u00fcl University Hospital will participate in the study. A total of 30 participants will randomly be divided into 2 groups as arm ergometer-balance training group and arm ergometer training group. Both exercise training will be given by a physiotherapist, supervised 2 days a week for 12 weeks. Assessments will done at baseline and after 12weeks (post-treatment). Assessments will be done by assessors who are blinded to the group allocation."
     },
     "conditionsModule": {
       "conditions": [
-        "Malignant Melanoma, Neoplasms"
+        "Multiple Sclerosis"
+      ],
+      "keywords": [
+        "multiple sclerosis",
+        "upper extremity",
+        "balance",
+        "rehabilitation"
       ]
     },
     "designModule": {
       "studyType": "INTERVENTIONAL",
       "phases": [
-        "PHASE1"
+        "NA"
       ],
       "designInfo": {
-        "allocation": "NON_RANDOMIZED",
-        "interventionModel": "SINGLE_GROUP",
+        "allocation": "RANDOMIZED",
+        "interventionModel": "PARALLEL",
         "primaryPurpose": "TREATMENT",
         "maskingInfo": {
-          "masking": "NONE"
+          "masking": "SINGLE",
+          "whoMasked": [
+            "OUTCOMES_ASSESSOR"
+          ]
         }
       },
       "enrollmentInfo": {
-        "count": 0,
-        "type": "ACTUAL"
+        "count": 30,
+        "type": "ESTIMATED"
       }
     },
     "armsInterventionsModule": {
       "armGroups": [
         {
-          "label": "Ketoconazole treatment",
+          "label": "Arm ergometer-balance training",
           "type": "EXPERIMENTAL",
+          "description": "Combination of arm ergometer exercise and balance training",
           "interventionNames": [
-            "Drug: ketoconazole"
+            "Other: exercise"
           ]
         },
         {
-          "label": "Vemurafenib treatment",
+          "label": "arm ergometer",
           "type": "EXPERIMENTAL",
+          "description": "Only arm ergometer exercise training",
           "interventionNames": [
-            "Drug: vemurafenib"
+            "Other: exercise"
           ]
         }
       ],
       "interventions": [
         {
-          "type": "DRUG",
-          "name": "ketoconazole",
-          "description": "multiple doses of ketoconazole in Period B and C",
+          "type": "OTHER",
+          "name": "exercise",
+          "description": "Arm ergometer will aplied as an aerobic exercise. Combination of balance training and arm ergometer exerise program will applied.",
           "armGroupLabels": [
-            "Ketoconazole treatment"
-          ]
-        },
-        {
-          "type": "DRUG",
-          "name": "vemurafenib",
-          "description": "single dose of vemurafenib in Period A and C",
-          "armGroupLabels": [
-            "Vemurafenib treatment"
+            "Arm ergometer-balance training",
+            "arm ergometer"
           ]
         }
       ]
@@ -121,175 +130,149 @@
     "outcomesModule": {
       "primaryOutcomes": [
         {
-          "measure": "Pharmacokinetics: Area under the concentration time curve",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Maximum plasma concentration",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Time to maximum plasma concentration",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Terminal half-life",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Apparent clearance",
-          "timeFrame": "Approximately 19 days"
+          "measure": "Nine-Hole Peg Test",
+          "description": "The Nine-Hole Peg Test measures finger dexterity.",
+          "timeFrame": "Change from Baseline at 12 weeks"
         }
       ],
       "secondaryOutcomes": [
         {
-          "measure": "Safety: Incidence of adverse events",
-          "timeFrame": "Approximately 19 days"
+          "measure": "Expanded Disability Status Scale",
+          "description": "Expanded Disability Status Scale is a method of quantifying disability in multiple sclerosis. The Expanded Disability Status Scale ranges from 0 to 10 in 0.5 unit increments that represent higher levels of disability.",
+          "timeFrame": "Baseline"
+        },
+        {
+          "measure": "Jamar Hand Dynamometer",
+          "description": "The Jamar Hand Dynamometer will be used to measure isometric force and peak strength.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Arm Function in Multiple Sclerosis Questionnaire",
+          "description": "Arm Function in Multiple Sclerosis Questionnaire is a unidimensional 31-item questionnaire for measuring arm function in MS. The total sum score ranged from 31 to 186 and a high score indicates a low degree of arm function.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Preference-based Multiple Sclerosis Index",
+          "description": "The Preference-based Multiple Sclerosis Index is a brief patient-reported outcome measure of health-related quality of life that consists of 5 items: walking, fatigue, mood, concentration, and roles and responsibilities. The scoring algorithm ranges from 0 (dead) to 1 (perfect health).",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Estimated VO2 Max",
+          "description": "Estimated VO2max will be calculated Astrand-Rhyming Cycle Ergometer Test.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Modified Fatigue Impact Scale",
+          "description": "The Modified Fatigue Impact Scale provides an assessment of the effects of fatigue in terms of physical, cognitive, and psychosocial functioning. The scale consists of 21 items with Likert-type choose options. The total score for the scale is the sum of the scores for the 21 items. Individual subscale scores for physical, cognitive, and psychosocial functioning can also be generated by calculating the sum of specific sets of items. The total score ranges from 0 to 84. A higher score indicates higher level of fatigue.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Timed Up and Go test",
+          "description": "The Timed Up and Go test is a simple test used to assess a person's mobility and requires both static and dynamic balance. It uses the time that a person takes to rise from a chair, walk three meters, turn around, walk back to the chair, and sit down. During the test, the person is expected to wear their regular footwear and use any mobility aids that they would normally require. The time is calculated from the initiation of the instruction to start and ends when the patient has sit down. Higher time represents more static and dynamic balance and mobility impairment.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Activities-Specific Balance Confidence Scale",
+          "description": "The Activities-Specific Balance Confidence Scale is a subjective measure of confidence in performing various ambulatory activities without falling or experiencing a sense of unsteadiness. 16-item self-report measure in which patients rate their balance confidence for performing activities. This stem is used to lead into each activity considered: \"How confident are you that you will not lose your balance or become unsteady when you...\" Items are rated on a rating scale that ranges from 0 - 100. Score of zero represents no confidence, a score of 100 represents complete confidence. Overall score is calculated by adding item scores and then dividing by the total number of items.",
+          "timeFrame": "Change from Baseline at 12 weeks"
+        },
+        {
+          "measure": "Coin Rotation Test",
+          "description": "The coin Rotation Test is developed to assess fine motor skills and speed.",
+          "timeFrame": "Change from Baseline at 12 weeks"
         }
       ]
     },
     "eligibilityModule": {
-      "eligibilityCriteria": "Inclusion Criteria:\n\n* Male or female patients \\>= 18 years old\n* Patients with either unresectable Stage IIIc or Stage IV metastatic melanoma positive for the BRAFV600 mutation or other malignant tumor type that harbors a V600-activating mutation of BRAF, as determined by results of cobas\u00ae 4800 BRAF V600 mutation test or a DNA sequencing method, and who have no acceptable standard treatment options\n* Eastern Cooperative Oncology Group (ECOG) performance status 0 to 2\n* Life expectancy \\>= 12 weeks\n* Full recovery from the effects of any major surgery or significant traumatic injury within 14 days prior to the first dose of study treatment\n* Adequate hematologic and end organ function\n* Female patients of childbearing potential and male patients with partners of childbearing potential must agree to always use two effective methods of contraception\n* Negative serum pregnancy test within 7 days prior to commencement of dosing in women of childbearing potential\n\nExclusion Criteria:\n\n* Prior treatment with vemurafenib or other BRAF inhibitor within 42 days of first dose of study drug\n* Requirement for immediate or urgent treatment with daily vemurafenib and for whom the intermittent schedule of vemurafenib employed during the 19-day period for this trial is not clinically acceptable\n* Allergy or hypersensitivity to components of the vemurafenib formulation\n* Experimental therapy within 4 weeks prior to first dose of study drug\n* Major surgical procedure or significant traumatic injury within 14 days prior to first dose of study drug or anticipation of the need for major surgery during study treatment\n* Prior anti-cancer therapy within 28 days before the first dose of study drug\n* History of clinically significant cardiac or pulmonary dysfunction\n* History of symptomatic congestive heart failure of any New York Heart Association class or serious cardiac arrhythmia requiring treatment\n* History of myocardial infarction within 6 months prior to first dose of study drug\n* Current dyspnea at rest, owing to complications of advanced malignancy or any requirement for supplemental oxygen to perform activities of daily living\n* History of congenital long QT syndrome or QTc \\> 450 ms\n* Active central nervous system lesions\n* Uncontrolled or poorly controlled diabetes\n* Current severe, uncontrolled systemic disease",
+      "eligibilityCriteria": "Inclusion Criteria:\n\n* A relapsing-remitting or secondary progressive type of multiple sclerosis,\n* To be willing to participate in the study.\n\nExclusion Criteria:\n\n* Another neurological disorder,\n* Orthopedic surgery history including the elbow, wrist, shoulder, ankle-foot, knee, hip or spine, affecting balance and upper extremity functions,\n* Diagnosed severe cognitive and/or psychiatric impairment,\n* Having congestive heart failure, coronary, cerebrovascular, and pulmonary disease such as COPD\n* Having cardiac disease such as hypertension that would be a contraindication to exercise",
       "healthyVolunteers": false,
       "sex": "ALL",
       "minimumAge": "18 Years",
+      "maximumAge": "65 Years",
       "stdAges": [
         "ADULT",
         "OLDER_ADULT"
       ]
     },
     "contactsLocationsModule": {
-      "overallOfficials": [
+      "centralContacts": [
         {
-          "name": "Clinical Trials",
-          "affiliation": "Hoffmann-La Roche",
-          "role": "STUDY_DIRECTOR"
+          "name": "Serkan Ozakbas, MD",
+          "role": "CONTACT",
+          "phone": "+90 232 412 4964",
+          "email": "serkan.ozakbas@gmail.com"
+        },
+        {
+          "name": "Asiye Tuba Ozdogar, PhD",
+          "role": "CONTACT"
         }
       ]
+    },
+    "ipdSharingStatementModule": {
+      "ipdSharing": "UNDECIDED"
     }
   },
   "derivedSection": {
     "miscInfoModule": {
-      "versionHolder": "2026-11-03",
-      "removedCountries": [
-        "Argentina",
-        "Bosnia and Herzegovina",
-        "Brazil",
-        "Greece",
-        "Romania",
-        "Spain",
-        "United States"
-      ]
+      "versionHolder": "2026-11-04"
     },
     "conditionBrowseModule": {
       "meshes": [
         {
-          "id": "D008545",
-          "term": "Melanoma"
-        },
-        {
-          "id": "D009369",
-          "term": "Neoplasms"
+          "id": "D009103",
+          "term": "Multiple Sclerosis"
         }
       ],
       "ancestors": [
         {
-          "id": "D018358",
-          "term": "Neuroendocrine Tumors"
+          "id": "D020278",
+          "term": "Demyelinating Autoimmune Diseases, CNS"
         },
         {
-          "id": "D017599",
-          "term": "Neuroectodermal Tumors"
+          "id": "D020274",
+          "term": "Autoimmune Diseases of the Nervous System"
         },
         {
-          "id": "D009373",
-          "term": "Neoplasms, Germ Cell and Embryonal"
+          "id": "D009422",
+          "term": "Nervous System Diseases"
         },
         {
-          "id": "D009370",
-          "term": "Neoplasms by Histologic Type"
+          "id": "D003711",
+          "term": "Demyelinating Diseases"
         },
         {
-          "id": "D009380",
-          "term": "Neoplasms, Nerve Tissue"
+          "id": "D001327",
+          "term": "Autoimmune Diseases"
         },
         {
-          "id": "D018326",
-          "term": "Nevi and Melanomas"
-        },
-        {
-          "id": "D012878",
-          "term": "Skin Neoplasms"
-        },
-        {
-          "id": "D009371",
-          "term": "Neoplasms by Site"
-        },
-        {
-          "id": "D012871",
-          "term": "Skin Diseases"
-        },
-        {
-          "id": "D017437",
-          "term": "Skin and Connective Tissue Diseases"
+          "id": "D007154",
+          "term": "Immune System Diseases"
         }
       ]
     },
     "interventionBrowseModule": {
       "meshes": [
         {
-          "id": "D007654",
-          "term": "Ketoconazole"
-        },
-        {
-          "id": "D000077484",
-          "term": "Vemurafenib"
+          "id": "D015444",
+          "term": "Exercise"
         }
       ],
       "ancestors": [
         {
-          "id": "D010879",
-          "term": "Piperazines"
+          "id": "D009043",
+          "term": "Motor Activity"
         },
         {
-          "id": "D006573",
-          "term": "Heterocyclic Compounds, 1-Ring"
+          "id": "D009068",
+          "term": "Movement"
         },
         {
-          "id": "D006571",
-          "term": "Heterocyclic Compounds"
+          "id": "D009142",
+          "term": "Musculoskeletal Physiological Phenomena"
         },
         {
-          "id": "D013449",
-          "term": "Sulfonamides"
-        },
-        {
-          "id": "D000577",
-          "term": "Amides"
-        },
-        {
-          "id": "D009930",
-          "term": "Organic Chemicals"
-        },
-        {
-          "id": "D013450",
-          "term": "Sulfones"
-        },
-        {
-          "id": "D013457",
-          "term": "Sulfur Compounds"
-        },
-        {
-          "id": "D007211",
-          "term": "Indoles"
-        },
-        {
-          "id": "D006574",
-          "term": "Heterocyclic Compounds, 2-Ring"
-        },
-        {
-          "id": "D000072471",
-          "term": "Heterocyclic Compounds, Fused-Ring"
+          "id": "D055687",
+          "term": "Musculoskeletal and Neural Physiological Phenomena"
         }
       ]
     }

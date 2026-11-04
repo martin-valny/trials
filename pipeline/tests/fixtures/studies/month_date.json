@@ -1,67 +1,104 @@
 {
   "protocolSection": {
     "identificationModule": {
-      "nctId": "NCT01765556",
+      "nctId": "NCT00836719",
       "orgStudyIdInfo": {
-        "id": "GO28054"
+        "id": "K23AT004433-01",
+        "type": "NIH",
+        "link": "https://reporter.nih.gov/quickSearch/K23AT004433-01"
       },
       "secondaryIdInfos": [
         {
-          "id": "2012-003143-29",
-          "type": "EUDRACT_NUMBER"
+          "id": "K23AT004433-01",
+          "type": "NIH",
+          "link": "https://reporter.nih.gov/quickSearch/K23AT004433-01"
+        },
+        {
+          "id": "1K23AT004433-01",
+          "type": "NIH",
+          "link": "https://reporter.nih.gov/quickSearch/1K23AT004433-01"
         }
       ],
       "organization": {
-        "fullName": "Hoffmann-La Roche",
-        "class": "INDUSTRY"
+        "fullName": "Louisiana State University Health Sciences Center in New Orleans",
+        "class": "OTHER"
       },
-      "briefTitle": "A Pharmacokinetics Study to Investigate the Effect of Ketoconazole on Vemurafenib in Patients With BRAFV600 Mutation-Positive Metastatic Melanoma",
-      "officialTitle": "A Phase I, Open-Label, Multicenter, Three-Period, One-Sequence Study To Investigate The Effect Of Ketoconazole On The Pharmacokinetics Of A Single Oral Dose Of 960 Mg Of Vemurafenib"
+      "briefTitle": "Safety of Polyphenon E in Multiple Sclerosis Pilot Study",
+      "officialTitle": "Safety and Neuroprotective Effects of Polyphenon E in Multiple Sclerosis"
     },
     "statusModule": {
-      "statusVerifiedDate": "2016-11",
-      "overallStatus": "WITHDRAWN",
+      "statusVerifiedDate": "2013-05",
+      "overallStatus": "COMPLETED",
       "expandedAccessInfo": {
         "hasExpandedAccess": false
       },
       "startDateStruct": {
-        "date": "2013-10"
+        "date": "2009-02"
       },
       "primaryCompletionDateStruct": {
-        "date": "2013-10",
-        "type": "ESTIMATED"
+        "date": "2010-11",
+        "type": "ACTUAL"
       },
       "completionDateStruct": {
-        "date": "2013-10",
-        "type": "ESTIMATED"
+        "date": "2010-11",
+        "type": "ACTUAL"
       },
-      "studyFirstSubmitDate": "2013-01-09",
-      "studyFirstSubmitQcDate": "2013-01-09",
+      "studyFirstSubmitDate": "2009-02-03",
+      "studyFirstSubmitQcDate": "2009-02-03",
       "studyFirstPostDateStruct": {
-        "date": "2013-01-10",
+        "date": "2009-02-04",
         "type": "ESTIMATED"
       },
-      "lastUpdateSubmitDate": "2016-11-01",
+      "resultsFirstSubmitDate": "2013-04-04",
+      "resultsFirstSubmitQcDate": "2013-05-21",
+      "resultsFirstPostDateStruct": {
+        "date": "2013-06-27",
+        "type": "ESTIMATED"
+      },
+      "lastUpdateSubmitDate": "2013-05-21",
       "lastUpdatePostDateStruct": {
-        "date": "2016-11-02",
+        "date": "2013-06-27",
         "type": "ESTIMATED"
       }
     },
     "sponsorCollaboratorsModule": {
       "responsibleParty": {
-        "type": "SPONSOR"
+        "type": "PRINCIPAL_INVESTIGATOR",
+        "investigatorFullName": "Jesus Lovera MD",
+        "investigatorTitle": "Assistant Profesor",
+        "investigatorAffiliation": "Louisiana State University Health Sciences Center in New Orleans"
       },
       "leadSponsor": {
-        "name": "Hoffmann-La Roche",
-        "class": "INDUSTRY"
-      }
+        "name": "Louisiana State University Health Sciences Center in New Orleans",
+        "class": "OTHER"
+      },
+      "collaborators": [
+        {
+          "name": "National Center for Complementary and Integrative Health (NCCIH)",
+          "class": "NIH"
+        }
+      ]
+    },
+    "oversightModule": {
+      "oversightHasDmc": true
     },
     "descriptionModule": {
-      "briefSummary": "This open-label, multi-center, three-period, one sequence study will investigate the effect of ketoconazole on the pharmacokinetics of vemurafenib in patients with unresectable BRAFV600-mutation positive metastatic melanoma or other malignant tumor type that harbors a V600-activating mutation of BRAF without acceptable standard treatment options. Patients will receive a single dose of vemurafenib in Periods A and C and multiple doses of ketoconazole in Periods B and C. Eligible patients will have the option to continue treatment with vemurafenib as part of an extension study (NCT01739764). The anticipated time on study treatment is approximately 19 days."
+      "briefSummary": "This study is an open label 6 month study. All subjects will be treated with Polyphenon E (400 mg EGCG twice a day) for six months. The main outcome of this pilot phase will be safety. Secondary outcomes are the change in NAA levels over 6 months as measured by MR-spectroscopy. NAA levels are a marker of neuronal function. We think that Polyphenon E will protect neurons and thus increase NAA levels.",
+      "detailedDescription": "Additional clinical data include changes in EDSS, MS functional composite and cognitive testing."
     },
     "conditionsModule": {
       "conditions": [
-        "Malignant Melanoma, Neoplasms"
+        "Multiple Sclerosis"
+      ],
+      "keywords": [
+        "Multiple sclerosis",
+        "safety",
+        "open label",
+        "Polyphenon E",
+        "EGCG",
+        "NAA",
+        "N-acetyl-aspartate",
+        "MRI"
       ]
     },
     "designModule": {
@@ -70,7 +107,7 @@
         "PHASE1"
       ],
       "designInfo": {
-        "allocation": "NON_RANDOMIZED",
+        "allocation": "NA",
         "interventionModel": "SINGLE_GROUP",
         "primaryPurpose": "TREATMENT",
         "maskingInfo": {
@@ -78,42 +115,32 @@
         }
       },
       "enrollmentInfo": {
-        "count": 0,
+        "count": 10,
         "type": "ACTUAL"
       }
     },
     "armsInterventionsModule": {
       "armGroups": [
         {
-          "label": "Ketoconazole treatment",
+          "label": "Polyphenon E",
           "type": "EXPERIMENTAL",
+          "description": "Standarized green tea extract containing 50% EGCG",
           "interventionNames": [
-            "Drug: ketoconazole"
-          ]
-        },
-        {
-          "label": "Vemurafenib treatment",
-          "type": "EXPERIMENTAL",
-          "interventionNames": [
-            "Drug: vemurafenib"
+            "Drug: Polyphenon E"
           ]
         }
       ],
       "interventions": [
         {
           "type": "DRUG",
-          "name": "ketoconazole",
-          "description": "multiple doses of ketoconazole in Period B and C",
+          "name": "Polyphenon E",
+          "description": "Polyphenon E capsules containing 200 mg of Epigallocachin-galleate. Two capsules twice a day.",
           "armGroupLabels": [
-            "Ketoconazole treatment"
-          ]
-        },
-        {
-          "type": "DRUG",
-          "name": "vemurafenib",
-          "description": "single dose of vemurafenib in Period A and C",
-          "armGroupLabels": [
-            "Vemurafenib treatment"
+            "Polyphenon E"
+          ],
+          "otherNames": [
+            "EGCG",
+            "Green tea extract"
           ]
         }
       ]
@@ -121,38 +148,24 @@
     "outcomesModule": {
       "primaryOutcomes": [
         {
-          "measure": "Pharmacokinetics: Area under the concentration time curve",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Maximum plasma concentration",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Time to maximum plasma concentration",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Terminal half-life",
-          "timeFrame": "Approximately 19 days"
-        },
-        {
-          "measure": "Pharmacokinetics: Apparent clearance",
-          "timeFrame": "Approximately 19 days"
+          "measure": "Number of Participants Experiencing Serious Adverse Events",
+          "timeFrame": "six months"
         }
       ],
       "secondaryOutcomes": [
         {
-          "measure": "Safety: Incidence of adverse events",
-          "timeFrame": "Approximately 19 days"
+          "measure": "Change in Brain NAA Level as Measured by MR Spectroscopy",
+          "description": "percent change from baseline to exit in NAA levels adjusted for creatine levels",
+          "timeFrame": "6 months"
         }
       ]
     },
     "eligibilityModule": {
-      "eligibilityCriteria": "Inclusion Criteria:\n\n* Male or female patients \\>= 18 years old\n* Patients with either unresectable Stage IIIc or Stage IV metastatic melanoma positive for the BRAFV600 mutation or other malignant tumor type that harbors a V600-activating mutation of BRAF, as determined by results of cobas\u00ae 4800 BRAF V600 mutation test or a DNA sequencing method, and who have no acceptable standard treatment options\n* Eastern Cooperative Oncology Group (ECOG) performance status 0 to 2\n* Life expectancy \\>= 12 weeks\n* Full recovery from the effects of any major surgery or significant traumatic injury within 14 days prior to the first dose of study treatment\n* Adequate hematologic and end organ function\n* Female patients of childbearing potential and male patients with partners of childbearing potential must agree to always use two effective methods of contraception\n* Negative serum pregnancy test within 7 days prior to commencement of dosing in women of childbearing potential\n\nExclusion Criteria:\n\n* Prior treatment with vemurafenib or other BRAF inhibitor within 42 days of first dose of study drug\n* Requirement for immediate or urgent treatment with daily vemurafenib and for whom the intermittent schedule of vemurafenib employed during the 19-day period for this trial is not clinically acceptable\n* Allergy or hypersensitivity to components of the vemurafenib formulation\n* Experimental therapy within 4 weeks prior to first dose of study drug\n* Major surgical procedure or significant traumatic injury within 14 days prior to first dose of study drug or anticipation of the need for major surgery during study treatment\n* Prior anti-cancer therapy within 28 days before the first dose of study drug\n* History of clinically significant cardiac or pulmonary dysfunction\n* History of symptomatic congestive heart failure of any New York Heart Association class or serious cardiac arrhythmia requiring treatment\n* History of myocardial infarction within 6 months prior to first dose of study drug\n* Current dyspnea at rest, owing to complications of advanced malignancy or any requirement for supplemental oxygen to perform activities of daily living\n* History of congenital long QT syndrome or QTc \\> 450 ms\n* Active central nervous system lesions\n* Uncontrolled or poorly controlled diabetes\n* Current severe, uncontrolled systemic disease",
+      "eligibilityCriteria": "Inclusion Criteria:\n\n* Diagnosis of MS by McDonald criteria\n* Relapsing-remitting MS or secondary progressive MS\n* Stable therapy with Copaxone, for at least six months prior to inclusion in the study or no therapy for six months in subjects refusing therapy.\n* EDSS Score less than or equal to 6.5 (able to walk about 20 meters without resting)\n* Ages 18-60.\n* Leukocytes \u22653,000/\u00b5L\n* Absolute neutrophil count \u22651,500/\u00b5L\n* Platelets \u2265100,000/\u00b5L\n* Total bilirubin \u2264local upper limit of normal\n* normal AST (SGOT) ALT (SGPT)\n* normal serum Creatinine\n* women of child-bearing potential and men must agree to use adequate contraception (hormonal or barrier method of birth control; abstinence) prior to study entry and for the duration of study participation.\n* Ability to understand and the willingness to sign a written informed consent document.\n* Willing to drink at most one cup of black tea and two cups of coffee per day, and abstain from drinking green tea or taking supplements containing green tea or green tea compounds, for the duration of the investigation.\n\nExclusion Criteria:\n\n* MS relapse within the 30 days prior to enrollment.\n* A primary progressive form of MS.\n* Previous treatment prior to study entry as follows: complete radiation ablation of the bone marrow or anti-CD4 antibody treatment (Campath) at any time; mitoxantrone, cyclophosphamide, cyclosporin, Natalizumab or other immunomodulatory or immunosuppressant therapies except for Copaxone or methylprednisone for relapses within prior nine months.\n* History of renal or liver disease.\n* Consumption of green tea or supplements containing green tea or tea extract within 30 days prior to enrollment.\n* Participants may not participate in any other clinical trial involving investigational agents during the study, or within six months prior to enrolling in the study.\n* history of allergic reactions attributed to compounds of similar chemical or biologic composition to Polyphenon E, tea, or any of the inactive ingredients present in the active or placebo capsules, including gelatin.\n* history of allergic reactions to gadolinium or any other condition contraindicated for MRI.\n* Uncontrolled, clinically-relevant active illness (aside from MS) including, but not limited to, ongoing or active infection, symptomatic congestive heart failure, unstable angina pectoris, cardiac arrhythmia, or psychiatric illness/social situations that would limit compliance with study requirements.\n* Any condition which would make the subject, in the opinion of the investigator, unsuitable for the study.\n* Inability to complete the baseline MRI scan.\n* Pregnant or breastfeeding women.",
       "healthyVolunteers": false,
       "sex": "ALL",
       "minimumAge": "18 Years",
+      "maximumAge": "65 Years",
       "stdAges": [
         "ADULT",
         "OLDER_ADULT"
@@ -161,138 +174,895 @@
     "contactsLocationsModule": {
       "overallOfficials": [
         {
-          "name": "Clinical Trials",
-          "affiliation": "Hoffmann-La Roche",
-          "role": "STUDY_DIRECTOR"
+          "name": "Jesus F Lovera, MD, MSPH",
+          "affiliation": "LSUHSC",
+          "role": "PRINCIPAL_INVESTIGATOR"
+        }
+      ],
+      "locations": [
+        {
+          "facility": "Louisiana Health Sciences Center New Orleans",
+          "city": "New Orleans",
+          "state": "Louisiana",
+          "zip": "70112",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 29.95465,
+            "lon": -90.07507
+          }
+        }
+      ]
+    },
+    "referencesModule": {
+      "references": [
+        {
+          "pmid": "15494532",
+          "type": "BACKGROUND",
+          "citation": "Aktas O, Prozorovski T, Smorodchenko A, Savaskan NE, Lauster R, Kloetzel PM, Infante-Duarte C, Brocke S, Zipp F. Green tea epigallocatechin-3-gallate mediates T cellular NF-kappa B inhibition and exerts neuroprotection in autoimmune encephalomyelitis. J Immunol. 2004 Nov 1;173(9):5794-800. doi: 10.4049/jimmunol.173.9.5794."
+        },
+        {
+          "pmid": "26298797",
+          "type": "DERIVED",
+          "citation": "Lovera J, Ramos A, Devier D, Garrison V, Kovner B, Reza T, Koop D, Rooney W, Foundas A, Bourdette D. Polyphenon E, non-futile at neuroprotection in multiple sclerosis but unpredictably hepatotoxic: Phase I single group and phase II randomized placebo-controlled studies. J Neurol Sci. 2015 Nov 15;358(1-2):46-52. doi: 10.1016/j.jns.2015.08.006. Epub 2015 Aug 7."
         }
       ]
     }
   },
+  "resultsSection": {
+    "participantFlowModule": {
+      "recruitmentDetails": "Recruitment started in 9/2009 and ended 4/2010. Subjects were recruited from the LSU MS Clinic and from the community. Advertisements were placed in the quarterly MS Society newsletter and email list.",
+      "groups": [
+        {
+          "id": "FG000",
+          "title": "Polyphenon E",
+          "description": "Standarized green tea extract containing 50% EGCG\n\nPolyphenon E : Polyphenon E capsules containing 200 mg of Epigallocachin-galleate.\n\nTwo capsules twice a day."
+        }
+      ],
+      "periods": [
+        {
+          "title": "Overall Study",
+          "milestones": [
+            {
+              "type": "STARTED",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "10"
+                }
+              ]
+            },
+            {
+              "type": "COMPLETED",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "10"
+                }
+              ]
+            },
+            {
+              "type": "NOT COMPLETED",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "baselineCharacteristicsModule": {
+      "groups": [
+        {
+          "id": "BG000",
+          "title": "Polyphenon E",
+          "description": "Standarized green tea extract containing 50% EGCG\n\nPolyphenon E : Polyphenon E capsules containing 200 mg of Epigallocachin-galleate.\n\nTwo capsules twice a day."
+        }
+      ],
+      "denoms": [
+        {
+          "units": "Participants",
+          "counts": [
+            {
+              "groupId": "BG000",
+              "value": "10"
+            }
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "title": "Age Continuous",
+          "paramType": "MEDIAN",
+          "dispersionType": "FULL_RANGE",
+          "unitOfMeasure": "years",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "45",
+                      "lowerLimit": "39",
+                      "upperLimit": "56"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Sex: Female, Male",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "Female",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "9"
+                    }
+                  ]
+                },
+                {
+                  "title": "Male",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Ethnicity (NIH/OMB)",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "Hispanic or Latino",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    }
+                  ]
+                },
+                {
+                  "title": "Not Hispanic or Latino",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "9"
+                    }
+                  ]
+                },
+                {
+                  "title": "Unknown or Not Reported",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Race (NIH/OMB)",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "American Indian or Alaska Native",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Asian",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Native Hawaiian or Other Pacific Islander",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Black or African American",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    }
+                  ]
+                },
+                {
+                  "title": "White",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "8"
+                    }
+                  ]
+                },
+                {
+                  "title": "More than one race",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    }
+                  ]
+                },
+                {
+                  "title": "Unknown or Not Reported",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Region of Enrollment",
+          "paramType": "NUMBER",
+          "unitOfMeasure": "participants",
+          "classes": [
+            {
+              "title": "United States",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "10"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Type of MS",
+          "paramType": "NUMBER",
+          "unitOfMeasure": "participants",
+          "classes": [
+            {
+              "title": "Relapsing Remitting",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "9"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "Secondary Progressive",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Expanded Disability Status Scale",
+          "description": "Expanded Disability Status Scale. Scored according to Neurostatus guidelines.Vakues range from 0-10. Higher values are worse.",
+          "paramType": "MEDIAN",
+          "dispersionType": "FULL_RANGE",
+          "unitOfMeasure": "points",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "4",
+                      "lowerLimit": "1",
+                      "upperLimit": "6.5"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Disease duration",
+          "paramType": "MEDIAN",
+          "dispersionType": "FULL_RANGE",
+          "unitOfMeasure": "years",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "14",
+                      "lowerLimit": "3",
+                      "upperLimit": "34"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "outcomeMeasuresModule": {
+      "outcomeMeasures": [
+        {
+          "type": "PRIMARY",
+          "title": "Number of Participants Experiencing Serious Adverse Events",
+          "reportingStatus": "POSTED",
+          "paramType": "NUMBER",
+          "unitOfMeasure": "participants",
+          "timeFrame": "six months",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Polyphenon E",
+              "description": "Standarized green tea extract containing 50% EGCG\n\nPolyphenon E : Polyphenon E capsules containing 200 mg of Epigallocachin-galleate.\n\nTwo capsules twice a day."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "10"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG000",
+                      "value": "0"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "SECONDARY",
+          "title": "Change in Brain NAA Level as Measured by MR Spectroscopy",
+          "description": "percent change from baseline to exit in NAA levels adjusted for creatine levels",
+          "reportingStatus": "POSTED",
+          "paramType": "MEAN",
+          "dispersionType": "95% Confidence Interval",
+          "unitOfMeasure": "percentage change from baseline",
+          "timeFrame": "6 months",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Polyphenon E",
+              "description": "Standarized green tea extract containing 50% EGCG\n\nPolyphenon E : Polyphenon E capsules containing 200 mg of Epigallocachin-galleate.\n\nTwo capsules twice a day."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "10"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG000",
+                      "value": "10",
+                      "lowerLimit": "3.4",
+                      "upperLimit": "16.2"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "analyses": [
+            {
+              "groupIds": [
+                "OG000"
+              ],
+              "groupDescription": "N-Acetylaspartate acid (NAA) levels were measured at baseline and exit (6 months). Voxels with less than 30% error in NAA and Creatine (Cre) were used.NAA, Cre and Proton Density were log transformed.",
+              "testedNonInferiority": false,
+              "nonInferiorityType": "SUPERIORITY_OR_OTHER",
+              "pValue": "<0.01",
+              "statisticalMethod": "Mixed Models Analysis",
+              "statisticalComment": "Anisotropic power spatial covariance matrix with terms for time and the registered voxel. Kenward Rogers approx. for degrees of freedom.",
+              "paramType": "Mean Difference (Final Values)",
+              "paramValue": "10",
+              "ciPctValue": "95",
+              "ciLowerLimit": "3.4",
+              "ciUpperLimit": "16.2",
+              "estimateComment": "Dependent variable: NAA. Main effect: visit. Covariates Cre, %GM, %WM, %CSF and %lesion in the voxel."
+            }
+          ]
+        }
+      ]
+    },
+    "adverseEventsModule": {
+      "frequencyThreshold": "5",
+      "eventGroups": [
+        {
+          "id": "EG000",
+          "title": "Polyphenon E",
+          "description": "Standarized green tea extract containing 50% EGCG\n\nPolyphenon E : Polyphenon E capsules containing 200 mg of Epigallocachin-galleate.\n\nTwo capsules twice a day.",
+          "seriousNumAffected": 0,
+          "seriousNumAtRisk": 10,
+          "otherNumAffected": 10,
+          "otherNumAtRisk": 10
+        }
+      ],
+      "otherEvents": [
+        {
+          "term": "ALT",
+          "organSystem": "Investigations",
+          "sourceVocabulary": "CTCSAE 3.0",
+          "assessmentType": "SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Pain other abdomen NOS",
+          "organSystem": "Gastrointestinal disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Back Pain",
+          "organSystem": "Musculoskeletal and connective tissue disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Pain in extremity",
+          "organSystem": "Musculoskeletal and connective tissue disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 4,
+              "numAffected": 4,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Skin infection",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "constipation",
+          "organSystem": "Gastrointestinal disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Hyperglycemia",
+          "organSystem": "Metabolism and nutrition disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "diarrhea",
+          "organSystem": "Gastrointestinal disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "fatigue",
+          "organSystem": "General disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Headache",
+          "organSystem": "Nervous system disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 3,
+              "numAffected": 3,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Muscle weakness lower limb",
+          "organSystem": "Musculoskeletal and connective tissue disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Pain",
+          "organSystem": "General disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Nausea",
+          "organSystem": "Gastrointestinal disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 6,
+              "numAffected": 3,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "neck pain",
+          "organSystem": "Musculoskeletal and connective tissue disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "restless legs",
+          "organSystem": "Nervous system disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Otitis media",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Shingles",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "sinusitis",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "subconjunctival hemorrage",
+          "organSystem": "Eye disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "upper respiratory infection",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "Urinary tract infection",
+          "organSystem": "Infections and infestations",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        },
+        {
+          "term": "vomiting",
+          "organSystem": "Gastrointestinal disorders",
+          "sourceVocabulary": "CTCAE (3.0)",
+          "assessmentType": "NON_SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 1,
+              "numAtRisk": 10
+            }
+          ]
+        }
+      ]
+    },
+    "moreInfoModule": {
+      "limitationsAndCaveats": {
+        "description": "The study was a pilot study with a small sample size and no control group. The primary endpoint was futility in change in NAA thus the p-values for the primary endpoint are nominal only."
+      },
+      "certainAgreement": {
+        "piSponsorEmployee": true,
+        "restrictiveAgreement": false
+      },
+      "pointOfContact": {
+        "title": "Jesus Lovera MD",
+        "organization": "LSU Health Sciences Center-New Orleans",
+        "email": "jlover@lsuhsc.edu",
+        "phone": "5045686700"
+      }
+    }
+  },
   "derivedSection": {
     "miscInfoModule": {
-      "versionHolder": "2026-11-03",
-      "removedCountries": [
-        "Argentina",
-        "Bosnia and Herzegovina",
-        "Brazil",
-        "Greece",
-        "Romania",
-        "Spain",
-        "United States"
-      ]
+      "versionHolder": "2026-11-04"
     },
     "conditionBrowseModule": {
       "meshes": [
         {
-          "id": "D008545",
-          "term": "Melanoma"
-        },
-        {
-          "id": "D009369",
-          "term": "Neoplasms"
+          "id": "D009103",
+          "term": "Multiple Sclerosis"
         }
       ],
       "ancestors": [
         {
-          "id": "D018358",
-          "term": "Neuroendocrine Tumors"
+          "id": "D020278",
+          "term": "Demyelinating Autoimmune Diseases, CNS"
         },
         {
-          "id": "D017599",
-          "term": "Neuroectodermal Tumors"
+          "id": "D020274",
+          "term": "Autoimmune Diseases of the Nervous System"
         },
         {
-          "id": "D009373",
-          "term": "Neoplasms, Germ Cell and Embryonal"
+          "id": "D009422",
+          "term": "Nervous System Diseases"
         },
         {
-          "id": "D009370",
-          "term": "Neoplasms by Histologic Type"
+          "id": "D003711",
+          "term": "Demyelinating Diseases"
         },
         {
-          "id": "D009380",
-          "term": "Neoplasms, Nerve Tissue"
+          "id": "D001327",
+          "term": "Autoimmune Diseases"
         },
         {
-          "id": "D018326",
-          "term": "Nevi and Melanomas"
-        },
-        {
-          "id": "D012878",
-          "term": "Skin Neoplasms"
-        },
-        {
-          "id": "D009371",
-          "term": "Neoplasms by Site"
-        },
-        {
-          "id": "D012871",
-          "term": "Skin Diseases"
-        },
-        {
-          "id": "D017437",
-          "term": "Skin and Connective Tissue Diseases"
+          "id": "D007154",
+          "term": "Immune System Diseases"
         }
       ]
     },
     "interventionBrowseModule": {
       "meshes": [
         {
-          "id": "D007654",
-          "term": "Ketoconazole"
+          "id": "C472086",
+          "term": "polyphenon E"
         },
         {
-          "id": "D000077484",
-          "term": "Vemurafenib"
+          "id": "D013662",
+          "term": "Tea"
         }
       ],
       "ancestors": [
         {
-          "id": "D010879",
-          "term": "Piperazines"
+          "id": "D028321",
+          "term": "Plant Preparations"
         },
         {
-          "id": "D006573",
-          "term": "Heterocyclic Compounds, 1-Ring"
+          "id": "D001688",
+          "term": "Biological Products"
         },
         {
-          "id": "D006571",
-          "term": "Heterocyclic Compounds"
+          "id": "D045424",
+          "term": "Complex Mixtures"
         },
         {
-          "id": "D013449",
-          "term": "Sulfonamides"
+          "id": "D001628",
+          "term": "Beverages"
         },
         {
-          "id": "D000577",
-          "term": "Amides"
+          "id": "D000066888",
+          "term": "Diet, Food, and Nutrition"
         },
         {
-          "id": "D009930",
-          "term": "Organic Chemicals"
+          "id": "D010829",
+          "term": "Physiological Phenomena"
         },
         {
-          "id": "D013450",
-          "term": "Sulfones"
-        },
-        {
-          "id": "D013457",
-          "term": "Sulfur Compounds"
-        },
-        {
-          "id": "D007211",
-          "term": "Indoles"
-        },
-        {
-          "id": "D006574",
-          "term": "Heterocyclic Compounds, 2-Ring"
-        },
-        {
-          "id": "D000072471",
-          "term": "Heterocyclic Compounds, Fused-Ring"
+          "id": "D019602",
+          "term": "Food and Beverages"
         }
       ]
     }
   },
-  "hasResults": false
+  "hasResults": true
 }

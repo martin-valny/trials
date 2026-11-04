@@ -1,74 +1,52 @@
 {
   "protocolSection": {
     "identificationModule": {
-      "nctId": "NCT00046943",
+      "nctId": "NCT00000146",
       "orgStudyIdInfo": {
-        "id": "CDR0000257127"
+        "id": "NEI-47"
       },
-      "secondaryIdInfos": [
-        {
-          "id": "ABBOTT-M00-258"
-        },
-        {
-          "id": "UCLA-0202002"
-        },
-        {
-          "id": "NCI-G02-2110"
-        }
-      ],
       "organization": {
-        "fullName": "National Cancer Institute (NCI)",
+        "fullName": "National Eye Institute (NEI)",
         "class": "NIH"
       },
-      "briefTitle": "Atrasentan in Treating Patients With Prostate Cancer",
-      "officialTitle": "A Phase III Extension Study to Evaluate the Safety of 10 mg Atrasentan in Men With Hormone-Refractory Prostate Cancer"
+      "briefTitle": "Optic Neuritis Treatment Trial (ONTT)"
     },
     "statusModule": {
-      "statusVerifiedDate": "2003-09",
-      "overallStatus": "COMPLETED",
+      "statusVerifiedDate": "2003-10",
+      "overallStatus": "UNKNOWN",
+      "lastKnownStatus": "ACTIVE_NOT_RECRUITING",
       "expandedAccessInfo": {
         "hasExpandedAccess": false
       },
       "startDateStruct": {
-        "date": "2002-09"
+        "date": "1988-07"
       },
-      "primaryCompletionDateStruct": {
-        "date": "2007-06",
-        "type": "ACTUAL"
-      },
-      "studyFirstSubmitDate": "2002-10-03",
-      "studyFirstSubmitQcDate": "2003-01-26",
+      "studyFirstSubmitDate": "1999-09-23",
+      "studyFirstSubmitQcDate": "1999-09-23",
       "studyFirstPostDateStruct": {
-        "date": "2003-01-27",
+        "date": "1999-09-24",
         "type": "ESTIMATED"
       },
-      "lastUpdateSubmitDate": "2011-02-18",
+      "lastUpdateSubmitDate": "2006-06-02",
       "lastUpdatePostDateStruct": {
-        "date": "2011-02-21",
+        "date": "2006-06-05",
         "type": "ESTIMATED"
       }
     },
     "sponsorCollaboratorsModule": {
       "leadSponsor": {
-        "name": "Abbott",
-        "class": "INDUSTRY"
+        "name": "National Eye Institute (NEI)",
+        "class": "NIH"
       }
     },
     "descriptionModule": {
-      "briefSummary": "RATIONALE: Drugs used in chemotherapy use different ways to stop tumor cells from dividing so they stop growing or die.\n\nPURPOSE: Phase III trial to determine the effectiveness of atrasentan in treating patients who have prostate cancer that has not responded to hormone therapy.",
-      "detailedDescription": "OBJECTIVES:\n\n* Determine the safety of atrasentan in patients with hormone-refractory prostate cancer.\n* Determine the pharmacokinetics of this drug in these patients.\n\nOUTLINE: This is an open-label, multicenter study.\n\nPatients receive oral atrasentan once daily for 3 years in the absence of disease progression or unacceptable toxicity.\n\nPatients are followed at 1 month and then every 3 months for 2 years.\n\nPROJECTED ACCRUAL: Approximately 1,400 patients will be accrued for this study."
+      "briefSummary": "To assess the beneficial and adverse effects of corticosteroid treatment for optic neuritis.\n\nTo determine the natural history of vision in patients who suffer optic neuritis.\n\nTo identify risk factors for the development of multiple sclerosis in patients with optic neuritis.",
+      "detailedDescription": "Optic neuritis is an inflammatory disease of the optic nerve that typically affects young adults. Women are affected more often than men. It is second only to glaucoma as the most common acquired optic nerve disorder in persons younger than age 50.\n\nIn this disorder, closely linked to multiple sclerosis, prognosis for visual recovery is generally good. However, return of visual function is almost never complete. After resolution of optic neuritis, virtually all patients show some signs of optic nerve damage, and most are symptomatic. Even when a patient's acuity recovers to 20/20, abnormalities frequently remain in other measures such as contrast sensitivity, color vision, and visual field.\n\nPrior to the Optic Neuritis Treatment Trial (ONTT), well-established guidelines for treating optic neuritis did not exist. Although corticosteroids had been used to treat this disease, studies to demonstrate their effectiveness had not been satisfactory. Some experts advocated treatment with oral prednisone while others recommended no treatment. Anecdotal reports suggested that high-dose intravenous corticosteroids might be effective.\n\nThe association between optic neuritis and multiple sclerosis is well established. Optic neuritis may be the first manifestation of multiple sclerosis, or it may occur later in its course. A strong case can be made for \"isolated\" optic neuritis being a forme fruste of multiple sclerosis, based on similarities between the two in such epidemiologic factors as gender, age, geographic distributions, cerebrospinal fluid changes, histocompatibility data, magnetic resonance imaging (MRI) changes, and family history. The magnitude of the risk of multiple sclerosis after optic neuritis is uncertain. Previous studies have reported very disparate results, with the risk being reported to be as low as 13 percent and as high as 88 percent. The importance of risk factors such as age, gender, and MRI changes in predicting which patients with optic neuritis are most likely to develop multiple sclerosis also is unclear.\n\nThe treatment phase of the study was called the Optic Neuritis Treatment Trial (ONTT), whereas the current long-term followup phase is called the Longitudinal Optic Neuritis Study (LONS). The study is being conducted at 15 clinical centers in the United States. Resource centers include a data coordinating center and a visual field reading center.\n\nPatients were randomized to one of the three following treatment groups at 15 clinical centers:\n\n* Oral prednisone (1 mg/kg/day) for 14 days\n* Intravenous methylprednisolone (250 mg every 6 hours) for 3 days, followed by oral prednisone (1 mg/kg/day) for 11 days\n* Oral placebo for 14 days\n\nEach regimen was followed by a short oral taper. The oral prednisone and placebo groups were double masked, whereas the intravenous methylprednisolone group was single masked.\n\nBaseline testing included blood tests to evaluate for syphilis and systemic lupus erythematosus, a chest x-ray to evaluate for sarcoidosis, and a brain MRI scan to evaluate for changes suggestive of multiple sclerosis.\n\nThe rate of visual recovery and the long-term visual outcome were both assessed by measures of visual acuity, contrast sensitivity, color vision, and visual field at baseline, at seven followup visits during the first 6 months, and then yearly. A standardized neurologic examination with an assessment of multiple sclerosis status was made at baseline, after 6 months, and then yearly."
     },
     "conditionsModule": {
       "conditions": [
-        "Prostate Cancer"
-      ],
-      "keywords": [
-        "adenocarcinoma of the prostate",
-        "recurrent prostate cancer",
-        "stage IIB prostate cancer",
-        "stage IIA prostate cancer",
-        "stage III prostate cancer",
-        "stage IV prostate cancer"
+        "Multiple Sclerosis",
+        "Optic Neuritis"
       ]
     },
     "designModule": {
@@ -77,9 +55,10 @@
         "PHASE3"
       ],
       "designInfo": {
+        "allocation": "RANDOMIZED",
         "primaryPurpose": "TREATMENT",
         "maskingInfo": {
-          "masking": "NONE"
+          "masking": "SINGLE"
         }
       }
     },
@@ -87,127 +66,403 @@
       "interventions": [
         {
           "type": "DRUG",
-          "name": "atrasentan hydrochloride"
+          "name": "Methylprednisolone"
+        },
+        {
+          "type": "DRUG",
+          "name": "Prednisone"
         }
       ]
     },
     "eligibilityModule": {
-      "eligibilityCriteria": "DISEASE CHARACTERISTICS:\n\n* Diagnosis of hormone-refractory prostate cancer\n* Completed protocol ABBOTT-M00-211 or ABBOTT-M00-244 within the past 30 days\n\n  * Disease progression OR\n  * Active in trial when double-blind treatment period ended\n\nPATIENT CHARACTERISTICS:\n\nAge\n\n* 19 and over\n\nPerformance status\n\n* Karnofsky 60-100%\n\nLife expectancy\n\n* Not specified\n\nHematopoietic\n\n* WBC at least 3,000/mm3\n* Absolute neutrophil count greater than 1,000/mm3\n* Platelet count at least 100,000/mm3\n* Hemoglobin at least 9 g/dL\n\nHepatic\n\n* Bilirubin less than 1.5 mg/dL\n* AST and ALT no greater than 1.5 times upper limit of normal\n\nRenal\n\n* Creatinine clearance at least 40 mL/min\n\nCardiovascular\n\n* No New York Heart Association class II-IV heart disease\n\nPulmonary\n\n* No significant pulmonary disease requiring chronic or pulse steroid therapy within the past 3 months\n\nOther\n\n* Fertile patients must use 2 effective methods of contraception (1 must be barrier contraception) during and for 8 weeks after study\n* No reason that would preclude study\n* No significant comorbid condition that would preclude study\n\nPRIOR CONCURRENT THERAPY:\n\nBiologic therapy\n\n* Not specified\n\nChemotherapy\n\n* At least 4 weeks since other prior cytotoxic chemotherapy\n* No other concurrent cytotoxic chemotherapy\n\nEndocrine therapy\n\n* Not specified\n\nRadiotherapy\n\n* At least 4 weeks since prior radionuclides\n* No concurrent radionuclides\n\nSurgery\n\n* Not specified\n\nOther\n\n* At least 4 weeks since prior investigational agents\n* No concurrent antiretroviral therapy for HIV-positive patients\n* No concurrent participation in another investigational study",
+      "eligibilityCriteria": "The major eligibility criteria for enrollment into the ONTT included the following:\n\nAge range of 18 to 46 years\n\nAcute unilateral optic neuritis with visual symptoms for 8 days or less\n\nA relative afferent pupillary defect and a visual field defect in the affected eye\n\nNo previous episodes of optic neuritis in the affected eye\n\nNo previous corticosteroid treatment for optic neuritis or multiple sclerosis\n\nNo systemic disease other than multiple sclerosis that might be the cause of the optic neuritis",
       "healthyVolunteers": false,
-      "sex": "MALE",
-      "minimumAge": "19 Years",
+      "sex": "ALL",
+      "minimumAge": "18 Years",
+      "maximumAge": "46 Years",
       "stdAges": [
-        "ADULT",
-        "OLDER_ADULT"
+        "ADULT"
       ]
     },
     "contactsLocationsModule": {
-      "overallOfficials": [
-        {
-          "name": "Gary Gordon, MD, PhD",
-          "affiliation": "Abbott"
-        }
-      ],
       "locations": [
         {
-          "facility": "Jonsson Comprehensive Cancer Center, UCLA",
-          "city": "Los Angeles",
-          "state": "California",
-          "zip": "90095-1738",
+          "facility": "University of Arkansas",
+          "city": "Little Rock",
+          "state": "Arkansas",
           "country": "United States",
           "geoPoint": {
-            "lat": 34.05223,
-            "lon": -118.24368
+            "lat": 34.74648,
+            "lon": -92.28959
           }
+        },
+        {
+          "facility": "California Pacific Medical Center",
+          "city": "San Francisco",
+          "state": "California",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 37.77493,
+            "lon": -122.41942
+          }
+        },
+        {
+          "facility": "Georgetown University",
+          "city": "Washington D.C.",
+          "state": "District of Columbia",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 38.89511,
+            "lon": -77.03637
+          }
+        },
+        {
+          "facility": "University of Florida",
+          "city": "Gainesville",
+          "state": "Florida",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 29.65163,
+            "lon": -82.32483
+          }
+        },
+        {
+          "facility": "University of Illinois",
+          "city": "Chicago",
+          "state": "Illinois",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 41.85003,
+            "lon": -87.65005
+          }
+        },
+        {
+          "facility": "University of Iowa",
+          "city": "Iowa City",
+          "state": "Iowa",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 41.66113,
+            "lon": -91.53017
+          }
+        },
+        {
+          "facility": "Johns Hopkins University",
+          "city": "Baltimore",
+          "state": "Maryland",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 39.29038,
+            "lon": -76.61219
+          }
+        },
+        {
+          "facility": "University of Michigan",
+          "city": "Ann Arbor",
+          "state": "Michigan",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 42.27756,
+            "lon": -83.74088
+          }
+        },
+        {
+          "facility": "Michigan State University",
+          "city": "East Lansing",
+          "state": "Michigan",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 42.73698,
+            "lon": -84.48387
+          }
+        },
+        {
+          "facility": "New York University",
+          "city": "New York",
+          "state": "New York",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 40.71427,
+            "lon": -74.00597
+          }
+        },
+        {
+          "facility": "Duke University",
+          "city": "Durham",
+          "state": "North Carolina",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 35.99403,
+            "lon": -78.89862
+          }
+        },
+        {
+          "facility": "Devers Eye Institute",
+          "city": "Portland",
+          "state": "Oregon",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 45.52345,
+            "lon": -122.67621
+          }
+        },
+        {
+          "facility": "Wills Eye Hospital",
+          "city": "Philadelphia",
+          "state": "Pennsylvania",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 39.95238,
+            "lon": -75.16362
+          }
+        },
+        {
+          "facility": "Baylor College of Medicine",
+          "city": "Houston",
+          "state": "Texas",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 29.76328,
+            "lon": -95.36327
+          }
+        },
+        {
+          "facility": "Swedish Medical Center",
+          "city": "Seattle",
+          "state": "Washington",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 47.60621,
+            "lon": -122.33207
+          }
+        }
+      ]
+    },
+    "referencesModule": {
+      "references": [
+        {
+          "pmid": "8500302",
+          "type": "BACKGROUND",
+          "citation": "Cleary PA, Beck RW, Anderson MM Jr, Kenny DJ, Backlund JY, Gilbert PR. Design, methods, and conduct of the Optic Neuritis Treatment Trial. Control Clin Trials. 1993 Apr;14(2):123-42. doi: 10.1016/0197-2456(93)90015-6."
+        },
+        {
+          "pmid": "8500303",
+          "type": "BACKGROUND",
+          "citation": "Keltner JL, Johnson CA, Beck RW, Cleary PA, Spurr JO. Quality control functions of the Visual Field Reading Center (VFRC) for the Optic Neuritis Treatment Trial (ONTT). Control Clin Trials. 1993 Apr;14(2):143-59. doi: 10.1016/0197-2456(93)90016-7."
+        },
+        {
+          "pmid": "8932973",
+          "type": "BACKGROUND",
+          "citation": "Anderson MM Jr, Boly LD, Beck RW. Remote clinic/patient monitoring for multicenter trials. Optic Neuritis Study Group. Control Clin Trials. 1996 Oct;17(5):407-14. doi: 10.1016/s0197-2456(96)00021-9."
+        },
+        {
+          "type": "BACKGROUND",
+          "citation": "Optic Neuritis Study Group; The five-year risk of multiple sclerosis after optic neuritis. Experience of the Optic Neuritis Treatment Trial., Neurology (in press)"
+        },
+        {
+          "pmid": "9400788",
+          "type": "BACKGROUND",
+          "citation": "Visual function 5 years after optic neuritis: experience of the Optic Neuritis Treatment Trial. The Optic Neuritis Study Group. Arch Ophthalmol. 1997 Dec;115(12):1545-52."
+        },
+        {
+          "pmid": "1841573",
+          "type": "BACKGROUND",
+          "citation": "The clinical profile of optic neuritis. Experience of the Optic Neuritis Treatment Trial. Optic Neuritis Study Group. Arch Ophthalmol. 1991 Dec;109(12):1673-8. doi: 10.1001/archopht.1991.01080120057025."
+        },
+        {
+          "pmid": "1734247",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Cleary PA, Anderson MM Jr, Keltner JL, Shults WT, Kaufman DI, Buckley EG, Corbett JJ, Kupersmith MJ, Miller NR, et al. A randomized, controlled trial of corticosteroids in the treatment of acute optic neuritis. The Optic Neuritis Study Group. N Engl J Med. 1992 Feb 27;326(9):581-8. doi: 10.1056/NEJM199202273260901."
+        },
+        {
+          "pmid": "1318520",
+          "type": "BACKGROUND",
+          "citation": "Beck RW. Corticosteroid treatment of optic neuritis: a need to change treatment practices. The Optic Neuritis Study Group. Neurology. 1992 Jun;42(6):1133-5. doi: 10.1212/wnl.42.6.1133. No abstract available."
+        },
+        {
+          "pmid": "1543448",
+          "type": "BACKGROUND",
+          "citation": "Beck RW. The optic neuritis treatment trial. Implications for clinical practice. Optic Neuritis Study Group. Arch Ophthalmol. 1992 Mar;110(3):331-2. doi: 10.1001/archopht.1992.01080150029020. No abstract available."
+        },
+        {
+          "pmid": "8352671",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Arrington J, Murtagh FR, Cleary PA, Kaufman DI. Brain magnetic resonance imaging in acute optic neuritis. Experience of the Optic Neuritis Study Group. Arch Neurol. 1993 Aug;50(8):841-6. doi: 10.1001/archneur.1993.00540080050013."
+        },
+        {
+          "pmid": "8512477",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Cleary PA. Optic neuritis treatment trial. One-year follow-up results. Arch Ophthalmol. 1993 Jun;111(6):773-5. doi: 10.1001/archopht.1993.01090060061023."
+        },
+        {
+          "pmid": "8447730",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Cleary PA. Recovery from severe visual loss in optic neuritis. Arch Ophthalmol. 1993 Mar;111(3):300. doi: 10.1001/archopht.1993.01090030018009. No abstract available."
+        },
+        {
+          "type": "BACKGROUND",
+          "citation": "Beck RW; Diehl L; Cleary PA; Optic Neuritis Study Group; The Pelli-Robson Letter Chart: Normative data for young adults., Clin Vis Sci 1993;8:207-210"
+        },
+        {
+          "pmid": "8493012",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Kupersmith MJ, Cleary PA, Katz B. Fellow eye abnormalities in acute unilateral optic neuritis. Experience of the optic neuritis treatment trial. Ophthalmology. 1993 May;100(5):691-7; discussion 697-8. doi: 10.1016/s0161-6420(13)31589-9."
+        },
+        {
+          "pmid": "8468765",
+          "type": "BACKGROUND",
+          "citation": "Chrousos GA, Kattah JC, Beck RW, Cleary PA. Side effects of glucocorticoid treatment. Experience of the Optic Neuritis Treatment Trial. JAMA. 1993 Apr 28;269(16):2110-2."
+        },
+        {
+          "pmid": "8431161",
+          "type": "BACKGROUND",
+          "citation": "Keltner JL, Johnson CA, Spurr JO, Beck RW. Baseline visual field profile of optic neuritis. The experience of the optic neuritis treatment trial. Optic Neuritis Study Group. Arch Ophthalmol. 1993 Feb;111(2):231-4. doi: 10.1001/archopht.1993.01090020085029."
+        },
+        {
+          "pmid": "7800355",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Cleary PA, Backlund JC. The course of visual recovery after optic neuritis. Experience of the Optic Neuritis Treatment Trial. Ophthalmology. 1994 Nov;101(11):1771-8. doi: 10.1016/s0161-6420(94)31103-1."
+        },
+        {
+          "pmid": "8031275",
+          "type": "BACKGROUND",
+          "citation": "Keltner JL, Johnson CA, Spurr JO, Beck RW. Visual field profile of optic neuritis. One-year follow-up in the Optic Neuritis Treatment Trial. Arch Ophthalmol. 1994 Jul;112(7):946-53. doi: 10.1001/archopht.1994.01090190094027."
+        },
+        {
+          "pmid": "7864737",
+          "type": "BACKGROUND",
+          "citation": "Beck RW. The optic neuritis treatment trial: three-year follow-up results. Arch Ophthalmol. 1995 Feb;113(2):136-7. doi: 10.1001/archopht.1995.01100020014004. No abstract available."
+        },
+        {
+          "pmid": "8574355",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Trobe JD. The Optic Neuritis Treatment Trial. Putting the results in perspective. The Optic Neuritis Study Group. J Neuroophthalmol. 1995 Sep;15(3):131-5. No abstract available."
+        },
+        {
+          "pmid": "9097798",
+          "type": "BACKGROUND",
+          "citation": "Beck RW, Trobe JD. What we have learned from the Optic Neuritis Treatment Trial. Ophthalmology. 1995 Oct;102(10):1504-8. doi: 10.1016/s0161-6420(95)30839-1. No abstract available."
+        },
+        {
+          "pmid": "8614496",
+          "type": "BACKGROUND",
+          "citation": "Rolak LA, Beck RW, Paty DW, Tourtellotte WW, Whitaker JN, Rudick RA. Cerebrospinal fluid in acute optic neuritis: experience of the optic neuritis treatment trial. Neurology. 1996 Feb;46(2):368-72. doi: 10.1212/wnl.46.2.368."
+        },
+        {
+          "pmid": "8610798",
+          "type": "BACKGROUND",
+          "citation": "Trobe JD, Beck RW, Moke PS, Cleary PA. Contrast sensitivity and other vision tests in the optic neuritis treatment trial. Am J Ophthalmol. 1996 May;121(5):547-53. doi: 10.1016/s0002-9394(14)75429-7."
+        },
+        {
+          "pmid": "9093956",
+          "type": "BACKGROUND",
+          "citation": "Cleary PA, Beck RW, Bourque LB, Backlund JC, Miskala PH. Visual symptoms after optic neuritis. Results from the Optic Neuritis Treatment Trial. J Neuroophthalmol. 1997 Mar;17(1):18-23; quiz 24-8. doi: 10.1016/s0002-9394(14)70814-1."
+        },
+        {
+          "pmid": "35044445",
+          "type": "DERIVED",
+          "citation": "Solli E, Doshi H, Elze T, Pasquale L, Wall M, Kupersmith M. Archetypal Analysis Reveals Quantifiable Patterns of Visual Field Loss in Optic Neuritis. Transl Vis Sci Technol. 2022 Jan 3;11(1):27. doi: 10.1167/tvst.11.1.27."
         }
       ]
     }
   },
   "derivedSection": {
     "miscInfoModule": {
-      "versionHolder": "2026-11-03"
+      "versionHolder": "2026-11-04"
     },
     "conditionBrowseModule": {
       "meshes": [
         {
-          "id": "D011471",
-          "term": "Prostatic Neoplasms"
+          "id": "D009103",
+          "term": "Multiple Sclerosis"
+        },
+        {
+          "id": "D009902",
+          "term": "Optic Neuritis"
         }
       ],
       "ancestors": [
         {
-          "id": "D005834",
-          "term": "Genital Neoplasms, Male"
+          "id": "D020278",
+          "term": "Demyelinating Autoimmune Diseases, CNS"
         },
         {
-          "id": "D014565",
-          "term": "Urogenital Neoplasms"
+          "id": "D020274",
+          "term": "Autoimmune Diseases of the Nervous System"
         },
         {
-          "id": "D009371",
-          "term": "Neoplasms by Site"
+          "id": "D009422",
+          "term": "Nervous System Diseases"
         },
         {
-          "id": "D009369",
-          "term": "Neoplasms"
+          "id": "D003711",
+          "term": "Demyelinating Diseases"
         },
         {
-          "id": "D005832",
-          "term": "Genital Diseases, Male"
+          "id": "D001327",
+          "term": "Autoimmune Diseases"
         },
         {
-          "id": "D000091662",
-          "term": "Genital Diseases"
+          "id": "D007154",
+          "term": "Immune System Diseases"
         },
         {
-          "id": "D000091642",
-          "term": "Urogenital Diseases"
+          "id": "D009901",
+          "term": "Optic Nerve Diseases"
         },
         {
-          "id": "D011469",
-          "term": "Prostatic Diseases"
+          "id": "D003389",
+          "term": "Cranial Nerve Diseases"
         },
         {
-          "id": "D052801",
-          "term": "Male Urogenital Diseases"
+          "id": "D005128",
+          "term": "Eye Diseases"
         }
       ]
     },
     "interventionBrowseModule": {
       "meshes": [
         {
-          "id": "D000077868",
-          "term": "Atrasentan"
+          "id": "D008775",
+          "term": "Methylprednisolone"
+        },
+        {
+          "id": "D011241",
+          "term": "Prednisone"
         }
       ],
       "ancestors": [
         {
-          "id": "D052117",
-          "term": "Benzodioxoles"
+          "id": "D011239",
+          "term": "Prednisolone"
         },
         {
-          "id": "D004149",
-          "term": "Dioxoles"
+          "id": "D011246",
+          "term": "Pregnadienetriols"
         },
         {
-          "id": "D006573",
-          "term": "Heterocyclic Compounds, 1-Ring"
+          "id": "D011245",
+          "term": "Pregnadienes"
         },
         {
-          "id": "D006571",
-          "term": "Heterocyclic Compounds"
+          "id": "D011278",
+          "term": "Pregnanes"
         },
         {
-          "id": "D011759",
-          "term": "Pyrrolidines"
+          "id": "D013256",
+          "term": "Steroids"
         },
         {
-          "id": "D006574",
-          "term": "Heterocyclic Compounds, 2-Ring"
+          "id": "D000072473",
+          "term": "Fused-Ring Compounds"
         },
         {
-          "id": "D000072471",
-          "term": "Heterocyclic Compounds, Fused-Ring"
+          "id": "D011083",
+          "term": "Polycyclic Compounds"
+        },
+        {
+          "id": "D011244",
+          "term": "Pregnadienediols"
         }
       ]
     }
