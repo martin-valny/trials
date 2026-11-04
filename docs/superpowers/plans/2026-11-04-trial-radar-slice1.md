@@ -367,6 +367,15 @@ Errors (exact message prefixes, used by tests): `"schema:"` — a raw study lack
 
 ---
 
+### Task 10 amendments (from the final review of Tasks 1–9; binding on Task 10)
+
+- **Failure handling:** run the raw `schema:` check BEFORE `normalize` (normalize raises on a missing nctId / bad date); wrap every stage so any exception becomes a `failed` run_log row, `status=failed` in `$GITHUB_OUTPUT`, exit 1, with state/history/site untouched.
+- **Order:** `export` runs BEFORE `append_run(success)`, so a failed export never marks the registry timestamp as done.
+- **Snapshots:** write `raw/YYYY-MM-DD.meta.json` (`data_timestamp`, `fetched_at`) next to each snapshot. A day that fails `quality.check` renames its snapshot to `*.failed.jsonl.gz` (never uploaded, never replayed). `rebuild` replays snapshots in date order, runs `quality.check`, skips days with errors, and writes a synthetic `success` run_log row per replayed day using the sidecar timestamp.
+- **Shared helpers:** add `registry_dates(tables) -> dict[str, date]` and `snapshot_frame(state, day) -> pl.DataFrame` (schema `SNAPSHOT_SCHEMA`) used by both `run` and `rebuild`.
+- **Integration test additions:** an empty first-run raw dir; a failed day 3 followed by `rebuild` equals the incremental history; same-day `force` rerun leaves no duplicates.
+- **Decisions still open (user):** relevance of the tracked set (production query returns many off-topic trials), alias-edit semantics, and treatment of a large one-day row drop. Do not start Task 10 until these are settled.
+
 ### Task 11: Scheduled workflows
 
 **Files:**
