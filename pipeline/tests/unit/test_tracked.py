@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
+import pytest
 from conftest import DELETE, REPO_ROOT, make_study
 
 from trialradar.config import TRACKED_FIELDS, AreaConfig
@@ -243,3 +244,87 @@ def test_collaborator_does_not_become_lead(tmp_path: Path) -> None:
     tables = normalize([study], _alias_dir(tmp_path, "d"))
     aliases = Aliases(sponsor={"collab": "Wrong"}, intervention={})
     assert tracked_state(tables, TRACKED_FIELDS, aliases)[NCT]["lead_sponsor"] == "Example Pharma"
+
+
+# --- raw-name re-derivation: removed / retargeted aliases ---------------------
+
+_FIELDS = {
+    "lead_sponsor": (
+        "sponsorCollaboratorsModule.leadSponsor",
+        lambda name: {"name": name, "class": "INDUSTRY"},
+        "sponsor",
+    ),
+    "interventions": (
+        "armsInterventionsModule.interventions",
+        lambda name: [{"type": "DRUG", "name": name}],
+        "intervention",
+    ),
+}
+
+
+def _named(field: str, name: str) -> dict[str, Any]:
+    path, build, _ = _FIELDS[field]
+    return make_study(**{path: build(name)})
+
+
+def _csv(field: str, raw: str, target: str | None) -> str:
+    return f"{raw},{target}\n" if target else ""
+
+
+def _aliases(field: str, mapping: dict[str, str]) -> Aliases:
+    kind = _FIELDS[field][2]
+    empty = Aliases.empty()
+    return Aliases(
+        sponsor=mapping if kind == "sponsor" else empty.sponsor,
+        intervention=mapping if kind == "intervention" else empty.intervention,
+    )
+
+
+def _tables(tmp_path: Path, tag: str, field: str, name: str, target: str | None) -> Any:
+    kind = _FIELDS[field][2]
+    d = _alias_dir(tmp_path, tag, **{kind: _csv(field, name, target)})
+    return normalize([_named(field, name)], d)
+
+
+def _value(state: Any, field: str) -> Any:
+    v = state[NCT][field]
+    return v if field == "lead_sponsor" else v[0]
+
+
+@pytest.mark.parametrize("field", ["lead_sponsor", "interventions"])
+def test_alias_removed_is_not_a_change(tmp_path: Path, cfg: AreaConfig, field: str) -> None:
+    prev_t = _tables(tmp_path, "prev", field, "Xname", "Yname")
+    curr_t = _tables(tmp_path, "curr", field, "Xname", None)
+    current = _aliases(field, {})
+    prev = tracked_state(prev_t, TRACKED_FIELDS, current)
+    curr = tracked_state(curr_t, TRACKED_FIELDS, current)
+    assert prev == curr
+    assert _value(curr, field) == "Xname"
+    day = date(2026, 11, 4)
+    assert diff(prev, curr, {NCT: day}, cfg, day).height == 0
+
+
+@pytest.mark.parametrize("field", ["lead_sponsor", "interventions"])
+def test_alias_retargeted_is_not_a_change(tmp_path: Path, cfg: AreaConfig, field: str) -> None:
+    prev_t = _tables(tmp_path, "prev", field, "Xname", "Yname")
+    curr_t = _tables(tmp_path, "curr", field, "Xname", "Zname")
+    current = _aliases(field, {"xname": "Zname"})
+    prev = tracked_state(prev_t, TRACKED_FIELDS, current)
+    curr = tracked_state(curr_t, TRACKED_FIELDS, current)
+    assert prev == curr
+    assert _value(curr, field) == "Zname"
+    day = date(2026, 11, 4)
+    assert diff(prev, curr, {NCT: day}, cfg, day).height == 0
+
+
+@pytest.mark.parametrize("field", ["lead_sponsor", "interventions"])
+def test_aliases_do_not_mask_real_raw_change(tmp_path: Path, cfg: AreaConfig, field: str) -> None:
+    prev_t = _tables(tmp_path, "prev", field, "Xname", "Yname")
+    curr_t = _tables(tmp_path, "curr", field, "X2name", None)
+    current = _aliases(field, {"xname": "Zname"})
+    prev = tracked_state(prev_t, TRACKED_FIELDS, current)
+    curr = tracked_state(curr_t, TRACKED_FIELDS, current)
+    assert _value(prev, field) == "Zname" and _value(curr, field) == "X2name"
+    day = date(2026, 11, 4)
+    out = diff(prev, curr, {NCT: day}, cfg, day)
+    assert out.filter(pl.col("field") == field).height == 1

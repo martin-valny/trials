@@ -49,7 +49,7 @@ def test_phrase_boundary_negative(cfg: AreaConfig) -> None:
 
 
 def test_case_whitespace_nbsp_insensitive(cfg: AreaConfig) -> None:
-    study = make_study(**{"conditionsModule.conditions": ["  MULTIPLE  sclerosis "]})
+    study = make_study(**{"conditionsModule.conditions": ["  MULTIPLE\u00a0 sclerosis\u00a0"]})
     assert is_relevant(study, cfg)
 
 
