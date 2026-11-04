@@ -31,5 +31,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898573+github-actions[bot]@users.noreply.github.com"
           git add pipeline/tests/fixtures/
-          git commit -m "test: record real ClinicalTrials.gov fixtures"
-          git push
+          if git diff --cached --quiet; then
+            echo "No fixture changes"
+          else
+            git commit -m "test: record real ClinicalTrials.gov fixtures"
+            git push
+          fi
