@@ -1,0 +1,216 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT00046943",
+      "orgStudyIdInfo": {
+        "id": "CDR0000257127"
+      },
+      "secondaryIdInfos": [
+        {
+          "id": "ABBOTT-M00-258"
+        },
+        {
+          "id": "UCLA-0202002"
+        },
+        {
+          "id": "NCI-G02-2110"
+        }
+      ],
+      "organization": {
+        "fullName": "National Cancer Institute (NCI)",
+        "class": "NIH"
+      },
+      "briefTitle": "Atrasentan in Treating Patients With Prostate Cancer",
+      "officialTitle": "A Phase III Extension Study to Evaluate the Safety of 10 mg Atrasentan in Men With Hormone-Refractory Prostate Cancer"
+    },
+    "statusModule": {
+      "statusVerifiedDate": "2003-09",
+      "overallStatus": "COMPLETED",
+      "expandedAccessInfo": {
+        "hasExpandedAccess": false
+      },
+      "startDateStruct": {
+        "date": "2002-09"
+      },
+      "primaryCompletionDateStruct": {
+        "date": "2007-06",
+        "type": "ACTUAL"
+      },
+      "studyFirstSubmitDate": "2002-10-03",
+      "studyFirstSubmitQcDate": "2003-01-26",
+      "studyFirstPostDateStruct": {
+        "date": "2003-01-27",
+        "type": "ESTIMATED"
+      },
+      "lastUpdateSubmitDate": "2011-02-18",
+      "lastUpdatePostDateStruct": {
+        "date": "2011-02-21",
+        "type": "ESTIMATED"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {
+        "name": "Abbott",
+        "class": "INDUSTRY"
+      }
+    },
+    "descriptionModule": {
+      "briefSummary": "RATIONALE: Drugs used in chemotherapy use different ways to stop tumor cells from dividing so they stop growing or die.\n\nPURPOSE: Phase III trial to determine the effectiveness of atrasentan in treating patients who have prostate cancer that has not responded to hormone therapy.",
+      "detailedDescription": "OBJECTIVES:\n\n* Determine the safety of atrasentan in patients with hormone-refractory prostate cancer.\n* Determine the pharmacokinetics of this drug in these patients.\n\nOUTLINE: This is an open-label, multicenter study.\n\nPatients receive oral atrasentan once daily for 3 years in the absence of disease progression or unacceptable toxicity.\n\nPatients are followed at 1 month and then every 3 months for 2 years.\n\nPROJECTED ACCRUAL: Approximately 1,400 patients will be accrued for this study."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Prostate Cancer"
+      ],
+      "keywords": [
+        "adenocarcinoma of the prostate",
+        "recurrent prostate cancer",
+        "stage IIB prostate cancer",
+        "stage IIA prostate cancer",
+        "stage III prostate cancer",
+        "stage IV prostate cancer"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE3"
+      ],
+      "designInfo": {
+        "primaryPurpose": "TREATMENT",
+        "maskingInfo": {
+          "masking": "NONE"
+        }
+      }
+    },
+    "armsInterventionsModule": {
+      "interventions": [
+        {
+          "type": "DRUG",
+          "name": "atrasentan hydrochloride"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "DISEASE CHARACTERISTICS:\n\n* Diagnosis of hormone-refractory prostate cancer\n* Completed protocol ABBOTT-M00-211 or ABBOTT-M00-244 within the past 30 days\n\n  * Disease progression OR\n  * Active in trial when double-blind treatment period ended\n\nPATIENT CHARACTERISTICS:\n\nAge\n\n* 19 and over\n\nPerformance status\n\n* Karnofsky 60-100%\n\nLife expectancy\n\n* Not specified\n\nHematopoietic\n\n* WBC at least 3,000/mm3\n* Absolute neutrophil count greater than 1,000/mm3\n* Platelet count at least 100,000/mm3\n* Hemoglobin at least 9 g/dL\n\nHepatic\n\n* Bilirubin less than 1.5 mg/dL\n* AST and ALT no greater than 1.5 times upper limit of normal\n\nRenal\n\n* Creatinine clearance at least 40 mL/min\n\nCardiovascular\n\n* No New York Heart Association class II-IV heart disease\n\nPulmonary\n\n* No significant pulmonary disease requiring chronic or pulse steroid therapy within the past 3 months\n\nOther\n\n* Fertile patients must use 2 effective methods of contraception (1 must be barrier contraception) during and for 8 weeks after study\n* No reason that would preclude study\n* No significant comorbid condition that would preclude study\n\nPRIOR CONCURRENT THERAPY:\n\nBiologic therapy\n\n* Not specified\n\nChemotherapy\n\n* At least 4 weeks since other prior cytotoxic chemotherapy\n* No other concurrent cytotoxic chemotherapy\n\nEndocrine therapy\n\n* Not specified\n\nRadiotherapy\n\n* At least 4 weeks since prior radionuclides\n* No concurrent radionuclides\n\nSurgery\n\n* Not specified\n\nOther\n\n* At least 4 weeks since prior investigational agents\n* No concurrent antiretroviral therapy for HIV-positive patients\n* No concurrent participation in another investigational study",
+      "healthyVolunteers": false,
+      "sex": "MALE",
+      "minimumAge": "19 Years",
+      "stdAges": [
+        "ADULT",
+        "OLDER_ADULT"
+      ]
+    },
+    "contactsLocationsModule": {
+      "overallOfficials": [
+        {
+          "name": "Gary Gordon, MD, PhD",
+          "affiliation": "Abbott"
+        }
+      ],
+      "locations": [
+        {
+          "facility": "Jonsson Comprehensive Cancer Center, UCLA",
+          "city": "Los Angeles",
+          "state": "California",
+          "zip": "90095-1738",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 34.05223,
+            "lon": -118.24368
+          }
+        }
+      ]
+    }
+  },
+  "derivedSection": {
+    "miscInfoModule": {
+      "versionHolder": "2026-11-03"
+    },
+    "conditionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D011471",
+          "term": "Prostatic Neoplasms"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D005834",
+          "term": "Genital Neoplasms, Male"
+        },
+        {
+          "id": "D014565",
+          "term": "Urogenital Neoplasms"
+        },
+        {
+          "id": "D009371",
+          "term": "Neoplasms by Site"
+        },
+        {
+          "id": "D009369",
+          "term": "Neoplasms"
+        },
+        {
+          "id": "D005832",
+          "term": "Genital Diseases, Male"
+        },
+        {
+          "id": "D000091662",
+          "term": "Genital Diseases"
+        },
+        {
+          "id": "D000091642",
+          "term": "Urogenital Diseases"
+        },
+        {
+          "id": "D011469",
+          "term": "Prostatic Diseases"
+        },
+        {
+          "id": "D052801",
+          "term": "Male Urogenital Diseases"
+        }
+      ]
+    },
+    "interventionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D000077868",
+          "term": "Atrasentan"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D052117",
+          "term": "Benzodioxoles"
+        },
+        {
+          "id": "D004149",
+          "term": "Dioxoles"
+        },
+        {
+          "id": "D006573",
+          "term": "Heterocyclic Compounds, 1-Ring"
+        },
+        {
+          "id": "D006571",
+          "term": "Heterocyclic Compounds"
+        },
+        {
+          "id": "D011759",
+          "term": "Pyrrolidines"
+        },
+        {
+          "id": "D006574",
+          "term": "Heterocyclic Compounds, 2-Ring"
+        },
+        {
+          "id": "D000072471",
+          "term": "Heterocyclic Compounds, Fused-Ring"
+        }
+      ]
+    }
+  },
+  "hasResults": false
+}

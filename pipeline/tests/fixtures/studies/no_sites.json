@@ -1,0 +1,298 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT01765556",
+      "orgStudyIdInfo": {
+        "id": "GO28054"
+      },
+      "secondaryIdInfos": [
+        {
+          "id": "2012-003143-29",
+          "type": "EUDRACT_NUMBER"
+        }
+      ],
+      "organization": {
+        "fullName": "Hoffmann-La Roche",
+        "class": "INDUSTRY"
+      },
+      "briefTitle": "A Pharmacokinetics Study to Investigate the Effect of Ketoconazole on Vemurafenib in Patients With BRAFV600 Mutation-Positive Metastatic Melanoma",
+      "officialTitle": "A Phase I, Open-Label, Multicenter, Three-Period, One-Sequence Study To Investigate The Effect Of Ketoconazole On The Pharmacokinetics Of A Single Oral Dose Of 960 Mg Of Vemurafenib"
+    },
+    "statusModule": {
+      "statusVerifiedDate": "2016-11",
+      "overallStatus": "WITHDRAWN",
+      "expandedAccessInfo": {
+        "hasExpandedAccess": false
+      },
+      "startDateStruct": {
+        "date": "2013-10"
+      },
+      "primaryCompletionDateStruct": {
+        "date": "2013-10",
+        "type": "ESTIMATED"
+      },
+      "completionDateStruct": {
+        "date": "2013-10",
+        "type": "ESTIMATED"
+      },
+      "studyFirstSubmitDate": "2013-01-09",
+      "studyFirstSubmitQcDate": "2013-01-09",
+      "studyFirstPostDateStruct": {
+        "date": "2013-01-10",
+        "type": "ESTIMATED"
+      },
+      "lastUpdateSubmitDate": "2016-11-01",
+      "lastUpdatePostDateStruct": {
+        "date": "2016-11-02",
+        "type": "ESTIMATED"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "responsibleParty": {
+        "type": "SPONSOR"
+      },
+      "leadSponsor": {
+        "name": "Hoffmann-La Roche",
+        "class": "INDUSTRY"
+      }
+    },
+    "descriptionModule": {
+      "briefSummary": "This open-label, multi-center, three-period, one sequence study will investigate the effect of ketoconazole on the pharmacokinetics of vemurafenib in patients with unresectable BRAFV600-mutation positive metastatic melanoma or other malignant tumor type that harbors a V600-activating mutation of BRAF without acceptable standard treatment options. Patients will receive a single dose of vemurafenib in Periods A and C and multiple doses of ketoconazole in Periods B and C. Eligible patients will have the option to continue treatment with vemurafenib as part of an extension study (NCT01739764). The anticipated time on study treatment is approximately 19 days."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Malignant Melanoma, Neoplasms"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE1"
+      ],
+      "designInfo": {
+        "allocation": "NON_RANDOMIZED",
+        "interventionModel": "SINGLE_GROUP",
+        "primaryPurpose": "TREATMENT",
+        "maskingInfo": {
+          "masking": "NONE"
+        }
+      },
+      "enrollmentInfo": {
+        "count": 0,
+        "type": "ACTUAL"
+      }
+    },
+    "armsInterventionsModule": {
+      "armGroups": [
+        {
+          "label": "Ketoconazole treatment",
+          "type": "EXPERIMENTAL",
+          "interventionNames": [
+            "Drug: ketoconazole"
+          ]
+        },
+        {
+          "label": "Vemurafenib treatment",
+          "type": "EXPERIMENTAL",
+          "interventionNames": [
+            "Drug: vemurafenib"
+          ]
+        }
+      ],
+      "interventions": [
+        {
+          "type": "DRUG",
+          "name": "ketoconazole",
+          "description": "multiple doses of ketoconazole in Period B and C",
+          "armGroupLabels": [
+            "Ketoconazole treatment"
+          ]
+        },
+        {
+          "type": "DRUG",
+          "name": "vemurafenib",
+          "description": "single dose of vemurafenib in Period A and C",
+          "armGroupLabels": [
+            "Vemurafenib treatment"
+          ]
+        }
+      ]
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {
+          "measure": "Pharmacokinetics: Area under the concentration time curve",
+          "timeFrame": "Approximately 19 days"
+        },
+        {
+          "measure": "Pharmacokinetics: Maximum plasma concentration",
+          "timeFrame": "Approximately 19 days"
+        },
+        {
+          "measure": "Pharmacokinetics: Time to maximum plasma concentration",
+          "timeFrame": "Approximately 19 days"
+        },
+        {
+          "measure": "Pharmacokinetics: Terminal half-life",
+          "timeFrame": "Approximately 19 days"
+        },
+        {
+          "measure": "Pharmacokinetics: Apparent clearance",
+          "timeFrame": "Approximately 19 days"
+        }
+      ],
+      "secondaryOutcomes": [
+        {
+          "measure": "Safety: Incidence of adverse events",
+          "timeFrame": "Approximately 19 days"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n* Male or female patients \\>= 18 years old\n* Patients with either unresectable Stage IIIc or Stage IV metastatic melanoma positive for the BRAFV600 mutation or other malignant tumor type that harbors a V600-activating mutation of BRAF, as determined by results of cobas\u00ae 4800 BRAF V600 mutation test or a DNA sequencing method, and who have no acceptable standard treatment options\n* Eastern Cooperative Oncology Group (ECOG) performance status 0 to 2\n* Life expectancy \\>= 12 weeks\n* Full recovery from the effects of any major surgery or significant traumatic injury within 14 days prior to the first dose of study treatment\n* Adequate hematologic and end organ function\n* Female patients of childbearing potential and male patients with partners of childbearing potential must agree to always use two effective methods of contraception\n* Negative serum pregnancy test within 7 days prior to commencement of dosing in women of childbearing potential\n\nExclusion Criteria:\n\n* Prior treatment with vemurafenib or other BRAF inhibitor within 42 days of first dose of study drug\n* Requirement for immediate or urgent treatment with daily vemurafenib and for whom the intermittent schedule of vemurafenib employed during the 19-day period for this trial is not clinically acceptable\n* Allergy or hypersensitivity to components of the vemurafenib formulation\n* Experimental therapy within 4 weeks prior to first dose of study drug\n* Major surgical procedure or significant traumatic injury within 14 days prior to first dose of study drug or anticipation of the need for major surgery during study treatment\n* Prior anti-cancer therapy within 28 days before the first dose of study drug\n* History of clinically significant cardiac or pulmonary dysfunction\n* History of symptomatic congestive heart failure of any New York Heart Association class or serious cardiac arrhythmia requiring treatment\n* History of myocardial infarction within 6 months prior to first dose of study drug\n* Current dyspnea at rest, owing to complications of advanced malignancy or any requirement for supplemental oxygen to perform activities of daily living\n* History of congenital long QT syndrome or QTc \\> 450 ms\n* Active central nervous system lesions\n* Uncontrolled or poorly controlled diabetes\n* Current severe, uncontrolled systemic disease",
+      "healthyVolunteers": false,
+      "sex": "ALL",
+      "minimumAge": "18 Years",
+      "stdAges": [
+        "ADULT",
+        "OLDER_ADULT"
+      ]
+    },
+    "contactsLocationsModule": {
+      "overallOfficials": [
+        {
+          "name": "Clinical Trials",
+          "affiliation": "Hoffmann-La Roche",
+          "role": "STUDY_DIRECTOR"
+        }
+      ]
+    }
+  },
+  "derivedSection": {
+    "miscInfoModule": {
+      "versionHolder": "2026-11-03",
+      "removedCountries": [
+        "Argentina",
+        "Bosnia and Herzegovina",
+        "Brazil",
+        "Greece",
+        "Romania",
+        "Spain",
+        "United States"
+      ]
+    },
+    "conditionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D008545",
+          "term": "Melanoma"
+        },
+        {
+          "id": "D009369",
+          "term": "Neoplasms"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D018358",
+          "term": "Neuroendocrine Tumors"
+        },
+        {
+          "id": "D017599",
+          "term": "Neuroectodermal Tumors"
+        },
+        {
+          "id": "D009373",
+          "term": "Neoplasms, Germ Cell and Embryonal"
+        },
+        {
+          "id": "D009370",
+          "term": "Neoplasms by Histologic Type"
+        },
+        {
+          "id": "D009380",
+          "term": "Neoplasms, Nerve Tissue"
+        },
+        {
+          "id": "D018326",
+          "term": "Nevi and Melanomas"
+        },
+        {
+          "id": "D012878",
+          "term": "Skin Neoplasms"
+        },
+        {
+          "id": "D009371",
+          "term": "Neoplasms by Site"
+        },
+        {
+          "id": "D012871",
+          "term": "Skin Diseases"
+        },
+        {
+          "id": "D017437",
+          "term": "Skin and Connective Tissue Diseases"
+        }
+      ]
+    },
+    "interventionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D007654",
+          "term": "Ketoconazole"
+        },
+        {
+          "id": "D000077484",
+          "term": "Vemurafenib"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D010879",
+          "term": "Piperazines"
+        },
+        {
+          "id": "D006573",
+          "term": "Heterocyclic Compounds, 1-Ring"
+        },
+        {
+          "id": "D006571",
+          "term": "Heterocyclic Compounds"
+        },
+        {
+          "id": "D013449",
+          "term": "Sulfonamides"
+        },
+        {
+          "id": "D000577",
+          "term": "Amides"
+        },
+        {
+          "id": "D009930",
+          "term": "Organic Chemicals"
+        },
+        {
+          "id": "D013450",
+          "term": "Sulfones"
+        },
+        {
+          "id": "D013457",
+          "term": "Sulfur Compounds"
+        },
+        {
+          "id": "D007211",
+          "term": "Indoles"
+        },
+        {
+          "id": "D006574",
+          "term": "Heterocyclic Compounds, 2-Ring"
+        },
+        {
+          "id": "D000072471",
+          "term": "Heterocyclic Compounds, Fused-Ring"
+        }
+      ]
+    }
+  },
+  "hasResults": false
+}

@@ -1,0 +1,1030 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT03835728",
+      "orgStudyIdInfo": {
+        "id": "STU-2018-0185"
+      },
+      "organization": {
+        "fullName": "University of Texas Southwestern Medical Center",
+        "class": "OTHER"
+      },
+      "briefTitle": "Efficacy of Ocrelizumab in Autoimmune Encephalitis",
+      "officialTitle": "Exploratory Study of Efficacy of Ocrelizumab in Autoimmune Encephalitis"
+    },
+    "statusModule": {
+      "statusVerifiedDate": "2021-09",
+      "overallStatus": "TERMINATED",
+      "whyStopped": "Failed to meet target enrollment and study was discontinued",
+      "expandedAccessInfo": {
+        "hasExpandedAccess": false
+      },
+      "startDateStruct": {
+        "date": "2019-01-22",
+        "type": "ACTUAL"
+      },
+      "primaryCompletionDateStruct": {
+        "date": "2020-10-02",
+        "type": "ACTUAL"
+      },
+      "completionDateStruct": {
+        "date": "2020-10-02",
+        "type": "ACTUAL"
+      },
+      "studyFirstSubmitDate": "2019-02-05",
+      "studyFirstSubmitQcDate": "2019-02-07",
+      "studyFirstPostDateStruct": {
+        "date": "2019-02-11",
+        "type": "ACTUAL"
+      },
+      "resultsFirstSubmitDate": "2021-08-25",
+      "resultsFirstSubmitQcDate": "2021-09-21",
+      "resultsFirstPostDateStruct": {
+        "date": "2021-10-19",
+        "type": "ACTUAL"
+      },
+      "lastUpdateSubmitDate": "2021-09-21",
+      "lastUpdatePostDateStruct": {
+        "date": "2021-10-19",
+        "type": "ACTUAL"
+      }
+    },
+    "sponsorCollaboratorsModule": {
+      "responsibleParty": {
+        "type": "PRINCIPAL_INVESTIGATOR",
+        "investigatorFullName": "Steven Vernino",
+        "investigatorTitle": "PROFESSOR",
+        "investigatorAffiliation": "University of Texas Southwestern Medical Center"
+      },
+      "leadSponsor": {
+        "name": "University of Texas Southwestern Medical Center",
+        "class": "OTHER"
+      },
+      "collaborators": [
+        {
+          "name": "Genentech, Inc.",
+          "class": "INDUSTRY"
+        }
+      ]
+    },
+    "oversightModule": {
+      "oversightHasDmc": false,
+      "isFdaRegulatedDrug": true,
+      "isFdaRegulatedDevice": false,
+      "isUsExport": false
+    },
+    "descriptionModule": {
+      "briefSummary": "This pilot study is a randomized, double-blind, placebo controlled study of the efficacy of ocrelizumab in autoimmune encephalitis. Subjects with new diagnosis of autoimmune encephalitis will be invited to enroll in this study. Subjects will be randomized to receive ocrelizumab (an anti-CD20 therapy) or matched placebo, and will undergo three infusions over a six month period. Subjects will complete clinical visits over the study period, during which safety monitoring and neuropsychological assessments will be performed to assess for signs of clinical worsening from encephalitis. The primary outcome of this study is the proportion of patients who fail to complete the twelve month period without clinical worsening, as defined by the protocol. Subjects who experience early clinical worsening during the study may be offered open-label treatment with ocrelizumab at the discretion of the investigators."
+    },
+    "conditionsModule": {
+      "conditions": [
+        "Autoimmune Encephalitis"
+      ]
+    },
+    "designModule": {
+      "studyType": "INTERVENTIONAL",
+      "phases": [
+        "PHASE2"
+      ],
+      "designInfo": {
+        "allocation": "RANDOMIZED",
+        "interventionModel": "PARALLEL",
+        "primaryPurpose": "TREATMENT",
+        "maskingInfo": {
+          "masking": "QUADRUPLE",
+          "whoMasked": [
+            "PARTICIPANT",
+            "CARE_PROVIDER",
+            "INVESTIGATOR",
+            "OUTCOMES_ASSESSOR"
+          ]
+        }
+      },
+      "enrollmentInfo": {
+        "count": 3,
+        "type": "ACTUAL"
+      }
+    },
+    "armsInterventionsModule": {
+      "armGroups": [
+        {
+          "label": "Treatment Arm",
+          "type": "ACTIVE_COMPARATOR",
+          "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.",
+          "interventionNames": [
+            "Drug: Ocrelizumab"
+          ]
+        },
+        {
+          "label": "Treatment Placebo Arm",
+          "type": "PLACEBO_COMPARATOR",
+          "description": "Saline will be used as the matching placebo",
+          "interventionNames": [
+            "Drug: Saline"
+          ]
+        }
+      ],
+      "interventions": [
+        {
+          "type": "DRUG",
+          "name": "Ocrelizumab",
+          "description": "Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months.",
+          "armGroupLabels": [
+            "Treatment Arm"
+          ]
+        },
+        {
+          "type": "DRUG",
+          "name": "Saline",
+          "description": "This will be the matching placebo used in the study.",
+          "armGroupLabels": [
+            "Treatment Placebo Arm"
+          ]
+        }
+      ]
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {
+          "measure": "Number of Participants Who Had Clinical Worsening",
+          "description": "The number of participants who had clinical worsening within 12 months.",
+          "timeFrame": "12 months"
+        }
+      ],
+      "secondaryOutcomes": [
+        {
+          "measure": "Time to Treatment Failure",
+          "description": "Definition of clinical worsening (treatment failure):\n\n1. Clinician or patient/caregiver perception of clinical decline\n2. Worsening of patient/family reported IADL (by one point or more)\n3. One of the following additional features:\n\n   * Significant worsening of Texas Functional Living Scale (by \u2265 5 T points, 0.5 st deviation)\n   * Other clinical worsening leading to hospitalization",
+          "timeFrame": "12 months"
+        },
+        {
+          "measure": "Change in TFLS T-score (Texas Functional Living Scale) Score at 6 Months",
+          "description": "Change in TFLS T-score (Texas Functional Living Scale) scores at 6 months compared to baseline. - A performance-based measure of functional competence designed to assess instrumental activities of daily living (e.g., managing money) that are thought to be more susceptible to cognitive change than basic activities of daily living (e.g., dressing).\n\nContent and Structure: The TFLS is comprised of 24 items divided into four subscales assessing abilities related to Time, Money and Calculation, Communication, and Memory. Many items provide a range of possible points allowing the instrument to account for the varying levels of functioning that may be observed in clinical populations.\n\nTotal raw score ranges between 0 and 50 with standardized T-score values between 20 and 66. The higher the score, the better the performance.\n\nChange in TFLS T-score was used in this study",
+          "timeFrame": "Baseline, 6 month"
+        },
+        {
+          "measure": "Change in TFLS T Score (Texas Functional Living Scale) Score at 12 Months",
+          "description": "Change in TFLS T-score (Texas Functional Living Scale) scores at 12 months compared to baseline. - A performance-based measure of functional competence designed to assess instrumental activities of daily living (e.g., managing money) that are thought to be more susceptible to cognitive change than basic activities of daily living (e.g., dressing).\n\nContent and Structure: The TFLS is comprised of 24 items divided into four subscales assessing abilities related to Time, Money and Calculation, Communication, and Memory. Many items provide a range of possible points allowing the instrument to account for the varying levels of functioning that may be observed in clinical populations.\n\nTotal raw score ranges between 0 and 50 with standardized T-score values between 20 and 66. The higher the score, the better the performance.\n\nChange in TFLS T-score was used in this study",
+          "timeFrame": "Baseline, 12 months"
+        }
+      ]
+    },
+    "eligibilityModule": {
+      "eligibilityCriteria": "Inclusion Criteria:\n\n1. Age 18 or greater\n2. Able to obtain informed consent from patient or appropriate designee\n3. Possible autoimmune encephalitis as defined by Table 1:\n\n   1. Reasonable exclusion of alternative causes\n   2. Subacute onset (\\< 3 months) of memory deficits, altered consciousness, and/or psychiatric symptoms\n   3. One or more of the following:\n\n      * CSF (cerebrospinal fluid) pleocytosis (\\>5 cells/\u00b5l corrected, if necessary, for traumatic lumbar puncture)\n      * EEG (electroencephalogram) with epileptiform or focal slow wave abnormalities involving temporal lobes\n      * Brain abnormalities on T2/FLAIR MRI restricted to the mesial temporal (limbic) lobes\n      * Associated dyskinesias (faciobrachial dystonic movements or orofacial dyskinesias)\n4. Completed initial treatment with iv steroids (at least 3000mg solumedrol) and plasma exchange (at least 3 exchanges) within the past 8 weeks\n5. Presence of one (or more) of the following autoantibodies in serum or CSF\n\n   * NMDA receptor\n   * LGI1\n   * CASPR2\n   * DPPX\n\nExclusion Criteria:\n\n1. Prior immunosuppression treatment in past year (other than steroids, intravenous immunoglobulin and plasma exchange)\n2. Active malignancy requiring chemotherapy\n3. Pregnancy\n4. Evidence of active hepatitis or tuberculosis infection\n5. Medical condition that (in investigators opinion) precludes the use of ocrelizumab",
+      "healthyVolunteers": false,
+      "sex": "ALL",
+      "minimumAge": "18 Years",
+      "stdAges": [
+        "ADULT",
+        "OLDER_ADULT"
+      ]
+    },
+    "contactsLocationsModule": {
+      "overallOfficials": [
+        {
+          "name": "Steven Vernino, MD, PhD",
+          "affiliation": "University of Texas Southwestern Medical Center",
+          "role": "PRINCIPAL_INVESTIGATOR"
+        }
+      ],
+      "locations": [
+        {
+          "facility": "UT Southwestern Medical Center",
+          "city": "Dallas",
+          "state": "Texas",
+          "zip": "75390",
+          "country": "United States",
+          "geoPoint": {
+            "lat": 32.78306,
+            "lon": -96.80667
+          }
+        }
+      ]
+    },
+    "referencesModule": {
+      "references": [
+        {
+          "pmid": "26906964",
+          "type": "BACKGROUND",
+          "citation": "Graus F, Titulaer MJ, Balu R, Benseler S, Bien CG, Cellucci T, Cortese I, Dale RC, Gelfand JM, Geschwind M, Glaser CA, Honnorat J, Hoftberger R, Iizuka T, Irani SR, Lancaster E, Leypoldt F, Pruss H, Rae-Grant A, Reindl M, Rosenfeld MR, Rostasy K, Saiz A, Venkatesan A, Vincent A, Wandinger KP, Waters P, Dalmau J. A clinical approach to diagnosis of autoimmune encephalitis. Lancet Neurol. 2016 Apr;15(4):391-404. doi: 10.1016/S1474-4422(15)00401-9. Epub 2016 Feb 20."
+        },
+        {
+          "pmid": "23290630",
+          "type": "BACKGROUND",
+          "citation": "Titulaer MJ, McCracken L, Gabilondo I, Armangue T, Glaser C, Iizuka T, Honig LS, Benseler SM, Kawachi I, Martinez-Hernandez E, Aguilar E, Gresa-Arribas N, Ryan-Florance N, Torrents A, Saiz A, Rosenfeld MR, Balice-Gordon R, Graus F, Dalmau J. Treatment and prognostic factors for long-term outcome in patients with anti-NMDA receptor encephalitis: an observational cohort study. Lancet Neurol. 2013 Feb;12(2):157-65. doi: 10.1016/S1474-4422(12)70310-1. Epub 2013 Jan 3."
+        },
+        {
+          "pmid": "26439968",
+          "type": "BACKGROUND",
+          "citation": "Dubey D, Sawhney A, Greenberg B, Lowden A, Warnack W, Khemani P, Stuve O, Vernino S. The spectrum of autoimmune encephalopathies. J Neuroimmunol. 2015 Oct 15;287:93-7. doi: 10.1016/j.jneuroim.2015.08.014. Epub 2015 Aug 28."
+        },
+        {
+          "pmid": "35129803",
+          "type": "DERIVED",
+          "citation": "Blackburn KM, Denney DA, Hopkins SC, Vernino SA. Low Recruitment in a Double-Blind, Placebo-Controlled Trial of Ocrelizumab for Autoimmune Encephalitis: A Case Series and Review of Lessons Learned. Neurol Ther. 2022 Jun;11(2):893-903. doi: 10.1007/s40120-022-00327-x. Epub 2022 Feb 7."
+        }
+      ]
+    },
+    "ipdSharingStatementModule": {
+      "ipdSharing": "YES"
+    }
+  },
+  "resultsSection": {
+    "participantFlowModule": {
+      "recruitmentDetails": "Failed to meet target enrollment and study was discontinued",
+      "groups": [
+        {
+          "id": "FG000",
+          "title": "Treatment Arm",
+          "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+        },
+        {
+          "id": "FG001",
+          "title": "Treatment Placebo Arm",
+          "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+        }
+      ],
+      "periods": [
+        {
+          "title": "Overall Study",
+          "milestones": [
+            {
+              "type": "STARTED",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "2"
+                },
+                {
+                  "groupId": "FG001",
+                  "numSubjects": "1"
+                }
+              ]
+            },
+            {
+              "type": "COMPLETED",
+              "comment": "Completed is defined as completing study procedures according to protocol even if the participant met primary endpoint and discontinued prior to 12 months.",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "2"
+                },
+                {
+                  "groupId": "FG001",
+                  "numSubjects": "1"
+                }
+              ]
+            },
+            {
+              "type": "NOT COMPLETED",
+              "achievements": [
+                {
+                  "groupId": "FG000",
+                  "numSubjects": "0"
+                },
+                {
+                  "groupId": "FG001",
+                  "numSubjects": "0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "baselineCharacteristicsModule": {
+      "groups": [
+        {
+          "id": "BG000",
+          "title": "Treatment Arm",
+          "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+        },
+        {
+          "id": "BG001",
+          "title": "Treatment Placebo Arm",
+          "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+        },
+        {
+          "id": "BG002",
+          "title": "Total",
+          "description": "Total of all reporting groups"
+        }
+      ],
+      "denoms": [
+        {
+          "units": "Participants",
+          "counts": [
+            {
+              "groupId": "BG000",
+              "value": "2"
+            },
+            {
+              "groupId": "BG001",
+              "value": "1"
+            },
+            {
+              "groupId": "BG002",
+              "value": "3"
+            }
+          ]
+        }
+      ],
+      "measures": [
+        {
+          "title": "Age, Customized",
+          "paramType": "MEDIAN",
+          "dispersionType": "FULL_RANGE",
+          "unitOfMeasure": "years",
+          "classes": [
+            {
+              "title": "Age",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "47.5",
+                      "lowerLimit": "25",
+                      "upperLimit": "70"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "44",
+                      "lowerLimit": "44",
+                      "upperLimit": "44"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "44",
+                      "lowerLimit": "25",
+                      "upperLimit": "70"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Sex: Female, Male",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "Female",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "2"
+                    }
+                  ]
+                },
+                {
+                  "title": "Male",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Race (NIH/OMB)",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "American Indian or Alaska Native",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Asian",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Native Hawaiian or Other Pacific Islander",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Black or African American",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "1"
+                    }
+                  ]
+                },
+                {
+                  "title": "White",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "2"
+                    }
+                  ]
+                },
+                {
+                  "title": "More than one race",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "0"
+                    }
+                  ]
+                },
+                {
+                  "title": "Unknown or Not Reported",
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "0"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Region of Enrollment",
+          "paramType": "NUMBER",
+          "unitOfMeasure": "participants",
+          "classes": [
+            {
+              "title": "United States",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "2"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Encephalitis antibody",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "classes": [
+            {
+              "title": "NMDAR Ab",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "2"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "LGI1 Ab",
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "BG000",
+                      "value": "1"
+                    },
+                    {
+                      "groupId": "BG001",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "BG002",
+                      "value": "1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "outcomeMeasuresModule": {
+      "outcomeMeasures": [
+        {
+          "type": "PRIMARY",
+          "title": "Number of Participants Who Had Clinical Worsening",
+          "description": "The number of participants who had clinical worsening within 12 months.",
+          "reportingStatus": "POSTED",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "unitOfMeasure": "Participants",
+          "timeFrame": "12 months",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Treatment Arm",
+              "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+            },
+            {
+              "id": "OG001",
+              "title": "Treatment Placebo Arm",
+              "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "2"
+                },
+                {
+                  "groupId": "OG001",
+                  "value": "1"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG000",
+                      "value": "0"
+                    },
+                    {
+                      "groupId": "OG001",
+                      "value": "1"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "SECONDARY",
+          "title": "Time to Treatment Failure",
+          "description": "Definition of clinical worsening (treatment failure):\n\n1. Clinician or patient/caregiver perception of clinical decline\n2. Worsening of patient/family reported IADL (by one point or more)\n3. One of the following additional features:\n\n   * Significant worsening of Texas Functional Living Scale (by \u2265 5 T points, 0.5 st deviation)\n   * Other clinical worsening leading to hospitalization",
+          "populationDescription": "There were no treatment failures in the treatment arm. Thus, there was no data for this secondary outcome measure in the treatment arm",
+          "reportingStatus": "POSTED",
+          "paramType": "NUMBER",
+          "unitOfMeasure": "weeks",
+          "timeFrame": "12 months",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Treatment Arm",
+              "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+            },
+            {
+              "id": "OG001",
+              "title": "Treatment Placebo Arm",
+              "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "0"
+                },
+                {
+                  "groupId": "OG001",
+                  "value": "1"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG001",
+                      "value": "12"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "SECONDARY",
+          "title": "Change in TFLS T-score (Texas Functional Living Scale) Score at 6 Months",
+          "description": "Change in TFLS T-score (Texas Functional Living Scale) scores at 6 months compared to baseline. - A performance-based measure of functional competence designed to assess instrumental activities of daily living (e.g., managing money) that are thought to be more susceptible to cognitive change than basic activities of daily living (e.g., dressing).\n\nContent and Structure: The TFLS is comprised of 24 items divided into four subscales assessing abilities related to Time, Money and Calculation, Communication, and Memory. Many items provide a range of possible points allowing the instrument to account for the varying levels of functioning that may be observed in clinical populations.\n\nTotal raw score ranges between 0 and 50 with standardized T-score values between 20 and 66. The higher the score, the better the performance.\n\nChange in TFLS T-score was used in this study",
+          "populationDescription": "Participant in placebo arm met study endpoint prior to 6 month outcome measure so change in TFLS score at 6 months was not analyzable for efficacy purposes.",
+          "reportingStatus": "POSTED",
+          "paramType": "MEDIAN",
+          "dispersionType": "Full Range",
+          "unitOfMeasure": "score on a scale",
+          "timeFrame": "Baseline, 6 month",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Treatment Arm",
+              "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+            },
+            {
+              "id": "OG001",
+              "title": "Treatment Placebo Arm",
+              "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "2"
+                },
+                {
+                  "groupId": "OG001",
+                  "value": "0"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG000",
+                      "value": "12.75",
+                      "lowerLimit": "3",
+                      "upperLimit": "22.5"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "SECONDARY",
+          "title": "Change in TFLS T Score (Texas Functional Living Scale) Score at 12 Months",
+          "description": "Change in TFLS T-score (Texas Functional Living Scale) scores at 12 months compared to baseline. - A performance-based measure of functional competence designed to assess instrumental activities of daily living (e.g., managing money) that are thought to be more susceptible to cognitive change than basic activities of daily living (e.g., dressing).\n\nContent and Structure: The TFLS is comprised of 24 items divided into four subscales assessing abilities related to Time, Money and Calculation, Communication, and Memory. Many items provide a range of possible points allowing the instrument to account for the varying levels of functioning that may be observed in clinical populations.\n\nTotal raw score ranges between 0 and 50 with standardized T-score values between 20 and 66. The higher the score, the better the performance.\n\nChange in TFLS T-score was used in this study",
+          "populationDescription": "Participant in placebo arm met study endpoint prior to 6 month outcome measure so change in TFLS score at 12 months was not analyzable for efficacy purposes.",
+          "reportingStatus": "POSTED",
+          "paramType": "MEDIAN",
+          "dispersionType": "Full Range",
+          "unitOfMeasure": "score on a scale",
+          "timeFrame": "Baseline, 12 months",
+          "groups": [
+            {
+              "id": "OG000",
+              "title": "Treatment Arm",
+              "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months."
+            },
+            {
+              "id": "OG001",
+              "title": "Treatment Placebo Arm",
+              "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study."
+            }
+          ],
+          "denoms": [
+            {
+              "units": "Participants",
+              "counts": [
+                {
+                  "groupId": "OG000",
+                  "value": "2"
+                },
+                {
+                  "groupId": "OG001",
+                  "value": "0"
+                }
+              ]
+            }
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {
+                      "groupId": "OG000",
+                      "value": "24.5",
+                      "lowerLimit": "3",
+                      "upperLimit": "46"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "adverseEventsModule": {
+      "frequencyThreshold": "0",
+      "timeFrame": "1 year",
+      "eventGroups": [
+        {
+          "id": "EG000",
+          "title": "Treatment Arm",
+          "description": "Ocrelizumab will be administered 3 times over a 1 year study period. Subjects will receive a dose of 300 mg at week 0 (baseline) and again at week 2. The final dose of 600 mg will be administered at week 24.\n\nOcrelizumab: Subjects will be randomized in a 1:1 fashion to receive infusion of Ocrelizumab (2 doses at 300 mg and 1 dose at 600 mg) or matched placebo. The 2 300 mg doses will be administered at day 2 and day 14. The 600 mg dose will be administered during the 6 month visit. The drug will be administered via infusion three times throughout the trial period: after the initial screening, at two weeks from initial infusion, and at 6 months.",
+          "deathsNumAffected": 0,
+          "deathsNumAtRisk": 2,
+          "seriousNumAffected": 0,
+          "seriousNumAtRisk": 2,
+          "otherNumAffected": 2,
+          "otherNumAtRisk": 2
+        },
+        {
+          "id": "EG001",
+          "title": "Treatment Placebo Arm",
+          "description": "Saline will be used as the matching placebo\n\nSaline: This will be the matching placebo used in the study.",
+          "deathsNumAffected": 0,
+          "deathsNumAtRisk": 1,
+          "seriousNumAffected": 0,
+          "seriousNumAtRisk": 1,
+          "otherNumAffected": 1,
+          "otherNumAtRisk": 1
+        }
+      ],
+      "otherEvents": [
+        {
+          "term": "rash",
+          "organSystem": "Skin and subcutaneous tissue disorders",
+          "assessmentType": "SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 2
+            },
+            {
+              "groupId": "EG001",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 1
+            }
+          ]
+        },
+        {
+          "term": "Elevated transaminases",
+          "organSystem": "Hepatobiliary disorders",
+          "assessmentType": "SYSTEMATIC_ASSESSMENT",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 1,
+              "numAffected": 1,
+              "numAtRisk": 2
+            },
+            {
+              "groupId": "EG001",
+              "numEvents": 0,
+              "numAffected": 0,
+              "numAtRisk": 1
+            }
+          ]
+        },
+        {
+          "term": "Seizures",
+          "organSystem": "Nervous system disorders",
+          "assessmentType": "SYSTEMATIC_ASSESSMENT",
+          "notes": "related to encephalitis - unrelated to treatment",
+          "stats": [
+            {
+              "groupId": "EG000",
+              "numEvents": 2,
+              "numAffected": 2,
+              "numAtRisk": 2
+            },
+            {
+              "groupId": "EG001",
+              "numEvents": 0,
+              "numAffected": 0,
+              "numAtRisk": 1
+            }
+          ]
+        }
+      ]
+    },
+    "moreInfoModule": {
+      "limitationsAndCaveats": {
+        "description": "Early termination of trial due to inadequate recruitment. Small numbers of subjects prevents definitive analysis of results"
+      },
+      "certainAgreement": {
+        "piSponsorEmployee": false,
+        "restrictiveAgreement": false
+      },
+      "pointOfContact": {
+        "title": "Dr. Steven Vernino",
+        "organization": "UT Southwestern, Dept of Neurology",
+        "email": "steven.vernino@utsouthwestern.edu",
+        "phone": "214-645-8800"
+      }
+    }
+  },
+  "documentSection": {
+    "largeDocumentModule": {
+      "largeDocs": [
+        {
+          "typeAbbrev": "Prot_SAP",
+          "hasProtocol": true,
+          "hasSap": true,
+          "hasIcf": false,
+          "label": "Study Protocol and Statistical Analysis Plan",
+          "date": "2019-03-21",
+          "uploadDate": "2021-08-25T10:52",
+          "filename": "Prot_SAP_000.pdf",
+          "size": 944697
+        }
+      ]
+    }
+  },
+  "derivedSection": {
+    "miscInfoModule": {
+      "versionHolder": "2026-11-03",
+      "submissionTracking": {
+        "firstMcpInfo": {
+          "postDateStruct": {
+            "date": "2021-09-22",
+            "type": "ACTUAL"
+          }
+        }
+      }
+    },
+    "conditionBrowseModule": {
+      "meshes": [
+        {
+          "id": "D020274",
+          "term": "Autoimmune Diseases of the Nervous System"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D009422",
+          "term": "Nervous System Diseases"
+        },
+        {
+          "id": "D001327",
+          "term": "Autoimmune Diseases"
+        },
+        {
+          "id": "D007154",
+          "term": "Immune System Diseases"
+        }
+      ]
+    },
+    "interventionBrowseModule": {
+      "meshes": [
+        {
+          "id": "C533411",
+          "term": "ocrelizumab"
+        },
+        {
+          "id": "D012965",
+          "term": "Sodium Chloride"
+        }
+      ],
+      "ancestors": [
+        {
+          "id": "D002712",
+          "term": "Chlorides"
+        },
+        {
+          "id": "D006851",
+          "term": "Hydrochloric Acid"
+        },
+        {
+          "id": "D017606",
+          "term": "Chlorine Compounds"
+        },
+        {
+          "id": "D007287",
+          "term": "Inorganic Chemicals"
+        },
+        {
+          "id": "D017670",
+          "term": "Sodium Compounds"
+        }
+      ]
+    }
+  },
+  "hasResults": true
+}
