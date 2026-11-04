@@ -9,8 +9,8 @@ from datetime import date
 from pathlib import Path
 
 _WS = re.compile(r"\s+")
-_MONTH = re.compile(r"^(\d{4})-(\d{2})$")
-_DAY = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+_MONTH = re.compile(r"(\d{4})-(\d{2})")
+_DAY = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 
 
 def norm_text(s: str | None) -> str | None:
@@ -31,7 +31,7 @@ def load_aliases(path: Path) -> dict[str, str]:
     if not path.is_file():
         return {}
     aliases: dict[str, str] = {}
-    with path.open(newline="", encoding="utf-8") as fh:
+    with path.open(newline="", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
             raw, normalized = row.get("raw"), norm_text(row.get("normalized"))
             if raw is None or normalized is None:
@@ -52,9 +52,9 @@ def parse_ct_date(s: str | None) -> tuple[date | None, str | None]:
     if s is None:
         return None, None
     try:
-        if m := _MONTH.match(s):
+        if m := _MONTH.fullmatch(s):
             return date(int(m[1]), int(m[2]), 1), "month"
-        if m := _DAY.match(s):
+        if m := _DAY.fullmatch(s):
             return date(int(m[1]), int(m[2]), int(m[3])), "day"
     except ValueError as exc:
         raise ValueError(f"invalid ClinicalTrials.gov date: {s!r}") from exc

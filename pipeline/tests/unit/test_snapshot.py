@@ -101,3 +101,13 @@ def test_list_snapshots_filters_and_sorts(tmp_path: Path) -> None:
     result = list_snapshots(tmp_path)
     assert [d for d, _ in result] == [date(2026, 1, 2), date(2026, 3, 9), date(2026, 11, 4)]
     assert result[0][1] == tmp_path / "2026-01-02.jsonl.gz"
+
+
+def test_list_snapshots_missing_dir_is_empty(tmp_path: Path) -> None:
+    assert list_snapshots(tmp_path / "nope") == []
+
+
+def test_list_snapshots_ignores_newline_and_non_ascii_digits(tmp_path: Path) -> None:
+    (tmp_path / "2026-11-04.jsonl.gz\n").write_bytes(b"")
+    (tmp_path / "٢٠٢٦-١١-٠٤.jsonl.gz").write_bytes(b"")
+    assert list_snapshots(tmp_path) == []

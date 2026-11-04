@@ -50,3 +50,15 @@ def test_load_aliases_header_only_and_missing(tmp_path: Path) -> None:
     p.write_text("raw,normalized\n")
     assert load_aliases(p) == {}
     assert load_aliases(tmp_path / "missing.csv") == {}
+
+
+def test_load_aliases_with_bom(tmp_path: Path) -> None:
+    p = tmp_path / "bom.csv"
+    p.write_bytes("raw,normalized\nRoche  Ltd,Roche\n".encode("utf-8-sig"))
+    assert apply_alias("roche ltd", load_aliases(p)) == "Roche"
+
+
+@pytest.mark.parametrize("s", ["2023-05\n", "2023-05-01\n"])
+def test_parse_ct_date_rejects_trailing_newline(s: str) -> None:
+    with pytest.raises(ValueError):
+        parse_ct_date(s)

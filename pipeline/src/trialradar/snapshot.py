@@ -14,7 +14,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-_NAME_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})\.jsonl\.gz$")
+_NAME_RE = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})\.jsonl\.gz")
 
 
 def write_snapshot(raw_dir: Path, day: date, studies: Iterable[dict[str, Any]]) -> Path:
@@ -63,10 +63,12 @@ def read_snapshot(path: Path) -> list[dict[str, Any]]:
 
 
 def list_snapshots(raw_dir: Path) -> list[tuple[date, Path]]:
-    """Snapshots in ``raw_dir`` sorted by date; non-matching names are ignored."""
+    """Snapshots sorted by date; non-matching names ignored; missing dir yields ``[]``."""
     found: list[tuple[date, Path]] = []
+    if not raw_dir.is_dir():
+        return found
     for path in raw_dir.iterdir():
-        m = _NAME_RE.match(path.name)
+        m = _NAME_RE.fullmatch(path.name)
         if not m or not path.is_file():
             continue
         try:
