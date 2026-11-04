@@ -30,7 +30,7 @@ from typing import Any
 import polars as pl
 
 from trialradar.diff import TRIAL_CHANGE_SCHEMA
-from trialradar.snapshot import _fsync_dir
+from trialradar.snapshot import _fsync_dir, write_text_atomic
 from trialradar.tables import SCHEMAS, Tables
 from trialradar.tracked import SNAPSHOT_SCHEMA
 
@@ -72,21 +72,6 @@ def _write_parquet(df: pl.DataFrame, path: Path) -> None:
             tmp.unlink()
         raise
     _fsync_dir(path.parent)
-
-
-def _write_text(text: str, path: Path) -> None:
-    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
-    tmp = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(text)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
-    except BaseException:
-        with contextlib.suppress(FileNotFoundError):
-            tmp.unlink()
-        raise
 
 
 def _check_schema(df: pl.DataFrame, schema: dict[str, pl.DataType], what: str) -> None:
@@ -144,6 +129,30 @@ class Store:
                 "from the raw snapshots to regenerate the state"
             )
 
+    def committed_date(self) -> date | None:
+        """Date of the newest committed state (``current/``, or ``.state-old``
+        while a crashed same-day swap left ``current/`` missing)."""
+        self._require_current_valid()
+        current = self.root / "current"
+        found = _read_state_dir(current if current.exists() else self.root / _OLD_DIR)
+        return found[1] if found else None
+
+    def require_no_rewind(self, day: date) -> None:
+        """Raise ``ValueError`` if ``day`` is before the committed state's date.
+
+        A same-day rerun is allowed. ``save_state`` uses the same check."""
+        existing = self.committed_date()
+        if existing is not None and existing > day:
+            raise ValueError(f"refusing to rewind state from {existing} to {day}")
+
+    def wipe(self) -> None:
+        """Remove every store-owned entry under the root; anything else (``.git``) stays."""
+        for name in ("current", "previous", "history", _OLD_DIR):
+            shutil.rmtree(self.root / name, ignore_errors=True)
+        if self.root.is_dir():
+            for stray in self.root.glob(".state-new-*"):
+                shutil.rmtree(stray, ignore_errors=True)
+
     def save_state(self, tables: Tables, day: date, data_timestamp: str) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
         current, previous = self.root / "current", self.root / "previous"
@@ -155,10 +164,9 @@ class Store:
         if current.exists():
             # A valid current supersedes any .state-old (left by a completed swap).
             shutil.rmtree(old, ignore_errors=True)
+        self.require_no_rewind(day)
         existing = _read_state_dir(current)
         existing_date = existing[1] if existing else None
-        if existing_date is not None and existing_date > day:
-            raise ValueError(f"refusing to rewind state from {existing_date} to {day}")
 
         for stray in self.root.glob(".state-new-*"):
             shutil.rmtree(stray, ignore_errors=True)
@@ -169,7 +177,7 @@ class Store:
             for name in _TABLE_NAMES:
                 _write_parquet(getattr(tables, name), new / f"{name}.parquet")
             meta = {"state_date": day.isoformat(), "data_timestamp": data_timestamp}
-            _write_text(json.dumps(meta), new / _STATE_FILE)
+            write_text_atomic(json.dumps(meta), new / _STATE_FILE)
             _fsync_dir(new)
 
             if existing_date is not None and existing_date < day:

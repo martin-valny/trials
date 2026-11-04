@@ -111,3 +111,76 @@ def test_list_snapshots_ignores_newline_and_non_ascii_digits(tmp_path: Path) -> 
     (tmp_path / "2026-11-04.jsonl.gz\n").write_bytes(b"")
     (tmp_path / "٢٠٢٦-١١-٠٤.jsonl.gz").write_bytes(b"")
     assert list_snapshots(tmp_path) == []
+
+
+# ----- staging, promotion, quarantine, sidecars -----
+
+
+def test_stage_then_promote(tmp_path: Path) -> None:
+    from trialradar.snapshot import STAGING_DIR, promote_staged, read_sidecar, stage_snapshot
+
+    (tmp_path / STAGING_DIR).mkdir()
+    (tmp_path / STAGING_DIR / "leftover.jsonl.gz").write_bytes(b"x")
+    studies = [make_study("NCT00000001")]
+    staged = stage_snapshot(tmp_path, DAY, studies, {"data_timestamp": "ts"})
+    assert staged == tmp_path / STAGING_DIR / "2026-11-04.jsonl.gz"
+    assert sorted(p.name for p in (tmp_path / STAGING_DIR).iterdir()) == [
+        "2026-11-04.jsonl.gz",
+        "2026-11-04.meta.json",
+    ]
+    assert list_snapshots(tmp_path) == []
+
+    promote_staged(tmp_path, DAY)
+
+    final = tmp_path / "2026-11-04.jsonl.gz"
+    assert list_snapshots(tmp_path) == [(DAY, final)]
+    assert read_snapshot(final) == studies
+    assert read_sidecar(final) == {"data_timestamp": "ts"}
+    assert not any((tmp_path / STAGING_DIR).iterdir())
+
+
+def test_quarantine_staged_uses_failed_names(tmp_path: Path) -> None:
+    from trialradar.snapshot import quarantine_staged, read_sidecar, stage_snapshot
+
+    stage_snapshot(tmp_path, DAY, [make_study()], {"data_timestamp": "ts"})
+    quarantine_staged(tmp_path, DAY)
+    assert sorted(p.name for p in tmp_path.iterdir() if p.is_file()) == [
+        "2026-11-04.failed.jsonl.gz",
+        "2026-11-04.failed.meta.json",
+    ]
+    assert list_snapshots(tmp_path) == []
+    assert read_sidecar(tmp_path / "2026-11-04.failed.jsonl.gz") == {"data_timestamp": "ts"}
+
+
+def test_promote_moves_snapshot_before_sidecar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from trialradar.snapshot import promote_staged, stage_snapshot
+
+    stage_snapshot(tmp_path, DAY, [make_study()], {})
+    moved: list[str] = []
+    real = os.replace
+    monkeypatch.setattr(os, "replace", lambda s, d: (moved.append(Path(d).name), real(s, d)))
+    promote_staged(tmp_path, DAY)
+    assert moved == ["2026-11-04.jsonl.gz", "2026-11-04.meta.json"]
+
+
+def test_read_sidecar_missing_or_bad(tmp_path: Path) -> None:
+    from trialradar.snapshot import read_sidecar
+
+    snap = tmp_path / "2026-11-04.jsonl.gz"
+    assert read_sidecar(snap) == {}
+    (tmp_path / "2026-11-04.meta.json").write_text("[1]")
+    assert read_sidecar(snap) == {}
+    (tmp_path / "2026-11-04.meta.json").write_text("{bad")
+    assert read_sidecar(snap) == {}
+
+
+def test_write_text_atomic(tmp_path: Path) -> None:
+    from trialradar.snapshot import write_text_atomic
+
+    target = tmp_path / "a.json"
+    write_text_atomic("one", target)
+    write_text_atomic("two", target)
+    assert target.read_text() == "two"
+    assert [p.name for p in tmp_path.iterdir()] == ["a.json"]

@@ -391,6 +391,7 @@ def test_each_stage_logs_one_json_line(
     env.run(FakeClient(TS1, day1_studies(cfg)), D1)
     lines = [json.loads(line) for line in capsys.readouterr().err.splitlines() if line]
     assert [ln["stage"] for ln in lines] == [
+        "rewind_check",
         "data_timestamp",
         "fetch",
         "snapshot",
@@ -420,10 +421,10 @@ def test_failed_stage_logs_its_error(
     client = FakeClient(TS1, day1_studies(cfg), fail_on="iter_studies", exc=CtGovError("x"))
     env.run(client, D1)
     lines = [json.loads(line) for line in capsys.readouterr().err.splitlines() if line]
-    assert [ln["stage"] for ln in lines] == ["data_timestamp", "fetch", "run_log"]
-    assert lines[1]["error"] == "CtGovError: x"
-    assert lines[2]["status"] == "failed"
-    assert lines[2]["warnings"] == ["CtGovError: x"]
+    assert [ln["stage"] for ln in lines] == ["rewind_check", "data_timestamp", "fetch", "run_log"]
+    assert lines[2]["error"] == "CtGovError: x"
+    assert lines[3]["status"] == "failed"
+    assert lines[3]["warnings"] == ["CtGovError: x"]
 
 
 def test_snapshot_is_gzip_jsonl(env: Env, cfg: AreaConfig) -> None:
@@ -440,3 +441,97 @@ def test_store_path_is_untouched_when_raw_dir_is_relative(
     env.raw_dir = Path("raw")
     assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
     assert (tmp_path / "raw" / "2026-03-01.jsonl.gz").exists()
+
+
+# ----- promotion only after the store write; no rewinds (fix round 1) -----
+
+
+def test_past_date_force_after_a_later_day_fails_before_fetching(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    from trialradar.pipeline import rebuild
+    from trialradar.store import Store
+
+    two_days(env, cfg)
+    raw_before, store_before = tree_bytes(env.raw_dir), store_tree(env)
+    site_before = tree_bytes(env.site_dir)
+    client = FakeClient(TS3, day2_studies(cfg))
+
+    result = env.run(client, D1, force=True)
+
+    assert result.status == "failed"
+    assert client.fetches == 0
+    assert any("2026-03-02" in e and "2026-03-01" in e for e in result.errors)
+    assert tree_bytes(env.raw_dir) == raw_before
+    assert store_tree(env) == store_before
+    assert tree_bytes(env.site_dir) == site_before
+    assert env.store.run_log()["status"].to_list() == ["success", "success", "failed"]
+
+    rebuild(cfg, tmp_path / "rb", env.raw_dir, tmp_path / "rb-site", env.aliases_dir)
+    assert Store(tmp_path / "rb").changes().equals(env.store.changes())
+    assert Store(tmp_path / "rb").snapshots().equals(env.store.snapshots())
+
+
+def test_backfilling_a_network_failed_day_is_refused(env: Env, cfg: AreaConfig) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    down = FakeClient(TS2, day2_studies(cfg), fail_on="iter_studies", exc=CtGovError("HTTP 503"))
+    assert env.run(down, D2).status == "failed"
+    assert env.run(FakeClient(TS3, day2_studies(cfg)), D3).status == "success"
+    raw_before = tree_bytes(env.raw_dir)
+
+    backfill = FakeClient("2026-03-03T09:00:00", day2_studies(cfg))
+    result = env.run(backfill, D2)
+
+    assert result.status == "failed"
+    assert backfill.fetches == 0
+    assert tree_bytes(env.raw_dir) == raw_before
+    assert not (env.raw_dir / "2026-03-02.jsonl.gz").exists()
+
+
+def test_store_failure_on_same_day_rerun_keeps_the_good_snapshot(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from trialradar.store import Store
+
+    two_days(env, cfg)
+    good = {
+        n: (env.raw_dir / n).read_bytes() for n in ("2026-03-02.jsonl.gz", "2026-03-02.meta.json")
+    }
+    newer = day2_studies(cfg)
+    newer[0]["protocolSection"]["designModule"]["enrollmentInfo"]["count"] = 4321
+
+    def boom(self: Store, *args: Any, **kwargs: Any) -> None:
+        raise OSError("disk full")
+
+    with monkeypatch.context() as m:
+        m.setattr(Store, "save_state", boom)
+        result = env.run(FakeClient("2026-03-02T12:00:00", newer), D2)
+
+    assert result.status == "failed"
+    for name, data in good.items():
+        assert (env.raw_dir / name).read_bytes() == data
+    assert not (env.raw_dir / "2026-03-02.failed.jsonl.gz").exists()
+    staged = env.raw_dir / ".incoming" / "2026-03-02.jsonl.gz"
+    assert read_snapshot(staged) == newer
+
+    assert env.run(FakeClient(TS3, day2_studies(cfg)), D3).status == "success"
+    incoming = env.raw_dir / ".incoming"
+    assert not incoming.exists() or not any(incoming.iterdir())
+
+
+def test_snapshot_is_promoted_before_its_sidecar(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    moves: list[str] = []
+    real = os.replace
+
+    def spy(src: Any, dst: Any) -> None:
+        if Path(dst).parent == env.raw_dir:
+            moves.append(Path(dst).name)
+        real(src, dst)
+
+    monkeypatch.setattr(os, "replace", spy)
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    assert moves == ["2026-03-01.jsonl.gz", "2026-03-01.meta.json"]

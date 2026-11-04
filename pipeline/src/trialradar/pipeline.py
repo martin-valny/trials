@@ -1,20 +1,20 @@
 """Daily run orchestration and rebuild from raw snapshots (spec sections 4.3, 6, 7).
 
-Integrity rule: bad data never replaces good data. Until the quality gate has
-passed, the only thing written is the raw snapshot, and that goes to a staging
-directory (``raw/.incoming/``). After the gate it is promoted to
-``raw/YYYY-MM-DD.jsonl.gz``; if the data itself is bad (schema, normalize or
-quality errors) it is quarantined as ``raw/YYYY-MM-DD.failed.jsonl.gz`` instead,
-which ``list_snapshots`` ignores, so it is never uploaded or replayed. Every
-failure appends a ``failed`` run_log row and leaves state, history and site as
-they were.
+Integrity rule: bad data never replaces good data. A run for a day before the
+committed state fails before fetching. Until the store has saved the run's data,
+the only thing written is the raw snapshot, and that goes to a staging directory
+(``raw/.incoming/``). Once state and history are written it is promoted to
+``raw/YYYY-MM-DD.jsonl.gz``, so every raw snapshot matches what was stored. If
+the data itself is bad (schema, normalize or quality errors) it is quarantined as
+``raw/YYYY-MM-DD.failed.jsonl.gz`` instead, which ``list_snapshots`` ignores, so
+it is never uploaded or replayed. Every failure appends a ``failed`` run_log row;
+failures before the store write leave state, history, site and the promoted raw
+snapshots as they were.
 """
 
 from __future__ import annotations
 
 import json
-import os
-import shutil
 import sys
 import time
 import uuid
@@ -34,18 +34,21 @@ from trialradar.diff import diff
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.relevance import filter_relevant
-from trialradar.snapshot import list_snapshots, read_snapshot, write_snapshot
-from trialradar.store import RUN_LOG_SCHEMA, Store, _write_text
+from trialradar.snapshot import (
+    list_snapshots,
+    promote_staged,
+    quarantine_staged,
+    read_sidecar,
+    read_snapshot,
+    stage_snapshot,
+)
+from trialradar.store import RUN_LOG_SCHEMA, Store
 from trialradar.tables import Tables
 from trialradar.textnorm import Aliases, load_alias_set
 from trialradar.tracked import registry_dates, snapshot_frame, tracked_state
 
 Status = Literal["success", "skipped", "failed"]
-_STAGING = ".incoming"
 _ROW_DROP = "row_drop_error:"
-# Entries ``Store`` owns under its root; rebuild removes only these, so a store
-# root that is also a git working tree keeps its ``.git``.
-_STORE_ENTRIES = ("current", "previous", "history", ".state-old")
 
 
 @dataclass
@@ -98,45 +101,6 @@ def _stage(name: str, **extra: Any) -> Iterator[dict[str, Any]]:
         if error is not None:
             line["error"] = error
         print(json.dumps(line, ensure_ascii=False, default=str), file=sys.stderr, flush=True)
-
-
-# ----- raw snapshot staging -----
-
-
-def _paths(raw_dir: Path, day: date, suffix: str = "") -> tuple[Path, Path]:
-    stem = day.isoformat() + suffix
-    return raw_dir / f"{stem}.jsonl.gz", raw_dir / f"{stem}.meta.json"
-
-
-def _stage_snapshot(
-    raw_dir: Path, day: date, raw: list[dict[str, Any]], meta: dict[str, Any]
-) -> None:
-    staging = raw_dir / _STAGING
-    shutil.rmtree(staging, ignore_errors=True)  # leftovers of an earlier failed/crashed run
-    write_snapshot(staging, day, raw)
-    _write_text(json.dumps(meta, sort_keys=True) + "\n", _paths(staging, day)[1])
-
-
-def _move_staged(raw_dir: Path, day: date, suffix: str) -> None:
-    """Move the staged snapshot to its final (``""``) or quarantine name.
-
-    The sidecar moves first, so a crash in between never leaves a snapshot
-    without its timestamp."""
-    src_snap, src_meta = _paths(raw_dir / _STAGING, day)
-    dst_snap, dst_meta = _paths(raw_dir, day, suffix)
-    if src_meta.exists():
-        os.replace(src_meta, dst_meta)
-    if src_snap.exists():
-        os.replace(src_snap, dst_snap)
-
-
-def _read_sidecar(snapshot: Path) -> dict[str, Any]:
-    path = snapshot.with_name(snapshot.name.removesuffix(".jsonl.gz") + ".meta.json")
-    try:
-        meta = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
-    return meta if isinstance(meta, dict) else {}
 
 
 # ----- shared stage helpers -----
@@ -254,9 +218,10 @@ def run(
 ) -> RunResult:
     """One daily run; never raises for a failed run (see the module docstring).
 
-    Stage order: version check (skip if unchanged) -> fetch -> staged snapshot ->
-    schema check -> relevance filter -> normalize -> previous state -> quality
-    gate -> promote snapshot -> diff -> store -> export -> success run_log row.
+    Stage order: rewind check -> version check (skip if unchanged) -> fetch ->
+    staged snapshot -> schema check -> relevance filter -> normalize -> previous
+    state -> quality gate -> diff -> store -> promote snapshot -> export ->
+    success run_log row.
     """
     clock = now or _utcnow
     started_at, t0 = clock(), time.monotonic()
@@ -266,6 +231,11 @@ def run(
     fetched = 0
     staged = False
     try:
+        with _stage("rewind_check") as info:
+            # A run for a day before the committed state would overwrite that
+            # day's good snapshot and then be refused by save_state: fail first.
+            store.require_no_rewind(day)
+            info["rows"] = 0
         with _stage("data_timestamp") as info:
             ts = client.data_timestamp()
             last = store.last_success_timestamp()
@@ -282,7 +252,7 @@ def run(
         with _stage("snapshot") as info:
             fetched_at = clock().isoformat(timespec="seconds") + "Z"
             meta = {"data_timestamp": ts, "fetched_at": fetched_at, "accept_drop": accept_drop}
-            _stage_snapshot(raw_dir, day, raw, meta)
+            stage_snapshot(raw_dir, day, raw, meta)
             staged = True
             info["rows"] = len(raw)
 
@@ -295,10 +265,14 @@ def run(
         prev_count = (prev.trial.height or None) if prev else None
         warnings = _gate(raw, relevant, tables, prev_count, cfg, accept_drop)
 
-        _move_staged(raw_dir, day, "")  # the data passed the gate: keep it for rebuild
-        staged = False
+        staged = False  # past the gate: a later failure is not the data's fault
         changes, snaps = _changes(prev, tables, cfg, load_alias_set(aliases_dir), day)
         _persist(store, tables, day, ts, changes, snaps)
+        # Promote only once the store holds this data, so a raw snapshot always
+        # matches what was stored (rebuild replays it); before export, so a failed
+        # export (the data was fine) keeps it. A diff/store failure leaves it in
+        # staging, which the next run clears.
+        promote_staged(raw_dir, day)
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -332,23 +306,16 @@ def _record_failure(
     """Best effort: quarantine bad data and append a ``failed`` row; never raises.
 
     A snapshot that failed for a non-data reason (store) stays in staging and is
-    overwritten by the next run of that day."""
+    cleared by the next run."""
     if quarantine:
         with suppress(Exception):
-            _move_staged(raw_dir, day, ".failed")
+            quarantine_staged(raw_dir, day)
     with suppress(Exception), _stage("run_log", status="failed") as info:
         store.append_run(row)
         info["rows"], info["warnings"] = 1, json.loads(row["warnings"])
 
 
 # ----- rebuild -----
-
-
-def _wipe_store(root: Path) -> None:
-    for name in _STORE_ENTRIES:
-        shutil.rmtree(root / name, ignore_errors=True)
-    for stray in root.glob(".state-new-*"):
-        shutil.rmtree(stray, ignore_errors=True)
 
 
 def rebuild(
@@ -363,17 +330,18 @@ def rebuild(
     Days replay in date order through the same gate as ``run`` (honouring an
     ``accept_drop`` recorded in the sidecar); a day that fails it is skipped with
     a ``rebuild_skip`` log line. Each replayed day gets a synthetic ``success``
-    run_log row. Only store-owned entries under ``store_root`` are removed.
+    run_log row. Only store-owned entries under ``store_root`` are removed
+    (``Store.wipe``).
     Errors writing the store or site propagate."""
     aliases_dir = aliases_dir if aliases_dir is not None else cfg.aliases_dir
     aliases = load_alias_set(aliases_dir)
-    _wipe_store(store_root)
     store = Store(store_root)
+    store.wipe()
     prev: Tables | None = None
     last: tuple[Tables, date] | None = None
     for day, path in list_snapshots(raw_dir):
         t0 = time.monotonic()
-        meta = _read_sidecar(path)
+        meta = read_sidecar(path)
         try:
             with _stage("read_snapshot", day=day.isoformat()) as info:
                 raw = read_snapshot(path)

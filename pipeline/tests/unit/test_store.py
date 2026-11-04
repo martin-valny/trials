@@ -394,3 +394,31 @@ def test_crashed_rotation_recovers_from_previous(tmp_path: Path) -> None:
     s.save_state(tables_with(6), D6, "t6")
     prev = _read_state_dir(tmp_path / "previous")
     assert prev is None or prev[1] == D4
+
+
+# ----- wipe and rewind guard -----
+
+
+def test_wipe_removes_only_store_entries(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+    for name in ("current", "previous", "history", ".state-old", ".state-new-abc", ".git"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "f").write_text("x")
+    (tmp_path / "README").write_text("keep")
+    store.wipe()
+    assert sorted(p.name for p in tmp_path.iterdir()) == [".git", "README"]
+    Store(tmp_path / "missing").wipe()  # a missing root is fine
+
+
+def test_require_no_rewind(tmp_path: Path) -> None:
+    from trialradar.tables import Tables
+
+    store = Store(tmp_path)
+    store.require_no_rewind(date(2026, 1, 1))  # empty store: anything goes
+    store.save_state(Tables.empty(), date(2026, 1, 2), "ts")
+    store.require_no_rewind(date(2026, 1, 2))  # same day is a rerun
+    store.require_no_rewind(date(2026, 1, 3))
+    with pytest.raises(ValueError, match="refusing to rewind state from 2026-01-02 to 2026-01-01"):
+        store.require_no_rewind(date(2026, 1, 1))
+    with pytest.raises(ValueError, match="refusing to rewind"):
+        store.save_state(Tables.empty(), date(2026, 1, 1), "ts")
