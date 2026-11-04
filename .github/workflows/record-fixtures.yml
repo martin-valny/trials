@@ -1,0 +1,35 @@
+name: record-fixtures
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pipeline
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - run: uv sync --locked
+      - run: uv run python scripts/record_fixtures.py
+      - run: uv run pytest -m recorded -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixtures
+          path: pipeline/tests/fixtures/
+      - name: Commit fixtures
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898573+github-actions[bot]@users.noreply.github.com"
+          git add pipeline/tests/fixtures/
+          git commit -m "test: record real ClinicalTrials.gov fixtures"
+          git push

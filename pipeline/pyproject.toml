@@ -28,8 +28,11 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["live: tests that hit the real ClinicalTrials.gov API"]
-addopts = "-m 'not live'"
+markers = [
+    "live: tests that hit the real ClinicalTrials.gov API",
+    "recorded: tests that need fixtures recorded by scripts/record_fixtures.py",
+]
+addopts = "-m 'not live and not recorded'"
 
 [tool.ruff]
 line-length = 100
