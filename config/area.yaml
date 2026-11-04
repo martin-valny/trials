@@ -1,0 +1,38 @@
+name: neuroimmunology
+conditions:
+  - label: Multiple sclerosis
+    synonyms: ["multiple sclerosis", "MS", "relapsing remitting multiple sclerosis"]
+  - label: NMOSD
+    synonyms: ["neuromyelitis optica", "NMOSD", "Devic"]
+  - label: MOGAD
+    synonyms: ["MOG antibody disease", "MOGAD", "myelin oligodendrocyte glycoprotein"]
+  - label: Myasthenia gravis
+    synonyms: ["myasthenia gravis", "MG"]
+  - label: CIDP
+    synonyms: ["chronic inflammatory demyelinating polyneuropathy", "CIDP"]
+  - label: Autoimmune encephalitis
+    synonyms: ["autoimmune encephalitis", "anti-NMDA receptor encephalitis", "limbic encephalitis"]
+study_type: INTERVENTIONAL
+phases: [EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, NA]
+tracked_fields:
+  - overall_status
+  - why_stopped
+  - phases
+  - enrollment
+  - enrollment_type
+  - start_date
+  - primary_completion_date
+  - completion_date
+  - primary_outcomes
+  - secondary_outcomes
+  - lead_sponsor
+  - interventions
+  - conditions
+  - site_countries
+  - site_count
+thresholds:
+  enrollment_rel_change: 0.20
+  date_slip_days: 90
+  row_drop_warn: 0.10
+  max_null_rate: 0.0
+aliases_dir: aliases
