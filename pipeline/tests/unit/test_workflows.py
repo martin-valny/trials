@@ -120,11 +120,14 @@ def test_site_build_uses_repo_base_path(daily: dict[str, Any]) -> None:
     assert "npm run build" in build["run"]
 
 
-def test_keepalive_is_pinned_to_a_tag_and_always_runs(daily: dict[str, Any]) -> None:
+def test_keepalive_uses_the_gh_cli_and_always_runs(daily: dict[str, Any]) -> None:
     job = daily["jobs"]["keepalive"]
     assert job["if"] == "always()"
-    uses = named(daily, "Keepalive")["uses"]
-    assert uses.startswith("gautamkrishnar/keepalive-workflow@v")
+    assert job["permissions"] == {"actions": "write"}
+    step = named(daily, "Keepalive")
+    assert "uses" not in step  # no third-party action
+    assert "gh workflow enable daily.yml" in step["run"]
+    assert step["env"]["GH_TOKEN"] == "${{ github.token }}"
 
 
 def test_pipeline_invocation_uses_repo_relative_paths(daily: dict[str, Any]) -> None:
