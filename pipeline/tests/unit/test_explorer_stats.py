@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.preprocessing import normalize
 
-from trialradar.explorer.stats import neighbourhood_lift
+from trialradar.explorer.stats import _neighbour_lists, neighbourhood_lift
 
 N, D = 200, 20
 
@@ -49,7 +49,14 @@ def test_same_drug_neighbours_excluded():
     for i in range(40):
         drugs[f"T{i}"] = frozenset({"shared"})
     r = _run(x, s, drugs)
-    assert r.verdict != "clustered"
+    assert r.verdict == "chance"
+    assert r.lift is not None and r.lift < 0.05
+    assert r.n_averaged == 40 and r.n_short == 0
+    idx, mask = _neighbour_lists(
+        sp.csr_matrix(normalize(x)), [f"T{i}" for i in range(N)], drugs, 10
+    )
+    assert (mask[:40].sum(axis=1) == 10).all()
+    assert (idx[:40][mask[:40]] >= 40).all()
 
 
 def test_insufficient_below_min():
@@ -89,3 +96,53 @@ def test_pool_restricts_rows_and_zero_rows_have_no_neighbours():
         min_successes=5,
     )
     assert r.n_pool == 55
+    assert r.n_succeeded == sum(s[5:])
+    assert r.success_rate == r.n_succeeded / 55
+    pid = [f"T{i}" for i in range(5, 60)]
+    _, mask = _neighbour_lists(sp.csr_matrix(x[5:]), pid, _unique_drugs(60), 5)
+    assert not mask[0].any()
+    assert mask[1:].all()
+
+
+def test_dense_same_drug_cluster_still_gets_k_neighbours():
+    rng = np.random.default_rng(8)
+    x = rng.normal(size=(500, D))
+    x[:100] = 5 * np.ones(D) + 0.1 * rng.normal(size=(100, D))
+    drugs = _unique_drugs(500)
+    for i in range(100):
+        drugs[f"T{i}"] = frozenset({"P"})
+    idx, mask = _neighbour_lists(
+        sp.csr_matrix(normalize(x)), [f"T{i}" for i in range(500)], drugs, 10
+    )
+    assert (mask[:100].sum(axis=1) == 10).all()
+    assert (idx[:100] >= 100).all()
+
+
+def test_self_is_never_a_neighbour_with_duplicate_rows():
+    x = np.ones((6, 3))
+    idx, mask = _neighbour_lists(sp.csr_matrix(normalize(x)), [f"T{i}" for i in range(6)], {}, 3)
+    assert mask.all()
+    for i in range(6):
+        assert i not in idx[i]
+
+
+def test_zero_success_rate_is_insufficient():
+    x = np.random.default_rng(9).normal(size=(40, D))
+    r = _run(x, [False] * 40, _unique_drugs(40), min_successes=0)
+    assert r.verdict == "insufficient" and r.lift is None and r.success_rate == 0.0
+
+
+def test_no_succeeded_row_with_neighbour_is_insufficient():
+    x = np.random.default_rng(10).normal(size=(40, D))
+    x[:5] = 0
+    s = [i < 5 for i in range(40)]
+    r = _run(x, s, _unique_drugs(40), min_successes=1)
+    assert r.verdict == "insufficient" and r.n_averaged == 0 and r.n_short == 5
+
+
+def test_permutations_must_be_positive():
+    import pytest
+
+    x = np.random.default_rng(11).normal(size=(40, D))
+    with pytest.raises(ValueError):
+        _run(x, [i < 10 for i in range(40)], _unique_drugs(40), permutations=0, min_successes=1)

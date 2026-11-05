@@ -13,12 +13,11 @@ from typing import Literal
 import numpy as np
 import numpy.typing as npt
 import scipy.sparse as sp
-from sklearn.neighbors import NearestNeighbors
 
 from trialradar.explorer.outcomes import TrialDrugs
 
-_EXTRA_FACTOR = 5
 _CHUNK = 100
+_CHUNK_ROWS = 512
 
 
 @dataclass(frozen=True)
@@ -30,12 +29,19 @@ class LiftResult:
     n_pool: int
     n_succeeded: int
     success_rate: float | None
+    n_averaged: int = 0  # succeeded rows with >= 1 kept neighbour (they form the average)
+    n_short: int = 0  # succeeded rows with fewer than k kept neighbours (incl. none)
 
 
 def _neighbour_lists(
     matrix: sp.csr_matrix, pool_ids: list[str], drugs: TrialDrugs, k: int
 ) -> tuple[npt.NDArray[np.int64], npt.NDArray[np.bool_]]:
-    """Index matrix (n, k) into pool rows plus a validity mask. Zero rows get none."""
+    """Exact neighbour lists: index matrix (n, k) into pool rows plus a validity mask.
+
+    For each row, every other non-zero pool row is ordered by cosine distance (ties by
+    index) and the first k that are not the row itself and share no drug are kept.
+    Zero rows have no neighbours and are never candidates.
+    """
     n = matrix.shape[0]
     idx = np.zeros((n, k), dtype=np.int64)
     mask = np.zeros((n, k), dtype=bool)
@@ -43,25 +49,28 @@ def _neighbour_lists(
     nz = np.flatnonzero(norms > 0)
     if len(nz) < 2:
         return idx, mask
-    sub = matrix[nz]
-    n_cand = min(len(nz), k + k * _EXTRA_FACTOR + 1)
-    nn = NearestNeighbors(n_neighbors=n_cand, metric="cosine", algorithm="brute").fit(sub)
-    cand = nn.kneighbors(sub, return_distance=False)
-    for r, row in enumerate(cand):
-        me = int(nz[r])
-        mine = drugs.get(pool_ids[me], frozenset())
-        kept = 0
-        for c in row:
-            j = int(nz[c])
-            if j == me:
-                continue
-            if mine and mine & drugs.get(pool_ids[j], frozenset()):
-                continue
-            idx[me, kept] = j
-            mask[me, kept] = True
-            kept += 1
-            if kept == k:
-                break
+    sub = sp.csr_matrix(matrix[nz])
+    sub_t = sub.T.tocsc()
+    dsets = [drugs.get(pool_ids[int(i)], frozenset()) for i in nz]
+    for lo in range(0, len(nz), _CHUNK_ROWS):
+        hi = min(lo + _CHUNK_ROWS, len(nz))
+        dist = 1.0 - (sub[lo:hi] @ sub_t).toarray()
+        for r in range(lo, hi):
+            order = np.argsort(dist[r - lo], kind="stable")
+            me = int(nz[r])
+            mine = dsets[r]
+            kept = 0
+            for c in order:
+                c = int(c)
+                if c == r:
+                    continue
+                if mine and mine & dsets[c]:
+                    continue
+                idx[me, kept] = int(nz[c])
+                mask[me, kept] = True
+                kept += 1
+                if kept == k:
+                    break
     return idx, mask
 
 
@@ -97,6 +106,13 @@ def neighbourhood_lift(
     seed: int,
     min_successes: int,
 ) -> LiftResult:
+    """Lift of neighbour success over the pool success rate, with a permutation null.
+
+    The null mean sits slightly below 1 by construction: a succeeded row's neighbours
+    exclude itself, so the remaining pool has a marginally lower success rate.
+    """
+    if permutations < 1:
+        raise ValueError("permutations must be >= 1")
     rows = np.flatnonzero(np.asarray(pool, dtype=bool))
     n_pool = len(rows)
     lab = np.asarray(succeeded, dtype=bool)[rows]
@@ -107,15 +123,19 @@ def neighbourhood_lift(
 
     pool_ids = [ids[int(i)] for i in rows]
     idx, mask = _neighbour_lists(sp.csr_matrix(matrix[rows]), pool_ids, drugs, k)
+    cnt = mask.sum(axis=1)
+    n_avg = int((lab & (cnt > 0)).sum())
+    n_short = int((lab & (cnt < k)).sum())
     observed = float(_lifts(lab[None, :], idx, mask, rate)[0])
-    if np.isnan(observed):
-        return LiftResult("insufficient", None, None, None, n_pool, n_succ, rate)
-
     rng = np.random.default_rng(seed)
     perm = np.stack([rng.permutation(lab) for _ in range(permutations)])
     base = _lifts(perm, idx, mask, rate)
     base = base[~np.isnan(base)]
+    if np.isnan(observed) or len(base) == 0:
+        return LiftResult("insufficient", None, None, None, n_pool, n_succ, rate, n_avg, n_short)
     lo, hi = (float(v) for v in np.percentile(base, [2.5, 97.5]))
     # Only a lift above the range counts as clustering; below it is not evidence of it.
     verdict: Literal["chance", "clustered"] = "clustered" if observed > hi else "chance"
-    return LiftResult(verdict, observed, float(base.mean()), (lo, hi), n_pool, n_succ, rate)
+    return LiftResult(
+        verdict, observed, float(base.mean()), (lo, hi), n_pool, n_succ, rate, n_avg, n_short
+    )
