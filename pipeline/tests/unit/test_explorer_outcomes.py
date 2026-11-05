@@ -4,7 +4,7 @@ from datetime import date
 
 import polars as pl
 
-from trialradar.explorer.outcomes import in_pool, label_outcomes, top_phase
+from trialradar.explorer.outcomes import can_succeed, in_pool, label_outcomes, top_phase
 
 Row = tuple[str, list[str], str, date | None]
 
@@ -70,10 +70,9 @@ def test_later_trial_must_start_after() -> None:
         [
             ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
             ("B", ["PHASE3"], "COMPLETED", date(2015, 1, 1)),
-            ("C", ["PHASE3"], "COMPLETED", date(2014, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x"), "C": _fs("y")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})
     assert out["A"] == "completed_unknown"
 
 
@@ -164,7 +163,77 @@ def test_top_phase_and_in_pool() -> None:
     assert top_phase(["PHASE2", "PHASE3"]) == "PHASE3"
     assert top_phase(["NA"]) == "NA"
     assert top_phase([]) is None
-    assert in_pool("PHASE3", "stopped")
-    assert not in_pool("PHASE4", "stopped")
-    assert not in_pool("NA", "succeeded")
-    assert not in_pool("PHASE2", "running")
+    assert not in_pool(["PHASE3"], "stopped")
+    assert in_pool(["PHASE2", "PHASE3"], "completed_unknown")
+    assert not in_pool(["NA"], "stopped")
+    assert not in_pool(["PHASE4"], "completed_unknown")
+    assert not in_pool(["PHASE2"], "running")
+    assert can_succeed(["PHASE1"])
+    assert not can_succeed([])
+
+
+def test_two_drugs_one_blocked_other_qualifies() -> None:
+    t = _trial(
+        [
+            ("E", ["PHASE3"], "COMPLETED", date(2010, 1, 1)),
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x", "z"), "B": _fs("z")})
+    assert out["A"] == "succeeded"
+
+
+def test_same_day_phase3_does_not_block() -> None:
+    t = _trial(
+        [
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("S", ["PHASE3"], "COMPLETED", date(2015, 1, 1)),
+            ("L", ["PHASE3"], "COMPLETED", date(2016, 1, 1)),
+        ]
+    )
+    out = label_outcomes(t, {"A": _fs("x"), "S": _fs("x"), "L": _fs("x")})
+    assert out["A"] == "succeeded"
+
+
+def test_earlier_phase4_and_withdrawn_phase3_block() -> None:
+    for earlier_phase, earlier_status in [("PHASE4", "COMPLETED"), ("PHASE3", "WITHDRAWN")]:
+        t = _trial(
+            [
+                ("E", [earlier_phase], earlier_status, date(2010, 1, 1)),
+                ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+                ("L", ["PHASE3"], "COMPLETED", date(2018, 1, 1)),
+            ]
+        )
+        out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x"), "L": _fs("x")})
+        assert out["A"] == "completed_unknown"
+
+
+def test_more_status_buckets() -> None:
+    d = date(2015, 1, 1)
+    rows: list[Row] = [
+        ("N", ["PHASE2"], "NOT_YET_RECRUITING", d),
+        ("A", ["PHASE2"], "ACTIVE_NOT_RECRUITING", d),
+        ("E", ["PHASE2"], "ENROLLING_BY_INVITATION", d),
+    ]
+    t = _trial(rows).vstack(
+        pl.DataFrame(
+            {"nct_id": ["Z"], "phases": [["PHASE2"]], "overall_status": [None], "start_date": [d]},
+            schema=_trial([]).schema,
+        )
+    )
+    out = label_outcomes(t, {})
+    assert out == {"N": "running", "A": "running", "E": "running", "Z": "unknown"}
+
+
+def test_phase4_and_na_completed_never_succeed() -> None:
+    t = _trial(
+        [
+            ("P4", ["PHASE4"], "COMPLETED", date(2015, 1, 1)),
+            ("NA", ["NA"], "COMPLETED", date(2015, 1, 1)),
+            ("L", ["PHASE4"], "COMPLETED", date(2020, 1, 1)),
+        ]
+    )
+    out = label_outcomes(t, {"P4": _fs("x"), "NA": _fs("x"), "L": _fs("x")})
+    assert out["P4"] == "completed_unknown"
+    assert out["NA"] == "completed_unknown"

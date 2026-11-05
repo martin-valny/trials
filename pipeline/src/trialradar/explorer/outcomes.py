@@ -21,6 +21,7 @@ _RUNNING = frozenset(
 )
 _LATE_RANK = PHASE_RANK["PHASE3"]
 _POOL_MAX_RANK = PHASE_RANK["PHASE3"]
+_EARLY = frozenset({"EARLY_PHASE1", "PHASE1", "PHASE2"})
 
 
 def top_phase(phases: Sequence[str]) -> str | None:
@@ -31,13 +32,15 @@ def top_phase(phases: Sequence[str]) -> str | None:
     return "NA" if "NA" in phases else None
 
 
-def in_pool(top: str | None, outcome: Outcome) -> bool:
+def can_succeed(phases: Sequence[str]) -> bool:
+    """Phases that can succeed: has an early phase (EP1/P1/P2) and tops out at PHASE3 or lower."""
+    top = top_phase(phases)
     rank = PHASE_RANK.get(top) if top is not None else None
-    return (
-        rank is not None
-        and rank <= _POOL_MAX_RANK
-        and outcome in ("succeeded", "stopped", "completed_unknown")
-    )
+    return rank is not None and rank <= _POOL_MAX_RANK and any(p in _EARLY for p in phases)
+
+
+def in_pool(phases: Sequence[str], outcome: Outcome) -> bool:
+    return can_succeed(phases) and outcome in ("succeeded", "stopped", "completed_unknown")
 
 
 def label_outcomes(trial: pl.DataFrame, drugs: TrialDrugs) -> dict[str, Outcome]:
@@ -49,8 +52,7 @@ def label_outcomes(trial: pl.DataFrame, drugs: TrialDrugs) -> dict[str, Outcome]
         phases = phases or []
         top = top_phase(phases)
         rank = PHASE_RANK.get(top) if top is not None else None
-        # pure PHASE3 is outside the pool; only the combined PHASE2|PHASE3 reaches rank 3
-        eligible = rank is not None and (rank < _LATE_RANK or "PHASE2" in phases)
+        eligible = can_succeed(phases)
         infos.append((nct_id, rank, eligible, status, start))
         if rank is not None and start is not None:
             for drug in drugs.get(nct_id, frozenset()):
