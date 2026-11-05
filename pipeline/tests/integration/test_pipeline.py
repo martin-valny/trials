@@ -8,6 +8,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -16,6 +17,7 @@ from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovError
 from trialradar.pipeline import RunResult
 from trialradar.snapshot import read_snapshot
+from trialradar.store import COORDS_SCHEMA
 
 from .conftest import (
     ADDED,
@@ -398,10 +400,12 @@ def test_each_stage_logs_one_json_line(
         "check_raw",
         "filter_relevant",
         "normalize",
+        "extras",
         "state_before",
         "quality",
         "diff",
         "store",
+        "explorer",
         "export",
         "run_log",
     ]
@@ -535,3 +539,136 @@ def test_snapshot_is_promoted_before_its_sidecar(
     monkeypatch.setattr(os, "replace", spy)
     assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
     assert moves == ["2026-03-01.jsonl.gz", "2026-03-01.meta.json"]
+
+
+# ----- explorer -----
+
+
+def _coords(env: Env) -> dict[str, tuple[float, float, float]]:
+    df = pl.read_parquet(env.store_root / "explorer" / "coords.parquet")
+    return {r["nct_id"]: (r["x"], r["y"], r["z"]) for r in df.iter_rows(named=True)}
+
+
+def test_run_writes_explorer_and_coords(env: Env, cfg: AreaConfig) -> None:
+    studies = day1_studies(cfg)
+    assert env.run(FakeClient(TS1, studies), D1).status == "success"
+
+    doc = json.loads((env.site_dir / "explorer.json").read_text(encoding="utf-8"))
+    ids = relevant_ids(cfg, studies)
+    assert doc["generated_for"] == D1.isoformat()
+    assert [t["nct_id"] for t in doc["trials"]] == ids
+    assert sorted(_coords(env)) == ids
+    assert env.store.load_explorer_coords() == _coords(env)
+    trial = json.loads((env.site_dir / "trials" / f"{STATUS_EDIT}.json").read_text())
+    assert {"brief_summary", "eligibility", "has_results"} <= set(trial)
+
+
+def test_second_day_is_aligned(env: Env, cfg: AreaConfig) -> None:
+    """Day 2 lands on yesterday's saved map. Yesterday's map is saved rotated,
+    reflected, scaled and shifted while the features are unchanged (a status edit),
+    so a day-2 layout that is not aligned would sit far from it."""
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    rot = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    saved = {n: tuple(np.array(c) @ rot * 1.7 + 0.3) for n, c in _coords(env).items()}
+    env.store.save_explorer_coords(
+        pl.DataFrame(
+            [{"nct_id": n, "x": c[0], "y": c[1], "z": c[2]} for n, c in sorted(saved.items())],
+            schema=COORDS_SCHEMA,
+        )
+    )
+    studies = day1_studies(cfg)
+    for s in studies:
+        if nct(s) == STATUS_EDIT:
+            s["protocolSection"]["statusModule"]["overallStatus"] = "TERMINATED"
+
+    assert env.run(FakeClient(TS2, studies), D2).status == "success"
+
+    day2 = _coords(env)
+    assert sorted(day2) == sorted(saved)
+    for n, want in saved.items():
+        assert max(abs(a - b) for a, b in zip(want, day2[n], strict=True)) < 0.05, n
+
+
+def test_alignment_never_moves_the_map_further_from_yesterday(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    """With a changed trial set the layout itself changes; the Procrustes fit must
+    still leave day 2 no further from day 1 than the unaligned (rebuilt) layout."""
+    from trialradar.pipeline import rebuild
+    from trialradar.store import Store
+
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    day1 = _coords(env)
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "success"
+    aligned = _coords(env)
+    rebuild(cfg, tmp_path / "rb", env.raw_dir, tmp_path / "rb-site", env.aliases_dir)
+    raw = Store(tmp_path / "rb").load_explorer_coords()  # rebuild: no previous coords
+
+    common = sorted(set(day1) & set(aligned))
+    assert raw.keys() == aligned.keys()
+
+    def sse(coords: dict[str, tuple[float, float, float]]) -> float:
+        return float(sum(((np.array(coords[n]) - day1[n]) ** 2).sum() for n in common))
+
+    assert sse(aligned) <= sse(raw) + 1e-9
+    assert REMOVED not in aligned and ADDED in aligned
+
+
+def test_explorer_failure_is_isolated(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    site_before = tree_bytes(env.site_dir)
+    coords_before = (env.store_root / "explorer" / "coords.parquet").read_bytes()
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("umap exploded")
+
+    monkeypatch.setattr(pipeline, "build_explorer", boom)
+    result = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+
+    assert result.status == "failed"
+    assert any("umap exploded" in e for e in result.errors)
+    # The store holds the new data; the site and the saved coordinates are as before.
+    assert env.store.changes().height == 4
+    assert env.store.committed_date() == D2
+    assert tree_bytes(env.site_dir) == site_before
+    assert (env.store_root / "explorer" / "coords.parquet").read_bytes() == coords_before
+    assert env.store.run_log()["status"].to_list() == ["success", "failed"]
+    assert env.store.last_success_timestamp() == TS1
+    assert (env.raw_dir / "2026-03-02.jsonl.gz").exists()
+    assert not (env.raw_dir / "2026-03-02.failed.jsonl.gz").exists()
+
+    monkeypatch.undo()
+    rerun = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    assert rerun.status == "success"
+    assert json.loads((env.site_dir / "explorer.json").read_text())["generated_for"] == "2026-03-02"
+
+
+def test_export_failure_keeps_the_saved_coords(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    coords_before = (env.store_root / "explorer" / "coords.parquet").read_bytes()
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pipeline, "export", boom)
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "failed"
+    assert (env.store_root / "explorer" / "coords.parquet").read_bytes() == coords_before
+
+
+def test_corrupt_coords_warn_and_fall_back(
+    env: Env, cfg: AreaConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    (env.store_root / "explorer" / "coords.parquet").write_bytes(b"garbage")
+    capsys.readouterr()
+
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "success"
+
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = next(ln for ln in lines if ln["stage"] == "explorer")
+    assert any("coords" in w for w in explorer["warnings"])
+    assert ADDED in _coords(env)

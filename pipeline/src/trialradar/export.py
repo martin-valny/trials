@@ -7,6 +7,7 @@ import json
 import os
 import re
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Any
 import polars as pl
 
 from trialradar.config import AreaConfig
+from trialradar.explorer.extras import StudyExtras
 from trialradar.tables import Tables
 
 WINDOWS: tuple[int, ...] = (1, 7, 30)
@@ -93,7 +95,9 @@ def _group(df: pl.DataFrame) -> dict[str, list[dict[str, Any]]]:
     return out
 
 
-def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def _trial_docs(
+    tables: Tables, items: list[dict[str, Any]], extras: Mapping[str, StudyExtras]
+) -> dict[str, dict[str, Any]]:
     conds, intervs = _group(tables.condition), _group(tables.intervention)
     sites, outs = _group(tables.site), _group(tables.outcome)
     item_by_trial: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -103,6 +107,7 @@ def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[s
     docs: dict[str, dict[str, Any]] = {}
     for r in tables.trial.iter_rows(named=True):
         nct = r["nct_id"]
+        x = extras.get(nct)
         site_rows = sites.get(nct, [])
         outcomes = outs.get(nct, [])
 
@@ -137,6 +142,13 @@ def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[s
             "secondary_outcomes": pick("secondary"),
             "changes": item_by_trial.get(nct, []),
             "source_url": _STUDY_URL + nct,
+            "brief_summary": x.brief_summary if x else None,
+            "eligibility": {
+                "sex": x.sex if x else None,
+                "min_age_years": x.min_age_years if x else None,
+                "max_age_years": x.max_age_years if x else None,
+            },
+            "has_results": x.has_results if x else False,
         }
     return docs
 
@@ -198,8 +210,14 @@ def export(
     cfg: AreaConfig,
     day: date,
     out_dir: Path,
+    *,
+    extras: Mapping[str, StudyExtras] | None = None,
+    explorer: dict[str, Any] | None = None,
 ) -> None:
-    """Write the site JSON views for ``day`` into ``out_dir``."""
+    """Write the site JSON views for ``day`` into ``out_dir``.
+
+    ``extras`` add the registry summary, eligibility and results flag to the trial
+    files (null/false when absent); ``explorer`` is written as ``explorer.json``."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -215,7 +233,7 @@ def export(
             {"window_days": n, "generated_for": hi, "changes": window},
         )
 
-    docs = _trial_docs(tables, items)
+    docs = _trial_docs(tables, items, extras or {})
     trials_dir = out_dir / "trials"
     trials_dir.mkdir(parents=True, exist_ok=True)
     for nct, doc in docs.items():
@@ -225,4 +243,6 @@ def export(
             p.unlink()
 
     _write_json(out_dir / "trials.json", _index(docs, day))
+    if explorer is not None:
+        _write_json(out_dir / "explorer.json", explorer)
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

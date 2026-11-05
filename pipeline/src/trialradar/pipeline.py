@@ -34,6 +34,8 @@ from trialradar import quality
 from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovClient
 from trialradar.diff import diff
+from trialradar.explorer.build import build_explorer
+from trialradar.explorer.extras import StudyExtras, extract_extras
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.relevance import filter_relevant
@@ -45,7 +47,7 @@ from trialradar.snapshot import (
     read_snapshot,
     stage_snapshot,
 )
-from trialradar.store import RUN_LOG_SCHEMA, Store
+from trialradar.store import RUN_LOG_SCHEMA, Store, StoreError
 from trialradar.tables import Tables
 from trialradar.textnorm import Aliases, load_alias_set
 from trialradar.tracked import registry_dates, snapshot_frame, tracked_state
@@ -111,8 +113,9 @@ def _stage(name: str, **extra: Any) -> Iterator[dict[str, Any]]:
 
 def _prepare(
     raw: list[dict[str, Any]], cfg: AreaConfig, aliases_dir: Path
-) -> tuple[list[dict[str, Any]], Tables]:
-    """Schema check, relevance filter and normalize; ``DataError`` for bad data."""
+) -> tuple[list[dict[str, Any]], Tables, dict[str, StudyExtras]]:
+    """Schema check, relevance filter, normalize and the explorer's extra fields;
+    ``DataError`` for bad data."""
     with _stage("check_raw") as info:
         info["rows"] = len(raw)
         errors = quality.check_raw(raw)
@@ -127,7 +130,38 @@ def _prepare(
         except Exception as exc:  # malformed data inside a study
             raise DataError([f"normalize: {_describe(exc)}"]) from exc
         info["rows"] = tables.trial.height
-    return relevant, tables
+    with _stage("extras") as info:
+        try:
+            extras = extract_extras(relevant, cfg)
+        except Exception as exc:  # malformed data inside a study
+            raise DataError([f"extras: {_describe(exc)}"]) from exc
+        info["rows"] = len(extras)
+    return relevant, tables, extras
+
+
+def _explorer(
+    tables: Tables,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    aliases: Aliases,
+    previous: Callable[[], dict[str, tuple[float, float, float]]],
+    day: date,
+    *,
+    log_day: bool = False,
+) -> tuple[dict[str, Any], pl.DataFrame]:
+    """Build the explorer document and coordinates in one logged stage.
+
+    Unreadable saved coordinates are only cosmetic (alignment): warn and lay out afresh."""
+    extra = {"day": day.isoformat()} if log_day else {}
+    with _stage("explorer", **extra) as info:
+        try:
+            prev = previous()
+        except StoreError as exc:
+            info["warnings"].append(f"explorer_coords_unreadable: {exc}")
+            prev = {}
+        doc, coords = build_explorer(tables, extras, cfg, aliases.intervention, prev, day)
+        info["rows"] = len(doc["trials"])
+    return doc, coords
 
 
 def _gate(
@@ -223,8 +257,8 @@ def run(
 
     Stage order: rewind check -> version check (skip if unchanged) -> fetch ->
     staged snapshot -> schema check -> relevance filter -> normalize -> previous
-    state -> quality gate -> diff -> store -> promote snapshot -> export ->
-    success run_log row.
+    state -> quality gate -> diff -> store -> promote snapshot -> explorer ->
+    export -> save explorer coords -> success run_log row.
     """
     clock = now or _utcnow
     started_at, t0 = clock(), time.monotonic()
@@ -259,7 +293,7 @@ def run(
             staged = True
             info["rows"] = len(raw)
 
-        relevant, tables = _prepare(raw, cfg, aliases_dir)
+        relevant, tables, extras = _prepare(raw, cfg, aliases_dir)
         with _stage("state_before") as info:
             # A StoreError here is not the data's fault: the snapshot is not quarantined.
             found = store.state_before(day)
@@ -269,13 +303,17 @@ def run(
         warnings = _gate(raw, relevant, tables, prev_count, cfg, accept_drop)
 
         staged = False  # past the gate: a later failure is not the data's fault
-        changes, snaps = _changes(prev, tables, cfg, load_alias_set(aliases_dir), day)
+        aliases = load_alias_set(aliases_dir)
+        changes, snaps = _changes(prev, tables, cfg, aliases, day)
         _persist(store, tables, day, ts, changes, snaps)
         # Promote only once the store holds this data, so a raw snapshot always
         # matches what was stored (rebuild replays it); before export, so a failed
         # export (the data was fine) keeps it. A diff/store failure leaves it in
         # staging, which the next run clears.
         promote_staged(raw_dir, day)
+        # A failed explorer build fails the run like a failed export: the stored data
+        # stays, the site and the saved coordinates are left as they were.
+        explorer, coords = _explorer(tables, extras, cfg, aliases, store.load_explorer_coords, day)
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -285,8 +323,12 @@ def run(
             # after save_state/replace_day, a same-day rerun is idempotent, and the
             # next run with an unchanged timestamp is NOT skipped (no success row).
             log = pl.concat([store.run_log(), pl.DataFrame([row], schema=RUN_LOG_SCHEMA)])
-            export(tables, store.changes(), log, cfg, day, site_dir)
+            export(
+                tables, store.changes(), log, cfg, day, site_dir, extras=extras, explorer=explorer
+            )
             info["rows"] = tables.trial.height
+        # Only a layout that reached the site becomes the next day's alignment target.
+        store.save_explorer_coords(coords)
         with _stage("run_log", status="success") as info:
             store.append_run(row)
             info["rows"] = 1
@@ -379,7 +421,7 @@ def rebuild(
     try:
         store = Store(tmp_root)
         prev: Tables | None = None
-        last: tuple[Tables, date] | None = None
+        last: tuple[Tables, dict[str, StudyExtras], date] | None = None
         for day, path in snapshots:
             t0 = time.monotonic()
             meta = read_sidecar(path)
@@ -387,7 +429,7 @@ def rebuild(
                 with _stage("read_snapshot", day=day.isoformat()) as info:
                     raw = read_snapshot(path)
                     info["rows"] = len(raw)
-                relevant, tables = _prepare(raw, cfg, aliases_dir)
+                relevant, tables, extras = _prepare(raw, cfg, aliases_dir)
                 prev_count = (prev.trial.height or None) if prev else None
                 accepted = meta.get("accept_drop") is True
                 warnings = _gate(raw, relevant, tables, prev_count, cfg, accepted)
@@ -411,13 +453,25 @@ def rebuild(
                 warnings,
             )
             store.append_run(row)
-            prev, last = tables, (tables, day)
+            prev, last = tables, (tables, extras, day)
         if last is None:
             raise RebuildError(f"none of the {len(snapshots)} raw snapshots could be replayed")
-        tables, day = last
+        tables, extras, day = last
+        # Only the last replayed day gets a map, laid out afresh (no previous coords).
+        explorer, coords = _explorer(tables, extras, cfg, aliases, dict, day, log_day=True)
         with _stage("export", day=day.isoformat()) as info:
-            export(tables, store.changes(), store.run_log(), cfg, day, site_dir)
+            export(
+                tables,
+                store.changes(),
+                store.run_log(),
+                cfg,
+                day,
+                site_dir,
+                extras=extras,
+                explorer=explorer,
+            )
             info["rows"] = tables.trial.height
+        store.save_explorer_coords(coords)
         # Everything succeeded: swap the rebuilt store in.
         Store(store_root).wipe()
         store_root.mkdir(parents=True, exist_ok=True)

@@ -12,6 +12,7 @@ from conftest import REPO_ROOT
 
 from trialradar.config import AreaConfig
 from trialradar.diff import TRIAL_CHANGE_SCHEMA
+from trialradar.explorer.extras import StudyExtras
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.store import RUN_LOG_SCHEMA
@@ -58,6 +59,9 @@ TRIAL_KEYS = {
     "secondary_outcomes",
     "changes",
     "source_url",
+    "brief_summary",
+    "eligibility",
+    "has_results",
 }
 
 
@@ -446,3 +450,54 @@ def test_stale_sweep_skips_directories(tmp_path: Path, cfg: AreaConfig) -> None:
     (trials / "NCT1.json").mkdir(parents=True)
     run(tmp_path, [], cfg=cfg)
     assert (trials / "NCT1.json").is_dir()
+
+
+def _extras(nct: str) -> StudyExtras:
+    return StudyExtras(
+        nct_id=nct,
+        brief_summary="A short summary.",
+        sex="FEMALE",
+        min_age_years=18.0,
+        max_age_years=None,
+        has_results=True,
+        experimental_drugs=("foo",),
+        mesh_terms=(),
+        condition_labels=(),
+    )
+
+
+def test_export_trial_doc_has_summary(tmp_path: Path, cfg: AreaConfig) -> None:
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        extras={"NCT00000001": _extras("NCT00000001")},
+    )
+    t1 = load(tmp_path / "trials" / "NCT00000001.json")
+    assert set(t1) == TRIAL_KEYS
+    assert t1["brief_summary"] == "A short summary."
+    assert t1["eligibility"] == {"sex": "FEMALE", "min_age_years": 18.0, "max_age_years": None}
+    assert t1["has_results"] is True
+    t2 = load(tmp_path / "trials" / "NCT00000002.json")
+    assert t2["brief_summary"] is None
+    assert t2["eligibility"] == {"sex": None, "min_age_years": None, "max_age_years": None}
+    assert t2["has_results"] is False
+
+
+def test_export_without_extras_has_null_summary(tmp_path: Path, cfg: AreaConfig) -> None:
+    run(tmp_path, [], cfg=cfg)
+    t1 = load(tmp_path / "trials" / "NCT00000001.json")
+    assert t1["brief_summary"] is None and t1["has_results"] is False
+
+
+def test_explorer_json_written_only_when_given(tmp_path: Path, cfg: AreaConfig) -> None:
+    run(tmp_path, [], cfg=cfg)
+    assert not (tmp_path / "explorer.json").exists()
+    doc = {"generated_for": DAY.isoformat(), "trials": [{"nct_id": "NCT00000001", "x": 0.5}]}
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
+    text = (tmp_path / "explorer.json").read_text(encoding="utf-8")
+    assert json.loads(text) == doc
+    assert text.endswith("\n") and ", " not in text  # compact like the other files

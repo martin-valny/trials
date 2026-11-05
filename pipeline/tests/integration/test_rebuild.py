@@ -41,8 +41,19 @@ def assert_same_history(a: Store, b: Store) -> None:
     assert a.snapshots().equals(b.snapshots())
 
 
+def _without_coords(site: Path) -> dict[str, Any]:
+    doc: dict[str, Any] = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
+    for t in doc["trials"]:
+        del t["x"], t["y"], t["z"]
+    return doc
+
+
 def assert_same_site(a: Path, b: Path) -> None:
-    assert tree_bytes(a, exclude=("meta.json",)) == tree_bytes(b, exclude=("meta.json",))
+    # A rebuild lays the map out afresh (no previous coordinates, spec 6.4a), so
+    # only the explorer coordinates may differ from the incremental site.
+    skip = ("meta.json", "explorer.json")
+    assert tree_bytes(a, exclude=skip) == tree_bytes(b, exclude=skip)
+    assert _without_coords(a) == _without_coords(b)
 
 
 def test_rebuild_equals_incremental_after_a_failed_day(
@@ -234,3 +245,22 @@ def test_failed_snapshots_are_not_replayed(env: Env, cfg: AreaConfig, tmp_path: 
     assert store.snapshots()["snapshot_date"].unique().to_list() == [D1]
     expected = len(relevant_ids(cfg, day1_studies(cfg)))
     assert store.snapshots().filter(pl.col("snapshot_date") == D1).height == expected
+
+
+def test_rebuild_builds_the_explorer_for_the_last_day_only(
+    env: Env, cfg: AreaConfig, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    capsys.readouterr()
+
+    store, site = rebuilt(env, tmp_path)
+
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = [ln for ln in lines if ln["stage"] == "explorer"]
+    assert [ln["day"] for ln in explorer] == [D2.isoformat()]
+    doc = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == D2.isoformat()
+    ids = relevant_ids(cfg, day2_studies(cfg))
+    assert sorted(store.load_explorer_coords()) == ids
+    assert [t["nct_id"] for t in doc["trials"]] == ids
