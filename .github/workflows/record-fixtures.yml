@@ -21,7 +21,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run python scripts/record_fixtures.py
       - run: uv run pytest -m "recorded or recorded_fresh" -v
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: fixtures
           path: pipeline/tests/fixtures/
