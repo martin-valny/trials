@@ -71,14 +71,27 @@ def _base_study(nct_id: str) -> dict[str, Any]:
     }
 
 
-def make_study(nct_id: str = "NCT00000001", **overrides: Any) -> dict[str, Any]:
+def make_study(
+    nct_id: str = "NCT00000001",
+    *,
+    has_results: bool | None = None,
+    mesh_terms: list[str] | None = None,
+    **overrides: Any,
+) -> dict[str, Any]:
     """Build a minimal valid API v2 study.
 
     Overrides are dotted paths relative to ``protocolSection``, e.g.
     ``make_study(**{"statusModule.overallStatus": "TERMINATED"})``. Pass ``DELETE``
-    as the value to remove a key.
+    as the value to remove a key. ``has_results`` sets the top-level ``hasResults`` and
+    ``mesh_terms`` fills ``derivedSection.conditionBrowseModule.meshes``.
     """
     study = _base_study(nct_id)
+    if has_results is not None:
+        study["hasResults"] = has_results
+    if mesh_terms is not None:
+        study["derivedSection"] = {
+            "conditionBrowseModule": {"meshes": [{"term": t} for t in mesh_terms]}
+        }
     for path, value in overrides.items():
         *parents, leaf = path.split(".")
         node: Any = study["protocolSection"]
