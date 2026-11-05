@@ -18,7 +18,7 @@ from trialradar.explorer.extras import extract_extras, parse_age_years
     ],
 )
 def test_parse_age_years(text: str | None, expected: float | None) -> None:
-    assert parse_age_years(text) == expected
+    assert parse_age_years(text) == (None if expected is None else pytest.approx(expected))
 
 
 def test_experimental_arm_drugs_only(cfg: AreaConfig) -> None:
@@ -66,3 +66,19 @@ def test_summary_sex_results(cfg: AreaConfig) -> None:
     bare = extract_extras([make_study("NCT00000002")], cfg)["NCT00000002"]
     assert bare.sex is None
     assert bare.has_results is False
+
+
+def test_experimental_arm_without_drug_does_not_fall_back(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {"label": "a", "type": "EXPERIMENTAL", "interventionNames": ["Device: D"]},
+                {"label": "b", "type": "ACTIVE_COMPARATOR", "interventionNames": ["Drug: B"]},
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "DRUG", "name": "B"},
+                {"type": "DEVICE", "name": "D"},
+            ],
+        }
+    )
+    assert extract_extras([study], cfg)["NCT00000001"].experimental_drugs == ()

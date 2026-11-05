@@ -56,14 +56,15 @@ def _dedupe(names: Sequence[str]) -> tuple[str, ...]:
 
 def _experimental_drugs(arms_module: dict[str, Any]) -> tuple[str, ...]:
     names: list[str] = []
-    for arm in arms_module.get("armGroups") or []:
+    arm_groups = arms_module.get("armGroups") or []
+    for arm in arm_groups:
         if arm.get("type") != "EXPERIMENTAL":
             continue
         for raw in arm.get("interventionNames") or []:
             prefix, sep, rest = str(raw).partition(":")
             if sep and prefix.strip().lower() in _DRUG_PREFIXES and rest.strip():
                 names.append(rest.strip())
-    if not names:
+    if not arm_groups:
         for item in arms_module.get("interventions") or []:
             name = (item.get("name") or "").strip()
             if item.get("type") in _DRUG_TYPES and name:
