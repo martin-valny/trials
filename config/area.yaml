@@ -48,6 +48,8 @@ explorer:
     - placebo
     - sham
     - saline
+    - sodium chloride
+    - normal saline
     - vehicle
     - standard of care
     - best supportive care

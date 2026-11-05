@@ -9,12 +9,11 @@ from trialradar.textnorm import apply_alias, norm_key
 
 _BRACKETED = re.compile(r"\([^)]*\)|\[[^\]]*\]")
 _DOSE = re.compile(
-    r"\d+(?:\.\d+)?\s*(?:mg/kg|mg|g|mcg|µg|ug|ml|iu|units?|%)(?![a-z])",
+    r"\d+(?:\.\d+)?\s*(?:mg/kg|mg|g|mcg|µg|ug|ml|iu|units?|%)(?:\s*/\s*(?:kg|ml|m2|day|d|dl|l|dose))?(?![a-z0-9])",
 )
 _NOISE = re.compile(
     r"\b(?:oral|iv|intravenous|subcutaneous|sc|im|intramuscular|infusion|injection|"
-    r"tablets?|capsules?|hydrochloride|hcl|sodium|acetate|sulfate|phosphate|maleate|"
-    r"fumarate)\b",
+    r"tablets?|capsules?|hydrochloride|hcl|sodium|acetate|sulfate|phosphate|maleate)\b",
 )
 _WS = re.compile(r"\s+")
 
@@ -23,6 +22,7 @@ def clean_drug_name(
     name: str, aliases: Mapping[str, str], exclude_terms: Sequence[str]
 ) -> str | None:
     """Canonical lower-case drug name, or None for empty/excluded (e.g. placebo) names."""
+    original = norm_key(name)
     s = apply_alias(name, aliases).casefold()
     s = _BRACKETED.sub(" ", s)
     s = _DOSE.sub(" ", s)
@@ -31,6 +31,7 @@ def clean_drug_name(
     if not s:
         return None
     s = apply_alias(s, aliases).casefold()
-    if not s or any(norm_key(t) in s for t in exclude_terms if norm_key(t)):
+    terms = [k for t in exclude_terms if (k := norm_key(t))]
+    if not s or any(k in s or k in original for k in terms):
         return None
     return s
