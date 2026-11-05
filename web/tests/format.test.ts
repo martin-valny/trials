@@ -50,3 +50,19 @@ test("labels", () => {
   expect(reasonLabel("status_change")).toBe("Status changed");
   expect(reasonLabel(null)).toBe("");
 });
+
+describe("outcome changes", () => {
+  test("pairs read as measure (time frame)", () => {
+    const v = [
+      ["Annualized relapse rate", "48 weeks"],
+      ["Disability progression", null],
+    ];
+    expect(formatValue("primary_outcomes", v)).toBe(
+      "Annualized relapse rate (48 weeks); Disability progression",
+    );
+    expect(formatValue("secondary_outcomes", [])).toBe("—");
+  });
+  test("other list fields keep the plain join", () => {
+    expect(formatValue("conditions", ["A", "B"])).toBe("A, B");
+  });
+});

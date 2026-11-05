@@ -22,12 +22,13 @@ export function FreshnessBadge({ now }: { now?: Date }) {
   if (s.state === "unknown") return <span className="badge warn">Freshness unknown</span>;
 
   const { meta } = s;
+  if (!meta.last_success_at) return <span className="badge warn">Freshness unknown</span>;
   const stale = isStale(meta.last_success_at, now ?? new Date());
   return (
     <span className={stale ? "badge warn" : "badge ok"}>
       {stale ? <strong>Data may be stale. </strong> : null}
       Last updated {meta.last_success_at.replace("T", " ").replace(/:\d\d(\.\d+)?Z$/, " UTC")}
-      {" · "}registry data as of {meta.data_timestamp.replace("T", " ")}
+      {meta.data_timestamp ? ` · registry data as of ${meta.data_timestamp.replace("T", " ")}` : ""}
     </span>
   );
 }

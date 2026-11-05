@@ -33,10 +33,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # First run: the data branch does not exist yet, so this step may fail.
+      # Only "the branch does not exist" (ls-remote exit 2) is a first run. Any other
+      # failure must stop the job: running on an empty ./data would publish a fresh
+      # orphan over the real history.
+      - name: Detect data branch
+        id: databranch
+        run: |
+          rc=0
+          git ls-remote --exit-code --heads origin data >/dev/null || rc=$?
+          case "$rc" in
+            0) echo "exists=true" >> "$GITHUB_OUTPUT" ;;
+            2) echo "exists=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "git ls-remote failed with exit code $rc" >&2; exit "$rc" ;;
+          esac
+
       - name: Checkout data branch
+        if: steps.databranch.outputs.exists == 'true'
         uses: actions/checkout@v4
-        continue-on-error: true
         with:
           ref: data
           path: data
@@ -86,22 +99,9 @@ jobs:
           retention-days: 30
 
       # Everything below publishes, so it runs only for a fully successful run.
-      - name: Push data branch
-        if: steps.run.outputs.status == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          rm -rf publish && mkdir publish
-          rsync -a --exclude .git data/ publish/
-          cd publish
-          git init -q
-          git config user.name "github-actions[bot]"
-          git config user.email "41898573+github-actions[bot]@users.noreply.github.com"
-          git checkout -q --orphan data-tmp
-          git add -A
-          git commit -q -m "data: $(date -u +%Y-%m-%d)"
-          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:data
-
+      # Order matters: the data branch is the commit point and goes LAST. If anything
+      # earlier fails, the data branch is unchanged, so the next run redoes the same
+      # registry version (idempotently) instead of skipping a day that never shipped.
       # Only dated snapshots and their sidecars; never raw/.incoming/ or *.failed.*.
       - name: Upload raw snapshot
         if: steps.run.outputs.status == 'success'
@@ -109,14 +109,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           shopt -s nullglob
-          files=(raw/????-??-??.jsonl.gz raw/????-??-??.meta.json)
-          if [ "${#files[@]}" -eq 0 ]; then
+          snaps=(raw/????-??-??.jsonl.gz)
+          files=("${snaps[@]}" raw/????-??-??.meta.json)
+          if [ "${#snaps[@]}" -eq 0 ]; then
             echo "No raw snapshot files to upload" >&2
             exit 1
           fi
-          tag="snapshots-$(date -u +%Y-%m)"
+          # The release month comes from the snapshot's own date, not the clock.
+          day="$(basename "${snaps[-1]}" .jsonl.gz)"
+          month="${day:0:7}"
+          tag="snapshots-$month"
           gh release view "$tag" >/dev/null 2>&1 \
-            || gh release create "$tag" --title "Raw snapshots $(date -u +%Y-%m)" \
+            || gh release create "$tag" --title "Raw snapshots $month" \
                  --notes "Raw ClinicalTrials.gov snapshots"
           gh release upload "$tag" "${files[@]}" --clobber
 
@@ -146,6 +150,22 @@ jobs:
         id: deployment
         if: steps.run.outputs.status == 'success'
         uses: actions/deploy-pages@v4
+
+      - name: Push data branch
+        if: steps.run.outputs.status == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf publish && mkdir publish
+          rsync -a --exclude .git data/ publish/
+          cd publish
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898573+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan data-tmp
+          git add -A
+          git commit -q -m "data: $(date -u +%Y-%m-%d)"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:data
 
       - name: Fail if the run failed
         if: always() && steps.run.outputs.status != 'success' && steps.run.outputs.status != 'skipped'

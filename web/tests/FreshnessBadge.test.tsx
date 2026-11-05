@@ -38,3 +38,16 @@ test("fixture matches the exported meta shape", () => {
     ["area", "conditions", "data_timestamp", "generated_for", "last_success_at", "trial_count", "warnings"],
   );
 });
+
+test("null timestamps degrade to unknown instead of crashing", async () => {
+  stubFetch({ "meta.json": { ...meta, last_success_at: null, data_timestamp: null } });
+  render(<FreshnessBadge />);
+  expect(await screen.findByText("Freshness unknown")).toBeInTheDocument();
+});
+
+test("missing data timestamp still shows the last update", async () => {
+  stubFetch({ "meta.json": { ...meta, data_timestamp: null } });
+  render(<FreshnessBadge now={new Date("2026-11-04T12:00:00Z")} />);
+  expect(await screen.findByText(/Last updated 2026-11-04 07:19 UTC/)).toBeInTheDocument();
+  expect(screen.queryByText(/registry data as of/)).not.toBeInTheDocument();
+});

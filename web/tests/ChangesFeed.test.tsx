@@ -115,3 +115,30 @@ test("table is accessible: caption and column headers", async () => {
   expect(within(table).getByText(/Changes detected in the last 7 days/)).toBeInTheDocument();
   expect(within(table).getAllByRole("columnheader")).toHaveLength(5);
 });
+
+test("switching window resets sponsor and field filters", async () => {
+  stubFetch();
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  await userEvent.selectOptions(screen.getByLabelText("Sponsor"), "Acme Biotech");
+  await userEvent.selectOptions(screen.getByLabelText("Field"), "Overall status");
+  await userEvent.click(screen.getByRole("tab", { name: "30 days" }));
+  await screen.findByRole("table");
+  expect(screen.getByLabelText("Sponsor")).toHaveValue("");
+  expect(screen.getByLabelText("Field")).toHaveValue("");
+});
+
+test("a removed trial has no trial page link but keeps the source link", async () => {
+  const removed = seven.changes.find((c) => c.title === null);
+  expect(removed).toBeDefined();
+  stubFetch();
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  await userEvent.click(screen.getByLabelText("Notable only")); // removed rows are never notable
+  const row = rows().find((r) => within(r).queryByText(removed!.nct_id))!;
+  expect(within(row).queryByRole("link", { name: removed!.nct_id })).not.toBeInTheDocument();
+  expect(within(row).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(
+    "href",
+    `https://clinicaltrials.gov/study/${removed!.nct_id}`,
+  );
+});

@@ -144,3 +144,29 @@ def test_live_check_is_weekly_and_runs_live_tests() -> None:
 def test_every_workflow_parses() -> None:
     for path in sorted(Path(WORKFLOWS).glob("*.yml")):
         assert isinstance(yaml.safe_load(path.read_text(encoding="utf-8")), dict), path.name
+
+
+def test_data_branch_is_the_last_publishing_step(daily: dict[str, Any]) -> None:
+    order = [s.get("name") for s in daily["jobs"]["update"]["steps"]]
+    raw, build, deploy, push = (
+        order.index(n)
+        for n in ("Upload raw snapshot", "Build site", "Deploy Pages", "Push data branch")
+    )
+    # Raw snapshot and site first; the data branch (the commit point) after everything else.
+    assert raw < build < deploy < push
+
+
+def test_only_a_missing_data_branch_counts_as_a_first_run(daily: dict[str, Any]) -> None:
+    detect = named(daily, "Detect data branch")
+    assert detect["id"] == "databranch"
+    assert "ls-remote --exit-code --heads origin data" in detect["run"]
+    assert "2)" in detect["run"] and "exit " in detect["run"]
+    checkout = named(daily, "Checkout data branch")
+    assert checkout["if"] == "steps.databranch.outputs.exists == 'true'"
+    assert "continue-on-error" not in checkout
+
+
+def test_release_month_comes_from_the_snapshot_date(daily: dict[str, Any]) -> None:
+    script = named(daily, "Upload raw snapshot")["run"]
+    assert "date -u" not in script
+    assert '"${day:0:7}"' in script

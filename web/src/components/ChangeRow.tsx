@@ -7,7 +7,12 @@ export function ChangeRow({ item }: { item: ChangeItem }) {
   return (
     <tr>
       <td data-label="Trial">
-        <Link to={`/trial/${item.nct_id}`}>{item.nct_id}</Link>
+        {item.title === null ? (
+          // Removed from the registry results: there is no trial page to link to.
+          <span>{item.nct_id}</span>
+        ) : (
+          <Link to={`/trial/${item.nct_id}`}>{item.nct_id}</Link>
+        )}
         <div className="muted">{item.title ?? "No longer in the registry results"}</div>
         {item.lead_sponsor ? <div className="muted">{item.lead_sponsor}</div> : null}
       </td>

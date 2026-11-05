@@ -20,10 +20,23 @@ export function formatDate(d: DateInfo): string {
   return d.precision === "month" || !day ? `${month} ${y}` : `${Number(day)} ${month} ${y}`;
 }
 
+/** Outcome changes are stored as [[measure, time_frame | null], ...]. */
+function isOutcomePair(v: unknown): v is [string, string | null] {
+  return Array.isArray(v) && v.length === 2 && typeof v[0] === "string";
+}
+
+function formatOutcomes(v: unknown[]): string {
+  return v
+    .map((o) => (isOutcomePair(o) ? (o[1] ? `${o[0]} (${o[1]})` : o[0]) : formatValue("", o)))
+    .join("; ");
+}
+
 export function formatValue(field: string, v: unknown): string {
-  void field;
   if (v === null || v === undefined) return DASH;
   if (isDateInfo(v)) return formatDate(v);
+  if (field.endsWith("_outcomes") && Array.isArray(v)) {
+    return v.length === 0 ? DASH : formatOutcomes(v);
+  }
   if (Array.isArray(v)) return v.length === 0 ? DASH : v.map((x) => formatValue(field, x)).join(", ");
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);

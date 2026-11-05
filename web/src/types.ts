@@ -57,8 +57,8 @@ export interface Meta {
   conditions: string[];
   generated_for: string;
   trial_count: number;
-  last_success_at: string; // ISO, UTC, trailing Z
-  data_timestamp: string;
+  last_success_at: string | null; // ISO, UTC, trailing Z; null before the first success
+  data_timestamp: string | null;
   warnings: string[];
 }
 

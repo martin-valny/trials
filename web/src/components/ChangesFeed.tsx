@@ -59,7 +59,12 @@ export function ChangesFeed() {
             role="tab"
             type="button"
             aria-selected={w === win}
-            onClick={() => setWin(w)}
+            onClick={() => {
+              setWin(w);
+              // Sponsor and field options depend on the window, so stale picks would hide everything.
+              setSponsor("");
+              setField("");
+            }}
           >
             {windowLabel(w)}
           </button>

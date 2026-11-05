@@ -51,7 +51,7 @@ npm run e2e          # production build + Playwright
 
 The site needs at least two daily runs before the feed shows anything. For a demo without the network, `uv run python scripts/make_web_fixtures.py` regenerates the test data in `web/tests/fixtures/data` (copy it to `web/public/data`).
 
-`trialradar rebuild` recreates the whole store from the raw snapshots.
+`trialradar rebuild` recreates the whole store from the raw snapshots. Download them first (`gh release download snapshots-YYYY-MM --dir raw`, once per month). It builds into a temporary store and swaps it in only on success; it refuses to run with no snapshots, or when they start later than the stored history (`--force` overrides that).
 
 ## Change the therapeutic area
 
