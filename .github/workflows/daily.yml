@@ -174,8 +174,10 @@ jobs:
           exit 1
 
   # Scheduled workflows are disabled after 60 days without repository activity.
-  # API mode re-enables the workflow and needs actions: write, so it lives in its
-  # own job and the update job keeps the minimal permission set.
+  # Re-enabling a workflow through the API restarts that timer. This needs
+  # actions: write, so it lives in its own job and the update job keeps the
+  # minimal permission set. It uses the preinstalled gh CLI, not a third-party
+  # action (the one we first tried is blocked by GitHub).
   keepalive:
     needs: update
     if: always()
@@ -184,7 +186,6 @@ jobs:
       actions: write
     steps:
       - name: Keepalive
-        uses: gautamkrishnar/keepalive-workflow@v2
-        with:
-          use_api: true
-          commit_message: "chore: keepalive"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow enable daily.yml --repo "$GITHUB_REPOSITORY"
