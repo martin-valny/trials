@@ -7,7 +7,7 @@ from typing import Any
 from conftest import DELETE, make_study
 
 from trialradar.config import AreaConfig, ConditionSpec
-from trialradar.relevance import filter_relevant, is_relevant
+from trialradar.relevance import condition_labels, filter_relevant, is_relevant
 
 
 def _with_mesh(study: dict[str, Any], *terms: Any) -> dict[str, Any]:
@@ -122,3 +122,23 @@ def test_other_condition_list_filters_accordingly(cfg: AreaConfig) -> None:
     pso = make_study("NCT00000002", **{"conditionsModule.conditions": ["Plaque Psoriasis"]})
     assert filter_relevant([ms, pso], psoriasis) == [pso]
     assert filter_relevant([ms, pso], cfg) == [ms]
+
+
+def test_condition_labels_matches_per_label(cfg: AreaConfig) -> None:
+    two = cfg.model_copy(update={"conditions": [cfg.conditions[0], cfg.conditions[1]]})
+    study = make_study(**{"conditionsModule.conditions": ["Neuromyelitis Optica"]})
+    assert condition_labels(study, two) == [cfg.conditions[1].label]
+
+
+def test_condition_labels_config_order_and_multiple(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "conditionsModule.conditions": ["Myasthenia Gravis"],
+            "conditionsModule.keywords": ["NMOSD"],
+        }
+    )
+    assert condition_labels(study, cfg) == ["NMOSD", "Myasthenia gravis"]
+
+
+def test_condition_labels_empty_when_no_match(cfg: AreaConfig) -> None:
+    assert condition_labels(make_study(**{"conditionsModule.conditions": ["Asthma"]}), cfg) == []

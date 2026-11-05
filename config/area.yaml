@@ -38,3 +38,19 @@ thresholds:
   min_relevant_share: 0.5
   max_null_rate: 0.0
 aliases_dir: aliases
+explorer:
+  weights:
+    disease: 1.0
+    treatment_type: 0.6
+    molecule: 1.0
+    population: 0.4
+  exclude_terms:
+    - placebo
+    - sham
+    - saline
+    - vehicle
+    - standard of care
+    - best supportive care
+    - usual care
+    - no intervention
+    - observation

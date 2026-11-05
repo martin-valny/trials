@@ -113,3 +113,32 @@ def test_invalid_values_rejected_with_a_reason(
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ConfigError, match=message):
         load_config(path)
+
+
+def test_explorer_defaults_when_block_absent(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data.pop("explorer", None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    cfg = load_config(path)
+    assert cfg.explorer.k == 10
+    assert cfg.explorer.weights["molecule"] == 1.0
+
+
+def test_explorer_partial_weights_fill_defaults(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data["explorer"] = {"weights": {"population": 0.5}}
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    weights = load_config(path).explorer.weights
+    assert weights["population"] == 0.5
+    assert weights["disease"] == 1.0
+
+
+def test_explorer_rejects_negative_weight(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data["explorer"] = {"weights": {"disease": -0.1}}
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError):
+        load_config(path)

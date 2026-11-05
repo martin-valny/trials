@@ -84,6 +84,35 @@ class Thresholds(_Strict):
         return self
 
 
+class ExplorerConfig(_Strict):
+    weights: dict[Literal["disease", "treatment_type", "molecule", "population"], float] = Field(
+        default_factory=dict, validate_default=True
+    )
+    exclude_terms: list[str] = []
+    n_neighbors: int = 15
+    min_dist: float = 0.1
+    seed: int = 42
+    k: int = 10
+    permutations: int = 1000
+    min_successes: int = 30
+
+    @field_validator("weights")
+    @classmethod
+    def _fill_weights(
+        cls, value: dict[Literal["disease", "treatment_type", "molecule", "population"], float]
+    ) -> dict[Literal["disease", "treatment_type", "molecule", "population"], float]:
+        if any(w < 0 for w in value.values()):
+            raise ValueError("explorer weights must be >= 0")
+        filled: dict[Literal["disease", "treatment_type", "molecule", "population"], float] = {
+            "disease": 1.0,
+            "treatment_type": 1.0,
+            "molecule": 1.0,
+            "population": 1.0,
+        }
+        filled.update(value)
+        return filled
+
+
 class AreaConfig(_Strict):
     name: str
     conditions: list[ConditionSpec] = Field(min_length=1)
@@ -94,6 +123,7 @@ class AreaConfig(_Strict):
     tracked_fields: list[str]
     thresholds: Thresholds = Thresholds()
     aliases_dir: Path
+    explorer: ExplorerConfig = ExplorerConfig()
 
     @field_validator("tracked_fields")
     @classmethod
