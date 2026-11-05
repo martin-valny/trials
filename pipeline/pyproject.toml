@@ -8,6 +8,9 @@ dependencies = [
     "httpx",
     "pydantic",
     "pyyaml",
+    "numpy>=2.5.4",
+    "scipy>=1.18.1",
+    "scikit-learn>=1.9.1",
 ]
 
 [project.scripts]
@@ -40,3 +43,7 @@ line-length = 100
 
 [tool.mypy]
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "scipy.*", "umap.*"]
+ignore_missing_imports = true
