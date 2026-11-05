@@ -368,6 +368,8 @@ Before writing UI, write the Impeccable direction contract.
     - Filtered-out dots draw at 0.08 alpha. Dot radius = (1.6 + sqrt(enrollment)/7) × perspective.
     - It has an accessible name, "3D map of N trials".
     - If `getContext` returns null, it renders a fallback paragraph linking to `#/trials`.
+  - Dark mode via `@media (prefers-color-scheme: dark)` tokens in `explore.css`, plus `DARK_PALETTE` for the canvas.
+  - A visually hidden summary next to the canvas ("N trials; X succeeded, Y stopped early…"), updated with the filters.
   - `Explore` owns `Filters`, `ColorMode` and `selected`, and lays out the plate grid as in the mockup (title row; panel a spans two rows on the left; b and c on the right; legend bar below).
 - States:
   - Loading: a skeleton plate.
@@ -404,6 +406,7 @@ Before writing UI, write the Impeccable direction contract.
     - Toggles for disease labels, phases, outcomes (with text labels and counts) and treatment types.
     - A search input with label "Find a trial".
     - A visible count: "Showing N of M trials".
+    - A "View as list" link to `#/trials`.
   - **`SelectedTrial` (d):**
     - The one-line facts: nct · drugs · phase · outcome label text · enrollment · sponsor.
     - The first two sentences of `brief_summary`, lazy-loaded via `loadTrial` and labelled "From the registry".
