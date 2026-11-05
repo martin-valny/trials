@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 
 import numpy as np
@@ -10,6 +11,7 @@ from scipy.linalg import orthogonal_procrustes
 from trialradar.explorer.features import Features
 
 _MIN_POINTS = 4
+_SPECTRAL_MIN = 16  # below this, spectral init warns or fails
 
 
 def embed(features: Features, n_neighbors: int, min_dist: float, seed: int) -> np.ndarray:
@@ -26,8 +28,16 @@ def embed(features: Features, n_neighbors: int, min_dist: float, seed: int) -> n
         min_dist=min_dist,
         random_state=seed,
         n_jobs=1,
+        init="spectral" if n >= _SPECTRAL_MIN else "random",
     )
-    out = np.asarray(reducer.fit_transform(features.matrix), dtype=np.float64)
+    try:
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            out = np.asarray(reducer.fit_transform(features.matrix), dtype=np.float64)
+    except Exception:  # noqa: BLE001
+        return np.zeros((n, 3), dtype=np.float64)
+    if out.shape != (n, 3) or not np.isfinite(out).all():
+        return np.zeros((n, 3), dtype=np.float64)
     out = out - out.mean(axis=0)
     peak = float(np.linalg.norm(out, axis=1).max())
     return out / peak if peak > 0 else out
@@ -44,6 +54,8 @@ def align(
         return coords
     src = coords[idx]
     dst = np.array([previous[ids[i]] for i in idx], dtype=np.float64)
+    if not (np.isfinite(src).all() and np.isfinite(dst).all()):
+        return coords
     src_c, dst_c = src.mean(axis=0), dst.mean(axis=0)
     a, b = src - src_c, dst - dst_c
     denom = float((a**2).sum())
@@ -51,4 +63,6 @@ def align(
         return coords
     rot, _ = orthogonal_procrustes(a, b)
     scale = float((a @ rot * b).sum()) / denom
+    if not scale > 0:
+        return coords
     return np.asarray((coords - src_c) @ rot * scale + dst_c, dtype=np.float64)

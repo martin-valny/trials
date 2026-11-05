@@ -1,4 +1,7 @@
+import warnings
+
 import numpy as np
+import pytest
 import scipy.sparse as sp
 
 from trialradar.explorer.features import Features
@@ -58,4 +61,30 @@ def test_align_without_overlap_is_identity() -> None:
     coords = np.random.default_rng(3).normal(size=(8, 3))
     ids = [f"t{i}" for i in range(8)]
     out = align(ids, coords, {"other": (0.0, 0.0, 0.0)})
+    assert np.array_equal(out, coords)
+
+
+@pytest.mark.parametrize("n", [4, 5, 10])
+def test_embed_small_inputs_are_quiet(n: int) -> None:
+    x = np.random.default_rng(n).random((n, 6))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        out = embed(_features(x), n_neighbors=15, min_dist=0.1, seed=3)
+    assert out.shape == (n, 3)
+    assert np.isfinite(out).all()
+
+
+def test_embed_degenerate_rows_are_safe() -> None:
+    x = np.ones((11, 5))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        out = embed(_features(x), n_neighbors=15, min_dist=0.1, seed=3)
+    assert out.shape == (11, 3)
+    assert np.isfinite(out).all()
+
+
+def test_align_zero_previous_is_unchanged() -> None:
+    coords = np.random.default_rng(4).normal(size=(8, 3))
+    ids = [f"t{i}" for i in range(8)]
+    out = align(ids, coords, {i: (0.0, 0.0, 0.0) for i in ids})
     assert np.array_equal(out, coords)
