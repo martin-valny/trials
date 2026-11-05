@@ -26,6 +26,7 @@ test("shows key facts", async () => {
   expect(screen.getByText("Jan 2024 (actual)")).toBeInTheDocument(); // month precision
   expect(screen.getByText("29 Sep 2026 (estimated)")).toBeInTheDocument(); // day precision
   expect(screen.getByText("Dec 2026 (estimated)")).toBeInTheDocument();
+  expect(screen.getByText("1 site in 1 country")).toBeInTheDocument();
 });
 
 test("timeline lists status and date changes newest first", async () => {

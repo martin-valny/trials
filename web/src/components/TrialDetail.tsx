@@ -65,7 +65,7 @@ export function TrialDetail() {
     ["Study completion", dateText(t.completion_date)],
     ["Conditions", formatValue("conditions", t.conditions)],
     ["Interventions", t.interventions.map((i) => i.name).join(", ") || "—"],
-    ["Sites", `${t.site_count} in ${t.countries.length} countries`],
+    ["Sites", `${t.site_count} ${t.site_count === 1 ? "site" : "sites"} in ${t.countries.length} ${t.countries.length === 1 ? "country" : "countries"}`],
   ];
 
   return (
