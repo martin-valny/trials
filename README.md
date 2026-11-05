@@ -4,7 +4,7 @@
 
 > **Status: slice 1 of 6.** The change feed and trial pages are what exists today. Linking trials to drug targets, genetic evidence and preprints is **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
 
-Live site: _to be added after go-live_ · Architecture: [docs/architecture.md](docs/architecture.md)
+Live site: <https://martin-valny.github.io/trials/> · Architecture: [docs/architecture.md](docs/architecture.md)
 
 ## The problem and who it is for
 
@@ -85,7 +85,12 @@ _Added in later slices._ Planned: a labelled evaluation set for retrieval answer
 
 ## Go-live status
 
-The scheduled run is designed to be unattended. **14-day clock: not started.** Start date and result will be recorded here after the first successful `daily` run.
+The scheduled run is designed to be unattended.
+
+- **First successful run:** 2026-11-05 (manual dispatch, run #2; run #1 failed on a blocked keepalive action and a Pages timeout, both since fixed).
+- **First scheduled run:** 2026-11-06, 07:17 UTC.
+- **14-day clock:** started 2026-11-05. The target is 14 consecutive daily runs without intervention; the result will be recorded here.
+- The change feed is empty on day 1 by design: a change needs two daily snapshots to compare.
 
 ## Repository layout
 
