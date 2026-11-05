@@ -31,7 +31,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Only "the branch does not exist" (ls-remote exit 2) is a first run. Any other
       # failure must stop the job: running on an empty ./data would publish a fresh
@@ -49,7 +49,7 @@ jobs:
 
       - name: Checkout data branch
         if: steps.databranch.outputs.exists == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: data
           path: data
