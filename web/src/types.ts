@@ -58,8 +58,26 @@ export interface Meta {
   generated_for: string;
   trial_count: number;
   last_success_at: string | null; // ISO, UTC, trailing Z; null before the first success
+  tracking_since: string | null; // YYYY-MM-DD of the first successful run
   data_timestamp: string | null;
   warnings: string[];
 }
 
 export type Window = 1 | 7 | 30;
+
+export interface TrialSummary {
+  nct_id: string;
+  title: string;
+  overall_status: string;
+  phases: string[];
+  lead_sponsor: string | null;
+  start_date: DateInfo | null;
+  primary_completion_date: DateInfo | null;
+  enrollment: number | null;
+  last_change: string | null; // YYYY-MM-DD of the latest recorded change
+}
+
+export interface TrialsIndex {
+  generated_for: string;
+  trials: TrialSummary[];
+}

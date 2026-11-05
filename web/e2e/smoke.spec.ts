@@ -16,8 +16,17 @@ test("feed -> trial -> methods", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Methods", level: 1 })).toBeVisible();
 });
 
+test("trials list opens a trial", async ({ page }) => {
+  await page.goto("/#/trials");
+  const first = page.locator("table.trials tbody tr").first();
+  await expect(first).toBeVisible();
+  const nct = (await first.getByRole("link", { name: /^NCT\d+$/ }).textContent()) ?? "";
+  await first.getByRole("link", { name: nct }).click();
+  await expect(page).toHaveURL(new RegExp(`#/trial/${nct}$`));
+});
+
 test("no horizontal scroll", async ({ page }) => {
-  for (const route of ["#/changes", "#/methods"]) {
+  for (const route of ["#/changes", "#/trials", "#/methods"]) {
     await page.goto("/" + route);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(

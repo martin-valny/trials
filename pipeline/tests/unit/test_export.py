@@ -344,6 +344,7 @@ def test_meta_latest_success(tmp_path: Path, cfg: AreaConfig) -> None:
         "generated_for": "2026-03-31",
         "trial_count": 2,
         "last_success_at": "2026-03-30T06:30:00Z",
+        "tracking_since": "2026-03-29",
         "data_timestamp": "new",
         "warnings": ["w1", "w2"],
     }
@@ -359,6 +360,35 @@ def test_meta_tie_takes_last_and_no_success(tmp_path: Path, cfg: AreaConfig) -> 
     run(tmp_path, [], log=runlog([{"status": "failed"}]), cfg=cfg)
     meta = load(tmp_path / "meta.json")
     assert (meta["last_success_at"], meta["data_timestamp"], meta["warnings"]) == (None, None, [])
+    assert meta["tracking_since"] is None
+
+
+def test_trial_index(tmp_path: Path, cfg: AreaConfig) -> None:
+    rows = [ch("NCT00000001", "old", date(2025, 1, 1)), ch("NCT00000001", "new", DAY)]
+    run(tmp_path, rows, cfg=cfg)
+    doc = load(tmp_path / "trials.json")
+    assert doc["generated_for"] == "2026-03-31"
+    assert [t["nct_id"] for t in doc["trials"]] == ["NCT00000001", "NCT00000002"]  # sorted
+    first, second = doc["trials"]
+    assert set(first) == {
+        "nct_id",
+        "title",
+        "overall_status",
+        "phases",
+        "lead_sponsor",
+        "start_date",
+        "primary_completion_date",
+        "enrollment",
+        "last_change",
+    }
+    assert first["last_change"] == "2026-03-31"
+    assert first["start_date"] == {"date": "2024-01-01", "precision": "month", "type": "ACTUAL"}
+    assert second["last_change"] is None and second["start_date"] is None
+
+
+def test_trial_index_empty_baseline(tmp_path: Path, cfg: AreaConfig) -> None:
+    export(Tables.empty(), changes_df([]), runlog([]), cfg, DAY, tmp_path)
+    assert load(tmp_path / "trials.json")["trials"] == []
 
 
 def test_file_format(tmp_path: Path, cfg: AreaConfig) -> None:

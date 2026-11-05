@@ -142,3 +142,25 @@ test("a removed trial has no trial page link but keeps the source link", async (
     `https://clinicaltrials.gov/study/${removed!.nct_id}`,
   );
 });
+
+test("an empty feed explains itself and links to the trials list", async () => {
+  stubFetch({ "changes/7d.json": { window_days: 7, generated_for: "2026-11-04", changes: [] } });
+  renderAt(<ChangesFeed />);
+  expect(await screen.findByText("No changes in the last 7 days")).toBeInTheDocument();
+  expect(await screen.findByText(/Tracking 14 trials since 2026-11-03/)).toBeInTheDocument();
+  expect(screen.getByText(/a new deployment starts empty/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Browse the tracked trials" })).toHaveAttribute(
+    "href",
+    "/trials",
+  );
+});
+
+test("an empty feed still renders without metadata", async () => {
+  stubFetch({
+    "changes/7d.json": { window_days: 7, generated_for: "2026-11-04", changes: [] },
+    "meta.json": 404,
+  });
+  renderAt(<ChangesFeed />);
+  expect(await screen.findByText("No changes in the last 7 days")).toBeInTheDocument();
+  expect(screen.queryByText(/Tracking/)).not.toBeInTheDocument();
+});

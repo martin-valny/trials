@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { loadChanges } from "../data";
+import { Link } from "react-router-dom";
+import { loadChanges, loadMeta } from "../data";
 import { fieldLabel, windowLabel } from "../lib/format";
-import type { ChangeItem, Window } from "../types";
+import type { ChangeItem, Meta, Window } from "../types";
 import { ChangeRow } from "./ChangeRow";
 
 const WINDOWS: Window[] = [1, 7, 30];
@@ -16,6 +17,17 @@ export function ChangesFeed() {
   const [sponsor, setSponsor] = useState("");
   const [field, setField] = useState("");
   const [notableOnly, setNotableOnly] = useState(true);
+  const [meta, setMeta] = useState<Meta | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    loadMeta()
+      .then((m) => live && setMeta(m))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -107,7 +119,17 @@ export function ChangesFeed() {
       {loading ? <p role="status">Loading changes…</p> : null}
       {error !== undefined ? <p role="alert">Could not load changes: {error}</p> : null}
       {ready && items.length === 0 ? (
-        <p>No changes in the last {windowLabel(win)}</p>
+        <div>
+          <p>No changes in the last {windowLabel(win)}</p>
+          {meta ? (
+            <p className="muted">
+              Tracking {meta.trial_count} trials
+              {meta.tracking_since ? ` since ${meta.tracking_since}` : ""}. A change appears here
+              once a tracked field differs between two daily snapshots, so a new deployment starts
+              empty. <Link to="/trials">Browse the tracked trials</Link>.
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {ready && items.length > 0 && shown.length === 0 ? (
         <p>No changes match these filters. Try unchecking “Notable only”.</p>

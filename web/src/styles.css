@@ -51,3 +51,5 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
 .placeholder { padding: .5rem .75rem; border: 1px dashed var(--line); color: var(--muted); border-radius: .4rem; }
 .callout { padding: .5rem .75rem; background: var(--warn-bg); color: var(--warn-fg); border-radius: .4rem; }
 .timeline { padding-left: 1.25rem; }
+.filters input[type="search"] { font: inherit; padding: .3rem; min-width: min(18rem, 100%); }
+table.trials td[data-label="Last change"] { white-space: nowrap; }
