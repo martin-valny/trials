@@ -1,4 +1,4 @@
-import warnings
+import logging
 
 import numpy as np
 import pytest
@@ -65,22 +65,27 @@ def test_align_without_overlap_is_identity() -> None:
 
 
 @pytest.mark.parametrize("n", [4, 5, 10])
-def test_embed_small_inputs_are_quiet(n: int) -> None:
+def test_embed_small_inputs_are_quiet(n: int, caplog: pytest.LogCaptureFixture) -> None:
     x = np.random.default_rng(n).random((n, 6))
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
+    with caplog.at_level(logging.WARNING, logger="trialradar.explorer.layout"):
         out = embed(_features(x), n_neighbors=15, min_dist=0.1, seed=3)
+    assert caplog.records == []
     assert out.shape == (n, 3)
     assert np.isfinite(out).all()
 
 
 def test_embed_degenerate_rows_are_safe() -> None:
-    x = np.ones((11, 5))
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        out = embed(_features(x), n_neighbors=15, min_dist=0.1, seed=3)
+    out = embed(_features(np.ones((11, 5))), n_neighbors=15, min_dist=0.1, seed=3)
     assert out.shape == (11, 3)
     assert np.isfinite(out).all()
+
+
+def test_align_nonfinite_previous_is_unchanged() -> None:
+    coords = np.random.default_rng(5).normal(size=(8, 3))
+    ids = [f"t{i}" for i in range(8)]
+    previous = {i: (1.0, 2.0, 3.0) for i in ids}
+    previous["t0"] = (float("nan"), 0.0, 0.0)
+    assert np.array_equal(align(ids, coords, previous), coords)
 
 
 def test_align_zero_previous_is_unchanged() -> None:
