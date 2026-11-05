@@ -56,7 +56,7 @@ export function Methods() {
           not medical advice.
         </li>
         <li>
-          Trials that list only an abbreviation (for example “MS”) as their condition are missed.
+          Trials that list only an abbreviation (for example a two-letter acronym) as their condition are missed.
         </li>
         <li>History starts on the first day of tracking; earlier changes are not reconstructed.</li>
         <li>No AI is used in this version; every value comes from the registry record.</li>
