@@ -1,0 +1,10 @@
+{
+  "name": "protect-data-branch",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": { "include": ["refs/heads/data"], "exclude": [] }
+  },
+  "rules": [{ "type": "deletion" }],
+  "bypass_actors": []
+}

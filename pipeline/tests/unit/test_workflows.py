@@ -170,3 +170,28 @@ def test_release_month_comes_from_the_snapshot_date(daily: dict[str, Any]) -> No
     script = named(daily, "Upload raw snapshot")["run"]
     assert "date -u" not in script
     assert '"${day:0:7}"' in script
+
+
+RULESETS = REPO_ROOT / ".github" / "rulesets"
+
+
+def test_ruleset_required_checks_match_ci_jobs() -> None:
+    import json
+
+    ci_jobs = set(load("ci.yml")["jobs"])
+    rules = json.loads((RULESETS / "default-branch.json").read_text(encoding="utf-8"))["rules"]
+    required = {
+        c["context"]
+        for r in rules
+        if r["type"] == "required_status_checks"
+        for c in r["parameters"]["required_status_checks"]
+    }
+    assert required == ci_jobs
+
+
+def test_data_branch_ruleset_allows_the_daily_force_push() -> None:
+    import json
+
+    rules = json.loads((RULESETS / "data-branch.json").read_text(encoding="utf-8"))["rules"]
+    assert {r["type"] for r in rules} == {"deletion"}  # no non_fast_forward: daily.yml force-pushes
+    assert "git push -f" in named(load("daily.yml"), "Push data branch")["run"]
