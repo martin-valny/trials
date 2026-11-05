@@ -65,7 +65,7 @@ def _sex(x: StudyExtras) -> list[float]:
 
 def _l2(m: sp.csr_matrix) -> sp.csr_matrix:
     # sklearn leaves all-zero rows as zero (no NaN) but rejects zero-width input.
-    if m.shape[1] == 0:
+    if m.shape[0] == 0 or m.shape[1] == 0:
         return m
     return sp.csr_matrix(normalize(m, norm="l2", axis=1))
 
@@ -77,6 +77,9 @@ def build_features(
     intervention_types: Mapping[str, frozenset[str]],
     weights: Mapping[str, float],
 ) -> Features:
+    missing = [k for k in _BLOCKS if k not in weights]
+    if missing:
+        raise KeyError(f"missing explorer weights: {missing}")
     ordered = sorted(ids)
     xs = [extras[i] for i in ordered]
     n = len(ordered)
@@ -89,7 +92,9 @@ def build_features(
         else sp.csr_matrix((n, 0), dtype=np.float64),
         "treatment_type": _multi_hot([sorted(intervention_types.get(i, ())) for i in ordered]),
         "molecule": _tfidf([sorted(drugs.get(i, ())) for i in ordered]),
-        "population": sp.csr_matrix(np.array([_population(x) for x in xs], dtype=np.float64)),
+        "population": sp.csr_matrix(
+            np.array([_population(x) for x in xs], dtype=np.float64).reshape(n, 5)
+        ),
     }
 
     parts: list[sp.csr_matrix] = []
