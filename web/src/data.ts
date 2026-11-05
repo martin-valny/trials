@@ -1,4 +1,4 @@
-import type { ChangesFile, Meta, TrialFile, Window } from "./types";
+import type { ChangesFile, Meta, TrialFile, TrialsIndex, Window } from "./types";
 
 const base = (): string => import.meta.env.BASE_URL + "data/";
 
@@ -17,3 +17,5 @@ export const loadTrial = (nct: string): Promise<TrialFile | null> =>
   fetchJson<TrialFile>(`trials/${encodeURIComponent(nct)}.json`);
 
 export const loadMeta = (): Promise<Meta | null> => fetchJson<Meta>("meta.json");
+
+export const loadTrials = (): Promise<TrialsIndex | null> => fetchJson<TrialsIndex>("trials.json");

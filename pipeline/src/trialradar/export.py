@@ -141,9 +141,31 @@ def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[s
     return docs
 
 
+def _index(docs: dict[str, dict[str, Any]], day: date) -> dict[str, Any]:
+    """One row per tracked trial for the browse view; sorted so output is stable."""
+    rows = []
+    for nct in sorted(docs):
+        d = docs[nct]
+        rows.append(
+            {
+                "nct_id": nct,
+                "title": d["title"],
+                "overall_status": d["overall_status"],
+                "phases": d["phases"],
+                "lead_sponsor": d["lead_sponsor"],
+                "start_date": d["start_date"],
+                "primary_completion_date": d["primary_completion_date"],
+                "enrollment": d["enrollment"],
+                "last_change": max((c["detected_date"] for c in d["changes"]), default=None),
+            }
+        )
+    return {"generated_for": day.isoformat(), "trials": rows}
+
+
 def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> dict[str, Any]:
     ok = run_log.filter(pl.col("status") == "success")
     last_success_at: str | None = None
+    tracking_since: str | None = None
     data_timestamp: str | None = None
     warnings: list[Any] = []
     if ok.height:
@@ -151,6 +173,8 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
         row = ok.sort("started_at", maintain_order=True).row(-1, named=True)
         started: datetime = row["started_at"]
         last_success_at = started.isoformat(timespec="seconds") + "Z"
+        first: datetime = ok["started_at"].min()  # type: ignore[assignment]
+        tracking_since = first.date().isoformat()
         data_timestamp = row["data_timestamp"]
         warnings = json.loads(row["warnings"]) if row["warnings"] else []
         if not isinstance(warnings, list) or not all(isinstance(w, str) for w in warnings):
@@ -161,6 +185,7 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
         "generated_for": day.isoformat(),
         "trial_count": tables.trial.height,
         "last_success_at": last_success_at,
+        "tracking_since": tracking_since,
         "data_timestamp": data_timestamp,
         "warnings": warnings,
     }
@@ -199,4 +224,5 @@ def export(
         if _TRIAL_FILE.fullmatch(p.name) and p.is_file() and p.stem not in docs:
             p.unlink()
 
+    _write_json(out_dir / "trials.json", _index(docs, day))
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

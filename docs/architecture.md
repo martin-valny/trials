@@ -42,7 +42,7 @@ flowchart LR
 | `tracked`, `diff` | Tracked-field state per trial; field-level changes with notable flags |
 | `quality` | Raw schema, null-rate, date-order, duplicate and row-drop checks |
 | `snapshot`, `store` | Raw snapshot staging/promotion; crash-safe Parquet store |
-| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `meta.json` |
+| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json` |
 | `pipeline`, `cli` | Orchestration, `rebuild`, `trialradar run`, `check`, `rebuild` |
 
 ## Workflows

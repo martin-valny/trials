@@ -35,9 +35,19 @@ test("badge handles a failing request", async () => {
 
 test("fixture matches the exported meta shape", () => {
   expect(Object.keys(meta).sort()).toEqual(
-    ["area", "conditions", "data_timestamp", "generated_for", "last_success_at", "trial_count", "warnings"],
+    [
+      "area",
+      "conditions",
+      "data_timestamp",
+      "generated_for",
+      "last_success_at",
+      "trial_count",
+      "tracking_since",
+      "warnings",
+    ].sort(),
   );
 });
+
 
 test("null timestamps degrade to unknown instead of crashing", async () => {
   stubFetch({ "meta.json": { ...meta, last_success_at: null, data_timestamp: null } });
