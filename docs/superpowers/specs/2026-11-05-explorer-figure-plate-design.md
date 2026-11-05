@@ -139,7 +139,7 @@ Computed in the pipeline and covered by tests on synthetic data: a planted clust
 
 ### 6.4a Day-to-day stability
 
-UMAP is refit daily. To keep the map recognisable, each day's coordinates are aligned to the previous day's by an orthogonal Procrustes rotation (plus reflection and scale) fitted on trials present both days. Previous coordinates are stored on the `data` branch (`current/explorer_coords.parquet`); with no previous coordinates (first run, rebuild) the raw layout is used.
+UMAP is refit daily. To keep the map recognisable, each day's coordinates are aligned to the previous day's by an orthogonal Procrustes rotation (plus reflection and scale) fitted on trials present both days. Previous coordinates are stored on the `data` branch (`explorer/coords.parquet` at the store root); with no previous coordinates (first run, rebuild) the raw layout is used.
 
 ### 6.5 Export contract
 

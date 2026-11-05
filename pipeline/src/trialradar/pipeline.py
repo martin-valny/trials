@@ -164,6 +164,12 @@ def _explorer(
     return doc, coords
 
 
+def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
+    with _stage("explorer_coords", **extra) as info:
+        store.save_explorer_coords(coords)
+        info["rows"] = coords.height
+
+
 def _gate(
     raw: list[dict[str, Any]],
     relevant: list[dict[str, Any]],
@@ -328,7 +334,7 @@ def run(
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
-        store.save_explorer_coords(coords)
+        _save_coords(store, coords)
         with _stage("run_log", status="success") as info:
             store.append_run(row)
             info["rows"] = 1
@@ -471,7 +477,7 @@ def rebuild(
                 explorer=explorer,
             )
             info["rows"] = tables.trial.height
-        store.save_explorer_coords(coords)
+        _save_coords(store, coords, day=day.isoformat())
         # Everything succeeded: swap the rebuilt store in.
         Store(store_root).wipe()
         store_root.mkdir(parents=True, exist_ok=True)

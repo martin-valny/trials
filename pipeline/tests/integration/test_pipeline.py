@@ -407,6 +407,7 @@ def test_each_stage_logs_one_json_line(
         "store",
         "explorer",
         "export",
+        "explorer_coords",
         "run_log",
     ]
     for ln in lines:

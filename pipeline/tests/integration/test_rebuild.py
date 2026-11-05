@@ -15,7 +15,16 @@ from trialradar.config import AreaConfig
 from trialradar.pipeline import RebuildError, rebuild
 from trialradar.store import Store
 
-from .conftest import Env, FakeClient, day1_studies, day2_studies, nct, relevant_ids, tree_bytes
+from .conftest import (
+    Env,
+    FakeClient,
+    day1_studies,
+    day2_studies,
+    nct,
+    relevant_ids,
+    tree_bytes,
+    without_coords,
+)
 from .test_pipeline import D1, D2, D3, TS1, TS2, TS3, drop_study
 
 D4 = date(2026, 3, 4)
@@ -41,19 +50,12 @@ def assert_same_history(a: Store, b: Store) -> None:
     assert a.snapshots().equals(b.snapshots())
 
 
-def _without_coords(site: Path) -> dict[str, Any]:
-    doc: dict[str, Any] = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
-    for t in doc["trials"]:
-        del t["x"], t["y"], t["z"]
-    return doc
-
-
 def assert_same_site(a: Path, b: Path) -> None:
     # A rebuild lays the map out afresh (no previous coordinates, spec 6.4a), so
     # only the explorer coordinates may differ from the incremental site.
     skip = ("meta.json", "explorer.json")
     assert tree_bytes(a, exclude=skip) == tree_bytes(b, exclude=skip)
-    assert _without_coords(a) == _without_coords(b)
+    assert without_coords(a) == without_coords(b)
 
 
 def test_rebuild_equals_incremental_after_a_failed_day(

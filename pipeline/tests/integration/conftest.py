@@ -163,6 +163,15 @@ def tree_bytes(root: Path, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
     }
 
 
+def without_coords(site: Path) -> dict[str, Any]:
+    """``site/explorer.json`` with each trial's x/y/z removed: UMAP coordinates are
+    not byte-stable across platforms, and a rebuild lays the map out afresh."""
+    doc: dict[str, Any] = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
+    for t in doc["trials"]:
+        del t["x"], t["y"], t["z"]
+    return doc
+
+
 @pytest.fixture
 def env(tmp_path: Path, cfg: AreaConfig) -> Env:
     return Env(tmp_path, cfg)
