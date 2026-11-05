@@ -44,3 +44,10 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
   table.changes td { border: 0; padding: .35rem .75rem; overflow-wrap: anywhere; }
   table.changes td::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); text-transform: uppercase; }
 }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .75rem 1.5rem; }
+.facts dt { font-size: .75rem; color: var(--muted); text-transform: uppercase; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.placeholder { padding: .5rem .75rem; border: 1px dashed var(--line); color: var(--muted); border-radius: .4rem; }
+.callout { padding: .5rem .75rem; background: var(--warn-bg); color: var(--warn-fg); border-radius: .4rem; }
+.timeline { padding-left: 1.25rem; }

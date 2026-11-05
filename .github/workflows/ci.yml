@@ -40,3 +40,7 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx vitest run
       - run: npm audit --audit-level=high
+      - run: npm run build
+      - run: rm -rf dist/data && cp -r tests/fixtures/data dist/data
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test

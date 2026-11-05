@@ -1,0 +1,37 @@
+import type { ChangeItem } from "../types";
+import { fieldLabel, formatDelta, formatValue, reasonLabel } from "../lib/format";
+
+/** Full change history for one trial (all-time, newest first). */
+export function ChangeTable({ items }: { items: ChangeItem[] }) {
+  return (
+    <table className="changes history">
+      <caption>All recorded changes ({items.length})</caption>
+      <thead>
+        <tr>
+          <th scope="col">Detected</th>
+          <th scope="col">Field</th>
+          <th scope="col">Change</th>
+          <th scope="col">Why notable</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((i) => (
+          <tr key={`${i.field}|${i.detected_date}|${String(i.new_value)}`}>
+            <td data-label="Detected">{i.detected_date}</td>
+            <td data-label="Field">{fieldLabel(i.field)}</td>
+            <td data-label="Change">
+              <span className="old">{formatValue(i.field, i.old_value)}</span>
+              <span aria-hidden="true"> → </span>
+              <span className="visually-hidden"> changed to </span>
+              <span className="new">{formatValue(i.field, i.new_value)}</span>
+              {formatDelta(i.delta_days) ? (
+                <div className="delta">{formatDelta(i.delta_days)}</div>
+              ) : null}
+            </td>
+            <td data-label="Why notable">{i.notable ? reasonLabel(i.notable_reason) : "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
