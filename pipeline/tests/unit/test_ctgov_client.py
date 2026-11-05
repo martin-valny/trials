@@ -154,7 +154,7 @@ def test_data_timestamp() -> None:
         seen.append(req.url.path)
         return httpx.Response(200, json=json.loads(body))
 
-    assert _client(handler).data_timestamp() == "2026-11-03T10:00:05"
+    assert _client(handler).data_timestamp() == json.loads(body)["dataTimestamp"]
     assert seen == ["/api/v2/version"]
 
 

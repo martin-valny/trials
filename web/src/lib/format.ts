@@ -1,0 +1,80 @@
+import type { DateInfo } from "../types";
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DASH = "—";
+
+export function isDateInfo(v: unknown): v is DateInfo {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as DateInfo).date === "string" &&
+    ((v as DateInfo).precision === "day" || (v as DateInfo).precision === "month")
+  );
+}
+
+/** "2027-03-15" -> "15 Mar 2027"; month precision "2027-03" -> "Mar 2027". */
+export function formatDate(d: DateInfo): string {
+  const [y, m, day] = d.date.split("-");
+  const month = MONTHS[Number(m) - 1];
+  if (!y || !month) return d.date;
+  return d.precision === "month" || !day ? `${month} ${y}` : `${Number(day)} ${month} ${y}`;
+}
+
+/** Outcome changes are stored as [[measure, time_frame | null], ...]. */
+function isOutcomePair(v: unknown): v is [string, string | null] {
+  return Array.isArray(v) && v.length === 2 && typeof v[0] === "string";
+}
+
+function formatOutcomes(v: unknown[]): string {
+  return v
+    .map((o) => (isOutcomePair(o) ? (o[1] ? `${o[0]} (${o[1]})` : o[0]) : formatValue("", o)))
+    .join("; ");
+}
+
+export function formatValue(field: string, v: unknown): string {
+  if (v === null || v === undefined) return DASH;
+  if (isDateInfo(v)) return formatDate(v);
+  if (field.endsWith("_outcomes") && Array.isArray(v)) {
+    return v.length === 0 ? DASH : formatOutcomes(v);
+  }
+  if (Array.isArray(v)) return v.length === 0 ? DASH : v.map((x) => formatValue(field, x)).join(", ");
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+export function formatDelta(days: number | null): string {
+  if (days === null || days === 0) return "";
+  const n = Math.abs(days);
+  const unit = n === 1 ? "day" : "days";
+  return days > 0 ? `slipped ${n} ${unit}` : `pulled in ${n} ${unit}`;
+}
+
+const STALE_MS = 36 * 60 * 60 * 1000;
+
+/** True when the last successful run is more than 36 hours before ``now``. */
+export function isStale(lastSuccessIso: string, now: Date): boolean {
+  const t = Date.parse(lastSuccessIso);
+  return Number.isNaN(t) || now.getTime() - t > STALE_MS;
+}
+
+/** "overall_status" -> "Overall status". */
+export function fieldLabel(field: string): string {
+  if (field === "_tracked") return "Registry presence";
+  const s = field.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const REASONS: Record<string, string> = {
+  status_change: "Status changed",
+  primary_endpoint_change: "Primary endpoint changed",
+  enrollment_change_ge_20pct: "Enrollment changed by 20% or more",
+  date_slip_ge_90d: "Date moved by 90 days or more",
+};
+
+export function reasonLabel(reason: string | null): string {
+  if (reason === null) return "";
+  return REASONS[reason] ?? reason.replace(/_/g, " ");
+}
+
+/** "7 days" / "1 day". */
+export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "days"}`;

@@ -1,0 +1,190 @@
+name: daily
+
+on:
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Run even if the registry data timestamp is unchanged"
+        type: boolean
+        default: false
+      accept_drop:
+        description: "Accept a one-day trial-count drop above the error threshold"
+        type: boolean
+        default: false
+
+# One run at a time; a queued run waits instead of cancelling the one in flight.
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Only "the branch does not exist" (ls-remote exit 2) is a first run. Any other
+      # failure must stop the job: running on an empty ./data would publish a fresh
+      # orphan over the real history.
+      - name: Detect data branch
+        id: databranch
+        run: |
+          rc=0
+          git ls-remote --exit-code --heads origin data >/dev/null || rc=$?
+          case "$rc" in
+            0) echo "exists=true" >> "$GITHUB_OUTPUT" ;;
+            2) echo "exists=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "git ls-remote failed with exit code $rc" >&2; exit "$rc" ;;
+          esac
+
+      - name: Checkout data branch
+        if: steps.databranch.outputs.exists == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data
+
+      - name: Ensure data directory
+        run: mkdir -p data
+
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - name: Install pipeline
+        working-directory: pipeline
+        run: uv sync --locked
+
+      # The CLI writes status=<success|skipped|failed> to $GITHUB_OUTPUT. The step
+      # is allowed to fail so the failure evidence below can be uploaded; the job is
+      # failed explicitly by the last step.
+      - name: Run pipeline
+        id: run
+        continue-on-error: true
+        working-directory: pipeline
+        env:
+          FORCE: ${{ inputs.force }}
+          ACCEPT_DROP: ${{ inputs.accept_drop }}
+        run: |
+          args=()
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          if [ "$ACCEPT_DROP" = "true" ]; then args+=(--accept-drop); fi
+          uv run trialradar run \
+            --config ../config/area.yaml \
+            --data-dir ../data \
+            --raw-dir ../raw \
+            --site-dir ../web/public/data \
+            "${args[@]}"
+
+      # Quarantined snapshots and staged files vanish with the runner otherwise.
+      - name: Upload failure evidence
+        if: always() && steps.run.outputs.status != 'success' && steps.run.outputs.status != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-run-${{ github.run_id }}
+          path: |
+            raw/*.failed.*
+            raw/.incoming/
+            data/history/run_log.parquet
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Everything below publishes, so it runs only for a fully successful run.
+      # Order matters: the data branch is the commit point and goes LAST. If anything
+      # earlier fails, the data branch is unchanged, so the next run redoes the same
+      # registry version (idempotently) instead of skipping a day that never shipped.
+      # Only dated snapshots and their sidecars; never raw/.incoming/ or *.failed.*.
+      - name: Upload raw snapshot
+        if: steps.run.outputs.status == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          snaps=(raw/????-??-??.jsonl.gz)
+          files=("${snaps[@]}" raw/????-??-??.meta.json)
+          if [ "${#snaps[@]}" -eq 0 ]; then
+            echo "No raw snapshot files to upload" >&2
+            exit 1
+          fi
+          # The release month comes from the snapshot's own date, not the clock.
+          day="$(basename "${snaps[-1]}" .jsonl.gz)"
+          month="${day:0:7}"
+          tag="snapshots-$month"
+          gh release view "$tag" >/dev/null 2>&1 \
+            || gh release create "$tag" --title "Raw snapshots $month" \
+                 --notes "Raw ClinicalTrials.gov snapshots"
+          gh release upload "$tag" "${files[@]}" --clobber
+
+      - uses: actions/setup-node@v4
+        if: steps.run.outputs.status == 'success'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build site
+        if: steps.run.outputs.status == 'success'
+        working-directory: web
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload Pages artifact
+        if: steps.run.outputs.status == 'success'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+      - name: Deploy Pages
+        id: deployment
+        if: steps.run.outputs.status == 'success'
+        uses: actions/deploy-pages@v4
+
+      - name: Push data branch
+        if: steps.run.outputs.status == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf publish && mkdir publish
+          rsync -a --exclude .git data/ publish/
+          cd publish
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898573+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan data-tmp
+          git add -A
+          git commit -q -m "data: $(date -u +%Y-%m-%d)"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:data
+
+      - name: Fail if the run failed
+        if: always() && steps.run.outputs.status != 'success' && steps.run.outputs.status != 'skipped'
+        run: |
+          echo "Pipeline status: '${{ steps.run.outputs.status }}'" >&2
+          exit 1
+
+  # Scheduled workflows are disabled after 60 days without repository activity.
+  # API mode re-enables the workflow and needs actions: write, so it lives in its
+  # own job and the update job keeps the minimal permission set.
+  keepalive:
+    needs: update
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Keepalive
+        uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          use_api: true
+          commit_message: "chore: keepalive"

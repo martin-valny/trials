@@ -46,6 +46,20 @@ class ConditionSpec(_Strict):
     label: str
     synonyms: list[str] = Field(min_length=1)
 
+    @field_validator("label")
+    @classmethod
+    def _label_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("condition label must not be blank")
+        return value
+
+    @field_validator("synonyms")
+    @classmethod
+    def _synonyms_not_blank(cls, value: list[str]) -> list[str]:
+        if any(not s.strip() for s in value):
+            raise ValueError("synonyms must not be empty or whitespace-only")
+        return value
+
 
 class Thresholds(_Strict):
     enrollment_rel_change: float = 0.20
@@ -61,6 +75,12 @@ class Thresholds(_Strict):
             raise ValueError("require 0 < row_drop_warn <= row_drop_error <= 1")
         if not 0 <= self.min_relevant_share <= 1:
             raise ValueError("min_relevant_share must be within [0, 1]")
+        if self.enrollment_rel_change <= 0:
+            raise ValueError("enrollment_rel_change must be > 0")
+        if self.date_slip_days < 1:
+            raise ValueError("date_slip_days must be >= 1")
+        if not 0 <= self.max_null_rate <= 1:
+            raise ValueError("max_null_rate must be within [0, 1]")
         return self
 
 
@@ -78,6 +98,10 @@ class AreaConfig(_Strict):
     @field_validator("tracked_fields")
     @classmethod
     def _known_fields(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("tracked_fields must not be empty")
+        if len(set(value)) != len(value):
+            raise ValueError("tracked_fields must not contain duplicates")
         unknown = [f for f in value if f not in TRACKED_FIELDS]
         if unknown:
             raise ValueError(f"unknown tracked_fields: {unknown}")
