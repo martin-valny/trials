@@ -48,6 +48,13 @@ export interface TrialFile {
   allocation: string | null;
   masking: string | null;
   last_update_post_date: string | null;
+  brief_summary: string | null;
+  eligibility: {
+    sex: "ALL" | "FEMALE" | "MALE" | null;
+    min_age_years: number | null;
+    max_age_years: number | null;
+  };
+  has_results: boolean;
   changes: ChangeItem[];
   source_url: string;
 }
@@ -80,4 +87,49 @@ export interface TrialSummary {
 export interface TrialsIndex {
   generated_for: string;
   trials: TrialSummary[];
+}
+
+export type Outcome = "succeeded" | "stopped" | "completed_unknown" | "running" | "unknown";
+
+export interface ExplorerTrial {
+  condition_labels: string[];
+  drugs: string[];
+  enrollment: number | null;
+  has_results: boolean;
+  lead_sponsor: string | null;
+  nct_id: string;
+  outcome: Outcome;
+  phase: string | null; // a phase string, "NA", or null
+  start_year: number | null;
+  title: string;
+  treatment_types: string[];
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface ExplorerStats {
+  baseline_mean: number | null;
+  baseline_range: [number, number] | null;
+  by_condition: { finished: number; label: string; succeeded: number }[];
+  lift: number | null;
+  n_averaged: number;
+  n_pool: number;
+  n_short: number;
+  n_succeeded: number;
+  success_rate: number | null;
+  verdict: "insufficient" | "chance" | "clustered";
+}
+
+export interface ExplorerFile {
+  generated_for: string;
+  method: {
+    algorithm: string;
+    dims: number;
+    features: string[];
+    k: number;
+    seed: number;
+  };
+  stats: ExplorerStats;
+  trials: ExplorerTrial[];
 }
