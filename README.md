@@ -91,4 +91,6 @@ The scheduled run is designed to be unattended. **14-day clock: not started.** S
 
 `pipeline/` Python package, tests, scripts · `web/` Vite + React app · `config/` area, thresholds, aliases · `.github/workflows/` CI and schedules · `docs/` architecture, specs, plans.
 
+Branch protection: importable rulesets are in [`.github/rulesets/`](.github/rulesets/README.md).
+
 Security: see [SECURITY.md](SECURITY.md).
