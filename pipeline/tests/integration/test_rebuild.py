@@ -12,7 +12,7 @@ import pytest
 
 from trialradar import pipeline
 from trialradar.config import AreaConfig
-from trialradar.pipeline import rebuild
+from trialradar.pipeline import RebuildError, rebuild
 from trialradar.store import Store
 
 from .conftest import Env, FakeClient, day1_studies, day2_studies, nct, relevant_ids, tree_bytes
@@ -124,14 +124,65 @@ def test_rebuild_in_place_reproduces_the_store(env: Env, cfg: AreaConfig) -> Non
     assert (env.store_root / ".git" / "HEAD").exists()
 
 
-def test_rebuild_on_missing_or_empty_raw_dir_is_a_no_op(tmp_path: Path, cfg: AreaConfig) -> None:
-    store_root, site = tmp_path / "data", tmp_path / "site"
-    rebuild(cfg, store_root, tmp_path / "missing", site)
-    (tmp_path / "empty").mkdir()
-    rebuild(cfg, store_root, tmp_path / "empty", site)
-    assert not site.exists()
-    assert Store(store_root).run_log().height == 0
-    assert Store(store_root).state_before(date(2100, 1, 1)) is None
+@pytest.mark.parametrize("raw", ["missing", "empty"])
+def test_rebuild_refuses_without_snapshots_and_keeps_the_store(
+    env: Env, cfg: AreaConfig, tmp_path: Path, raw: str
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    raw_dir = tmp_path / "nothing"
+    if raw == "empty":
+        raw_dir.mkdir()
+    before = tree_bytes(env.store_root)
+    site_before = tree_bytes(env.site_dir)
+
+    with pytest.raises(RebuildError, match="no raw snapshots"):
+        rebuild(env.cfg, env.store_root, raw_dir, env.site_dir, env.aliases_dir)
+
+    assert tree_bytes(env.store_root) == before
+    assert tree_bytes(env.site_dir) == site_before
+
+
+def test_rebuild_refuses_an_incomplete_raw_set_unless_forced(env: Env, cfg: AreaConfig) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    (env.raw_dir / "2026-03-01.jsonl.gz").unlink()  # only day 2 downloaded
+    before = tree_bytes(env.store_root)
+
+    with pytest.raises(RebuildError, match="would drop the earlier days"):
+        rebuild(env.cfg, env.store_root, env.raw_dir, env.site_dir, env.aliases_dir)
+    assert tree_bytes(env.store_root) == before
+
+    rebuild(env.cfg, env.store_root, env.raw_dir, env.site_dir, env.aliases_dir, force=True)
+    assert Store(env.store_root).run_log()["data_timestamp"].to_list() == [TS2]
+
+
+def test_rebuild_with_no_replayable_day_keeps_the_store(env: Env, cfg: AreaConfig) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    before = tree_bytes(env.store_root)
+    (env.raw_dir / "2026-03-01.jsonl.gz").write_bytes(b"not gzip")
+
+    with pytest.raises(RebuildError, match="could be replayed"):
+        rebuild(env.cfg, env.store_root, env.raw_dir, env.site_dir, env.aliases_dir, force=True)
+
+    assert tree_bytes(env.store_root) == before
+    assert not [p for p in env.store_root.parent.iterdir() if p.name.startswith(".rebuild-")]
+
+
+def test_rebuild_keeps_the_gate_warnings_of_an_accepted_drop(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    studies = day1_studies(cfg)
+    keep = relevant_ids(cfg, studies)[:6]
+    small = [s for s in studies if nct(s) in keep]
+    env.run(FakeClient(TS2, small), D2, accept_drop=True)
+
+    store, site = rebuilt(env, tmp_path)
+
+    incremental = json.loads(env.store.run_log()["warnings"][-1])
+    assert any(w.startswith("row_drop_error:") for w in incremental)
+    assert json.loads(store.run_log()["warnings"][-1]) == incremental
+    assert json.loads((site / "meta.json").read_text())["warnings"] == incremental
 
 
 def test_rebuild_skips_unreadable_and_failing_days(

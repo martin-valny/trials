@@ -86,3 +86,30 @@ def test_condition_requires_synonym(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ConfigError):
         load_config(path)
+
+
+@pytest.mark.parametrize(
+    ("patch", "message"),
+    [
+        ({"tracked_fields": []}, "must not be empty"),
+        ({"tracked_fields": ["overall_status", "overall_status"]}, "duplicates"),
+        ({"thresholds": {"date_slip_days": -5}}, "date_slip_days"),
+        ({"thresholds": {"date_slip_days": 0}}, "date_slip_days"),
+        ({"thresholds": {"enrollment_rel_change": 0}}, "enrollment_rel_change"),
+        ({"thresholds": {"enrollment_rel_change": -0.2}}, "enrollment_rel_change"),
+        ({"thresholds": {"max_null_rate": 1.5}}, "max_null_rate"),
+        ({"thresholds": {"max_null_rate": -0.1}}, "max_null_rate"),
+        ({"conditions": [{"label": "X", "synonyms": ["ok", ""]}]}, "must not be empty"),
+        ({"conditions": [{"label": "X", "synonyms": ["  "]}]}, "whitespace-only"),
+        ({"conditions": [{"label": " ", "synonyms": ["ok"]}]}, "label must not be blank"),
+    ],
+)
+def test_invalid_values_rejected_with_a_reason(
+    tmp_path: Path, patch: dict[str, Any], message: str
+) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data.update(patch)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match=message):
+        load_config(path)

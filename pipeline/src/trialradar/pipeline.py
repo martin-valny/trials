@@ -15,7 +15,10 @@ snapshots as they were.
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Callable, Iterator, Sequence
@@ -318,61 +321,107 @@ def _record_failure(
 # ----- rebuild -----
 
 
+class RebuildError(ValueError):
+    """A rebuild was refused or had nothing to replay; the existing store is untouched."""
+
+
+def _earliest_stored_day(store_root: Path) -> date | None:
+    """First day in the existing store's history, or None if it is empty or unreadable
+    (a corrupt store is the main reason to rebuild)."""
+    try:
+        days = Store(store_root).snapshots()["snapshot_date"]
+        return days.min() if days.len() else None  # type: ignore[return-value]
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def rebuild(
     cfg: AreaConfig,
     store_root: Path,
     raw_dir: Path,
     site_dir: Path,
     aliases_dir: Path | None = None,
+    force: bool = False,
 ) -> None:
     """Regenerate the store from the raw snapshots, then export the last replayed day.
+
+    The replay is built in a temporary store next to ``store_root`` and swapped in
+    only when every step succeeded, so a refused or failed rebuild leaves the
+    existing store and site untouched. It is refused (``RebuildError``) when there
+    is nothing usable to replay, or when the earliest snapshot is later than the
+    earliest day in the existing history (an incomplete raw set would silently
+    truncate history) unless ``force`` is set.
 
     Days replay in date order through the same gate as ``run`` (honouring an
     ``accept_drop`` recorded in the sidecar); a day that fails it is skipped with
     a ``rebuild_skip`` log line. Each replayed day gets a synthetic ``success``
-    run_log row. Only store-owned entries under ``store_root`` are removed
-    (``Store.wipe``).
+    run_log row carrying the gate's warnings. Only store-owned entries under
+    ``store_root`` are replaced (``.git`` stays).
     Errors writing the store or site propagate."""
     aliases_dir = aliases_dir if aliases_dir is not None else cfg.aliases_dir
     aliases = load_alias_set(aliases_dir)
-    store = Store(store_root)
-    store.wipe()
-    prev: Tables | None = None
-    last: tuple[Tables, date] | None = None
-    for day, path in list_snapshots(raw_dir):
-        t0 = time.monotonic()
-        meta = read_sidecar(path)
-        try:
-            with _stage("read_snapshot", day=day.isoformat()) as info:
-                raw = read_snapshot(path)
-                info["rows"] = len(raw)
-            relevant, tables = _prepare(raw, cfg, aliases_dir)
-            prev_count = (prev.trial.height or None) if prev else None
-            accepted = meta.get("accept_drop") is True
-            _gate(raw, relevant, tables, prev_count, cfg, accepted)
-        except Exception as exc:  # noqa: BLE001 - an unusable day is skipped, not fatal
-            errors = exc.errors if isinstance(exc, DataError) else [_describe(exc)]
-            with _stage("rebuild_skip", day=day.isoformat()) as info:
-                info["rows"], info["warnings"] = 0, errors
-            continue
-        changes, snaps = _changes(prev, tables, cfg, aliases, day)
-        timestamp = str(meta.get("data_timestamp") or "")
-        _persist(store, tables, day, timestamp, changes, snaps)
-        started = datetime(day.year, day.month, day.day)
-        row = _run_row(
-            f"rebuild-{day.isoformat()}",
-            started,
-            t0,
-            "success",
-            timestamp,
-            len(raw),
-            changes.height,
-            [],
+    snapshots = list_snapshots(raw_dir)
+    if not snapshots:
+        raise RebuildError(
+            f"no raw snapshots in {raw_dir}; download them first "
+            "(for example: gh release download <snapshots-YYYY-MM> --dir raw)"
         )
-        store.append_run(row)
-        prev, last = tables, (tables, day)
-    if last is not None:
+    stored_from = _earliest_stored_day(store_root)
+    if not force and stored_from is not None and snapshots[0][0] > stored_from:
+        raise RebuildError(
+            f"raw snapshots start at {snapshots[0][0]} but the stored history starts at "
+            f"{stored_from}; rebuilding would drop the earlier days. Download the missing "
+            "snapshots or pass --force to rebuild from what is there"
+        )
+
+    store_root.parent.mkdir(parents=True, exist_ok=True)
+    tmp_root = Path(tempfile.mkdtemp(prefix=".rebuild-", dir=store_root.parent))
+    try:
+        store = Store(tmp_root)
+        prev: Tables | None = None
+        last: tuple[Tables, date] | None = None
+        for day, path in snapshots:
+            t0 = time.monotonic()
+            meta = read_sidecar(path)
+            try:
+                with _stage("read_snapshot", day=day.isoformat()) as info:
+                    raw = read_snapshot(path)
+                    info["rows"] = len(raw)
+                relevant, tables = _prepare(raw, cfg, aliases_dir)
+                prev_count = (prev.trial.height or None) if prev else None
+                accepted = meta.get("accept_drop") is True
+                warnings = _gate(raw, relevant, tables, prev_count, cfg, accepted)
+            except Exception as exc:  # noqa: BLE001 - an unusable day is skipped, not fatal
+                errors = exc.errors if isinstance(exc, DataError) else [_describe(exc)]
+                with _stage("rebuild_skip", day=day.isoformat()) as info:
+                    info["rows"], info["warnings"] = 0, errors
+                continue
+            changes, snaps = _changes(prev, tables, cfg, aliases, day)
+            timestamp = str(meta.get("data_timestamp") or "")
+            _persist(store, tables, day, timestamp, changes, snaps)
+            started = datetime(day.year, day.month, day.day)
+            row = _run_row(
+                f"rebuild-{day.isoformat()}",
+                started,
+                t0,
+                "success",
+                timestamp,
+                len(raw),
+                changes.height,
+                warnings,
+            )
+            store.append_run(row)
+            prev, last = tables, (tables, day)
+        if last is None:
+            raise RebuildError(f"none of the {len(snapshots)} raw snapshots could be replayed")
         tables, day = last
         with _stage("export", day=day.isoformat()) as info:
             export(tables, store.changes(), store.run_log(), cfg, day, site_dir)
             info["rows"] = tables.trial.height
+        # Everything succeeded: swap the rebuilt store in.
+        Store(store_root).wipe()
+        store_root.mkdir(parents=True, exist_ok=True)
+        for entry in sorted(tmp_root.iterdir()):
+            os.replace(entry, store_root / entry.name)
+    finally:
+        shutil.rmtree(tmp_root, ignore_errors=True)

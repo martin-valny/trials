@@ -48,6 +48,12 @@ def build_parser() -> argparse.ArgumentParser:
                 action="store_true",
                 help="accept a large drop in trial count (demotes row_drop_error to a warning)",
             )
+        else:
+            p.add_argument(
+                "--force",
+                action="store_true",
+                help="rebuild even if the raw snapshots start later than the stored history",
+            )
     return parser
 
 
@@ -112,7 +118,9 @@ def _check(args: argparse.Namespace) -> int:
 def _rebuild(args: argparse.Namespace) -> int:
     try:
         cfg = load_config(args.config)
-        rebuild(cfg, args.data_dir, args.raw_dir, args.site_dir, _aliases(args, cfg))
+        rebuild(
+            cfg, args.data_dir, args.raw_dir, args.site_dir, _aliases(args, cfg), force=args.force
+        )
     except Exception as exc:  # noqa: BLE001
         _error(exc)
         return 1
