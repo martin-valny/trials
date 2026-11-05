@@ -129,3 +129,11 @@ Final whole-branch review (session 2): sonnet reviewed web/workflows/docs, opus 
 Ruling: data branch push is the commit point and goes last in daily.yml — a failed earlier step leaves state unchanged so the next run redoes the version; cost if wrong: a deployed site may briefly be one day ahead of the data branch (self-heals next run).
 Ruling: rebuild refuses empty/partial raw sets (--force overrides) — cost if wrong: one extra flag in a rare recovery path.
 Left (documented): failed/skipped run_log rows live only in the 30-day failure artifact; vite preview returns 200 for missing files (Pages returns 404); Task 8 crash-window items; perf/test-hygiene nits.
+
+## Session 3 (see docs/superpowers/HANDOFF.md sections 7 and 9 for the full log)
+Go-live reached: repo public, rulesets on main (PR + pipeline/web checks, no force push/delete) and data (no delete), default branch renamed to main, Pages on, daily runs #2 and #3 green. First run (#1) failed: keepalive action blocked by GitHub (replaced by `gh workflow enable`) and a Pages deploy timeout (re-run fixed it).
+PRs merged: #5 (Tasks 10b-14 + review fixes), #6 (ruleset definitions, email removal), #1-#4 Dependabot, #7 keepalive fix, #8 go-live note + trials.json/meta.tracking_since + Trials page + self-explaining empty feed.
+Ruling: data branch pushed last as the commit point — a failed earlier step leaves state unchanged — cost if wrong: site briefly one day ahead of data (self-heals).
+Ruling: rebuild refuses empty/partial raw sets unless --force — cost if wrong: one extra flag.
+Ruling: Ask feature is browser-only with a bring-your-own Gemini key and an extractive fallback; evaluation runs on recorded responses in CI; no AWS/Bedrock (user decision) — cost if wrong: no server-side AI endpoint on the public site.
+Open: design direction (A clinical dashboard / B editorial / C dense terminal) awaiting the user; Ask-feature brainstorming paused after the hosting decision (approaches, design sections, spec, plan still to do).
