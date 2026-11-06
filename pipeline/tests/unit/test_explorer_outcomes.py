@@ -4,7 +4,14 @@ from datetime import date
 
 import polars as pl
 
-from trialradar.explorer.outcomes import can_succeed, in_pool, label_outcomes, top_phase
+from trialradar.explorer.outcomes import (
+    TrialLabels,
+    can_succeed,
+    in_pool,
+    label_outcomes,
+    success_labels,
+    top_phase,
+)
 
 Row = tuple[str, list[str], str, date | None]
 
@@ -30,6 +37,11 @@ def _fs(*names: str) -> frozenset[str]:
     return frozenset(names)
 
 
+def _labels(t: pl.DataFrame, *labels: str) -> TrialLabels:
+    """Every trial in ``t`` gets the same condition labels."""
+    return {n: frozenset(labels) for n in t["nct_id"].to_list()}
+
+
 def test_phase2_completed_drug_later_in_phase3_succeeds() -> None:
     t = _trial(
         [
@@ -37,7 +49,7 @@ def test_phase2_completed_drug_later_in_phase3_succeeds() -> None:
             ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "succeeded"
     assert out["B"] == "running"
 
@@ -49,7 +61,7 @@ def test_comparator_drug_does_not_count() -> None:
             ("B", ["PHASE3"], "COMPLETED", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("y")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("y")}, _labels(t, "MS"))
     assert out["A"] == "completed_unknown"
 
 
@@ -61,7 +73,7 @@ def test_already_late_phase_drug_does_not_count() -> None:
             ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x"), "B": _fs("x")})
+    out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "completed_unknown"
 
 
@@ -72,7 +84,7 @@ def test_later_trial_must_start_after() -> None:
             ("B", ["PHASE3"], "COMPLETED", date(2015, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "completed_unknown"
 
 
@@ -83,7 +95,7 @@ def test_withdrawn_later_trial_ignored() -> None:
             ("B", ["PHASE3"], "WITHDRAWN", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "completed_unknown"
     assert out["B"] == "stopped"
 
@@ -95,7 +107,7 @@ def test_phase3_never_succeeds() -> None:
             ("B", ["PHASE4"], "COMPLETED", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "completed_unknown"
 
 
@@ -108,7 +120,9 @@ def test_combined_phase2_phase3_uses_phase3() -> None:
             ("D", ["PHASE4"], "COMPLETED", date(2019, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x"), "C": _fs("z"), "D": _fs("z")})
+    out = label_outcomes(
+        t, {"A": _fs("x"), "B": _fs("x"), "C": _fs("z"), "D": _fs("z")}, _labels(t, "MS")
+    )
     assert out["A"] == "completed_unknown"
     assert out["C"] == "succeeded"
 
@@ -123,7 +137,7 @@ def test_status_buckets() -> None:
         ("U", ["PHASE2"], "UNKNOWN", d),
         ("O", ["PHASE2"], "WEIRD", d),
     ]
-    out = label_outcomes(_trial(rows), {})
+    out = label_outcomes(_trial(rows), {}, _labels(_trial(rows), "MS"))
     assert out == {
         "T": "stopped",
         "W": "stopped",
@@ -143,7 +157,9 @@ def test_missing_start_date_never_succeeds() -> None:
             ("N", ["PHASE3"], "COMPLETED", None),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x"), "C": _fs("x"), "N": _fs("x")})
+    out = label_outcomes(
+        t, {"A": _fs("x"), "B": _fs("x"), "C": _fs("x"), "N": _fs("x")}, _labels(t, "MS")
+    )
     assert out["A"] == "completed_unknown"
     # undated PHASE3 trial is no evidence for (a) or (b)
     assert out["C"] == "succeeded"
@@ -156,7 +172,10 @@ def test_na_phase_is_no_evidence() -> None:
             ("B", ["NA"], "COMPLETED", date(2018, 1, 1)),
         ]
     )
-    assert label_outcomes(t, {"A": _fs("x"), "B": _fs("x")})["A"] == "completed_unknown"
+    assert (
+        label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, _labels(t, "MS"))["A"]
+        == "completed_unknown"
+    )
 
 
 def test_top_phase_and_in_pool() -> None:
@@ -181,7 +200,7 @@ def test_two_drugs_one_blocked_other_qualifies() -> None:
             ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x", "z"), "B": _fs("z")})
+    out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x", "z"), "B": _fs("z")}, _labels(t, "MS"))
     assert out["A"] == "succeeded"
 
 
@@ -193,7 +212,7 @@ def test_same_day_phase3_does_not_block() -> None:
             ("L", ["PHASE3"], "COMPLETED", date(2016, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"A": _fs("x"), "S": _fs("x"), "L": _fs("x")})
+    out = label_outcomes(t, {"A": _fs("x"), "S": _fs("x"), "L": _fs("x")}, _labels(t, "MS"))
     assert out["A"] == "succeeded"
 
 
@@ -206,7 +225,7 @@ def test_earlier_phase4_and_withdrawn_phase3_block() -> None:
                 ("L", ["PHASE3"], "COMPLETED", date(2018, 1, 1)),
             ]
         )
-        out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x"), "L": _fs("x")})
+        out = label_outcomes(t, {"E": _fs("x"), "A": _fs("x"), "L": _fs("x")}, _labels(t, "MS"))
         assert out["A"] == "completed_unknown"
 
 
@@ -223,7 +242,7 @@ def test_more_status_buckets() -> None:
             schema=_trial([]).schema,
         )
     )
-    out = label_outcomes(t, {})
+    out = label_outcomes(t, {}, _labels(t, "MS"))
     assert out == {"N": "running", "A": "running", "E": "running", "Z": "unknown"}
 
 
@@ -235,7 +254,7 @@ def test_phase4_and_na_completed_never_succeed() -> None:
             ("L", ["PHASE4"], "COMPLETED", date(2020, 1, 1)),
         ]
     )
-    out = label_outcomes(t, {"P4": _fs("x"), "NA": _fs("x"), "L": _fs("x")})
+    out = label_outcomes(t, {"P4": _fs("x"), "NA": _fs("x"), "L": _fs("x")}, _labels(t, "MS"))
     assert out["P4"] == "completed_unknown"
     assert out["NA"] == "completed_unknown"
 
@@ -245,3 +264,54 @@ def test_drug_free_trial_is_never_in_pool() -> None:
     for outcome in ("succeeded", "stopped", "completed_unknown"):
         assert in_pool(["PHASE2"], outcome, True)
         assert not in_pool(["PHASE2"], outcome, False)
+
+
+def test_progression_in_other_disease_does_not_count() -> None:
+    t = _trial(
+        [
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, {"A": _fs("CIDP"), "B": _fs("MG")})
+    assert out["A"] == "completed_unknown"
+
+
+def test_multi_label_trial_succeeds_only_where_progressed() -> None:
+    t = _trial(
+        [
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    drugs = {"A": _fs("x"), "B": _fs("x")}
+    labels = {"A": _fs("MG", "CIDP"), "B": _fs("MG")}
+    sl = success_labels(t, drugs, labels)
+    assert sl["A"] == _fs("MG")
+    assert label_outcomes(t, drugs, labels)["A"] == "succeeded"
+
+
+def test_late_phase_block_is_per_disease() -> None:
+    # x already in Phase 3 for MS before A starts; A (CIDP Ph2) then x goes to Ph3 in CIDP
+    t = _trial(
+        [
+            ("V", ["PHASE3"], "COMPLETED", date(2010, 1, 1)),
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    out = label_outcomes(
+        t, {k: _fs("x") for k in "VAB"}, {"V": _fs("MS"), "A": _fs("CIDP"), "B": _fs("CIDP")}
+    )
+    assert out["A"] == "succeeded"
+
+
+def test_unlabelled_trial_never_succeeds() -> None:
+    t = _trial(
+        [
+            ("A", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("B", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, {"A": _fs(), "B": _fs("MS")})
+    assert out["A"] == "completed_unknown"

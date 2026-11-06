@@ -14,6 +14,7 @@ Outcome = Literal["succeeded", "stopped", "completed_unknown", "running", "unkno
 PHASE_RANK: dict[str, int] = {"EARLY_PHASE1": 0, "PHASE1": 1, "PHASE2": 2, "PHASE3": 3, "PHASE4": 4}
 
 TrialDrugs = dict[str, frozenset[str]]
+TrialLabels = dict[str, frozenset[str]]  # nct_id -> condition labels
 
 _STOPPED = frozenset({"TERMINATED", "WITHDRAWN", "SUSPENDED"})
 _RUNNING = frozenset(
@@ -49,48 +50,79 @@ def in_pool(phases: Sequence[str], outcome: Outcome, has_drug: bool) -> bool:
     )
 
 
-def label_outcomes(trial: pl.DataFrame, drugs: TrialDrugs) -> dict[str, Outcome]:
+_Entry = tuple[int, date, str | None, frozenset[str]]  # rank, start, status, labels
+
+
+def success_labels(
+    trial: pl.DataFrame, drugs: TrialDrugs, labels: TrialLabels
+) -> dict[str, frozenset[str]]:
+    """For each completed, eligible trial: the condition labels in which one of its drugs
+    later progressed (R21). Empty for every other trial.
+
+    Trial T succeeded in label L iff L is one of T's labels and some drug d of T has a later
+    trial U (started after T, higher phase, not withdrawn, L among U's labels), and d had no
+    trial V of PHASE3 or later that started before T with L among V's labels."""
     rows = trial.select("nct_id", "phases", "overall_status", "start_date").iter_rows()
     infos: list[tuple[str, int | None, bool, str | None, date | None]] = []
-    # drug -> (rank, start, status) of every dated, ranked trial with that drug
-    index: dict[str, list[tuple[int, date, str | None]]] = defaultdict(list)
+    # drug -> (rank, start, status, labels) of every dated, ranked trial with that drug
+    index: dict[str, list[_Entry]] = defaultdict(list)
     for nct_id, phases, status, start in rows:
         phases = phases or []
         top = top_phase(phases)
         rank = PHASE_RANK.get(top) if top is not None else None
-        eligible = can_succeed(phases)
-        infos.append((nct_id, rank, eligible, status, start))
+        infos.append((nct_id, rank, can_succeed(phases), status, start))
         if rank is not None and start is not None:
+            mine = labels.get(nct_id, frozenset())
             for drug in drugs.get(nct_id, frozenset()):
-                index[drug].append((rank, start, status))
+                index[drug].append((rank, start, status, mine))
 
-    out: dict[str, Outcome] = {}
+    out: dict[str, frozenset[str]] = {}
     for nct_id, rank, eligible, status, start in infos:
-        out[nct_id] = _label(nct_id, rank, eligible, status, start, drugs, index)
+        if status != "COMPLETED" or rank is None or not eligible or start is None:
+            out[nct_id] = frozenset()
+            continue
+        out[nct_id] = _success_labels(
+            rank, start, drugs.get(nct_id, frozenset()), labels.get(nct_id, frozenset()), index
+        )
     return out
 
 
-def _label(
-    nct_id: str,
-    rank: int | None,
-    eligible: bool,
-    status: str | None,
-    start: date | None,
-    drugs: TrialDrugs,
-    index: dict[str, list[tuple[int, date, str | None]]],
-) -> Outcome:
+def _success_labels(
+    rank: int,
+    start: date,
+    my_drugs: frozenset[str],
+    my_labels: frozenset[str],
+    index: dict[str, list[_Entry]],
+) -> frozenset[str]:
+    won: set[str] = set()
+    for drug in my_drugs:
+        entries = index.get(drug, [])
+        for label in my_labels - won:
+            # Planner's call: the late-phase block is per label ("already late in this disease").
+            if any(r >= _LATE_RANK and s < start and label in ls for r, s, _, ls in entries):
+                continue
+            if any(
+                r > rank and s > start and st != "WITHDRAWN" and label in ls
+                for r, s, st, ls in entries
+            ):
+                won.add(label)
+    return frozenset(won)
+
+
+def label_outcomes(
+    trial: pl.DataFrame, drugs: TrialDrugs, labels: TrialLabels
+) -> dict[str, Outcome]:
+    """One outcome per trial; ``"succeeded"`` iff :func:`success_labels` is non-empty."""
+    won = success_labels(trial, drugs, labels)
+    rows = trial.select("nct_id", "phases", "overall_status").iter_rows()
+    return {nct_id: _label(status, bool(won[nct_id])) for nct_id, _, status in rows}
+
+
+def _label(status: str | None, succeeded: bool) -> Outcome:
     if status in _STOPPED:
         return "stopped"
     if status in _RUNNING:
         return "running"
     if status != "COMPLETED":
         return "unknown"
-    if rank is None or not eligible or start is None:
-        return "completed_unknown"
-    for drug in drugs.get(nct_id, frozenset()):
-        entries = index.get(drug, [])
-        if any(r >= _LATE_RANK and s < start for r, s, _ in entries):
-            continue
-        if any(r > rank and s > start and st != "WITHDRAWN" for r, s, st in entries):
-            return "succeeded"
-    return "completed_unknown"
+    return "succeeded" if succeeded else "completed_unknown"

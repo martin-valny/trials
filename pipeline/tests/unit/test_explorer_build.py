@@ -50,6 +50,8 @@ TRIAL_KEYS = {
     "start_year",
     "end_year",
     "end_estimated",
+    "succeeded_in",
+    "in_pool",
 }
 OUTCOMES = {"succeeded", "stopped", "completed_unknown", "running", "unknown"}
 
@@ -98,6 +100,15 @@ def test_build_explorer_contract(cfg: AreaConfig) -> None:
             assert round(t[axis], 4) == t[axis]
         assert t["start_year"] is None or isinstance(t["start_year"], int)
         assert "brief_summary" not in t
+        assert t["succeeded_in"] == sorted(t["succeeded_in"])
+        assert set(t["succeeded_in"]) <= set(t["condition_labels"])
+        assert bool(t["succeeded_in"]) == (t["outcome"] == "succeeded")
+        assert isinstance(t["in_pool"], bool)
+    assert sum(t["in_pool"] for t in trials) == stats["n_pool"]
+    for r in stats["by_condition"]:
+        assert r["succeeded"] == sum(
+            1 for t in trials if t["in_pool"] and r["label"] in t["succeeded_in"]
+        )
     json.dumps(doc, allow_nan=False)  # strict JSON
 
     assert coords.schema == pl.Schema(
