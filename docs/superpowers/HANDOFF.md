@@ -1,6 +1,19 @@
 # Trial Radar — Handoff for the next agent
 
-Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 for the Explorer (branch `feat/explorer-figure-plate`, not yet merged at the time of writing). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of session 4 for the Explorer (branch `feat/explorer-figure-plate`, committed locally, not pushed — see section 00). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+
+---
+
+## 00. Current state — end of session 4 (2026-11-06), read this first
+
+- **The Explorer is finished but NOT pushed.** Everything is committed locally on branch **`feat/explorer-figure-plate`** in the user's Mac checkout (`~/Desktop/trials`), 40+ commits on top of `main` (`253c15b`). No PR exists. `main`, the live site and the daily workflow are unchanged.
+- **Why not pushed:** `git push` from the agent's shell is blocked by the user's org policy (git network calls return nothing; `gh api` works). The user rejected bypassing the sandbox. **Do not retry pushes or disable the sandbox.** The user pushes themselves: `git push -u origin feat/explorer-figure-plate`, then `gh pr create --base main` (PR body: summarise section 6, end with the Claude Code attribution line). After CI is green, merge only when the user says so.
+- **Verification at hand-off:** pipeline `pytest` 487 passed, ruff + mypy clean, `uv lock --check` clean; web vitest 140 passed, eslint + tsc clean; Playwright e2e 18/18 (desktop + 375px). Process: subagent-driven development with a spec + quality review per task, an Impeccable finish review, a final whole-branch review (opus) and a scoped re-review of its fix wave — all clean.
+- **CI on Linux has never run this branch.** Expect the first run on the PR to be the real test (UMAP/numba install, Playwright browser install). Fixture checks deliberately ignore UMAP coordinates (R10).
+- **Parked nits (R20, doc/copy only):** spec section 10 "my calls" item 9 still says the pool is "finished, Early Phase 1 – Phase 2/3" without R18's experimental-drug condition; the clustered-verdict sentence in `web/src/lib/explorer.ts` says "as often as the average finished trial" where the divisor is the pool rate ("finished trials that could succeed"). Neither shows on current data (verdict is "chance").
+- **Local preview (may still be running):** real-data site served by `vite preview` on <http://localhost:4173/#/explore>. To recreate: `gh release download snapshots-2026-11 -R martin-valny/trials -D <tmp>/raw`; `cd pipeline && uv run trialradar rebuild --config ../config/area.yaml --raw-dir <tmp>/raw --data-dir <tmp>/store --site-dir <tmp>/site --force`; `cd web && npm run build && rm -rf dist/data && cp -r <tmp>/site/. dist/data/ && npx vite preview --port 4173`. Never commit real data.
+- **Agent memory:** `~/.claude/projects/-Users-martin-valny-Desktop-trials/memory/` holds a note about the push block.
+- **Sensible next steps (ask the user which):** (1) user pushes and opens the PR, then watch CI and fix Linux-only failures; (2) fix the two R20 nits; (3) restyle Changes/Trials/Trial detail/Methods to the Figure Plate system (`DESIGN.md`); (4) resume the paused "Ask" feature brainstorm (section 5.3); (5) the pathway-graph idea (needs drug → target → pathway enrichment, e.g. ChEMBL/Open Targets — "coming next" in README).
 
 ---
 
@@ -153,7 +166,7 @@ Open design questions to settle in the spec: what is retrievable (trial records,
 - **R12 to R17 (visual):** selection ring is ink (R12); dot radius uses enrollment clamped at the 98th percentile with a count scale, isotropic cloud fit (R13); filter pills and Colour group styling as amended (R14); red is only for succeeded trials (R15); e2e pixel check counts non-transparent canvas pixels (R16); cluster labels sit at each condition's densest point and are skipped when too diffuse (R17).
 
 ### First real-data result (a dated observation, not a standing claim)
-2026-11-05 snapshot, after R18: 2,986 trials, pool 478 (finished, could succeed, with an experimental drug), 66 succeeded (rate 0.138), lift 1.31 against shuffled 0.64 to 1.39, p = 0.058 over 10,000 shuffles, so **no more than chance** (also under seeds 1, 2 and 3: p 0.058 to 0.062). Before R18 the pool held 1,030 more drug-free finished trials and read "clustered, barely" (lift 1.44, range 0.59 to 1.41). The explorer stage took about 12 s, nearly all UMAP; the statistic itself takes about 0.15 s. Numbers change daily; re-measure before quoting.
+2026-11-05 snapshot, after R18: 2,986 trials, pool 478 (finished, could succeed, with an experimental drug), 66 succeeded (rate 0.138), lift 1.31 against shuffled 0.64 to 1.39, p = 0.058 over 10,000 shuffles, so **no more than chance** (also under seeds 1, 2 and 3: p 0.058 to 0.062). Before R18 the pool held 144 more drug-free finished trials (622 vs 478) and read "clustered, barely" (lift 1.44, range 0.59 to 1.41). The explorer stage took about 12 s, nearly all UMAP; the statistic itself takes about 0.15 s. Numbers change daily; re-measure before quoting.
 
 ### Local dev notes
 - `uv` is installed via Homebrew on the user's Mac (`brew install uv`); this work was done in the local checkout, not the cloud container, so section 3's network limits do not apply to it.
