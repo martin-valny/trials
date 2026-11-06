@@ -54,10 +54,19 @@ export const DARK_PALETTE: Palette = {
   diseases: ["#eceae4", "#ff8a3d", "#7fb2e5", "#e5c07b", "#8fc29a", "#7d8287"],
 };
 
-const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
+export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
+
+/** Phase buckets in reading order; anything else sorts after these. */
+export const PHASES = ["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "NA"];
 
 /** A trial's phase bucket for filtering; a missing phase counts as "NA". */
-const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
+export const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
+
+/** Disease colour for a condition label, by its position in the area's condition order. */
+export function diseaseColor(label: string | undefined, palette: Palette, conditionOrder: string[]): string {
+  const i = label === undefined ? -1 : conditionOrder.indexOf(label);
+  return i < 0 ? palette.unknown : palette.diseases[i % palette.diseases.length];
+}
 
 /** Filters with every value present in the file switched on. */
 export function allFilters(f: ExplorerFile): Filters {
@@ -94,11 +103,7 @@ export function colorFor(
 ): string {
   if (mode === "outcome") return palette[t.outcome];
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
-  const label = t.condition_labels[0];
-  if (label === undefined) return palette.unknown;
-  const i = conditionOrder.indexOf(label);
-  if (i < 0) return palette.unknown;
-  return palette.diseases[i % palette.diseases.length];
+  return diseaseColor(t.condition_labels[0], palette, conditionOrder);
 }
 
 export interface Projected {

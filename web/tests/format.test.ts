@@ -1,5 +1,15 @@
 import { describe, expect, test } from "vitest";
-import { fieldLabel, formatDelta, formatValue, isStale, reasonLabel } from "../src/lib/format";
+import {
+  fieldLabel,
+  firstSentences,
+  formatDelta,
+  formatValue,
+  isStale,
+  outcomeLabel,
+  phaseLabel,
+  reasonLabel,
+  treatmentLabel,
+} from "../src/lib/format";
 
 describe("formatValue", () => {
   test("month vs day precision", () => {
@@ -64,5 +74,33 @@ describe("outcome changes", () => {
   });
   test("other list fields keep the plain join", () => {
     expect(formatValue("conditions", ["A", "B"])).toBe("A, B");
+  });
+});
+
+describe("explorer display text", () => {
+  test("phase labels", () => {
+    expect(phaseLabel("EARLY_PHASE1")).toBe("Early phase 1");
+    expect(phaseLabel("PHASE1")).toBe("Phase 1");
+    expect(phaseLabel("PHASE4")).toBe("Phase 4");
+    expect(phaseLabel("NA")).toBe("Not applicable");
+    expect(phaseLabel(null)).toBe("Not applicable");
+  });
+  test("outcome labels", () => {
+    expect(outcomeLabel("succeeded")).toBe("Succeeded (drug moved to a later phase)");
+    expect(outcomeLabel("stopped")).toBe("Stopped early");
+    expect(outcomeLabel("completed_unknown")).toBe("Completed, outcome unknown");
+    expect(outcomeLabel("running")).toBe("Still running");
+    expect(outcomeLabel("unknown")).toBe("Status unknown");
+  });
+  test("treatment type title case", () => {
+    expect(treatmentLabel("BIOLOGICAL")).toBe("Biological");
+    expect(treatmentLabel("DIETARY_SUPPLEMENT")).toBe("Dietary supplement");
+  });
+  test("first two sentences", () => {
+    expect(firstSentences("One here. Two there! Three more. Four.")).toBe("One here. Two there!");
+    expect(firstSentences("Only one sentence.")).toBe("Only one sentence.");
+    expect(firstSentences("Uses e.g. lowercase. Next Sentence. Third.")).toBe("Uses e.g. lowercase. Next Sentence.");
+    expect(firstSentences("Ask? Yes. No.")).toBe("Ask? Yes.");
+    expect(firstSentences("  Spaced.   Out.  ")).toBe("Spaced. Out.");
   });
 });

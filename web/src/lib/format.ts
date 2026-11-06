@@ -1,4 +1,4 @@
-import type { DateInfo } from "../types";
+import type { DateInfo, Outcome } from "../types";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DASH = "—";
@@ -78,3 +78,36 @@ export function reasonLabel(reason: string | null): string {
 
 /** "7 days" / "1 day". */
 export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "days"}`;
+
+const OUTCOME_LABELS: Record<Outcome, string> = {
+  succeeded: "Succeeded (drug moved to a later phase)",
+  stopped: "Stopped early",
+  completed_unknown: "Completed, outcome unknown",
+  running: "Still running",
+  unknown: "Status unknown",
+};
+
+export const outcomeLabel = (o: Outcome): string => OUTCOME_LABELS[o];
+
+/** "PHASE2" -> "Phase 2", "EARLY_PHASE1" -> "Early phase 1", "NA" or null -> "Not applicable". */
+export function phaseLabel(p: string | null): string {
+  if (p === null || p === "NA") return "Not applicable";
+  if (p === "EARLY_PHASE1") return "Early phase 1";
+  const m = /^PHASE(\d)$/.exec(p);
+  return m ? `Phase ${m[1]}` : p;
+}
+
+/** Registry intervention type in sentence case: "DIETARY_SUPPLEMENT" -> "Dietary supplement". */
+export function treatmentLabel(t: string): string {
+  const s = t.replace(/_/g, " ").toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** The first n sentences; a sentence ends at ". ", "? " or "! " followed by a capital letter. */
+export function firstSentences(text: string, n = 2): string {
+  return text
+    .trim()
+    .split(/(?<=[.?!])\s+(?=[A-Z])/)
+    .slice(0, n)
+    .join(" ");
+}

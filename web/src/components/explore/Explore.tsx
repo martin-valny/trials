@@ -11,7 +11,11 @@ import {
   type Filters,
 } from "../../lib/explorer";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
+import { LegendBar } from "./LegendBar";
+import { PanelPhase } from "./PanelPhase";
+import { PanelSuccess } from "./PanelSuccess";
 import { PlateCanvas } from "./PlateCanvas";
+import { SelectedTrial } from "./SelectedTrial";
 import "./explore.css";
 
 type State =
@@ -108,8 +112,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const dark = useMediaQuery("(prefers-color-scheme: dark)");
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
-  // Colour mode and selection are driven by the legend and panel d (next task).
-  const [mode] = useState<ColorMode>("outcome");
+  const [mode, setMode] = useState<ColorMode>("outcome");
   const [selected, setSelected] = useState<string | null>(null);
 
   const palette = dark ? DARK_PALETTE : LIGHT_PALETTE;
@@ -121,6 +124,15 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, order), [mode, palette, order]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
+  const conditions = useMemo(() => {
+    const all = allFilters(file).conditions;
+    const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length);
+    return [...all].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+  }, [file, order]);
+  const selectedTrial = useMemo(
+    () => (selected === null ? null : (file.trials.find((t) => t.nct_id === selected) ?? null)),
+    [file, selected],
+  );
 
   return (
     <div className="explore">
@@ -129,7 +141,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         <section className="panel panel-a" aria-labelledby="panel-a-h">
           <h2 className="panel-h" id="panel-a-h">
             <span className="panel-l">a</span>
-            Embedding of {total} trials ({featureWords(file.method.features)})
+            Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
           <div className="panel-a-body">
             <PlateCanvas
@@ -154,26 +166,23 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             {summary(shown)}
           </p>
         </section>
-        <section className="panel panel-b" data-slot="b" />
-        <section className="panel panel-c" data-slot="c" />
+        <PanelSuccess stats={file.stats} />
+        <PanelPhase trials={shown} />
       </div>
-      <div className="legend" data-slot="legend">
-        <label className="legend-k" htmlFor="explore-find">
-          Find a trial
-        </label>
-        <div className="legend-v find">
-          <input
-            id="explore-find"
-            type="search"
-            value={filters.query}
-            placeholder="NCT number, drug, sponsor or title"
-            onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-          />
-          <span className="count">
-            Showing {shown.length} of {total} trials
-          </span>
-        </div>
-      </div>
+      <LegendBar
+        trials={file.trials}
+        filters={filters}
+        onFilters={setFilters}
+        conditions={conditions}
+        order={order}
+        mode={mode}
+        onMode={setMode}
+        palette={palette}
+        shown={shown.length}
+        onFind={() => shown.length > 0 && setSelected(shown[0].nct_id)}
+      >
+        <SelectedTrial trial={selectedTrial} />
+      </LegendBar>
     </div>
   );
 }
