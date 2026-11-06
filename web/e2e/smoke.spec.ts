@@ -168,10 +168,12 @@ test("explore canvas draws", async ({ page }) => {
   await waitForDraw(page);
 });
 
-test("reduced motion keeps the map still", async ({ page }) => {
+test("reduced motion keeps the map still and offers no rotation control", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#/explore");
   await waitForDraw(page);
+  // The map starts still for everyone; under reduced motion the turn is not even offered.
+  await expect(page.getByRole("button", { name: /rotation/ })).toHaveCount(0);
   const canvas = canvasOf(page);
   const a = await canvas.screenshot();
   await page.waitForTimeout(500);

@@ -91,7 +91,8 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   display: grid; grid-template-columns: 6.5rem 1fr; gap: 6px 18px; align-items: center;
   font-size: 13px; line-height: 1.5; color: var(--muted);
 }
-.legend-key { border-top: 1px solid var(--ink); padding: 12px 0 10px; grid-template-columns: 6.5rem 1fr auto; }
+.legend-key { border-top: 1px solid var(--ink); padding: 12px 0 10px; grid-template-columns: 6.5rem 1fr auto; align-items: baseline; }
+.legend-key .legend-k { align-self: baseline; padding-top: 0; }
 .legend-d { padding: 10px 0 18px; border-top: 1px solid var(--rule); margin-top: 0; }
 .legend-k { color: var(--ink); font-weight: 700; align-self: start; padding-top: 3px; }
 .legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
@@ -287,7 +288,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
     position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30;
     min-width: 0; max-width: none; max-height: 72dvh;
     padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
-    border-width: 1px 0 0; border-top-color: var(--ink);
+    border-width: 2px 0 0; border-top-color: var(--ink); /* heavier than a hairline: its edge reads against the page */
   }
   .checklist { max-height: none; flex: 1 1 auto; min-height: 0; margin: 0 -16px; }
   .check { padding: 8px 16px; }
@@ -310,9 +311,9 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .toolbar > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .toolbar .tb-filters { flex-wrap: wrap; row-gap: 8px; }
-.toolbar .tb-end { margin-left: auto; gap: 16px; }
+.toolbar .tb-count { margin-left: auto; }
 .tb-k { color: var(--ink); font-weight: 700; margin-right: 4px; }
-.tb-count { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.toolbar .tb-count { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Find: a pill with a drawn magnifier inside its left edge. */
 .tb-find { position: relative; }
@@ -349,7 +350,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 
 /* Reset all: a word, idle (muted, no underline) until there is something to reset. */
-.explore .text-button:disabled { color: var(--muted); text-decoration: none; cursor: default; opacity: 0.6; }
+.explore .text-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
 
 /* A popover that would run off the right edge opens from its button's right edge instead. */
 .popover[data-align="end"] { left: auto; right: 0; }
@@ -359,22 +360,25 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* The colour key: swatches and words in a row, then a quiet link to the list. */
 .key-list { list-style: none; margin: 0; padding: 0; color: var(--ink); }
 .key-list li { display: inline-flex; align-items: center; gap: 6px; }
-.key-list-link { white-space: nowrap; align-self: start; padding-top: 0; }
+.key-list-link { white-space: nowrap; }
 
 /* Laptop widths: the full set needs about 1,350px, so it is set on two deliberate lines instead of
-   wrapping wherever it breaks: find, colour, and the count on the first; the filters under them. */
+   wrapping wherever it breaks: find, colour and the count on the first; the filters and Reset all under
+   them. Only the count (not focusable) sits out of DOM order, so Tab still follows the eye. */
 @media (min-width: 901px) and (max-width: 1439px) {
   .toolbar {
-    display: grid; grid-template-columns: auto auto 1fr; grid-template-areas: "find colour end" "filters filters filters";
+    display: grid; grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "find colour . count" "filters filters filters reset";
     justify-items: start;
   }
   .toolbar .tb-find { grid-area: find; }
   .toolbar .tb-colour { grid-area: colour; }
   .toolbar .tb-filters { grid-area: filters; }
-  .toolbar .tb-end { grid-area: end; justify-self: end; }
+  .toolbar .tb-reset { grid-area: reset; justify-self: end; }
+  .toolbar .tb-count { grid-area: count; justify-self: end; margin-left: 0; }
 }
 @media (max-width: 900px) {
-  .toolbar .tb-end { margin-left: 0; width: 100%; justify-content: space-between; }
+  .toolbar .tb-count { margin-left: auto; }
 }
 @media (max-width: 640px) {
   .toolbar { padding: 8px 16px 10px; gap: 10px 14px; }

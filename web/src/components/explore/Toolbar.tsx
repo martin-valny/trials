@@ -1,13 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
   diseaseColor,
+  filterCounts,
   filtersFor,
+  MODES,
   OUTCOMES,
   outcomeColor,
-  PHASES,
-  phaseKey,
+  phasesOf,
   sameFilters,
-  tally,
   type ColorMode,
   type Filters,
   type Palette,
@@ -35,32 +35,7 @@ export interface ToolbarProps {
   onReset(): void;
 }
 
-export const MODES: [ColorMode, string][] = [
-  ["outcome", "Outcome"],
-  ["phase", "Phase"],
-  ["disease", "Disease"],
-];
-
 const fmt = (n: number): string => n.toLocaleString("en-US");
-
-/** Counts per value of each filter, over every trial in the file (not just those shown). */
-export function useCounts(trials: ExplorerTrial[]) {
-  return useMemo(
-    () => ({
-      conditions: tally(trials, (t) => t.condition_labels),
-      phases: tally(trials, (t) => [phaseKey(t)]),
-      outcomes: tally(trials, (t) => [t.outcome]),
-      treatmentTypes: tally(trials, (t) => t.treatment_types),
-    }),
-    [trials],
-  );
-}
-
-/** Phase keys present in the data, in reading order (unknown keys after, alphabetically). */
-export function phasesOf(counts: Map<string, number>): string[] {
-  const rank = (k: string) => (PHASES.includes(k) ? PHASES.indexOf(k) : PHASES.length);
-  return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
-}
 
 /** A small drawn magnifier, hairline ink, set inside the search pill. */
 function FindGlyph() {
@@ -78,7 +53,8 @@ function FindGlyph() {
  */
 export function Toolbar(p: ToolbarProps) {
   const { trials, filters, mode, palette } = p;
-  const counts = useCounts(trials);
+  const counts = useMemo(() => filterCounts(trials), [trials]);
+  const find = useRef<HTMLInputElement>(null);
   // Reset all returns to every value in the file and the full year span; it is idle while that is shown.
   const pristine = useMemo(
     () => sameFilters(filters, { ...filtersFor(trials, p.conditions), years: p.bounds }),
@@ -121,6 +97,7 @@ export function Toolbar(p: ToolbarProps) {
         </label>
         <FindGlyph />
         <input
+          ref={find}
           id="explore-find"
           type="search"
           value={filters.query}
@@ -189,13 +166,22 @@ export function Toolbar(p: ToolbarProps) {
         </button>
       </div>
 
-      <div className="tb-end">
-        <button type="button" className="text-button tb-reset" disabled={pristine} onClick={p.onReset}>
+      <div className="tb-reset">
+        {/* Reset all disables itself, so focus moves on to Find rather than falling to the page. */}
+        <button
+          type="button"
+          className="text-button"
+          disabled={pristine}
+          onClick={() => {
+            p.onReset();
+            find.current?.focus();
+          }}
+        >
           Reset all
         </button>
-        <span className="tb-count">
-          Showing {fmt(p.shown)} of {fmt(trials.length)} trials
-        </span>
+      </div>
+      <div className="tb-count">
+        Showing {fmt(p.shown)} of {fmt(trials.length)} trials
       </div>
     </div>
   );

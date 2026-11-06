@@ -203,3 +203,16 @@ test("Reset all is disabled until a filter changes, and resets every filter", as
   const n = explorer.trials.length;
   expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
 });
+
+test("Reset all hands keyboard focus to the Find field instead of dropping it", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const sw = await screen.findByRole("switch", { name: "Results posted" });
+  await userEvent.click(sw);
+  const reset = screen.getByRole("button", { name: "Reset all" });
+  reset.focus();
+  await userEvent.keyboard("{Enter}");
+  expect(reset).toBeDisabled();
+  expect(screen.getByLabelText("Find a trial")).toHaveFocus();
+});

@@ -1,8 +1,16 @@
 import { useMemo, type ReactNode } from "react";
-import { diseaseColor, OUTCOMES, outcomeColor, type ColorMode, type Palette } from "../../lib/explorer";
+import {
+  diseaseColor,
+  filterCounts,
+  MODES,
+  OUTCOMES,
+  outcomeColor,
+  phasesOf,
+  type ColorMode,
+  type Palette,
+} from "../../lib/explorer";
 import { outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
-import { MODES, phasesOf, useCounts } from "./Toolbar";
 
 export interface LegendBarProps {
   trials: ExplorerTrial[];
@@ -27,7 +35,7 @@ interface Key {
  */
 export function LegendBar(p: LegendBarProps) {
   const { trials, mode, palette, order, conditions } = p;
-  const counts = useCounts(trials);
+  const counts = useMemo(() => filterCounts(trials), [trials]);
   const keys = useMemo((): Key[] => {
     if (mode === "outcome")
       return OUTCOMES.filter((o) => counts.outcomes.has(o)).map((o) => ({

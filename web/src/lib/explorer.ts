@@ -99,6 +99,29 @@ export function tally(trials: ExplorerTrial[], keys: (t: ExplorerTrial) => strin
   return m;
 }
 
+/** Counts per value of each filter, over every trial given. */
+export function filterCounts(trials: ExplorerTrial[]) {
+  return {
+    conditions: tally(trials, (t) => t.condition_labels),
+    phases: tally(trials, (t) => [phaseKey(t)]),
+    outcomes: tally(trials, (t) => [t.outcome]),
+    treatmentTypes: tally(trials, (t) => t.treatment_types),
+  };
+}
+
+/** Phase keys present in ``counts``, in reading order (unknown keys after, alphabetically). */
+export function phasesOf(counts: Map<string, number>): string[] {
+  const rank = (k: string) => (PHASES.includes(k) ? PHASES.indexOf(k) : PHASES.length);
+  return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** The colour modes, with their names as shown. */
+export const MODES: [ColorMode, string][] = [
+  ["outcome", "Outcome"],
+  ["phase", "Phase"],
+  ["disease", "Disease"],
+];
+
 const sameSet = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
   a.size === b.size && [...a].every((x) => b.has(x));
 
