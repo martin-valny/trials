@@ -103,10 +103,11 @@ class ClusterConfig(_Strict):
     drug_share: float = Field(default=0.15, ge=0, le=1)
 
 
+_Block = Literal["disease", "treatment_type", "molecule", "mechanism", "population"]
+
+
 class ExplorerConfig(_Strict):
-    weights: dict[Literal["disease", "treatment_type", "molecule", "population"], float] = Field(
-        default_factory=dict, validate_default=True
-    )
+    weights: dict[_Block, float] = Field(default_factory=dict, validate_default=True)
     exclude_terms: list[str] = []
     n_neighbors: int = 15
     min_dist: float = 0.1
@@ -126,15 +127,14 @@ class ExplorerConfig(_Strict):
 
     @field_validator("weights")
     @classmethod
-    def _fill_weights(
-        cls, value: dict[Literal["disease", "treatment_type", "molecule", "population"], float]
-    ) -> dict[Literal["disease", "treatment_type", "molecule", "population"], float]:
+    def _fill_weights(cls, value: dict[_Block, float]) -> dict[_Block, float]:
         if any(w < 0 for w in value.values()):
             raise ValueError("explorer weights must be >= 0")
-        filled: dict[Literal["disease", "treatment_type", "molecule", "population"], float] = {
+        filled: dict[_Block, float] = {
             "disease": 1.0,
             "treatment_type": 1.0,
             "molecule": 1.0,
+            "mechanism": 1.0,
             "population": 1.0,
         }
         filled.update(value)

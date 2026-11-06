@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
@@ -16,7 +17,7 @@ from trialradar.explorer.drugs import clean_drug_name
 from trialradar.explorer.extras import StudyExtras, empty_extras
 from trialradar.explorer.features import build_features
 from trialradar.explorer.layout import align, embed
-from trialradar.explorer.mechanisms import load_trial_mechanisms
+from trialradar.explorer.mechanisms import TrialMechanisms, load_trial_mechanisms
 from trialradar.explorer.outcomes import (
     Outcome,
     TrialDrugs,
@@ -29,7 +30,7 @@ from trialradar.explorer.stats import LiftResult, neighbourhood_lift
 from trialradar.store import COORDS_SCHEMA
 from trialradar.tables import Tables
 
-FEATURES = ["disease", "treatment_type", "molecule", "population"]
+FEATURES = ["disease", "treatment_type", "molecule", "mechanism", "population"]
 _MIN_TRIALS = 4
 _DECIMALS = 4
 
@@ -71,6 +72,35 @@ def _stats(result: LiftResult, by_condition: list[dict[str, Any]]) -> dict[str, 
     }
 
 
+@dataclass(frozen=True)
+class ExplorerInputs:
+    """Everything the layout is computed from, shared by ``build_explorer`` and dev scripts."""
+
+    ids: list[str]
+    full: dict[str, StudyExtras]
+    drugs: TrialDrugs
+    mechs: dict[str, TrialMechanisms]
+    types: dict[str, frozenset[str]]
+
+
+def explorer_inputs(
+    tables: Tables,
+    extras: Mapping[str, StudyExtras],
+    cfg: AreaConfig,
+    aliases: Mapping[str, str],
+    warnings: list[str],
+) -> ExplorerInputs:
+    ids = sorted(tables.trial["nct_id"].to_list())
+    full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
+    drugs = _trial_drugs(ids, full, aliases, cfg)
+    mechs = load_trial_mechanisms(cfg, drugs, warnings)
+    return ExplorerInputs(ids, full, drugs, mechs, _intervention_types(tables))
+
+
+def feature_weights(cfg: AreaConfig) -> dict[str, float]:
+    return {str(k): v for k, v in cfg.explorer.weights.items()}
+
+
 def build_explorer(
     tables: Tables,
     extras: Mapping[str, StudyExtras],
@@ -87,12 +117,10 @@ def build_explorer(
     (a failed layout) are appended to ``warnings``."""
     ex = cfg.explorer
     trial_rows = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
-    ids = sorted(trial_rows)
-    full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
-    drugs = _trial_drugs(ids, full, aliases, cfg)
     if warnings is None:
         warnings = []
-    mechs = load_trial_mechanisms(cfg, drugs, warnings)
+    inp = explorer_inputs(tables, extras, cfg, aliases, warnings)
+    ids, full, drugs, mechs, types = inp.ids, inp.full, inp.drugs, inp.mechs, inp.types
     labels = {n: frozenset(full[n].condition_labels) for n in ids}
     succeeded_in = success_labels(tables.trial, drugs, labels)
     outcomes: dict[str, Outcome] = outcomes_from_success(tables.trial, succeeded_in)
@@ -132,9 +160,8 @@ def build_explorer(
         }
         return doc, pl.DataFrame(schema=COORDS_SCHEMA)
 
-    types = _intervention_types(tables)
     # build_features orders rows by sorted id, which is ``ids``.
-    features = build_features(ids, full, drugs, types, {str(k): v for k, v in ex.weights.items()})
+    features = build_features(ids, full, drugs, types, feature_weights(cfg), mechs)
     result = neighbourhood_lift(
         features.matrix,
         ids,

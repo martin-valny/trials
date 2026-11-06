@@ -52,6 +52,7 @@ explorer:
     disease: 1.0
     treatment_type: 0.6
     molecule: 1.0
+    mechanism: 1.0
     population: 0.4
   exclude_terms:
     - placebo

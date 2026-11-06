@@ -78,7 +78,7 @@ def test_build_explorer_contract(cfg: AreaConfig) -> None:
         "algorithm": "umap",
         "dims": 3,
         "seed": cfg.explorer.seed,
-        "features": ["disease", "treatment_type", "molecule", "population"],
+        "features": ["disease", "treatment_type", "molecule", "mechanism", "population"],
         "k": cfg.explorer.k,
         "min_group": 10,
     }
