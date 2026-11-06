@@ -71,13 +71,15 @@ function summary(shown: ExplorerTrial[]): string {
   );
 }
 
-/** Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. */
+/**
+ * Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. Its name says
+ * what a press will do ("Play rotation" / "Pause rotation"), so it carries no aria-pressed as well.
+ */
 function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
       className="spin-toggle"
-      aria-pressed={spinning}
       aria-label={spinning ? "Pause rotation" : "Play rotation"}
       onClick={onToggle}
     >
@@ -243,7 +245,14 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             ) : shown.length === 0 ? (
               <div className="plate-empty" role="status">
                 <p>No trials match these filters.</p>
-                <button type="button" onClick={reset}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reset();
+                    // The button leaves with the empty state: hand focus to Find, as Reset all does.
+                    document.getElementById("explore-find")?.focus();
+                  }}
+                >
                   Reset filters
                 </button>
               </div>

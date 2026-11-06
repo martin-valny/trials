@@ -93,7 +93,7 @@ export function Toolbar(p: ToolbarProps) {
   }, [counts, mode, palette, p.conditions, p.ranked]);
 
   return (
-    <div className="toolbar" role="toolbar" aria-label="Map controls">
+    <div className="toolbar" role="group" aria-label="Map controls">
       <div className="tb-find">
         <label className="visually-hidden" htmlFor="explore-find">
           Find a trial

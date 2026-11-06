@@ -265,7 +265,7 @@ test("panel c note is a plain count of shown trials that succeeded", async () =>
 
 test("results posted is a narrowing pill in the toolbar with its count, off by default, and narrows when on", async () => {
   await ready();
-  const bar = screen.getByRole("toolbar", { name: "Map controls" });
+  const bar = screen.getByRole("group", { name: "Map controls" });
   const withResults = explorer.trials.filter((t) => t.has_results).length;
   expect(withResults).toBeGreaterThan(0);
   const pill = within(bar).getByRole("button", { name: `Results posted ${withResults}` });

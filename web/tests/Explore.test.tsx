@@ -90,6 +90,8 @@ test("zero matches shows reset and reset restores", async () => {
   expect(await screen.findByText(/^0 trials;/, {}, { timeout: 2000 })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
   expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
+  // The button is gone with the empty state, so focus goes on to Find rather than falling to the page.
+  expect(screen.getByLabelText("Find a trial")).toHaveFocus();
   expect(box).toHaveValue("");
   const n = explorer.trials.length;
   expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
@@ -141,11 +143,12 @@ test("the map starts still, with a play control that toggles to pause", async ()
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
+  // The name says what a press will do, so it carries no pressed state as well.
   const play = await screen.findByRole("button", { name: "Play rotation" });
-  expect(play).toHaveAttribute("aria-pressed", "false");
+  expect(play).not.toHaveAttribute("aria-pressed");
   await userEvent.click(play);
   const pause = screen.getByRole("button", { name: "Pause rotation" });
-  expect(pause).toHaveAttribute("aria-pressed", "true");
+  expect(pause).not.toHaveAttribute("aria-pressed");
   expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
 });
 
@@ -193,7 +196,7 @@ test("the map controls toolbar comes before the canvas", async () => {
   stubFetch();
   renderAt(<Explore />, "/explore");
   const canvas = await screen.findByRole("img", { name: /^3D map of/ });
-  const bar = screen.getByRole("toolbar", { name: "Map controls" });
+  const bar = screen.getByRole("group", { name: "Map controls" });
   expect(follows(bar, canvas)).toBe(true);
   expect(within(bar).getByLabelText("Find a trial")).toBeInTheDocument();
   expect(within(bar).getByRole("group", { name: "Colour" })).toBeInTheDocument();
