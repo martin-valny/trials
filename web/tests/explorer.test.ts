@@ -6,6 +6,7 @@ import {
   clusterAnchors,
   colorFor,
   columnLabels,
+  columnSide,
   diseaseRanking,
   emphasisFor,
   labelPosition,
@@ -518,23 +519,28 @@ describe("popupPosition", () => {
 });
 
 describe("columnLabels", () => {
-  // sx is a label centre placed right of its dot (as the canvas passes it): dot x = sx - width / 2.
   const items = [
     { sx: 120, sy: 200, width: 40 },
     { sx: 150, sy: 202, width: 60 },
     { sx: 105, sy: 50, width: 30 },
   ];
   it("stacks labels down from the top, in the order of their dots' height", () => {
-    expect(columnLabels(items, 375, 40).map((p) => p.y)).toEqual([40 + 14, 40 + 28, 40]);
+    expect(columnLabels(items, 375, 40, "right").map((p) => p.y)).toEqual([40 + 14, 40 + 28, 40]);
   });
-  it("sets the column on the side away from the clusters, its inner edge flush, leaders ending on one line", () => {
-    const at = columnLabels(items, 375, 40);
-    // Dots left of centre: the column is on the right, left-aligned at 375 - 4 - 60 = 311.
+  it("sets the column on the side given, its inner edge flush, leaders ending on one line", () => {
+    const at = columnLabels(items, 375, 40, "right");
     at.forEach((p, i) => expect(p.x - items[i].width / 2).toBe(311));
     expect(new Set(at.map((p) => p.lx))).toEqual(new Set([308]));
-    const mirrored = items.map((it) => ({ ...it, sx: 375 - it.sx + it.width }));
-    const left = columnLabels(mirrored, 375, 40);
+    const left = columnLabels(items, 375, 40, "left");
     left.forEach((p, i) => expect(p.x + items[i].width / 2).toBe(64));
     expect(new Set(left.map((p) => p.lx))).toEqual(new Set([67]));
+  });
+});
+
+describe("columnSide", () => {
+  it("puts the column away from the clusters, judged once from their unrotated positions", () => {
+    expect(columnSide([{ x: -0.4 }, { x: 0.1 }])).toBe("right");
+    expect(columnSide([{ x: 0.4 }, { x: 0.1 }])).toBe("left");
+    expect(columnSide([])).toBe("right");
   });
 });

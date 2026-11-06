@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { clusterAnchors, columnLabels, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
+import { clusterAnchors, columnLabels, columnSide, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
 import type { ExplorerTrial } from "../../types";
 
 export interface PlateCanvasProps {
@@ -137,15 +137,16 @@ export function PlateCanvas(props: PlateCanvasProps) {
     () => clusterAnchors(trials, points, labels ?? []),
     [trials, points, labels],
   );
+  const side = useMemo(() => columnSide(anchors), [anchors]);
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
-  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink: "", plate: "" });
+  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink: "", plate: "" });
   const dirty = useRef(true);
   useEffect(() => {
     // Theme colours are read here, once per render, never per frame.
     const css = canvasRef.current ? getComputedStyle(canvasRef.current) : null;
     const ink = css?.color || "#111";
     const plate = css?.getPropertyValue("--plate").trim() || "#fff";
-    live.current = { ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink, plate };
+    live.current = { ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink, plate };
     dirty.current = true;
   });
 
@@ -184,7 +185,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const draw = () => {
       const { trials, points: pts, mask, colors, emph, rings, anchors, scale, extents, selected, ringColor, ink, plate } =
         live.current;
-      const labelColumn = live.current.labelColumn === true;
+      const { labelColumn, side } = live.current;
       ctx.clearRect(0, 0, w, h);
       const zoom = fitZoom(extents, w, h, ZOOM);
       projected = project(pts, angle, TILT, w, h, zoom);
@@ -244,7 +245,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
         // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
         // from the clusters, below the play control, each with a leader down to its cluster.
         const spots: { x: number; y: number; lx?: number }[] = labelColumn
-          ? columnLabels(items, w, COLUMN_TOP)
+          ? columnLabels(items, w, COLUMN_TOP, side)
           : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;

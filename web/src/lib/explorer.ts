@@ -433,20 +433,29 @@ export function placeLabels(
 }
 
 /**
- * Phone layout for centred labels: a column stacked down from ``top`` in the corner away from the
- * labelled clusters (the right edge when their dots sit left of centre, else the left edge), its inner
- * edge flush so every leader ends on one vertical line (``lx``, 3px off the column) and never runs
+ * Which edge the phone label column takes: away from the labelled clusters, judged once from their
+ * unrotated (fitted) positions so the column never jumps sides while the map turns. Right by default.
+ */
+export function columnSide(anchors: { x: number }[]): "left" | "right" {
+  if (anchors.length === 0) return "right";
+  const meanX = anchors.reduce((a, p) => a + p.x, 0) / anchors.length;
+  return meanX > 0 ? "left" : "right";
+}
+
+/**
+ * Phone layout for centred labels: a column stacked down from ``top`` on ``side`` (see columnSide), its
+ * inner edge flush so every leader ends on one vertical line (``lx``, 3px off the column) and never runs
  * through another label. Labels keep the order of their dots' height, so the leaders do not cross.
  */
 export function columnLabels(
   items: { sx: number; sy: number; width: number }[],
   w: number,
   top: number,
+  side: "left" | "right",
 ): { x: number; y: number; lx: number }[] {
   if (items.length === 0) return [];
   const widest = Math.max(...items.map((it) => it.width));
-  const meanX = items.reduce((a, it) => a + it.sx - it.width / 2, 0) / items.length;
-  const right = meanX < w / 2;
+  const right = side === "right";
   const inner = right ? w - 4 - widest : 4 + widest;
   const order = items.map((_, i) => i).sort((a, b) => items[a].sy - items[b].sy);
   const ys = new Array<number>(items.length);
