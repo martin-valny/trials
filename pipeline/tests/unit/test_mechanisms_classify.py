@@ -29,6 +29,11 @@ from trialradar.mechanisms.classify import (
         ("X", "ANTISENSE INHIBITOR", "oligonucleotide", "X silencer"),
         ("X", "SUBSTRATE", None, "X substrate"),
         ("S1P receptor", "BINDING AGENT", "small molecule", "S1P receptor modulator"),
+        ("H3 receptor", "INVERSE AGONIST", "small molecule", "H3 receptor inverse agonist"),
+        ("Iron", "SEQUESTERING AGENT", "small molecule", "Iron agent"),
+        ("C5", "SEQUESTERING AGENT", "protein", "anti-C5"),
+        ("CD19", "BINDING AGENT", "cell therapy", "CD19 CAR-T"),
+        ("BCMA", "INHIBITOR", "cell therapy", "BCMA CAR-T"),
     ],
 )
 def test_mechanism_class_examples(label: str, action: str, mod: str | None, expected: str) -> None:
@@ -67,6 +72,8 @@ def test_action_words() -> None:
         "RELEASING AGENT",
     ):
         assert ACTION_WORD[a] == "agent"
+    assert ACTION_WORD["SEQUESTERING AGENT"] == "agent"
+    assert ACTION_WORD["INVERSE AGONIST"] == "inverse agonist"
     assert ACTION_WORD["RNAI INHIBITOR"] == ACTION_WORD["ANTISENSE INHIBITOR"] == "silencer"
 
 

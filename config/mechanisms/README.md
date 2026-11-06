@@ -4,6 +4,9 @@ Reference data that maps each experimental drug name (as cleaned by the explorer
 mechanism of action, molecular targets and modality. It is keyed by drug, never by
 condition, and is committed. The daily run only reads these files; it never calls ChEMBL.
 
+Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
+`overrides.csv` replaces the `vitamin d` row. A drug may appear only once per file.
+
 | File | What it is | Who writes it |
 |---|---|---|
 | `drugs.csv` | One row per drug: `drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets`. Multi-valued cells are `;`-joined. `status` is `mapped`, `unmapped`, `not_a_drug` or `manual`. | `pipeline/scripts/map_mechanisms.py` (regenerated; do not hand-edit) |
@@ -13,14 +16,18 @@ condition, and is committed. The daily run only reads these files; it never call
 ## How a drug is mapped
 
 1. Exact, casefolded match of the drug name against the ChEMBL `pref_name` or any synonym
-   (no fuzzy matching, nothing guessed from name endings; no match → `unmapped`).
+   (no fuzzy matching, nothing guessed from name endings; no match → `unmapped`). The
+   free-text search is tried first; only if it has no exact match, exact `pref_name` and
+   then exact synonym lookups. Exact matches that belong to different parent molecules are
+   ambiguous and stay `unmapped` (resolve them in `overrides.csv`).
 2. The parent molecule (salts and prodrugs roll up to it). Mechanisms are fetched for the
    parent **and all its forms** (`parent_molecule_chembl_id`); fingolimod's mechanisms,
    for example, are recorded only on its salts.
 3. Each mechanism's target → gene symbols → label (above) → class:
    antibodies and proteins that inhibit, antagonise, bind or act as an agent on a target
    become `anti-<label>`; everything else `<label> <action word>` (e.g.
-   `S1P receptor modulator`, `BTK inhibitor`). Modality comes from the parent's
+   `S1P receptor modulator`, `BTK inhibitor`); cell therapies become `<label> CAR-T`
+   (e.g. `CD19 CAR-T`). Modality comes from the parent's
    `molecule_type`.
 4. A molecule found but without a usable mechanism stays `unmapped` (it keeps its ChEMBL id
    and modality).

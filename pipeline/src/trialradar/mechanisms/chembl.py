@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import random
 import re
+import tempfile
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -39,6 +41,34 @@ def cache_key(url: str) -> str:
 
 def _str(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
+
+
+def _read_cache(path: Path) -> Json | None:
+    """The cached body, or None (a miss) if absent, unreadable or not a JSON object."""
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return body if isinstance(body, dict) else None
+
+
+def _write_atomic(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+class _Ambiguous:
+    """Exact matches that resolve to different parents: not a miss, so no fallback."""
+
+
+_AMBIGUOUS = _Ambiguous()
 
 
 class ChemblClient:
@@ -107,13 +137,11 @@ class ChemblClient:
         url = self._url(path, params)
         key = cache_key(url)
         cached = self._cache_dir / key if self._cache_dir is not None else None
-        if cached is not None and cached.is_file():
-            body: Json = json.loads(cached.read_text(encoding="utf-8"))
-        else:
+        body = _read_cache(cached) if cached is not None else None
+        if body is None:
             body = self._fetch(url)
             if cached is not None:
-                cached.parent.mkdir(parents=True, exist_ok=True)
-                cached.write_text(json.dumps(body), encoding="utf-8")
+                _write_atomic(cached, json.dumps(body))
         if self._record_dir is not None:
             saved = self._record(path, body) if self._record is not None else body
             self._record_dir.mkdir(parents=True, exist_ok=True)
@@ -128,12 +156,29 @@ class ChemblClient:
     def find_molecule(self, name: str) -> Json | None:
         """The molecule whose pref_name or a synonym equals ``name`` (casefolded), or None.
 
-        Several exact matches (a parent and its salts often share a synonym): the one that
-        is its own parent wins, else the first in ChEMBL's order.
+        Tries the free-text search, then (only on a miss) exact ``pref_name`` and exact
+        synonym lookups. Several exact matches with one parent (a parent and its salts often
+        share a synonym): the self-parent wins, else the first in ChEMBL's order. Exact
+        matches with different parents are ambiguous → None (left to ``overrides.csv``).
         """
         want = name.casefold().strip()
-        body = self._get("molecule/search.json", {"q": want, "limit": SEARCH_LIMIT})
-        molecules = body.get("molecules")
+        lookups: list[tuple[str, dict[str, str | int]]] = [
+            ("molecule/search.json", {"q": want, "limit": SEARCH_LIMIT}),
+            ("molecule.json", {"pref_name__iexact": want, "limit": SEARCH_LIMIT}),
+            (
+                "molecule.json",
+                {"molecule_synonyms__molecule_synonym__iexact": want, "limit": SEARCH_LIMIT},
+            ),
+        ]
+        for path, params in lookups:
+            picked = self._pick(want, self._get(path, params).get("molecules"))
+            if picked is _AMBIGUOUS:
+                return None
+            if isinstance(picked, dict):
+                return picked
+        return None
+
+    def _pick(self, want: str, molecules: Any) -> Json | _Ambiguous | None:
         exact: list[Json] = []
         for mol in molecules if isinstance(molecules, list) else []:
             if not isinstance(mol, dict) or not _str(mol.get("molecule_chembl_id")):
@@ -145,6 +190,8 @@ class ChemblClient:
                 exact.append(mol)
         if not exact:
             return None
+        if len({self.parent_id(m) for m in exact}) > 1:
+            return _AMBIGUOUS
         for mol in exact:
             if self.parent_id(mol) == mol["molecule_chembl_id"]:
                 return mol

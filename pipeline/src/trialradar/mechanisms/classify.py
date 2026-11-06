@@ -19,6 +19,7 @@ MODALITY: dict[str, str] = {
 
 _WORDS: dict[str, tuple[str, ...]] = {
     "inhibitor": ("INHIBITOR", "NEGATIVE ALLOSTERIC MODULATOR", "BLOCKER"),
+    "inverse agonist": ("INVERSE AGONIST",),
     "antagonist": ("ANTAGONIST",),
     "modulator": (
         "AGONIST",
@@ -34,6 +35,7 @@ _WORDS: dict[str, tuple[str, ...]] = {
         "CHELATING AGENT",
         "HYDROLYTIC ENZYME",
         "RELEASING AGENT",
+        "SEQUESTERING AGENT",
     ),
     "silencer": ("RNAI INHIBITOR", "ANTISENSE INHIBITOR"),
 }
@@ -52,6 +54,8 @@ def action_word(action_type: str) -> str:
 
 
 def mechanism_class(target_label: str, action_type: str, modality: str | None) -> str:
+    if modality == "cell therapy":
+        return f"{target_label} CAR-T"
     word = action_word(action_type)
     if modality in _BIOLOGIC and (word in _ANTI_WORDS or action_type == "BINDING AGENT"):
         return f"anti-{target_label}"

@@ -78,7 +78,8 @@ def test_find_molecule_ignores_fuzzy_hits() -> None:
                     }
                 ],
                 "page_meta": {"next": None},
-            }
+            },
+            "molecule.json": {"molecules": [], "page_meta": {"next": None}},
         }
     )
     assert client.find_molecule("fingolimod") is None
@@ -350,3 +351,97 @@ def test_script_only_filter_includes_names_absent_from_the_snapshot(tmp_path: Pa
         labels_path=REPO_ROOT / "config" / "mechanisms" / "target_labels.csv",
     )
     assert list(read_mappings(out)) == ["efgartigimod", "fingolimod"]
+
+
+def _mol(cid: str, parent: str, name: str, *syns: str) -> dict[str, Any]:
+    return {
+        "molecule_chembl_id": cid,
+        "pref_name": name,
+        "molecule_synonyms": [{"molecule_synonym": s} for s in syns],
+        "molecule_hierarchy": {"parent_chembl_id": parent},
+        "molecule_type": "Small molecule",
+    }
+
+
+def _page(*mols: dict[str, Any]) -> dict[str, Any]:
+    return {"molecules": list(mols), "page_meta": {"next": None}}
+
+
+def _routing_client(routes: dict[str, dict[str, Any]], seen: list[str]) -> ChemblClient:
+    """Routes by a query-parameter name present in the request URL."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        for param, body in routes.items():
+            if param in request.url.params:
+                return httpx.Response(200, json=body)
+        return httpx.Response(404)
+
+    return ChemblClient(http=httpx.Client(transport=httpx.MockTransport(handler)))
+
+
+def test_exact_matches_with_different_parents_are_ambiguous() -> None:
+    seen: list[str] = []
+    client = _routing_client(
+        {
+            "q": _page(
+                _mol("CHEMBL1", "CHEMBL1", "VITAMIN B12"),
+                _mol("CHEMBL2", "CHEMBL2", "HYDROXOCOBALAMIN", "Vitamin B12"),
+            ),
+            "pref_name__iexact": _page(_mol("CHEMBL1", "CHEMBL1", "VITAMIN B12")),
+        },
+        seen,
+    )
+    assert client.find_molecule("vitamin b12") is None
+    assert len(seen) == 1  # ambiguous is not a miss: no fallback lookups
+
+
+def test_search_miss_falls_back_to_exact_pref_name_then_synonym() -> None:
+    seen: list[str] = []
+    client = _routing_client(
+        {
+            "q": _page(_mol("CHEMBL9", "CHEMBL9", "SOMETHING ELSE")),
+            "pref_name__iexact": _page(),
+            "molecule_synonyms__molecule_synonym__iexact": _page(
+                _mol("CHEMBL5", "CHEMBL4", "DRUGX SODIUM", "Drug-X"),
+                _mol("CHEMBL4", "CHEMBL4", "DRUGX", "Drug-X"),
+            ),
+        },
+        seen,
+    )
+    mol = client.find_molecule("Drug-X")
+    assert mol is not None and mol["molecule_chembl_id"] == "CHEMBL4"
+    assert [httpx.URL(u).path.rsplit("/", 1)[-1] for u in seen] == [
+        "search.json",
+        "molecule.json",
+        "molecule.json",
+    ]
+
+
+def test_fallback_hit_on_pref_name_stops_there() -> None:
+    seen: list[str] = []
+    client = _routing_client(
+        {"q": _page(), "pref_name__iexact": _page(_mol("CHEMBL3", "CHEMBL3", "DRUG Y"))},
+        seen,
+    )
+    mol = client.find_molecule("drug y")
+    assert mol is not None and mol["molecule_chembl_id"] == "CHEMBL3"
+    assert len(seen) == 2
+
+
+def test_unreadable_cache_entry_is_a_miss_and_is_rewritten(tmp_path: Path) -> None:
+    body = {"target_chembl_id": "T1", "target_components": []}
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(200, json=body)
+
+    c = ChemblClient(http=httpx.Client(transport=httpx.MockTransport(handler)), cache_dir=tmp_path)
+    url = str(httpx.URL("https://www.ebi.ac.uk/chembl/api/data/target/T1.json"))
+    (tmp_path / cache_key(url)).write_text('{"truncated": ', encoding="utf-8")
+    assert c.target("T1") == body
+    assert calls == [1]
+    assert json.loads((tmp_path / cache_key(url)).read_text(encoding="utf-8")) == body
+    assert [p.name for p in tmp_path.iterdir()] == [cache_key(url)]  # no temp files left
+    assert c.target("T1") == body and calls == [1]

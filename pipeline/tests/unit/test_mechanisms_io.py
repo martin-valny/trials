@@ -145,3 +145,44 @@ def test_read_target_labels(tmp_path: Path) -> None:
     p.write_text("gene,name\nA,B\n", encoding="utf-8")
     with pytest.raises(ValueError, match="column"):
         read_target_labels(p)
+
+
+def test_csv_error_becomes_value_error(tmp_path: Path) -> None:
+    huge = "x" * (csv.field_size_limit() + 10)  # trips the csv module's field-size check
+    (tmp_path / "drugs.csv").write_text(
+        ",".join(DRUG_COLUMNS) + f"\nfingolimod,mapped,{huge},,,,,\n", encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="drugs.csv"):
+        read_mappings(tmp_path)
+
+
+def test_bom_is_tolerated(tmp_path: Path) -> None:
+    write_drugs(tmp_path / "drugs.csv", [FTY])
+    text = (tmp_path / "drugs.csv").read_text(encoding="utf-8")
+    (tmp_path / "drugs.csv").write_text("﻿" + text, encoding="utf-8")
+    assert read_mappings(tmp_path) == {"fingolimod": FTY}
+
+
+def test_drug_keys_are_casefolded_so_overrides_match(tmp_path: Path) -> None:
+    vit = DrugMapping("vitamin d", "unmapped", None, None, (), (), (), ())
+    write_drugs(tmp_path / "drugs.csv", [FTY, vit])
+    _write_overrides(
+        tmp_path / "overrides.csv",
+        [{"drug": "Vitamin D", "status": "not_a_drug", **dict.fromkeys(DRUG_COLUMNS[2:], "")}],
+    )
+    got = read_mappings(tmp_path)
+    assert list(got) == ["fingolimod", "vitamin d"]
+    assert got["vitamin d"].status == "not_a_drug"
+
+
+def test_duplicate_drug_rows_raise(tmp_path: Path) -> None:
+    write_drugs(tmp_path / "drugs.csv", [FTY])
+    _write_overrides(
+        tmp_path / "overrides.csv",
+        [
+            {"drug": "x", "status": "not_a_drug", **dict.fromkeys(DRUG_COLUMNS[2:], "")},
+            {"drug": "X", "status": "not_a_drug", **dict.fromkeys(DRUG_COLUMNS[2:], "")},
+        ],
+    )
+    with pytest.raises(ValueError, match="duplicate"):
+        read_mappings(tmp_path)

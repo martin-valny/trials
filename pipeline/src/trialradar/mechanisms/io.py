@@ -69,7 +69,7 @@ def _parse(path: Path, line: int, raw: dict[str | None, Any]) -> DrugMapping:
         raise ValueError(f"{path.name} line {line}: more cells than columns")
     if any(raw.get(c) is None for c in DRUG_COLUMNS):
         raise ValueError(f"{path.name} line {line}: fewer cells than columns")
-    drug = (raw.get("drug") or "").strip()
+    drug = (raw.get("drug") or "").strip().casefold()
     if not drug:
         raise ValueError(f"{path.name} line {line}: empty drug")
     status = (raw.get("status") or "").strip()
@@ -88,20 +88,27 @@ def _parse(path: Path, line: int, raw: dict[str | None, Any]) -> DrugMapping:
 
 
 def _read(path: Path) -> dict[str, DrugMapping]:
-    with path.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        missing = [c for c in DRUG_COLUMNS if c not in (reader.fieldnames or [])]
-        if missing:
-            raise ValueError(f"{path.name}: missing column(s) {', '.join(missing)}")
-        out: dict[str, DrugMapping] = {}
-        for i, raw in enumerate(reader, start=2):
-            m = _parse(path, i, raw)
-            out[m.drug] = m
-        return out
+    with path.open(newline="", encoding="utf-8-sig") as f:
+        try:
+            reader = csv.DictReader(f)
+            missing = [c for c in DRUG_COLUMNS if c not in (reader.fieldnames or [])]
+            if missing:
+                raise ValueError(f"{path.name}: missing column(s) {', '.join(missing)}")
+            out: dict[str, DrugMapping] = {}
+            for raw in reader:
+                line = reader.line_num
+                m = _parse(path, line, raw)
+                if m.drug in out:
+                    raise ValueError(f"{path.name} line {line}: duplicate drug {m.drug!r}")
+                out[m.drug] = m
+            return out
+        except csv.Error as exc:
+            raise ValueError(f"{path.name}: {exc}") from exc
 
 
 def read_mappings(dir: Path) -> dict[str, DrugMapping]:
-    """``drugs.csv`` with ``overrides.csv`` (optional) replacing whole rows, keyed by drug.
+    """``drugs.csv`` with ``overrides.csv`` (optional) replacing whole rows, keyed by the
+    lower-cased (casefolded) drug name.
 
     Raises ``OSError`` if ``drugs.csv`` is missing and ``ValueError`` on missing columns
     or a bad status.
@@ -115,7 +122,7 @@ def read_mappings(dir: Path) -> dict[str, DrugMapping]:
 
 def read_target_labels(path: Path) -> dict[str, str]:
     """``key,label`` rows; the key is a ChEMBL target id, a gene symbol or ``;``-joined genes."""
-    with path.open(newline="", encoding="utf-8") as f:
+    with path.open(newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if not {"key", "label"} <= set(reader.fieldnames or []):
             raise ValueError(f"{path.name}: needs columns key,label")
