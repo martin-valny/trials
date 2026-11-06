@@ -166,9 +166,21 @@ test("with reduced motion there is no rotation control", async () => {
   expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });
 
+test("the hover card draws a 1px leader to the dot's ring", () => {
+  const t = explorer.trials[0];
+  const { container } = render(
+    <div style={{ position: "relative" }}>
+      <HoverCard trial={t} x={10} y={10} r={6} />
+    </div>,
+  );
+  const leader = container.querySelector("svg.hover-leader line");
+  expect(leader).not.toBeNull();
+  expect(container.querySelector("svg.hover-leader")).toHaveAttribute("aria-hidden", "true");
+});
+
 test("the hover card is a tooltip with the trial's id, title and facts", () => {
   const t = explorer.trials[0];
-  render(<HoverCard trial={t} x={10} y={10} />);
+  render(<HoverCard trial={t} x={10} y={10} r={6} />);
   const card = screen.getByRole("tooltip");
   expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
   expect(card).toHaveTextContent("dimethyl fumarate · Behavioral, Device · Phase 4 · 2015–2016");

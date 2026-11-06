@@ -348,13 +348,14 @@ const renderHoverable = () => {
 };
 let rerenderHoverable: (visible: (t: ExplorerTrial) => boolean) => void = () => undefined;
 
-test("hovering a dot with a mouse reports the trial and where the pointer is", () => {
+test("hovering a dot with a mouse reports the trial, the dot's centre and its hover ring's radius", () => {
   const { onHover, dot, first, canvas } = renderHoverable();
-  fireEvent.pointerMove(canvas, { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
+  fireEvent.pointerMove(canvas, { clientX: dot.x + 2, clientY: dot.y - 1, pointerType: "mouse" });
   expect(onHover).toHaveBeenCalledTimes(1);
-  expect(onHover).toHaveBeenLastCalledWith({ nct: first, x: dot.x, y: dot.y });
+  // The card's leader ends on the ring drawn 4px outside the dot (1.5px stroke), not at the pointer.
+  expect(onHover).toHaveBeenLastCalledWith({ nct: first, x: dot.x, y: dot.y, r: dot.r + 4.75 });
   // Still on the same dot: nothing new to report.
-  fireEvent.pointerMove(canvas, { clientX: dot.x + 1, clientY: dot.y, pointerType: "mouse" });
+  fireEvent.pointerMove(canvas, { clientX: dot.x + 1, clientY: dot.y + 1, pointerType: "mouse" });
   expect(onHover).toHaveBeenCalledTimes(1);
   fireEvent.pointerLeave(canvas, { pointerType: "mouse" });
   expect(onHover).toHaveBeenLastCalledWith(null);

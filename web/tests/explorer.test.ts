@@ -494,18 +494,24 @@ describe("popupLines", () => {
 });
 
 describe("popupPosition", () => {
-  it("sits 12px right of and below the pointer", () => {
-    expect(popupPosition(10, 10, 200, 60, 1000, 600)).toEqual({ left: 22, top: 22 });
+  it("sits centred above the dot, its bottom edge 10px above it", () => {
+    expect(popupPosition(500, 300, 200, 60, 1000, 600)).toEqual({ left: 400, top: 230, below: false });
   });
 
-  it("flips left and up near the far edges and stays inside the panel", () => {
-    const p = popupPosition(990, 590, 200, 60, 1000, 600);
-    expect(p.left).toBeLessThanOrEqual(1000 - 200 - 4);
-    expect(p.top).toBeLessThanOrEqual(600 - 60 - 4);
-    expect(p).toEqual({ left: 990 - 12 - 200, top: 590 - 12 - 60 });
+  it("takes a larger gap, so the card can clear the dot's ring", () => {
+    expect(popupPosition(500, 300, 200, 60, 1000, 600, 18)).toEqual({ left: 400, top: 222, below: false });
   });
 
-  it("clamps to a 4px margin when the card cannot fit either side", () => {
-    expect(popupPosition(100, 30, 300, 80, 320, 100)).toEqual({ left: 4, top: 4 });
+  it("flips below the dot only at the top edge", () => {
+    expect(popupPosition(500, 40, 200, 60, 1000, 600)).toEqual({ left: 400, top: 50, below: true });
+    // Near the bottom it still sits above.
+    expect(popupPosition(500, 590, 200, 60, 1000, 600)).toEqual({ left: 400, top: 520, below: false });
+  });
+
+  it("is clamped horizontally to a 4px margin inside the panel", () => {
+    expect(popupPosition(20, 300, 200, 60, 1000, 600).left).toBe(4);
+    expect(popupPosition(990, 300, 200, 60, 1000, 600).left).toBe(1000 - 200 - 4);
+    // Wider than the panel: pinned to the left margin.
+    expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
   });
 });

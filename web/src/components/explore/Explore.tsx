@@ -232,7 +232,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             {!reducedMotion && total > 0 && (
               <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />
             )}
-            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} />}
+            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} r={hover.r} />}
             {total === 0 ? (
               <div className="plate-empty" role="status">
                 <p>The map needs at least 4 trials in this area.</p>

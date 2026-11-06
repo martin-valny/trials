@@ -23,10 +23,12 @@ export interface PlateCanvasProps {
   ringColor?: string;
 }
 
+/** The hovered trial's dot, in canvas CSS px: its centre and the radius of the ring drawn around it. */
 export interface PlateHover {
   nct: string;
   x: number;
   y: number;
+  r: number;
 }
 
 const SPIN = 0.0022; // radians per frame, as in the approved plate
@@ -37,6 +39,8 @@ const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
 const LABEL_FONT = '600 11.5px "Hanken Grotesk", system-ui, sans-serif';
 const LABEL_OFFSET = 8; // px right of and above the anchor dot
+const RING_GAP = 4; // px between a dot and its selection or hover ring
+const RING_WIDTH = 1.5;
 
 /** True when this browser gives a 2D canvas context (jsdom and some locked-down browsers do not). */
 function canDraw(): boolean {
@@ -258,9 +262,9 @@ export function PlateCanvas(props: PlateCanvasProps) {
         const p = projected[i];
         const r = dotRadius(trials[i].enrollment, p.f, scale);
         ctx.strokeStyle = ring;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = RING_WIDTH;
         ctx.beginPath();
-        ctx.arc(p.sx, p.sy, Math.max(emph[i] ? EMPHASIS_MIN_R : 0, r) + 4, 0, Math.PI * 2);
+        ctx.arc(p.sx, p.sy, Math.max(emph[i] ? EMPHASIS_MIN_R : 0, r) + RING_GAP, 0, Math.PI * 2);
         ctx.stroke();
       }
     };
@@ -306,23 +310,31 @@ export function PlateCanvas(props: PlateCanvasProps) {
       if (alive) dirty.current = true;
     });
 
+    /** Index of the visible trial under the pointer, or -1. */
+    const hitIndex = (e: PointerEvent): number => {
+      const box = canvas.getBoundingClientRect();
+      return nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, live.current.mask);
+    };
     /** The visible trial under the pointer, or null. */
     const hit = (e: PointerEvent): string | null => {
-      const box = canvas.getBoundingClientRect();
-      const { trials, mask } = live.current;
-      const i = nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, mask);
-      return i < 0 ? null : trials[i].nct_id;
+      const i = hitIndex(e);
+      return i < 0 ? null : live.current.trials[i].nct_id;
     };
-    /** Change the hovered trial; a mouse or pen hover is reported, so a card can follow it. */
-    const setHover = (next: string | null, e?: PointerEvent) => {
+    /**
+     * Change the hovered trial; a mouse or pen hover is reported with the dot's centre and the outer
+     * edge of its hover ring, so a card can sit above it with a leader to the ring.
+     */
+    const setHover = (next: string | null, e?: PointerEvent, i = -1) => {
       if (next === hover) return;
       hover = next;
       dirty.current = true;
       if (next === null) {
         live.current.onHover?.(null);
-      } else if (e && (e.pointerType === "mouse" || e.pointerType === "pen")) {
-        const box = canvas.getBoundingClientRect();
-        live.current.onHover?.({ nct: next, x: e.clientX - box.left, y: e.clientY - box.top });
+      } else if (e && i >= 0 && (e.pointerType === "mouse" || e.pointerType === "pen")) {
+        const { trials, emph, scale } = live.current;
+        const p = projected[i];
+        const r = Math.max(emph[i] ? EMPHASIS_MIN_R : 0, dotRadius(trials[i].enrollment, p.f, scale));
+        live.current.onHover?.({ nct: next, x: p.sx, y: p.sy, r: r + RING_GAP + RING_WIDTH / 2 });
       }
     };
 
@@ -341,9 +353,10 @@ export function PlateCanvas(props: PlateCanvasProps) {
         dirty.current = true;
         return;
       }
-      const next = hit(e);
+      const i = hitIndex(e);
+      const next = i < 0 ? null : live.current.trials[i].nct_id;
       canvas.style.cursor = next ? "pointer" : "grab";
-      setHover(next, e);
+      setHover(next, e, i);
     };
     const up = (e: PointerEvent) => {
       if (!dragging) return;

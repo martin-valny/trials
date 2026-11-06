@@ -454,12 +454,14 @@ export function popupLines(t: ExplorerTrial): [string, string] {
   return [`${t.nct_id} · ${t.title}`, parts.filter((p) => p !== "").join(" · ")];
 }
 
-const POPUP_GAP = 12; // px from the pointer
+const POPUP_GAP = 10; // px between the dot and the card's near edge
 const POPUP_MARGIN = 4; // px kept clear of the panel edge
 
 /**
- * Top-left of a cardW x cardH card for a pointer at (x, y) in a w x h panel: 12px right of and below
- * the pointer, flipped to the left or above where it would overflow, then kept 4px inside the panel.
+ * Top-left of a cardW x cardH card for a dot at (x, y) in a w x h panel: centred on the dot with its
+ * bottom edge ``gap`` px above it, so the card never covers the dot or the marks just below it. Only
+ * where that would cross the panel's top edge does it flip below (``below``), if it fits there.
+ * Horizontally it is kept 4px inside the panel.
  */
 export function popupPosition(
   x: number,
@@ -468,11 +470,11 @@ export function popupPosition(
   cardH: number,
   w: number,
   h: number,
-): { left: number; top: number } {
-  const place = (p: number, size: number, limit: number) => {
-    const after = p + POPUP_GAP;
-    const at = after + size > limit - POPUP_MARGIN ? p - POPUP_GAP - size : after;
-    return Math.max(POPUP_MARGIN, Math.min(limit - size - POPUP_MARGIN, at));
-  };
-  return { left: place(x, cardW, w), top: place(y, cardH, h) };
+  gap = POPUP_GAP,
+): { left: number; top: number; below: boolean } {
+  const above = y - gap - cardH;
+  // Below only when above crosses the top edge and below fits; a panel too short for either keeps it above.
+  const below = above < POPUP_MARGIN && y + gap + cardH <= h - POPUP_MARGIN;
+  const left = Math.max(POPUP_MARGIN, Math.min(w - cardW - POPUP_MARGIN, x - cardW / 2));
+  return { left, top: below ? y + gap : Math.max(POPUP_MARGIN, above), below };
 }
