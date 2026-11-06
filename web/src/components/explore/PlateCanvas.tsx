@@ -69,8 +69,8 @@ const COLUMN_TOP = 40; // px: the phone label column starts below the play contr
 const RING_GAP = 4; // px between a dot and its selection or hover ring
 const RING_WIDTH = 1.5;
 const KEY_ZOOM = 1.5; // per press of + or -
-const WHEEL_ZOOM = 0.0015; // per wheel pixel; a trackpad pinch (ctrl + wheel) sends small deltas, so 0.01
-const PINCH_WHEEL_ZOOM = 0.01;
+const WHEEL_ZOOM = 0.0015; // zoom rate per wheel pixel: zoom factor = exp(-deltaY * rate)
+const PINCH_WHEEL_ZOOM = 0.01; // a trackpad pinch arrives as ctrl + wheel with small deltas, so a faster rate
 
 /** True when this browser gives a 2D canvas context (jsdom and some locked-down browsers do not). */
 function canDraw(): boolean {
@@ -425,7 +425,13 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
       return { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     };
 
+    /** Remember where a mouse or pen is, so a zoom can find the dot under it again. */
+    const track = (e: PointerEvent) => {
+      if (e.pointerType === "mouse" || e.pointerType === "pen")
+        lastPointer = { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType };
+    };
     const down = (e: PointerEvent) => {
+      track(e);
       pointers.set(e.pointerId ?? 0, local(e));
       setHover(null); // the card would trail behind a moving map
       canvas.setPointerCapture?.(e.pointerId);
@@ -456,6 +462,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         return;
       }
       if (gesture === "turn" || gesture === "pan") {
+        track(e);
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
         if (gesture === "turn") angle += dx * DRAG;
@@ -466,8 +473,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         dirty.current = true;
         return;
       }
-      if (e.pointerType === "mouse" || e.pointerType === "pen")
-        lastPointer = { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType };
+      track(e);
       const i = hitIndex(e);
       const next = i < 0 ? null : live.current.trials[i].nct_id;
       canvas.style.cursor = next ? "pointer" : "grab";

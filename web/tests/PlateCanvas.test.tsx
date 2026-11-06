@@ -515,3 +515,20 @@ test("hovering at 2x reports the dot where it is drawn", () => {
   fireEvent.pointerMove(canvas, { clientX: dot.x + 1, clientY: dot.y, pointerType: "mouse" });
   expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ nct: first, x: dot.x, y: dot.y }));
 });
+
+test("a wheel right after a mouse drag finds the dot under the pointer again", () => {
+  const { canvas, onHover, first } = renderZoomable();
+  fireEvent.keyDown(canvas, { key: "+" });
+  step();
+  const dot = firstDot();
+  // Pan the first dot 20px right, ending the drag exactly on it, with no plain move afterwards.
+  const at = { clientX: dot.x + 20, clientY: dot.y, pointerId: 1, pointerType: "mouse" };
+  fireEvent.pointerDown(canvas, { clientX: dot.x, clientY: dot.y, pointerId: 1, pointerType: "mouse" });
+  fireEvent.pointerMove(canvas, at);
+  fireEvent.pointerUp(canvas, at);
+  step();
+  onHover.mockClear();
+  act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -100, clientX: at.clientX, clientY: at.clientY, cancelable: true })));
+  step();
+  expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ nct: first }));
+});
