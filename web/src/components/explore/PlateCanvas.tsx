@@ -26,7 +26,7 @@ const DRAG = 0.008; // radians per dragged pixel
 const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
 const LABEL_FONT = '600 11.5px "Hanken Grotesk", system-ui, sans-serif';
-const LABEL_MIN_TRIALS = 5;
+const LABEL_OFFSET = 8; // px right of and above the anchor dot
 
 /** True when this browser gives a 2D canvas context (jsdom and some locked-down browsers do not). */
 function canDraw(): boolean {
@@ -117,7 +117,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
   );
   const rings = useMemo(() => Uint8Array.from(trials, (t) => (hollow?.(t) ? 1 : 0)), [trials, hollow]);
   const anchors = useMemo(
-    () => clusterAnchors(trials, points, labels ?? [], LABEL_MIN_TRIALS),
+    () => clusterAnchors(trials, points, labels ?? []),
     [trials, points, labels],
   );
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
@@ -207,21 +207,35 @@ export function PlateCanvas(props: PlateCanvasProps) {
         ctx.arc(p.sx, p.sy, r + 0.5, 0, Math.PI * 2);
         ctx.stroke();
       }
-      // Cluster labels: each condition's centroid, projected with the cloud, in ink on a plate halo.
+      // Cluster labels: beside each condition's densest trial, projected with the cloud, in ink on a
+      // plate halo, with a 1px leader back to the dot.
       if (anchors.length > 0) {
         const at = project(anchors, angle, TILT, w, h, zoom);
         ctx.font = LABEL_FONT;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.lineJoin = "round";
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = plate;
-        ctx.fillStyle = ink;
+        const widths = anchors.map((a) => ctx.measureText(a.label).width);
         const spots = placeLabels(
-          anchors.map((a, k) => ({ sx: at[k].sx, sy: at[k].sy, width: ctx.measureText(a.label).width })),
+          anchors.map((_, k) => ({
+            sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
+            sy: at[k].sy - LABEL_OFFSET,
+            width: widths[k],
+          })),
           w,
           h,
         );
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = 1;
+        anchors.forEach((_, k) => {
+          ctx.beginPath();
+          ctx.moveTo(at[k].sx, at[k].sy);
+          ctx.lineTo(spots[k].x - widths[k] / 2 - 2, spots[k].y);
+          ctx.stroke();
+        });
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = plate;
+        ctx.fillStyle = ink;
         anchors.forEach((a, k) => {
           ctx.strokeText(a.label, spots[k].x, spots[k].y);
           ctx.fillText(a.label, spots[k].x, spots[k].y);

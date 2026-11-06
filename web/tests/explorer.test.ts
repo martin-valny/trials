@@ -183,28 +183,42 @@ describe("red is reserved for succeeded", () => {
 describe("clusterAnchors", () => {
   const at = (label: string | null, x: number, y = 0, z = 0) =>
     trial({ condition_labels: label === null ? [] : [label, "Other"], x, y, z });
+  const pts = (ts: ExplorerTrial[]) => ts.map((t) => ({ x: t.x, y: t.y, z: t.z }));
 
-  it("averages points by FIRST condition label, in config order, only with at least min trials", () => {
+  it("puts the label on the planted cluster, not the centroid", () => {
     const trials = [
-      ...Array.from({ length: 5 }, (_, i) => at("B", 2 + i)), // mean x 4
-      ...Array.from({ length: 4 }, () => at("A", 9)), // too few
-      ...Array.from({ length: 6 }, (_, i) => at("C", -1, i)), // mean y 2.5
-      at(null, 100),
-      trial({ condition_labels: ["Other", "B"], x: 50 }), // B only as a second label: not counted
+      // A: a tight planted cluster at (0.5, 0.5) plus scattered stragglers far away (pulling the centroid off it).
+      ...Array.from({ length: 10 }, (_, i) => at("A", 0.5 + (i % 3) * 0.01, 0.5 + (i % 2) * 0.01)),
+      ...Array.from({ length: 5 }, (_, i) => at("A", -3 - i, -3)),
+      // Background noise from another condition sitting right on A's centroid does not count for A.
+      ...Array.from({ length: 20 }, () => at("Z", -1.3, -0.7)),
     ];
-    const points = trials.map((t) => ({ x: t.x, y: t.y, z: t.z }));
-    const got = clusterAnchors(trials, points, ["A", "B", "C"], 5);
-    expect(got.map((a) => a.label)).toEqual(["B", "C"]);
-    expect(got[0].x).toBeCloseTo(4);
-    expect(got[1].y).toBeCloseTo(2.5);
-    expect(got[1].x).toBeCloseTo(-1);
+    const [got] = clusterAnchors(trials, pts(trials), ["A"]);
+    expect(got.label).toBe("A");
+    expect(got.x).toBeCloseTo(0.5, 1);
+    expect(got.y).toBeCloseTo(0.5, 1);
   });
 
-  it("keeps at most six labels", () => {
+  it("skips a spread-out condition, a majority condition, a small one, and counts only FIRST labels", () => {
+    const trials = [
+      ...Array.from({ length: 10 }, (_, i) => at("A", 0, 0.001 * i)), // a real cluster
+      ...Array.from({ length: 10 }, (_, i) => at("B", 2 + i, 2 + i)), // spread: each alone within the radius
+      ...Array.from({ length: 4 }, () => at("S", 5, 5)), // fewer than 5
+      ...Array.from({ length: 3 }, () => trial({ condition_labels: ["Other", "S"], x: 5, y: 5 })), // S only second
+      at(null, 9),
+    ];
+    const got = clusterAnchors(trials, pts(trials), ["A", "B", "S"]);
+    expect(got.map((a) => a.label)).toEqual(["A"]);
+    // Same map plus a condition holding more than 60% of all trials: it is the background, no label.
+    const bg = Array.from({ length: 60 }, () => at("M", 1, 1));
+    const all = [...trials, ...bg];
+    expect(clusterAnchors(all, pts(all), ["A", "B", "S", "M"]).map((a) => a.label)).toEqual(["A"]);
+  });
+
+  it("keeps at most six labels, in config order", () => {
     const labels = Array.from({ length: 8 }, (_, i) => `L${i}`);
     const trials = labels.flatMap((l, i) => Array.from({ length: 5 }, () => at(l, i)));
-    const got = clusterAnchors(trials, trials.map((t) => ({ x: t.x, y: t.y, z: t.z })), labels, 5);
-    expect(got.map((a) => a.label)).toEqual(labels.slice(0, 6));
+    expect(clusterAnchors(trials, pts(trials), labels).map((a) => a.label)).toEqual(labels.slice(0, 6));
   });
 });
 
@@ -225,7 +239,7 @@ describe("placeLabels", () => {
     const got = placeLabels([{ sx: 100, sy: 50, width: 40 }, { sx: 300, sy: 50, width: 40 }], 400, 300);
     expect(got).toEqual([{ x: 100, y: 50 }, { x: 300, y: 50 }]);
   });
-  it("moves a colliding label off the earlier one by whole lines", () => {
+  it("nudges a colliding label down by whole lines", () => {
     const got = placeLabels(
       [
         { sx: 200, sy: 100, width: 80 },
@@ -236,6 +250,8 @@ describe("placeLabels", () => {
       300,
     );
     expect(got[0]).toEqual({ x: 200, y: 100 });
+    expect(got[1]).toEqual({ x: 210, y: 118 });
+    expect(got[2]).toEqual({ x: 195, y: 140 }); // 112 and 126 touch the first two
     for (let i = 0; i < got.length; i++)
       for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i].y - got[j].y)).toBeGreaterThanOrEqual(14);
   });

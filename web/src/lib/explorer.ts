@@ -189,35 +189,62 @@ export interface ClusterAnchor {
   z: number;
 }
 
+export interface ClusterOptions {
+  /** Fewest first-label trials a condition needs for a label. */
+  min?: number;
+  /** Most labels returned. */
+  max?: number;
+  /** Neighbourhood radius in fitted (unit-cloud) coordinates. */
+  radius?: number;
+  /** A condition holding more than this share of all trials is the background: no label. */
+  maxShare?: number;
+  /** Fewer than this share of the condition's trials near its densest point: no real cluster, no label. */
+  minDensity?: number;
+}
+
 /**
- * One anchor per condition in the configured order: the 3D centroid of the trials whose FIRST
- * condition label is that condition. Conditions with fewer than ``min`` such trials get no anchor;
- * at most ``max`` anchors are returned. ``points`` are the trials' positions, index-aligned.
+ * One anchor per condition in the configured order, at its densest point: among the trials whose FIRST
+ * condition label is that condition, the one with the most same-condition trials within ``radius``.
+ * A condition gets no anchor when it has fewer than ``min`` trials, holds more than ``maxShare`` of all
+ * trials, or has fewer than ``minDensity`` of its trials within ``radius`` of that point. At most
+ * ``max`` anchors. ``points`` are the trials' fitted positions, index-aligned. Run once, not per frame.
  */
 export function clusterAnchors(
   trials: ExplorerTrial[],
   points: { x: number; y: number; z: number }[],
   conditionOrder: string[],
-  min = 5,
-  max = 6,
+  { min = 5, max = 6, radius = 0.12, maxShare = 0.6, minDensity = 0.25 }: ClusterOptions = {},
 ): ClusterAnchor[] {
-  const sums = new Map<string, { n: number; x: number; y: number; z: number }>();
+  const groups = new Map<string, number[]>();
   trials.forEach((t, i) => {
     const label = t.condition_labels[0];
     if (label === undefined) return;
-    const s = sums.get(label) ?? { n: 0, x: 0, y: 0, z: 0 };
-    s.n += 1;
-    s.x += points[i].x;
-    s.y += points[i].y;
-    s.z += points[i].z;
-    sums.set(label, s);
+    const g = groups.get(label) ?? [];
+    g.push(i);
+    groups.set(label, g);
   });
+  const r2 = radius * radius;
   const out: ClusterAnchor[] = [];
   for (const label of conditionOrder) {
-    const s = sums.get(label);
-    if (!s || s.n < min) continue;
-    out.push({ label, x: s.x / s.n, y: s.y / s.n, z: s.z / s.n });
     if (out.length >= max) break;
+    const g = groups.get(label);
+    if (!g || g.length < min || g.length > maxShare * trials.length) continue;
+    let best = -1;
+    let bestN = 0;
+    for (const i of g) {
+      const p = points[i];
+      let n = 0;
+      for (const j of g) {
+        const q = points[j];
+        if ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 <= r2) n++;
+      }
+      if (n > bestN) {
+        bestN = n;
+        best = i;
+      }
+    }
+    if (best < 0 || bestN < minDensity * g.length) continue;
+    out.push({ label, ...points[best] });
   }
   return out;
 }
@@ -236,8 +263,8 @@ const LABEL_LINE = 14;
 
 /**
  * Place centred labels in order: each goes where labelPosition puts it, unless that box would touch one
- * already placed; then it moves by whole lines (down 1, up 1, down 2, up 2, …) to the first free slot.
- * With no free slot nearby it keeps its own position. Cheap enough per frame for a handful of labels.
+ * already placed; then it is nudged down a line at a time to the first free slot (up to 8 lines; with
+ * none free it keeps its own position). A greedy pass, cheap enough per frame for a handful of labels.
  */
 export function placeLabels(
   items: { sx: number; sy: number; width: number }[],
@@ -251,8 +278,7 @@ export function placeLabels(
     const home = labelPosition(sx, sy, width, w, h);
     let at = home;
     for (let k = 0; k <= 8; k++) {
-      const step = k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 ? 1 : -1);
-      const cand = labelPosition(sx, sy + step * LABEL_LINE, width, w, h);
+      const cand = labelPosition(sx, sy + k * LABEL_LINE, width, w, h);
       if (!hits(cand.x, cand.y, width)) {
         at = cand;
         break;

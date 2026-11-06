@@ -60,7 +60,7 @@ afterEach(() => vi.restoreAllMocks());
 const isStopped = (t: ExplorerTrial) => t.outcome === "stopped";
 const isUnknown = (t: ExplorerTrial) => t.outcome === "unknown";
 
-const renderCanvas = (labels?: string[]) => {
+const renderCanvas = (labels?: string[], data: ExplorerTrial[] = trials) => {
   const visible = vi.fn(() => true);
   const color = vi.fn((t: ExplorerTrial) => (isStopped(t) ? "#e00" : "#111"));
   const emphasis = vi.fn(isStopped);
@@ -68,7 +68,7 @@ const renderCanvas = (labels?: string[]) => {
   const onSelect = vi.fn();
   render(
     <PlateCanvas
-      trials={trials}
+      trials={data}
       visible={visible}
       color={color}
       emphasis={emphasis}
@@ -130,11 +130,17 @@ test("hollow trials are stroked rings, not filled dots", () => {
   expect(base.filter((m) => m.op === "fill")).toHaveLength(trials.length - k - unknownN);
 });
 
-test("cluster labels are drawn with the canvas, computed from the given condition order", () => {
-  const first = trials[0].condition_labels[0];
-  renderCanvas([first, "No such condition"]);
+test("cluster labels are drawn for planted clusters, not for the background condition", () => {
+  const background = trials[0].condition_labels[0];
+  // Every fixture trial shares one first label: that is the background, so it gets no label.
+  renderCanvas([background, "No such condition"]);
   step();
-  expect(texts).toContain(first);
+  expect(texts).toEqual([]);
+  // Plant six trials at one point under a new first label: that cluster is labelled.
+  const planted = trials.map((t, i) => (i < 6 ? { ...t, condition_labels: ["Planted"], x: 0.5, y: 0.5, z: 0 } : t));
+  renderCanvas(["Planted", "No such condition"], planted);
+  step();
+  expect(texts).toContain("Planted");
   expect(texts).not.toContain("No such condition");
 });
 
