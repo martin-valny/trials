@@ -17,6 +17,9 @@ import {
   yearBounds,
   nearestIndex,
   project,
+  popupLines,
+  popupPosition,
+  yearSpan,
 } from "../src/lib/explorer";
 import type { Filters } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
@@ -385,5 +388,59 @@ describe("placeLabels", () => {
     expect(got[2]).toEqual({ x: 195, y: 140 }); // 112 and 126 touch the first two
     for (let i = 0; i < got.length; i++)
       for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i].y - got[j].y)).toBeGreaterThanOrEqual(14);
+  });
+});
+
+describe("yearSpan", () => {
+  it("joins start and end with an en dash, marking estimated ends", () => {
+    expect(yearSpan(trial({ start_year: 2014, end_year: 2019, end_estimated: false }))).toBe("2014–2019");
+    expect(yearSpan(trial({ start_year: 2021, end_year: null, end_estimated: false }))).toBe("2021–");
+    expect(yearSpan(trial({ start_year: 2021, end_year: 2025, end_estimated: true }))).toBe("2021–2025 (est.)");
+    expect(yearSpan(trial({ start_year: null, end_year: null }))).toBe("");
+    expect(yearSpan(trial({ start_year: null, end_year: 2019, end_estimated: false }))).toBe("–2019");
+  });
+});
+
+describe("popupLines", () => {
+  it("names the trial, then drugs, treatment types, phase and years", () => {
+    const t = trial({
+      nct_id: "NCT01234567",
+      title: "A Study of Things",
+      drugs: ["a", "b", "c"],
+      treatment_types: ["DRUG"],
+      phase: "PHASE3",
+      start_year: 2014,
+      end_year: 2019,
+      end_estimated: false,
+    });
+    expect(popupLines(t)).toEqual(["NCT01234567 · A Study of Things", "a, b +1 · Drug · Phase 3 · 2014–2019"]);
+  });
+
+  it("skips empty parts and keeps the first two treatment types", () => {
+    const t = trial({
+      drugs: [],
+      treatment_types: ["BEHAVIORAL", "DEVICE", "DRUG"],
+      phase: null,
+      start_year: null,
+      end_year: null,
+    });
+    expect(popupLines(t)[1]).toBe("Behavioral, Device · Not applicable");
+  });
+});
+
+describe("popupPosition", () => {
+  it("sits 12px right of and below the pointer", () => {
+    expect(popupPosition(10, 10, 200, 60, 1000, 600)).toEqual({ left: 22, top: 22 });
+  });
+
+  it("flips left and up near the far edges and stays inside the panel", () => {
+    const p = popupPosition(990, 590, 200, 60, 1000, 600);
+    expect(p.left).toBeLessThanOrEqual(1000 - 200 - 4);
+    expect(p.top).toBeLessThanOrEqual(600 - 60 - 4);
+    expect(p).toEqual({ left: 990 - 12 - 200, top: 590 - 12 - 60 });
+  });
+
+  it("clamps to a 4px margin when the card cannot fit either side", () => {
+    expect(popupPosition(100, 30, 300, 80, 320, 100)).toEqual({ left: 4, top: 4 });
   });
 });

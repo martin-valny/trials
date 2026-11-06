@@ -15,7 +15,8 @@ import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
 import { LegendBar } from "./LegendBar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
-import { PlateCanvas } from "./PlateCanvas";
+import { HoverCard } from "./HoverCard";
+import { PlateCanvas, type PlateHover } from "./PlateCanvas";
 import { SelectedBar, SelectedTrial } from "./SelectedTrial";
 import "./explore.css";
 
@@ -63,6 +64,24 @@ function summary(shown: ExplorerTrial[]): string {
   return (
     `${shown.length} trials; ${n("succeeded")} succeeded, ${n("stopped")} stopped early, ` +
     `${n("running")} still running, ${n("completed_unknown")} finished without a known result.`
+  );
+}
+
+/** Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. */
+function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      className="spin-toggle"
+      aria-pressed={spinning}
+      aria-label={spinning ? "Pause rotation" : "Play rotation"}
+      onClick={onToggle}
+    >
+      <svg className="spin-glyph" viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
+        {spinning ? <path d="M2.75 1.5v7M7.25 1.5v7" /> : <path d="M2.5 1.25 8.5 5l-6 3.75z" />}
+      </svg>
+      {spinning ? "Pause" : "Play"}
+    </button>
   );
 }
 
@@ -129,6 +148,9 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
   const [selected, setSelected] = useState<string | null>(null);
+  // The map starts still; the turn is opt-in, and never offered under reduced motion.
+  const [spinning, setSpinning] = useState(false);
+  const [hover, setHover] = useState<PlateHover | null>(null);
 
   const palette = dark ? DARK_PALETTE : LIGHT_PALETTE;
   const order = useMemo(
@@ -151,6 +173,10 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => (selected === null ? null : (file.trials.find((t) => t.nct_id === selected) ?? null)),
     [file, selected],
   );
+  const hoverTrial = useMemo(
+    () => (hover === null ? null : (file.trials.find((t) => t.nct_id === hover.nct) ?? null)),
+    [file, hover],
+  );
 
   return (
     <div className="explore">
@@ -172,8 +198,14 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}
+              spinning={spinning}
+              onHover={setHover}
               ringColor={palette.stopped}
             />
+            {!reducedMotion && total > 0 && (
+              <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />
+            )}
+            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} />}
             {total === 0 ? (
               <div className="plate-empty" role="status">
                 <p>The map needs at least 4 trials in this area.</p>
@@ -189,7 +221,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           </div>
           <p className="panel-note plate-caption">
             Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn,
-            click a dot.
+            hover for details, click to open.
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}

@@ -1,7 +1,8 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
+import { HoverCard } from "../src/components/explore/HoverCard";
 import type { ExplorerFile, Meta } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
@@ -46,7 +47,7 @@ test("panel a carries a caption on how to read the map", async () => {
   const a = await screen.findByRole("region", { name: /Embedding of/ });
   expect(
     within(a).getByText(
-      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn, click a dot.",
+      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn, hover for details, click to open.",
     ),
   ).toBeInTheDocument();
 });
@@ -115,4 +116,41 @@ test("the screen-reader summary waits for typing to pause", async () => {
   expect(live.textContent).toMatch(new RegExp(`^${n} trials;`));
   // ... and it settles about half a second later.
   await waitFor(() => expect(live.textContent).toMatch(/^0 trials;/), { timeout: 2000 });
+});
+
+test("the map starts still, with a play control that toggles to pause", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const play = await screen.findByRole("button", { name: "Play rotation" });
+  expect(play).toHaveAttribute("aria-pressed", "false");
+  await userEvent.click(play);
+  const pause = screen.getByRole("button", { name: "Pause rotation" });
+  expect(pause).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
+});
+
+test("with reduced motion there is no rotation control", async () => {
+  withCanvas();
+  stubFetch();
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("prefers-reduced-motion"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+  renderAt(<Explore />, "/explore");
+  await screen.findByRole("heading", { level: 1 });
+  expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
+});
+
+test("the hover card is a tooltip with the trial's id, title and facts", () => {
+  const t = explorer.trials[0];
+  render(<HoverCard trial={t} x={10} y={10} />);
+  const card = screen.getByRole("tooltip");
+  expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
+  expect(card).toHaveTextContent("dimethyl fumarate · Behavioral, Device · Phase 4 · 2015–2016");
 });
