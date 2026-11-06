@@ -1,0 +1,3 @@
+drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets
+dimethyl fumarate,mapped,CHEMBL2107333,small molecule,NRF2 activator,Nuclear factor erythroid 2-related factor 2 activator,ACTIVATOR,NFE2L2
+example drug,unmapped,,,,,,

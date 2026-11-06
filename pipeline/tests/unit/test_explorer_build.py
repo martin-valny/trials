@@ -19,7 +19,7 @@ from trialradar.tables import Tables
 
 DAY = date(2026, 3, 1)
 TOP_KEYS = {"generated_for", "method", "stats", "trials"}
-METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k"}
+METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k", "min_group"}
 STATS_KEYS = {
     "verdict",
     "lift",
@@ -45,6 +45,9 @@ TRIAL_KEYS = {
     "has_results",
     "treatment_types",
     "drugs",
+    "mechanisms",
+    "targets",
+    "modalities",
     "enrollment",
     "lead_sponsor",
     "start_year",
@@ -74,6 +77,7 @@ def test_build_explorer_contract(cfg: AreaConfig) -> None:
         "seed": cfg.explorer.seed,
         "features": ["disease", "treatment_type", "molecule", "population"],
         "k": cfg.explorer.k,
+        "min_group": 10,
     }
     assert set(doc["method"]) == METHOD_KEYS
     stats = doc["stats"]
@@ -253,3 +257,19 @@ def test_layout_fallback_reaches_the_warning_sink(
     doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY, warnings=sink)
     assert any(w.startswith("explorer_layout_fallback: ") for w in sink)
     assert doc["trials"]
+
+
+def test_build_adds_mechanism_fields_from_the_mapping_dir(cfg: AreaConfig) -> None:
+    from pathlib import Path
+
+    mech = Path(__file__).resolve().parents[1] / "fixtures" / "mechanisms"
+    cfg = cfg.model_copy(update={"mechanisms_dir": mech})
+    tables, extras, _ = _inputs(cfg)
+    warnings: list[str] = []
+    doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY, warnings=warnings)
+    row = next(t for t in doc["trials"] if t["nct_id"] == "NCT90000001")
+    assert row["mechanisms"] == ["anti-CD20"]
+    assert row["targets"] == ["MS4A1"]
+    assert row["modalities"] == ["antibody"]
+    assert doc["method"]["min_group"] == 10
+    assert not any(w.startswith("explorer_mechanisms") for w in warnings)

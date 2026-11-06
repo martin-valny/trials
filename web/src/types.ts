@@ -99,10 +99,13 @@ export interface ExplorerTrial {
   enrollment: number | null;
   has_results: boolean;
   lead_sponsor: string | null;
+  mechanisms: string[];
+  modalities: string[];
   nct_id: string;
   outcome: Outcome;
   phase: string | null; // a phase string, "NA", or null
   start_year: number | null;
+  targets: string[];
   title: string;
   treatment_types: string[];
   x: number;
@@ -132,6 +135,7 @@ export interface ExplorerFile {
     dims: number;
     features: string[];
     k: number;
+    min_group: number;
     seed: number;
   };
   stats: ExplorerStats;

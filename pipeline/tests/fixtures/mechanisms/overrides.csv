@@ -1,0 +1,2 @@
+drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets
+example drug,manual,,antibody,anti-CD20,CD20 antagonist,ANTAGONIST,MS4A1
