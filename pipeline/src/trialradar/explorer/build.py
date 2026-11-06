@@ -142,6 +142,11 @@ def build_explorer(
     for i, nct in enumerate(ids):
         r, x = trial_rows[nct], full[nct]
         start: date | None = r["start_date"]
+        if r["primary_completion_date"] is not None:
+            end: date | None = r["primary_completion_date"]
+            end_type = r["primary_completion_date_type"]
+        else:
+            end, end_type = r["completion_date"], r["completion_date_type"]
         trials.append(
             {
                 "nct_id": nct,
@@ -158,6 +163,8 @@ def build_explorer(
                 "enrollment": r["enrollment"],
                 "lead_sponsor": r["lead_sponsor"],
                 "start_year": start.year if start is not None else None,
+                "end_year": end.year if end is not None else None,
+                "end_estimated": end is not None and end_type == "ESTIMATED",
             }
         )
     doc = {

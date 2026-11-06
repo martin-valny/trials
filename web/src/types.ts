@@ -94,6 +94,8 @@ export type Outcome = "succeeded" | "stopped" | "completed_unknown" | "running" 
 export interface ExplorerTrial {
   condition_labels: string[];
   drugs: string[];
+  end_estimated: boolean;
+  end_year: number | null;
   enrollment: number | null;
   has_results: boolean;
   lead_sponsor: string | null;

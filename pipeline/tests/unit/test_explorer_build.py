@@ -48,6 +48,8 @@ TRIAL_KEYS = {
     "enrollment",
     "lead_sponsor",
     "start_year",
+    "end_year",
+    "end_estimated",
 }
 OUTCOMES = {"succeeded", "stopped", "completed_unknown", "running", "unknown"}
 
@@ -198,6 +200,36 @@ def test_pool_needs_an_experimental_drug(cfg: AreaConfig) -> None:
     rows = {t["nct_id"]: t for t in doc["trials"]}
     assert rows[synthetic[0]]["outcome"] == "completed_unknown"
     assert rows[synthetic[0]]["drugs"] == []
+
+
+def test_end_year_prefers_primary_completion_and_flags_estimates(cfg: AreaConfig) -> None:
+    import dataclasses
+
+    tables, extras, _ = _inputs(cfg)
+    a, b, c = "NCT90000001", "NCT90000002", "NCT90000003"
+    cases = {
+        a: (date(2023, 5, 1), "ACTUAL", date(2024, 6, 1), "ACTUAL"),
+        b: (None, None, date(2027, 1, 1), "ESTIMATED"),
+        c: (None, None, None, None),
+    }
+
+    def col(name: str, idx: int) -> pl.Expr:
+        expr = pl.col(name)
+        for nct, vals in cases.items():
+            expr = pl.when(pl.col("nct_id") == nct).then(pl.lit(vals[idx])).otherwise(expr)
+        return expr.alias(name)
+
+    trial = tables.trial.with_columns(
+        col("primary_completion_date", 0),
+        col("primary_completion_date_type", 1),
+        col("completion_date", 2),
+        col("completion_date_type", 3),
+    )
+    doc, _ = build_explorer(dataclasses.replace(tables, trial=trial), extras, cfg, {}, {}, DAY)
+    rows = {t["nct_id"]: t for t in doc["trials"]}
+    assert (rows[a]["end_year"], rows[a]["end_estimated"]) == (2023, False)
+    assert (rows[b]["end_year"], rows[b]["end_estimated"]) == (2027, True)
+    assert (rows[c]["end_year"], rows[c]["end_estimated"]) == (None, False)
 
 
 def test_stats_export_p_value(cfg: AreaConfig) -> None:

@@ -19,6 +19,8 @@ import { readFixture } from "./helpers";
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
   condition_labels: ["Alpha", "Beta"],
   drugs: ["fooumab"],
+  end_estimated: false,
+  end_year: 2022,
   enrollment: 10,
   has_results: false,
   lead_sponsor: "Acme Pharma",
