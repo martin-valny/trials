@@ -32,7 +32,6 @@ export function PanelPhase({ trials }: { trials: ExplorerTrial[] }) {
   }, [trials]);
   const max = Math.max(1, ...cols.map(([, c]) => c.n));
   const won = cols.reduce((a, [, c]) => a + c.won, 0);
-  const phased = trials.length - unphased;
 
   return (
     <section className="panel panel-c" aria-labelledby="panel-c-h">
@@ -59,9 +58,7 @@ export function PanelPhase({ trials }: { trials: ExplorerTrial[] }) {
           ))}
         </ul>
       )}
-      <p className="panel-note">
-        {fmt(won)} of {fmt(phased)} shown trials with a phase succeeded.
-      </p>
+      <p className="panel-note">{fmt(won)} shown trials succeeded.</p>
       {unphased > 0 ? (
         <p className="panel-note">{`+${fmt(unphased)} trials without a phase, outside this measure.`}</p>
       ) : null}

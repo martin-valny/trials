@@ -39,7 +39,7 @@ const ready = async () => {
 
 test("success panel shows lift sentence and definition link", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share of finished trials that succeeded/ });
+  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
   expect(within(b).getByText(liftSentence(explorer.stats))).toBeInTheDocument();
   expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
   expect(within(b).getByRole("link", { name: "How this is measured" })).toHaveAttribute(
@@ -50,7 +50,12 @@ test("success panel shows lift sentence and definition link", async () => {
   for (const row of explorer.stats.by_condition) {
     expect(within(b).getByText(row.label)).toBeInTheDocument();
   }
-  expect(within(b).getByText(/^Tick: average across all finished trials \(\d+%\)\.$/)).toBeInTheDocument();
+  expect(
+    within(b).getByText(/^Tick: average across all finished trials that could succeed \(\d+%\)\.$/),
+  ).toBeInTheDocument();
+  expect(
+    within(b).getByText("Finished Early Phase 1–Phase 2/3 trials with an experimental drug."),
+  ).toBeInTheDocument();
   const c = screen.getByRole("region", { name: /Trials by phase/ });
   expect(within(c).getByText("Phase 2")).toBeInTheDocument();
 });
@@ -142,7 +147,7 @@ test("enter with an empty query selects nothing", async () => {
 
 test("panel b shows succeeded/finished per row and outlines rows with fewer than 10 finished", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share of finished trials that succeeded/ });
+  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
   const rows = within(b).getAllByRole("listitem");
   expect(rows).toHaveLength(explorer.stats.by_condition.length);
   explorer.stats.by_condition.forEach((row, i) => {
@@ -187,4 +192,80 @@ test("unknown outcome legend swatch is a ring, not a filled dot", async () => {
   expect(pill.querySelector(".swatch.ring")).not.toBeNull();
   const running = explorer.trials.filter((t) => t.outcome === "running").length;
   expect(screen.getByRole("button", { name: `Still running ${running}` }).querySelector(".swatch.ring")).toBeNull();
+});
+
+const withStats = (o: Partial<ExplorerFile["stats"]>): ExplorerFile => ({
+  ...explorer,
+  stats: {
+    ...explorer.stats,
+    verdict: "chance",
+    lift: 1.31,
+    baseline_mean: 0.99,
+    baseline_range: [0.64, 1.39],
+    p_value: 0.058,
+    n_averaged: 66,
+    n_short: 0,
+    ...o,
+  },
+});
+
+test("panel b says how many successes the statistic rests on, and how many were short of neighbours", async () => {
+  stubFetch({ "explorer.json": withStats({ n_averaged: 40, n_short: 3 }) });
+  await ready();
+  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  expect(
+    within(b).getByText("Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours."),
+  ).toBeInTheDocument();
+  expect(within(b).getByText("Trials that succeeded cluster no more than chance would (p = 0.058).")).toBeInTheDocument();
+});
+
+test("panel b omits the short-neighbour clause when none were short", async () => {
+  stubFetch({ "explorer.json": withStats({ n_averaged: 66, n_short: 0 }) });
+  await ready();
+  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  expect(within(b).getByText("Based on 66 trials that succeeded.")).toBeInTheDocument();
+});
+
+test("panel b has no basis note when the statistic was not computed", async () => {
+  await ready();
+  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  expect(within(b).queryByText(/^Based on/)).not.toBeInTheDocument();
+});
+
+test("panel c note is a plain count of shown trials that succeeded", async () => {
+  await ready();
+  const c = screen.getByRole("region", { name: /Trials by phase/ });
+  const won = explorer.trials.filter((t) => t.outcome === "succeeded").length;
+  expect(within(c).getByText(`${won} shown trials succeeded.`)).toBeInTheDocument();
+  expect(within(c).queryByText(/ of .* shown trials/)).not.toBeInTheDocument();
+});
+
+test("results posted is one pill in the outcome row, off by default, and narrows when on", async () => {
+  await ready();
+  const row = screen.getByRole("group", { name: "Outcome" });
+  const withResults = explorer.trials.filter((t) => t.has_results).length;
+  expect(withResults).toBeGreaterThan(0);
+  const pill = within(row).getByRole("button", { name: `Results posted ${withResults}` });
+  expect(pill).toHaveAttribute("aria-pressed", "false");
+  expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
+  await userEvent.click(pill);
+  expect(pill).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText(`Showing ${withResults} of ${N} trials`)).toBeInTheDocument();
+  await userEvent.click(pill);
+  expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
+});
+
+test("on narrow screens a selected trial gets a short sticky line with a Details link", async () => {
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  const box = await ready();
+  expect(document.querySelector(".selected-bar")).toBeNull();
+  await userEvent.type(box, "NCT02343159{Enter}");
+  const bar = document.querySelector<HTMLElement>(".selected-bar")!;
+  expect(bar).not.toBeNull();
+  expect(bar.textContent).toMatch(/NCT02343159/);
+  expect(bar.querySelector(".selected-summary")).toBeNull();
+  await userEvent.click(within(bar).getByRole("button", { name: /Details/ }));
+  expect(scroll).toHaveBeenCalled();
+  expect(scroll.mock.contexts[0]).toBe(screen.getByRole("region", { name: "Selected trial" }));
 });

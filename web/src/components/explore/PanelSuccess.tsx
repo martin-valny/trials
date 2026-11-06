@@ -6,16 +6,28 @@ const pct = (r: number): string => `${Math.round(r * 100)}%`;
 /** Below this many finished trials a row's share is drawn as an outline: shown, but not to be leaned on. */
 const FEW = 10;
 
-/** Panel b: per condition, the share of finished trials that succeeded, against the area average. */
-export function PanelSuccess({ stats }: { stats: ExplorerStats }) {
+const fmt = (n: number): string => n.toLocaleString("en-US");
+
+/** "Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours." (second clause only when some did). */
+function basisNote(stats: ExplorerStats, k: number): string {
+  const head = `Based on ${fmt(stats.n_averaged)} trials that succeeded`;
+  return stats.n_short > 0 ? `${head}; ${fmt(stats.n_short)} had fewer than ${k} usable neighbours.` : `${head}.`;
+}
+
+/**
+ * Panel b: per condition, the share of finished trials that could succeed (the pool: Early Phase 1 to
+ * Phase 2/3 with an experimental drug) that did succeed, against the pool average.
+ */
+export function PanelSuccess({ stats, k }: { stats: ExplorerStats; k: number }) {
   const avg = stats.success_rate;
   const anyFew = stats.by_condition.some((row) => row.finished < FEW);
   return (
     <section className="panel panel-b" aria-labelledby="panel-b-h">
       <h2 className="panel-h" id="panel-b-h">
         <span className="panel-l">b</span>
-        Share of finished trials that succeeded
+        Share that succeeded, of finished trials that could succeed
       </h2>
+      <p className="panel-note">Finished Early Phase 1–Phase 2/3 trials with an experimental drug.</p>
       <ul className="bars">
         {stats.by_condition.map((row) => {
           const rate = row.finished > 0 ? row.succeeded / row.finished : null;
@@ -41,9 +53,10 @@ export function PanelSuccess({ stats }: { stats: ExplorerStats }) {
           );
         })}
       </ul>
-      {avg !== null ? <p className="panel-note">Tick: average across all finished trials ({pct(avg)}).</p> : null}
+      {avg !== null ? <p className="panel-note">Tick: average across all finished trials that could succeed ({pct(avg)}).</p> : null}
       {anyFew ? <p className="panel-note">Outlined: fewer than {FEW} finished trials.</p> : null}
       <p className="panel-claim">{liftSentence(stats)}</p>
+      {stats.lift !== null ? <p className="panel-note">{basisNote(stats, k)}</p> : null}
       <p className="panel-note">
         Succeeded = drug moved to a later phase. <a href="#/methods#map">How this is measured</a>
       </p>

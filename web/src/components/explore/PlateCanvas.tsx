@@ -10,7 +10,7 @@ export interface PlateCanvasProps {
   emphasis?: (t: ExplorerTrial) => boolean;
   /** Trials drawn as a hollow 1px ring instead of a filled dot. */
   hollow?: (t: ExplorerTrial) => boolean;
-  /** Condition labels, in the area's order, to annotate at the centre of their trials. */
+  /** Condition labels, in the area's order, to annotate at each condition's densest point (see clusterAnchors). */
   labels?: string[];
   selected: string | null;
   onSelect: (nct: string | null) => void;
@@ -147,6 +147,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
     let hover: string | null = null;
     let projected: Projected[] = [];
     let frame = 0;
+    let onscreen = true;
+    let alive = true;
 
     const resize = () => {
       const box = canvas.getBoundingClientRect();
@@ -254,6 +256,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
     };
 
     const tick = () => {
+      frame = 0;
+      if (!onscreen) return; // paused: resumed by the intersection observer
       const spinning = !dragging && !live.current.reducedMotion;
       if (spinning) angle += SPIN;
       if (spinning || dirty.current) {
@@ -263,6 +267,29 @@ export function PlateCanvas(props: PlateCanvasProps) {
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
+
+    // Offscreen (scrolled away on a long page), the loop stops; it resumes, with a redraw, on return.
+    const visibility =
+      typeof IntersectionObserver === "function"
+        ? new IntersectionObserver((entries) => {
+            const next = entries.some((e) => e.isIntersecting);
+            if (next === onscreen) return;
+            onscreen = next;
+            if (onscreen && frame === 0) {
+              dirty.current = true;
+              frame = requestAnimationFrame(tick);
+            } else if (!onscreen && frame !== 0) {
+              cancelAnimationFrame(frame);
+              frame = 0;
+            }
+          })
+        : null;
+    visibility?.observe(canvas);
+
+    // Labels are measured in the web font: draw once more when it has loaded.
+    document.fonts?.ready.then(() => {
+      if (alive) dirty.current = true;
+    });
 
     /** The visible trial under the pointer, or null. */
     const hit = (e: PointerEvent): string | null => {
@@ -315,8 +342,10 @@ export function PlateCanvas(props: PlateCanvasProps) {
     canvas.addEventListener("pointerleave", leave);
 
     return () => {
+      alive = false;
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      visibility?.disconnect();
       canvas.removeEventListener("pointerdown", down);
       canvas.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerup", up);

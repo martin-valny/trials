@@ -8,6 +8,7 @@ import {
   labelPosition,
   placeLabels,
   liftSentence,
+  formatP,
   matches,
   nearestIndex,
   project,
@@ -49,6 +50,7 @@ describe("allFilters / matches", () => {
     outcomes: new Set(["succeeded" as const]),
     treatmentTypes: new Set(["DRUG"]),
     query: "",
+    resultsOnly: false,
   });
 
   it("matches with all filters on", () => expect(matches(trial(), all())).toBe(true));
@@ -82,6 +84,17 @@ describe("allFilters / matches", () => {
     expect(matches(trial({ treatment_types: [] }), offT)).toBe(true);
   });
 
+  it("results posted: off shows all, on keeps only trials with results", () => {
+    expect(matches(trial({ has_results: false }), all())).toBe(true);
+    expect(matches(trial({ has_results: false }), { ...all(), resultsOnly: true })).toBe(false);
+    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true })).toBe(true);
+    // Combines with the other filters.
+    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true, phases: new Set(["PHASE3"]) })).toBe(
+      false,
+    );
+    expect(allFilters(file()).resultsOnly).toBe(false);
+  });
+
   it("query matches nct_id, title, drugs, sponsor case-insensitively", () => {
     for (const q of ["nct00000001", "THINGS", "FOOUMAB", "acme"])
       expect(matches(trial(), { ...all(), query: q })).toBe(true);
@@ -97,7 +110,7 @@ describe("colorFor", () => {
     expect(colorFor(trial({ outcome: "stopped" }), "outcome", DARK_PALETTE, order)).toBe("#eceae4");
   });
   it("outcome mode: running is a visible grey; unknown is a mid-grey ring colour", () => {
-    expect(colorFor(trial({ outcome: "running" }), "outcome", LIGHT_PALETTE, order)).toBe("#9aa6b0");
+    expect(colorFor(trial({ outcome: "running" }), "outcome", LIGHT_PALETTE, order)).toBe("#8592a0");
     expect(colorFor(trial({ outcome: "running" }), "outcome", DARK_PALETTE, order)).toBe("#5f666e");
     expect(colorFor(trial({ outcome: "unknown" }), "outcome", LIGHT_PALETTE, order)).toBe("#8796a3");
     expect(colorFor(trial({ outcome: "unknown" }), "outcome", DARK_PALETTE, order)).toBe("#6c7f93");
@@ -112,6 +125,9 @@ describe("colorFor", () => {
     expect(colorFor(trial(), "disease", LIGHT_PALETTE, order)).toBe("#111111");
     expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, order)).toBe("#7a5c2e");
     expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, order)).toBe("#c8a96a");
+    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ["Alpha", "Beta", "Gamma"])).toBe(
+      "#5f8a7a",
+    );
     const long = Array.from({ length: 8 }, (_, i) => `L${i}`);
     expect(colorFor(trial({ condition_labels: ["L7"] }), "disease", LIGHT_PALETTE, long)).toBe("#7a5c2e");
     expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
@@ -149,28 +165,84 @@ describe("liftSentence", () => {
     n_pool: 0,
     n_short: 0,
     n_succeeded: 0,
+    p_value: null,
     success_rate: null,
     verdict: "insufficient",
     ...o,
   });
   it("insufficient", () =>
     expect(liftSentence(s({}))).toBe("Too few successes in this area to measure clustering yet."));
-  it("chance", () =>
-    expect(liftSentence(s({ verdict: "chance" }))).toBe(
-      "Successful trials cluster no more than chance would.",
+  it("chance names the p-value", () =>
+    expect(liftSentence(s({ verdict: "chance", lift: 1.31, baseline_range: [0.64, 1.39], p_value: 0.058394 }))).toBe(
+      "Trials that succeeded cluster no more than chance would (p = 0.058).",
     ));
-  it("clustered", () =>
-    expect(liftSentence(s({ verdict: "clustered", lift: 2.345, baseline_range: [0.94, 1.26] }))).toBe(
-      "Successful trials' neighbours succeed 2.35× more often than chance (shuffled: 0.94–1.26×).",
+  it("clustered names the lift, the shuffled range and the p-value", () =>
+    expect(
+      liftSentence(s({ verdict: "clustered", lift: 2.345, baseline_range: [0.94, 1.26], p_value: 0.0123 })),
+    ).toBe(
+      "Trials that succeeded have neighbours that succeed 2.35× as often as the average finished trial (shuffled labels: 0.94–1.26×; p = 0.012).",
     ));
-  it("clustered, but within 10% of the shuffled maximum", () =>
-    expect(liftSentence(s({ verdict: "clustered", lift: 1.44, baseline_range: [0.59, 1.41] }))).toBe(
-      "Successful trials' neighbours succeed 1.44× more often than chance (shuffled: 0.59–1.41×) — just above the shuffled range.",
+  it("clustered with the smallest p reads as a floor", () =>
+    expect(
+      liftSentence(s({ verdict: "clustered", lift: 2.5, baseline_range: [0.5, 2], p_value: 1 / 10001 })),
+    ).toBe(
+      "Trials that succeeded have neighbours that succeed 2.50× as often as the average finished trial (shuffled labels: 0.50–2.00×; p < 0.001).",
     ));
-  it("clustered well above 1.1 × the shuffled maximum is not hedged", () =>
-    expect(liftSentence(s({ verdict: "clustered", lift: 2.5, baseline_range: [0.5, 2] }))).toBe(
-      "Successful trials' neighbours succeed 2.50× more often than chance (shuffled: 0.50–2.00×).",
-    ));
+  it("never says a bare 'successful'", () => {
+    for (const v of ["insufficient", "chance", "clustered"] as const)
+      expect(liftSentence(s({ verdict: v, lift: 1.5, baseline_range: [0.5, 1.2], p_value: 0.01 }))).not.toMatch(
+        /successful/i,
+      );
+  });
+});
+
+describe("formatP", () => {
+  it("two significant digits, floored at < 0.001", () => {
+    expect(formatP(0.058394)).toBe("0.058");
+    expect(formatP(0.5)).toBe("0.5");
+    expect(formatP(0.0123)).toBe("0.012");
+    expect(formatP(0.001)).toBe("0.001");
+    expect(formatP(0.00099)).toBe("< 0.001");
+    expect(formatP(1 / 10001)).toBe("< 0.001");
+  });
+});
+
+/** WCAG contrast ratio of two #rrggbb colours. */
+function contrast(a: string, b: string): number {
+  const lum = (h: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+    const l = c.map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+  };
+  const [lo, hi] = [lum(a), lum(b)].sort((x, y) => x - y);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Hue in degrees and HSL saturation of a #rrggbb colour. */
+function hueSat(h: string): [number, number] {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  const l = (max + min) / 2;
+  const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  if (d === 0) return [0, 0];
+  const hue = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(hue * 60 + 360) % 360, sat];
+}
+
+describe("light palette legibility", () => {
+  it("every outcome fill is at least 3:1 on the white plate", () => {
+    for (const o of ["succeeded", "stopped", "completed_unknown", "running", "unknownRing"] as const)
+      expect(contrast(LIGHT_PALETTE[o], "#ffffff")).toBeGreaterThanOrEqual(3);
+  });
+  it("no saturated light disease colour sits in the red family (red is for succeeded)", () => {
+    for (const c of LIGHT_PALETTE.diseases) {
+      const [hue, sat] = hueSat(c);
+      if (sat > 0.2) expect(hue > 30 && hue < 330).toBe(true);
+    }
+    expect(contrast(LIGHT_PALETTE.diseases[2], "#ffffff")).toBeGreaterThanOrEqual(3);
+  });
 });
 
 describe("red is reserved for succeeded", () => {

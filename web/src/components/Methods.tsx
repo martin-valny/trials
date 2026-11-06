@@ -93,22 +93,35 @@ export function Methods() {
             A later-phase trial does not prove the earlier one met its endpoint.
           </li>
           <li>
-            Phase 3 and 4 trials get no success label until approval data is added.
+            Phase 3-only and Phase 4 trials get no success label until approval data is added;
+            Phase 2/3 trials can succeed.
+          </li>
+          <li>
+            A trial without a drug in an experimental arm cannot succeed by this definition.
+          </li>
+          <li>
+            Recently completed trials have had little time to move on, so recent years undercount success.
           </li>
         </ul>
         <p>Start dates given only to the month are compared as if on the first day of that month.</p>
 
         <h3>Do successes cluster?</h3>
         <p>
-          For each succeeded trial we take its 10 nearest neighbours by what they study, among
-          finished trials that could succeed. Trials that share any of its drugs are excluded:
-          drugs both place trials and define success, so those neighbours would agree by
-          construction. The share of neighbours that also succeeded is compared with 1,000 shuffles
-          of the success labels.
+          The comparison uses only finished trials that could succeed: completed, stopped or
+          succeeded trials in Early Phase 1 to Phase 2/3 with at least one drug in an experimental
+          arm. Panel b&apos;s shares and average use the same trials.
         </p>
         <p>
-          With fewer than 30 successes the result is withheld. When the observed value falls inside
-          the shuffled range, the map says successes cluster no more than chance.
+          For each trial that succeeded we take its 10 nearest neighbours among them by what they
+          study (cosine distance). Trials that share any of its drugs are excluded: drugs both place
+          trials and define success, so those neighbours would agree by construction. The share of
+          neighbours that also succeeded, relative to the average, is compared with the same value
+          for 10,000 shuffles of the success labels.
+        </p>
+        <p>
+          The p-value is the share of shuffles that reach the observed value (counting the observed
+          one). The map says successes cluster only when it is below 0.025; otherwise it says they
+          cluster no more than chance. With fewer than 30 successes the result is withheld.
         </p>
       </section>
 

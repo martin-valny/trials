@@ -15,7 +15,7 @@ import { LegendBar } from "./LegendBar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
 import { PlateCanvas } from "./PlateCanvas";
-import { SelectedTrial } from "./SelectedTrial";
+import { SelectedBar, SelectedTrial } from "./SelectedTrial";
 import "./explore.css";
 
 type State =
@@ -45,6 +45,16 @@ function useMediaQuery(query: string): boolean {
 /** Feature names from the export, read as plain words ("treatment_type" -> "treatment"). */
 const featureWords = (features: string[]): string =>
   features.map((f) => f.replace(/_type$/, "").replace(/_/g, " ")).join(", ");
+
+/** ``value`` once it has stayed the same for ``ms`` milliseconds (the first value immediately). */
+function useSettled<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return settled;
+}
 
 /** One sentence for screen readers describing what the map currently shows. */
 function summary(shown: ExplorerTrial[]): string {
@@ -133,6 +143,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length);
     return [...all].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [file, order]);
+  // Announced only once typing or toggling pauses, so a screen reader is not read every keystroke.
+  const announced = useSettled(summary(shown), 500);
   const selectedTrial = useMemo(
     () => (selected === null ? null : (file.trials.find((t) => t.nct_id === selected) ?? null)),
     [file, selected],
@@ -160,7 +172,11 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               reducedMotion={reducedMotion}
               ringColor={palette.stopped}
             />
-            {shown.length === 0 ? (
+            {total === 0 ? (
+              <div className="plate-empty" role="status">
+                <p>The map needs at least 4 trials in this area.</p>
+              </div>
+            ) : shown.length === 0 ? (
               <div className="plate-empty" role="status">
                 <p>No trials match these filters.</p>
                 <button type="button" onClick={() => setFilters(allFilters(file))}>
@@ -174,10 +190,10 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             click a dot.
           </p>
           <p className="visually-hidden" aria-live="polite">
-            {summary(shown)}
+            {announced}
           </p>
         </section>
-        <PanelSuccess stats={file.stats} />
+        <PanelSuccess stats={file.stats} k={file.method.k} />
         <PanelPhase trials={shown} />
       </div>
       <LegendBar
@@ -196,6 +212,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
       >
         <SelectedTrial trial={selectedTrial} />
       </LegendBar>
+      <SelectedBar trial={selectedTrial} />
     </div>
   );
 }

@@ -51,10 +51,17 @@ function Pill(props: {
   swatch?: string;
   /** Draw the swatch as a hollow ring, matching how the map draws these trials. */
   ring?: boolean;
+  /** A narrowing toggle (off = show all), styled so "off" never reads as "excluded". */
+  narrowing?: boolean;
   onClick: () => void;
 }) {
   return (
-    <button type="button" className="pill" aria-pressed={props.on} onClick={props.onClick}>
+    <button
+      type="button"
+      className={props.narrowing ? "pill narrowing" : "pill"}
+      aria-pressed={props.on}
+      onClick={props.onClick}
+    >
       {props.swatch ? (
         <span
           className={props.ring ? "swatch ring" : "swatch"}
@@ -80,6 +87,7 @@ export function LegendBar(p: LegendBarProps) {
       phases: tally(trials, (t) => [phaseKey(t)]),
       outcomes: tally(trials, (t) => [t.outcome]),
       treatmentTypes: tally(trials, (t) => t.treatment_types),
+      results: trials.filter((t) => t.has_results).length,
     }),
     [trials],
   );
@@ -156,6 +164,14 @@ export function LegendBar(p: LegendBarProps) {
               onClick={() => toggle("outcomes", o)}
             />
           ))}
+          {/* Not an outcome but a narrowing: off (the default) shows every trial; on keeps those with results. */}
+          <Pill
+            label="Results posted"
+            n={counts.results}
+            narrowing
+            on={filters.resultsOnly}
+            onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
+          />
         </div>
 
         <span className="legend-k" id="legend-disease">

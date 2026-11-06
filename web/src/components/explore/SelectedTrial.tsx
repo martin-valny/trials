@@ -12,6 +12,53 @@ function drugList(drugs: string[]): string | null {
   return drugs.length > 3 ? `${head} and ${drugs.length - 3} more` : head;
 }
 
+/** The facts line's parts after the NCT number: drugs, phase, outcome, enrollment, sponsor (missing ones left out). */
+function factsOf(trial: ExplorerTrial): [string, string][] {
+  const all: [string, string | null][] = [
+    ["drugs", drugList(trial.drugs)],
+    ["phase", phaseLabel(trial.phase)],
+    ["outcome", outcomeLabel(trial.outcome)],
+    ["enrollment", trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null],
+    ["sponsor", trial.lead_sponsor],
+  ];
+  return all.filter((f): f is [string, string] => f[1] !== null);
+}
+
+function Facts({ trial }: { trial: ExplorerTrial }) {
+  return (
+    <>
+      <b>{trial.nct_id}</b>
+      {factsOf(trial).map(([field, f]) => (
+        <span key={field}> · {f}</span>
+      ))}
+    </>
+  );
+}
+
+export const SELECTED_ID = "explore-selected";
+
+/**
+ * On narrow screens: only the selected trial's facts line, stuck to the bottom of the viewport, with a link
+ * down to the full panel d. Hidden on wide screens, where d sits beside the controls.
+ */
+export function SelectedBar({ trial }: { trial: ExplorerTrial | null }) {
+  if (trial === null) return null;
+  return (
+    <div className="selected-bar">
+      <p className="selected-facts" aria-hidden="true">
+        <Facts trial={trial} />
+      </p>
+      <button
+        type="button"
+        className="selected-more"
+        onClick={() => document.getElementById(SELECTED_ID)?.scrollIntoView?.({ block: "center" })}
+      >
+        Details<span className="visually-hidden"> of the selected trial</span>
+      </button>
+    </div>
+  );
+}
+
 /** Panel d: the selected trial's facts and the start of its registry summary, loaded on demand. */
 export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -31,15 +78,6 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
     };
   }, [nct]);
 
-  const facts: [string, string | null][] = trial
-    ? [
-        ["drugs", drugList(trial.drugs)],
-        ["phase", phaseLabel(trial.phase)],
-        ["outcome", outcomeLabel(trial.outcome)],
-        ["enrollment", trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null],
-        ["sponsor", trial.lead_sponsor],
-      ]
-    : [];
   const loaded = summary !== null && summary.nct === nct ? summary : null;
 
   return (
@@ -47,7 +85,7 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
       <span className="legend-k panel-l" aria-hidden="true">
         d
       </span>
-      <section className="legend-v selected" aria-label="Selected trial" aria-live="polite">
+      <section id={SELECTED_ID} className="legend-v selected" aria-label="Selected trial" aria-live="polite">
         {trial === null ? (
           <p className="selected-empty">
             Click a dot in <b>a</b>, or search and press Enter, to read a trial here.
@@ -55,8 +93,7 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
         ) : (
           <>
             <p className="selected-facts">
-              <b>{trial.nct_id}</b>
-              {facts.map(([field, f]) => (f === null ? null : <span key={field}> · {f}</span>))}
+              <Facts trial={trial} />
             </p>
             <p className="selected-summary">
               <span className="selected-src">From the registry</span>{" "}

@@ -8,6 +8,8 @@ export interface Filters {
   outcomes: Set<Outcome>;
   treatmentTypes: Set<string>;
   query: string;
+  /** On: only trials with results posted. Off (default): every trial, results or not. */
+  resultsOnly: boolean;
 }
 
 export interface Palette {
@@ -27,7 +29,7 @@ export const LIGHT_PALETTE: Palette = {
   succeeded: "#c8102e",
   stopped: "#111111",
   completed_unknown: "#7d8a95",
-  running: "#9aa6b0",
+  running: "#8592a0",
   unknown: "#e4e8eb",
   unknownRing: "#8796a3",
   phases: {
@@ -38,7 +40,7 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  diseases: ["#111111", "#7a5c2e", "#e07a5f", "#3b6ea5", "#7aa6c2", "#8a8f94"],
+  diseases: ["#111111", "#7a5c2e", "#5f8a7a", "#3b6ea5", "#7aa6c2", "#8a8f94"],
 };
 
 export const DARK_PALETTE: Palette = {
@@ -83,7 +85,7 @@ export function allFilters(f: ExplorerFile): Filters {
     phases.add(phaseKey(t));
     t.treatment_types.forEach((x) => treatmentTypes.add(x));
   }
-  return { conditions, phases, outcomes: new Set(OUTCOMES), treatmentTypes, query: "" };
+  return { conditions, phases, outcomes: new Set(OUTCOMES), treatmentTypes, query: "", resultsOnly: false };
 }
 
 /** A trial with no labels or no types cannot be filtered out by those sets. */
@@ -91,6 +93,7 @@ export function matches(t: ExplorerTrial, f: Filters): boolean {
   if (t.condition_labels.length > 0 && !t.condition_labels.some((l) => f.conditions.has(l))) return false;
   if (!f.phases.has(phaseKey(t))) return false;
   if (!f.outcomes.has(t.outcome)) return false;
+  if (f.resultsOnly && !t.has_results) return false;
   if (t.treatment_types.length > 0 && !t.treatment_types.some((x) => f.treatmentTypes.has(x))) return false;
   const q = f.query.trim().toLowerCase();
   if (q) {
@@ -172,14 +175,29 @@ export function nearestIndex(
 
 const two = (n: number): string => n.toFixed(2);
 
+/** A p-value to two significant digits, floored at "< 0.001". */
+export function formatP(p: number): string {
+  return p < 0.001 ? "< 0.001" : String(Number(p.toPrecision(2)));
+}
+
+/** "p = 0.058" or "p < 0.001". */
+const pClause = (p: number): string => {
+  const f = formatP(p);
+  return f.startsWith("<") ? `p ${f}` : `p = ${f}`;
+};
+
 export function liftSentence(s: ExplorerStats): string {
   if (s.verdict === "insufficient") return "Too few successes in this area to measure clustering yet.";
-  if (s.verdict === "chance") return "Successful trials cluster no more than chance would.";
+  if (s.verdict === "chance") {
+    const p = s.p_value === null ? "" : ` (${pClause(s.p_value)})`;
+    return `Trials that succeeded cluster no more than chance would${p}.`;
+  }
   const [lo, hi] = s.baseline_range ?? [NaN, NaN];
-  const lift = s.lift ?? NaN;
-  const base = `Successful trials' neighbours succeed ${two(lift)}× more often than chance (shuffled: ${two(lo)}–${two(hi)}×)`;
-  // A lift barely past the shuffled maximum is real but slight; say so.
-  return lift < 1.1 * hi ? `${base} — just above the shuffled range.` : `${base}.`;
+  const p = s.p_value === null ? "" : `; ${pClause(s.p_value)}`;
+  return (
+    `Trials that succeeded have neighbours that succeed ${two(s.lift ?? NaN)}× as often as the average ` +
+    `finished trial (shuffled labels: ${two(lo)}–${two(hi)}×${p}).`
+  );
 }
 
 export interface ClusterAnchor {

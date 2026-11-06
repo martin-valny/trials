@@ -228,3 +228,69 @@ test("plateExtents measures spin-axis and tilted vertical spread at the 98th per
   expect(e.horizontal).toBeCloseTo(1);
   expect(e.vertical).toBeCloseTo(0);
 });
+
+const renderStill = () =>
+  render(
+    <PlateCanvas
+      trials={trials}
+      visible={() => true}
+      color={() => "#111"}
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={true}
+    />,
+  );
+
+test("redraws once when the web fonts have loaded, so labels use the real face", async () => {
+  let loaded: () => void = () => undefined;
+  const ready = new Promise<void>((r) => (loaded = r));
+  Object.defineProperty(document, "fonts", { configurable: true, value: { ready } });
+  try {
+    renderStill();
+    step();
+    const drawn = arcs;
+    expect(drawn).toBeGreaterThan(0);
+    step();
+    expect(arcs).toBe(drawn); // still: nothing changed, nothing drawn
+    await act(async () => {
+      loaded();
+      await ready;
+    });
+    step();
+    expect(arcs).toBeGreaterThan(drawn);
+  } finally {
+    delete (document as { fonts?: unknown }).fonts;
+  }
+});
+
+test("the draw loop pauses while the canvas is offscreen and resumes when it returns", () => {
+  let report: (entries: { isIntersecting: boolean }[]) => void = () => undefined;
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+        report = cb;
+      }
+      observe() {}
+      disconnect() {}
+    },
+  );
+  try {
+    renderCanvas();
+    step();
+    expect(frames.length).toBe(1);
+    act(() => report([{ isIntersecting: false }]));
+    const drawn = arcs;
+    step();
+    expect(arcs).toBe(drawn); // no drawing offscreen
+    expect(frames.length).toBe(0); // and no frame scheduled
+    act(() => report([{ isIntersecting: true }]));
+    expect(frames.length).toBe(1);
+    step();
+    expect(arcs).toBeGreaterThan(drawn);
+  } finally {
+    vi.unstubAllGlobals();
+    vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+  }
+});

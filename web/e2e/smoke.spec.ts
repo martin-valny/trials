@@ -81,17 +81,35 @@ test("explore selects a trial by clicking the map", async ({ page }) => {
   await expect(panel).toBeVisible();
   await expect(panel).not.toContainText(NCT);
   const box = (await canvasOf(page).boundingBox())!;
+  // Click where dots were actually drawn (opaque pixels, one per 16px cell), not on a blind grid.
+  const spots = await canvasOf(page).evaluate((c: HTMLCanvasElement) => {
+    const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+    const sx = c.width / c.clientWidth;
+    const sy = c.height / c.clientHeight;
+    const seen = new Set<string>();
+    const out: [number, number][] = [];
+    for (let i = 3; i < d.length; i += 4) {
+      if (d[i] < 200) continue;
+      const px = (i - 3) / 4;
+      const x = (px % c.width) / sx;
+      const y = Math.floor(px / c.width) / sy;
+      const cell = `${Math.floor(x / 16)},${Math.floor(y / 16)}`;
+      if (seen.has(cell)) continue;
+      seen.add(cell);
+      out.push([x, y]);
+    }
+    return out;
+  });
+  expect(spots.length, "the map drew opaque dots").toBeGreaterThan(0);
   let found = false;
-  outer: for (let gy = 0.15; gy <= 0.86; gy += 0.05) {
-    for (let gx = 0.1; gx <= 0.91; gx += 0.05) {
-      await page.mouse.click(box.x + box.width * gx, box.y + box.height * gy);
-      try {
-        await expect(panel).toContainText(NCT, { timeout: 300 });
-        found = true;
-        break outer;
-      } catch {
-        /* no dot here */
-      }
+  for (const [x, y] of spots.slice(0, 40)) {
+    await page.mouse.click(box.x + x, box.y + y);
+    try {
+      await expect(panel).toContainText(NCT, { timeout: 300 });
+      found = true;
+      break;
+    } catch {
+      /* a label or an edge pixel, not a dot */
     }
   }
   expect(found, "a click on the map selected a trial").toBe(true);

@@ -117,6 +117,8 @@ export interface ExplorerStats {
   n_pool: number;
   n_short: number;
   n_succeeded: number;
+  /** One-sided permutation p-value; null when the statistic was not computed. */
+  p_value: number | null;
   success_rate: number | null;
   verdict: "insufficient" | "chance" | "clustered";
 }

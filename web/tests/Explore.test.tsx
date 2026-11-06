@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
@@ -67,7 +67,7 @@ test("zero matches shows reset and reset restores", async () => {
   const box = await screen.findByLabelText("Find a trial");
   await userEvent.type(box, "zzz-no-such-trial");
   expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
-  expect(screen.getByText(/^0 trials;/)).toBeInTheDocument();
+  expect(await screen.findByText(/^0 trials;/, {}, { timeout: 2000 })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
   expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
   expect(box).toHaveValue("");
@@ -91,4 +91,28 @@ test("shows a skeleton while loading", () => {
   vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
   renderAt(<Explore />, "/explore");
   expect(screen.getByText("Loading the map…")).toBeInTheDocument();
+});
+
+test("a map with no trials says it needs at least 4, not that filters match nothing", async () => {
+  withCanvas();
+  stubFetch({ "explorer.json": { ...explorer, trials: [] } });
+  renderAt(<Explore />, "/explore");
+  expect(await screen.findByText("The map needs at least 4 trials in this area.")).toBeInTheDocument();
+  expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Reset filters" })).not.toBeInTheDocument();
+});
+
+test("the screen-reader summary waits for typing to pause", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const box = await screen.findByLabelText("Find a trial");
+  const n = explorer.trials.length;
+  const live = screen.getByText(new RegExp(`^${n} trials;`));
+  expect(live).toHaveAttribute("aria-live", "polite");
+  await userEvent.type(box, "zzz");
+  // Right after typing the announcement has not changed yet ...
+  expect(live.textContent).toMatch(new RegExp(`^${n} trials;`));
+  // ... and it settles about half a second later.
+  await waitFor(() => expect(live.textContent).toMatch(/^0 trials;/), { timeout: 2000 });
 });
