@@ -39,6 +39,7 @@ thresholds:
   max_null_rate: 0.0
 aliases_dir: aliases
 explorer:
+  permutations: 10000
   weights:
     disease: 1.0
     treatment_type: 0.6

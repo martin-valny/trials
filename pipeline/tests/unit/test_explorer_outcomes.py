@@ -163,11 +163,12 @@ def test_top_phase_and_in_pool() -> None:
     assert top_phase(["PHASE2", "PHASE3"]) == "PHASE3"
     assert top_phase(["NA"]) == "NA"
     assert top_phase([]) is None
-    assert not in_pool(["PHASE3"], "stopped")
-    assert in_pool(["PHASE2", "PHASE3"], "completed_unknown")
-    assert not in_pool(["NA"], "stopped")
-    assert not in_pool(["PHASE4"], "completed_unknown")
-    assert not in_pool(["PHASE2"], "running")
+    assert not in_pool(["PHASE3"], "stopped", True)
+    assert in_pool(["PHASE2", "PHASE3"], "completed_unknown", True)
+    assert not in_pool(["NA"], "stopped", True)
+    assert not in_pool(["PHASE4"], "completed_unknown", True)
+    assert not in_pool(["PHASE2"], "running", True)
+    assert in_pool(["PHASE2"], "succeeded", True)
     assert can_succeed(["PHASE1"])
     assert not can_succeed([])
 
@@ -237,3 +238,10 @@ def test_phase4_and_na_completed_never_succeed() -> None:
     out = label_outcomes(t, {"P4": _fs("x"), "NA": _fs("x"), "L": _fs("x")})
     assert out["P4"] == "completed_unknown"
     assert out["NA"] == "completed_unknown"
+
+
+def test_drug_free_trial_is_never_in_pool() -> None:
+    """A trial without a cleaned experimental drug cannot succeed, so it is not in the pool (R18)."""
+    for outcome in ("succeeded", "stopped", "completed_unknown"):
+        assert in_pool(["PHASE2"], outcome, True)
+        assert not in_pool(["PHASE2"], outcome, False)

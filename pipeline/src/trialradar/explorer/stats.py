@@ -1,7 +1,8 @@
 """Neighbourhood lift: do succeeded trials have succeeded neighbours beyond chance?
 
 Same-drug neighbours are dropped: the success label is defined through drugs and
-the features include drugs, so they would inflate the signal.
+the features include drugs, so they would inflate the signal. The verdict is a
+one-sided permutation test: "clustered" only when p < ``ALPHA``.
 """
 
 from __future__ import annotations
@@ -18,6 +19,8 @@ from trialradar.explorer.outcomes import TrialDrugs
 
 _CHUNK = 100
 _CHUNK_ROWS = 512
+ALPHA = 0.025  # one-sided: the lift must beat shuffled labels this rarely by chance
+_TIE = 1e-12  # a shuffle within float error of the observed lift counts as reaching it
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,7 @@ class LiftResult:
     success_rate: float | None
     n_averaged: int = 0  # succeeded rows with >= 1 kept neighbour (they form the average)
     n_short: int = 0  # succeeded rows with fewer than k kept neighbours (incl. none)
+    p_value: float | None = None  # (1 + #{shuffled lift >= observed}) / (1 + #valid shuffles)
 
 
 def _neighbour_lists(
@@ -108,8 +112,13 @@ def neighbourhood_lift(
 ) -> LiftResult:
     """Lift of neighbour success over the pool success rate, with a permutation null.
 
-    The null mean sits slightly below 1 by construction: a succeeded row's neighbours
-    exclude itself, so the remaining pool has a marginally lower success rate.
+    Rows are L2-normalised here, so neighbours are by cosine distance whatever the
+    caller passes (zero rows stay zero and get no neighbours). The verdict is
+    "clustered" when the one-sided permutation p-value is below ``ALPHA``, else
+    "chance". ``baseline_range`` (2.5-97.5 percentile of the shuffled lifts) is for
+    display only. The null mean sits slightly below 1 by construction: a succeeded
+    row's neighbours exclude itself, so the remaining pool has a marginally lower
+    success rate.
     """
     if permutations < 1:
         raise ValueError("permutations must be >= 1")
@@ -122,20 +131,38 @@ def neighbourhood_lift(
         return LiftResult("insufficient", None, None, None, n_pool, n_succ, rate)
 
     pool_ids = [ids[int(i)] for i in rows]
-    idx, mask = _neighbour_lists(sp.csr_matrix(matrix[rows]), pool_ids, drugs, k)
+    sub = sp.csr_matrix(matrix[rows], dtype=np.float64)
+    norms = np.sqrt(np.asarray(sub.multiply(sub).sum(axis=1)).ravel())
+    unit = sp.csr_matrix(
+        sp.diags(np.where(norms > 0, 1.0 / np.where(norms > 0, norms, 1.0), 0.0)) @ sub
+    )
+    idx, mask = _neighbour_lists(unit, pool_ids, drugs, k)
     cnt = mask.sum(axis=1)
     n_avg = int((lab & (cnt > 0)).sum())
     n_short = int((lab & (cnt < k)).sum())
     observed = float(_lifts(lab[None, :], idx, mask, rate)[0])
     rng = np.random.default_rng(seed)
-    perm = np.stack([rng.permutation(lab) for _ in range(permutations)])
-    base = _lifts(perm, idx, mask, rate)
+    parts = []
+    for lo in range(0, permutations, _CHUNK):
+        perm = np.stack([rng.permutation(lab) for _ in range(min(_CHUNK, permutations - lo))])
+        parts.append(_lifts(perm, idx, mask, rate))
+    base = np.concatenate(parts)
     base = base[~np.isnan(base)]
     if np.isnan(observed) or len(base) == 0:
         return LiftResult("insufficient", None, None, None, n_pool, n_succ, rate, n_avg, n_short)
-    lo, hi = (float(v) for v in np.percentile(base, [2.5, 97.5]))
-    # Only a lift above the range counts as clustering; below it is not evidence of it.
-    verdict: Literal["chance", "clustered"] = "clustered" if observed > hi else "chance"
+    lo_b, hi_b = (float(v) for v in np.percentile(base, [2.5, 97.5]))
+    p_value = (1 + int((base >= observed - _TIE).sum())) / (1 + len(base))
+    # One-sided: a lift below the shuffles is not evidence of clustering either.
+    verdict: Literal["chance", "clustered"] = "clustered" if p_value < ALPHA else "chance"
     return LiftResult(
-        verdict, observed, float(base.mean()), (lo, hi), n_pool, n_succ, rate, n_avg, n_short
+        verdict,
+        observed,
+        float(base.mean()),
+        (lo_b, hi_b),
+        n_pool,
+        n_succ,
+        rate,
+        n_avg,
+        n_short,
+        p_value,
     )

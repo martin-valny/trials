@@ -39,8 +39,14 @@ def can_succeed(phases: Sequence[str]) -> bool:
     return rank is not None and rank <= _POOL_MAX_RANK and any(p in _EARLY for p in phases)
 
 
-def in_pool(phases: Sequence[str], outcome: Outcome) -> bool:
-    return can_succeed(phases) and outcome in ("succeeded", "stopped", "completed_unknown")
+def in_pool(phases: Sequence[str], outcome: Outcome, has_drug: bool) -> bool:
+    """Finished trials that could succeed: phases that can succeed, at least one cleaned
+    experimental drug (a drug-free trial has nothing to move on), and a finished outcome."""
+    return (
+        has_drug
+        and can_succeed(phases)
+        and outcome in ("succeeded", "stopped", "completed_unknown")
+    )
 
 
 def label_outcomes(trial: pl.DataFrame, drugs: TrialDrugs) -> dict[str, Outcome]:

@@ -93,7 +93,7 @@ class ExplorerConfig(_Strict):
     min_dist: float = 0.1
     seed: int = 42
     k: int = 10
-    permutations: int = 1000
+    permutations: int = 10_000
     min_successes: int = 30
 
     @field_validator("weights")

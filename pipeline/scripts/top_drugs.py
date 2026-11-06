@@ -30,7 +30,7 @@ def main() -> None:
     aliases = load_aliases(cfg.aliases_dir / "intervention.csv")
     relevant = filter_relevant(read_snapshot(args.snapshot), cfg)
     counts: Counter[str] = Counter()
-    for extras in extract_extras(relevant, cfg).values():
+    for extras in extract_extras(relevant, cfg)[0].values():
         names = {
             clean_drug_name(n, aliases, cfg.explorer.exclude_terms)
             for n in extras.experimental_drugs

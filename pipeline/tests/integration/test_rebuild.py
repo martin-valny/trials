@@ -266,3 +266,31 @@ def test_rebuild_builds_the_explorer_for_the_last_day_only(
     ids = relevant_ids(cfg, day2_studies(cfg))
     assert sorted(store.load_explorer_coords()) == ids
     assert [t["nct_id"] for t in doc["trials"]] == ids
+
+
+def test_rebuild_survives_an_explorer_failure(
+    env: Env, cfg: AreaConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R19: the rebuild still swaps in the store and exports the site, without a map
+    (a stale explorer.json is removed) and without saved coordinates; the last day's
+    run_log row carries the warning."""
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    root, site = tmp_path / "rebuilt-data", tmp_path / "rebuilt-site"
+    site.mkdir()
+    (site / "explorer.json").write_text("{}", encoding="utf-8")
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("umap exploded")
+
+    monkeypatch.setattr(pipeline, "build_explorer", boom)
+    rebuild(env.cfg, root, env.raw_dir, site, env.aliases_dir)
+
+    assert not (site / "explorer.json").exists()
+    assert (site / "trials.json").exists()
+    store = Store(root)
+    assert store.load_explorer_coords() == {}
+    last = json.loads(store.run_log().row(-1, named=True)["warnings"])
+    assert "explorer: RuntimeError: umap exploded" in last
+    meta = json.loads((site / "meta.json").read_text(encoding="utf-8"))
+    assert "explorer: RuntimeError: umap exploded" in meta["warnings"]

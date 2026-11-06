@@ -501,3 +501,13 @@ def test_explorer_json_written_only_when_given(tmp_path: Path, cfg: AreaConfig) 
     text = (tmp_path / "explorer.json").read_text(encoding="utf-8")
     assert json.loads(text) == doc
     assert text.endswith("\n") and ", " not in text  # compact like the other files
+
+
+def test_export_without_explorer_removes_a_stale_map(tmp_path: Path, cfg: AreaConfig) -> None:
+    """explorer.json is present exactly when this export has a map, so a failed map
+    build never leaves yesterday's map over today's trials."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
+    assert (tmp_path / "explorer.json").exists()
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    assert not (tmp_path / "explorer.json").exists()

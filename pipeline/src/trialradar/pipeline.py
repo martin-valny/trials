@@ -113,9 +113,10 @@ def _stage(name: str, **extra: Any) -> Iterator[dict[str, Any]]:
 
 def _prepare(
     raw: list[dict[str, Any]], cfg: AreaConfig, aliases_dir: Path
-) -> tuple[list[dict[str, Any]], Tables, dict[str, StudyExtras]]:
+) -> tuple[list[dict[str, Any]], Tables, dict[str, StudyExtras], list[str]]:
     """Schema check, relevance filter, normalize and the explorer's extra fields;
-    ``DataError`` for bad data."""
+    ``DataError`` for bad data. The extra fields only feed the explorer and the trial
+    pages, so a malformed one is a warning (returned), never a failed run (R19)."""
     with _stage("check_raw") as info:
         info["rows"] = len(raw)
         errors = quality.check_raw(raw)
@@ -131,12 +132,9 @@ def _prepare(
             raise DataError([f"normalize: {_describe(exc)}"]) from exc
         info["rows"] = tables.trial.height
     with _stage("extras") as info:
-        try:
-            extras = extract_extras(relevant, cfg)
-        except Exception as exc:  # malformed data inside a study
-            raise DataError([f"extras: {_describe(exc)}"]) from exc
-        info["rows"] = len(extras)
-    return relevant, tables, extras
+        extras, extras_warnings = extract_extras(relevant, cfg)
+        info["rows"], info["warnings"] = len(extras), extras_warnings
+    return relevant, tables, extras, extras_warnings
 
 
 def _explorer(
@@ -148,20 +146,30 @@ def _explorer(
     day: date,
     *,
     log_day: bool = False,
-) -> tuple[dict[str, Any], pl.DataFrame]:
-    """Build the explorer document and coordinates in one logged stage.
+) -> tuple[dict[str, Any] | None, pl.DataFrame | None, list[str]]:
+    """Build the explorer document and coordinates in one logged stage, plus its warnings.
 
-    Unreadable saved coordinates are only cosmetic (alignment): warn and lay out afresh."""
+    Unreadable saved coordinates are only cosmetic (alignment): warn and lay out afresh.
+    The map is optional (R19): if the build fails, the stage logs the error and this
+    returns no document and no coordinates with an ``explorer:`` warning, so the run
+    still exports the site, without a map, and keeps yesterday's saved coordinates."""
     extra = {"day": day.isoformat()} if log_day else {}
-    with _stage("explorer", **extra) as info:
-        try:
-            prev = previous()
-        except StoreError as exc:
-            info["warnings"].append(f"explorer_coords_unreadable: {exc}")
-            prev = {}
-        doc, coords = build_explorer(tables, extras, cfg, aliases.intervention, prev, day)
-        info["rows"] = len(doc["trials"])
-    return doc, coords
+    warnings: list[str] = []
+    try:
+        with _stage("explorer", **extra) as info:
+            info["warnings"] = warnings
+            try:
+                prev = previous()
+            except StoreError as exc:
+                warnings.append(f"explorer_coords_unreadable: {exc}")
+                prev = {}
+            doc, coords = build_explorer(
+                tables, extras, cfg, aliases.intervention, prev, day, warnings=warnings
+            )
+            info["rows"] = len(doc["trials"])
+    except Exception as exc:  # noqa: BLE001 - the map never fails the daily run
+        return None, None, [*warnings, f"explorer: {_describe(exc)}"]
+    return doc, coords, warnings
 
 
 def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
@@ -299,14 +307,14 @@ def run(
             staged = True
             info["rows"] = len(raw)
 
-        relevant, tables, extras = _prepare(raw, cfg, aliases_dir)
+        relevant, tables, extras, extras_warnings = _prepare(raw, cfg, aliases_dir)
         with _stage("state_before") as info:
             # A StoreError here is not the data's fault: the snapshot is not quarantined.
             found = store.state_before(day)
             prev = found[0] if found else None
             info["rows"] = prev.trial.height if prev else 0
         prev_count = (prev.trial.height or None) if prev else None
-        warnings = _gate(raw, relevant, tables, prev_count, cfg, accept_drop)
+        warnings = [*_gate(raw, relevant, tables, prev_count, cfg, accept_drop), *extras_warnings]
 
         staged = False  # past the gate: a later failure is not the data's fault
         aliases = load_alias_set(aliases_dir)
@@ -317,9 +325,12 @@ def run(
         # export (the data was fine) keeps it. A diff/store failure leaves it in
         # staging, which the next run clears.
         promote_staged(raw_dir, day)
-        # A failed explorer build fails the run like a failed export: the stored data
-        # stays, the site and the saved coordinates are left as they were.
-        explorer, coords = _explorer(tables, extras, cfg, aliases, store.load_explorer_coords, day)
+        # A failed explorer build is a warning (R19): the site is exported without a map
+        # and the saved coordinates are left as they were.
+        explorer, coords, explorer_warnings = _explorer(
+            tables, extras, cfg, aliases, store.load_explorer_coords, day
+        )
+        warnings += explorer_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -334,7 +345,8 @@ def run(
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
-        _save_coords(store, coords)
+        if coords is not None:
+            _save_coords(store, coords)
         with _stage("run_log", status="success") as info:
             store.append_run(row)
             info["rows"] = 1
@@ -428,6 +440,9 @@ def rebuild(
         store = Store(tmp_root)
         prev: Tables | None = None
         last: tuple[Tables, dict[str, StudyExtras], date] | None = None
+        # The last replayed day's row is appended after the map is built, so it can
+        # carry the map's warnings.
+        pending: dict[str, Any] | None = None
         for day, path in snapshots:
             t0 = time.monotonic()
             meta = read_sidecar(path)
@@ -435,10 +450,11 @@ def rebuild(
                 with _stage("read_snapshot", day=day.isoformat()) as info:
                     raw = read_snapshot(path)
                     info["rows"] = len(raw)
-                relevant, tables, extras = _prepare(raw, cfg, aliases_dir)
+                relevant, tables, extras, extras_warnings = _prepare(raw, cfg, aliases_dir)
                 prev_count = (prev.trial.height or None) if prev else None
                 accepted = meta.get("accept_drop") is True
-                warnings = _gate(raw, relevant, tables, prev_count, cfg, accepted)
+                warnings = [*_gate(raw, relevant, tables, prev_count, cfg, accepted)]
+                warnings += extras_warnings
             except Exception as exc:  # noqa: BLE001 - an unusable day is skipped, not fatal
                 errors = exc.errors if isinstance(exc, DataError) else [_describe(exc)]
                 with _stage("rebuild_skip", day=day.isoformat()) as info:
@@ -458,13 +474,22 @@ def rebuild(
                 changes.height,
                 warnings,
             )
-            store.append_run(row)
+            if pending is not None:
+                store.append_run(pending)
+            pending = row
             prev, last = tables, (tables, extras, day)
-        if last is None:
+        if last is None or pending is None:
             raise RebuildError(f"none of the {len(snapshots)} raw snapshots could be replayed")
         tables, extras, day = last
         # Only the last replayed day gets a map, laid out afresh (no previous coords).
-        explorer, coords = _explorer(tables, extras, cfg, aliases, dict, day, log_day=True)
+        explorer, coords, explorer_warnings = _explorer(
+            tables, extras, cfg, aliases, dict, day, log_day=True
+        )
+        if explorer_warnings:
+            pending["warnings"] = json.dumps(
+                [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
+            )
+        store.append_run(pending)
         with _stage("export", day=day.isoformat()) as info:
             export(
                 tables,
@@ -477,7 +502,8 @@ def rebuild(
                 explorer=explorer,
             )
             info["rows"] = tables.trial.height
-        _save_coords(store, coords, day=day.isoformat())
+        if coords is not None:
+            _save_coords(store, coords, day=day.isoformat())
         # Everything succeeded: swap the rebuilt store in.
         Store(store_root).wipe()
         store_root.mkdir(parents=True, exist_ok=True)

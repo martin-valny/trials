@@ -217,7 +217,8 @@ def export(
     """Write the site JSON views for ``day`` into ``out_dir``.
 
     ``extras`` add the registry summary, eligibility and results flag to the trial
-    files (null/false when absent); ``explorer`` is written as ``explorer.json``."""
+    files (null/false when absent); ``explorer`` is written as ``explorer.json``, and
+    without it a previous ``explorer.json`` is removed (the site then shows no map)."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -245,4 +246,7 @@ def export(
     _write_json(out_dir / "trials.json", _index(docs, day))
     if explorer is not None:
         _write_json(out_dir / "explorer.json", explorer)
+    else:
+        # No map this time: never leave an old map over the new trials.
+        (out_dir / "explorer.json").unlink(missing_ok=True)
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

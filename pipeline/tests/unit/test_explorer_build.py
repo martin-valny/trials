@@ -30,6 +30,7 @@ STATS_KEYS = {
     "success_rate",
     "n_averaged",
     "n_short",
+    "p_value",
     "by_condition",
 }
 TRIAL_KEYS = {
@@ -54,7 +55,9 @@ OUTCOMES = {"succeeded", "stopped", "completed_unknown", "running", "unknown"}
 def _inputs(cfg: AreaConfig) -> tuple[Tables, dict, list[dict]]:  # type: ignore[type-arg]
     relevant = filter_relevant(day1_studies(cfg), cfg)
     tables = normalize(relevant, cfg.aliases_dir)
-    return tables, extract_extras(relevant, cfg), relevant
+    extras, warnings = extract_extras(relevant, cfg)
+    assert warnings == []
+    return tables, extras, relevant
 
 
 def test_build_explorer_contract(cfg: AreaConfig) -> None:
@@ -169,3 +172,52 @@ def test_build_is_deterministic(cfg: AreaConfig, weight: float) -> None:
     a, _ = build_explorer(tables, extras, c, {}, {}, DAY)
     b, _ = build_explorer(tables, extras, c, {}, {}, DAY)
     assert a == b
+
+
+def test_pool_needs_an_experimental_drug(cfg: AreaConfig) -> None:
+    """R18: finished trials without a cleaned experimental drug are not in the pool."""
+    import dataclasses
+
+    tables, extras, _ = _inputs(cfg)
+    synthetic = [f"NCT9000000{i}" for i in range(1, 9)]
+    trial = tables.trial.with_columns(
+        pl.when(pl.col("nct_id").is_in(synthetic))
+        .then(pl.lit("COMPLETED"))
+        .otherwise(pl.col("overall_status"))
+        .alias("overall_status")
+    )
+    done = dataclasses.replace(tables, trial=trial)
+    doc, _ = build_explorer(done, extras, cfg, {}, {}, DAY)
+    assert doc["stats"]["n_pool"] == 8
+    stripped = dict(extras)
+    for nct in synthetic[:3]:
+        stripped[nct] = dataclasses.replace(extras[nct], experimental_drugs=())
+    doc, _ = build_explorer(done, stripped, cfg, {}, {}, DAY)
+    assert doc["stats"]["n_pool"] == 5
+    assert all(r["finished"] <= 5 for r in doc["stats"]["by_condition"])
+    rows = {t["nct_id"]: t for t in doc["trials"]}
+    assert rows[synthetic[0]]["outcome"] == "completed_unknown"
+    assert rows[synthetic[0]]["drugs"] == []
+
+
+def test_stats_export_p_value(cfg: AreaConfig) -> None:
+    tables, extras, _ = _inputs(cfg)
+    doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY)
+    assert "p_value" in doc["stats"]
+    assert doc["stats"]["p_value"] is None  # insufficient: no test was run
+
+
+def test_layout_fallback_reaches_the_warning_sink(
+    cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import umap
+
+    def broken(self: object, *args: object, **kwargs: object) -> None:
+        raise ValueError("no layout")
+
+    monkeypatch.setattr(umap.UMAP, "fit_transform", broken)
+    tables, extras, _ = _inputs(cfg)
+    sink: list[str] = []
+    doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY, warnings=sink)
+    assert any(w.startswith("explorer_layout_fallback: ") for w in sink)
+    assert doc["trials"]

@@ -93,3 +93,24 @@ def test_align_zero_previous_is_unchanged() -> None:
     ids = [f"t{i}" for i in range(8)]
     out = align(ids, coords, {i: (0.0, 0.0, 0.0) for i in ids})
     assert np.array_equal(out, coords)
+
+
+def test_embed_failure_reports_a_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    import umap
+
+    def broken(self: object, *args: object, **kwargs: object) -> None:
+        raise ValueError("no layout")
+
+    monkeypatch.setattr(umap.UMAP, "fit_transform", broken)
+    sink: list[str] = []
+    x = np.random.default_rng(3).random((20, 5))
+    out = embed(_features(x), n_neighbors=10, min_dist=0.1, seed=1, warnings=sink)
+    assert not out.any()
+    assert len(sink) == 1 and sink[0].startswith("explorer_layout_fallback: ")
+
+
+def test_embed_success_reports_no_warning() -> None:
+    sink: list[str] = []
+    x = np.random.default_rng(4).random((20, 5))
+    embed(_features(x), n_neighbors=10, min_dist=0.1, seed=1, warnings=sink)
+    assert sink == []

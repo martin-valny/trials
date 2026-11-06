@@ -618,8 +618,12 @@ def test_alignment_never_moves_the_map_further_from_yesterday(
 def test_explorer_failure_is_isolated(
     env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """R19: a failed explorer build never fails the daily run. The run succeeds with a
+    warning, the site is exported without a map (the stale explorer.json is removed, so
+    the page shows "the map appears after the next daily update" rather than an old map
+    over new trials) and the saved coordinates are left as they were."""
     env.run(FakeClient(TS1, day1_studies(cfg)), D1)
-    site_before = tree_bytes(env.site_dir)
+    assert (env.site_dir / "explorer.json").exists()
     coords_before = (env.store_root / "explorer" / "coords.parquet").read_bytes()
 
     def boom(*args: Any, **kwargs: Any) -> None:
@@ -628,22 +632,68 @@ def test_explorer_failure_is_isolated(
     monkeypatch.setattr(pipeline, "build_explorer", boom)
     result = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
 
-    assert result.status == "failed"
-    assert any("umap exploded" in e for e in result.errors)
-    # The store holds the new data; the site and the saved coordinates are as before.
+    assert result.status == "success"
+    assert "explorer: RuntimeError: umap exploded" in result.warnings
     assert env.store.changes().height == 4
     assert env.store.committed_date() == D2
-    assert tree_bytes(env.site_dir) == site_before
+    assert not (env.site_dir / "explorer.json").exists()
+    meta = json.loads((env.site_dir / "meta.json").read_text())
+    assert "explorer: RuntimeError: umap exploded" in meta["warnings"]
+    index = json.loads((env.site_dir / "trials.json").read_text())
+    assert index["generated_for"] == "2026-03-02"
     assert (env.store_root / "explorer" / "coords.parquet").read_bytes() == coords_before
-    assert env.store.run_log()["status"].to_list() == ["success", "failed"]
-    assert env.store.last_success_timestamp() == TS1
+    assert env.store.run_log()["status"].to_list() == ["success", "success"]
+    assert env.store.last_success_timestamp() == TS2
     assert (env.raw_dir / "2026-03-02.jsonl.gz").exists()
     assert not (env.raw_dir / "2026-03-02.failed.jsonl.gz").exists()
 
     monkeypatch.undo()
-    rerun = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    rerun = env.run(FakeClient(TS2, day2_studies(cfg)), D2, force=True)
     assert rerun.status == "success"
     assert json.loads((env.site_dir / "explorer.json").read_text())["generated_for"] == "2026-03-02"
+
+
+def test_malformed_extras_warn_and_never_quarantine(
+    env: Env, cfg: AreaConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """R19: a study whose explorer-only fields are malformed gets empty extras and a
+    warning; the run succeeds and the snapshot is promoted, not quarantined."""
+    studies = day1_studies(cfg)
+    bad = relevant_ids(cfg, studies)[0]
+    for s in studies:
+        if nct(s) == bad:
+            s["protocolSection"]["descriptionModule"] = "not a module"
+    result = env.run(FakeClient(TS1, studies), D1)
+
+    assert result.status == "success"
+    assert any(w.startswith(f"extras_fallback: {bad}: ") for w in result.warnings)
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    extras = next(ln for ln in lines if ln["stage"] == "extras")
+    assert any(w.startswith("extras_fallback: ") for w in extras["warnings"])
+    row = env.store.run_log().row(-1, named=True)
+    assert any(w.startswith("extras_fallback: ") for w in json.loads(row["warnings"]))
+    assert (env.raw_dir / "2026-03-01.jsonl.gz").exists()
+    assert not (env.raw_dir / "2026-03-01.failed.jsonl.gz").exists()
+    trial = json.loads((env.site_dir / "trials" / f"{bad}.json").read_text())
+    assert trial["brief_summary"] is None
+
+
+def test_layout_fallback_is_a_run_warning(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import umap
+
+    def broken(self: Any, *args: Any, **kwargs: Any) -> None:
+        raise ValueError("no layout")
+
+    monkeypatch.setattr(umap.UMAP, "fit_transform", broken)
+    result = env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+
+    assert result.status == "success"
+    assert any(w.startswith("explorer_layout_fallback: ") for w in result.warnings)
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = next(ln for ln in lines if ln["stage"] == "explorer")
+    assert any(w.startswith("explorer_layout_fallback: ") for w in explorer["warnings"])
 
 
 def test_export_failure_keeps_the_saved_coords(

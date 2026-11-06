@@ -12,7 +12,7 @@ import polars as pl
 
 from trialradar.config import AreaConfig
 from trialradar.explorer.drugs import clean_drug_name
-from trialradar.explorer.extras import StudyExtras
+from trialradar.explorer.extras import StudyExtras, empty_extras
 from trialradar.explorer.features import build_features
 from trialradar.explorer.layout import align, embed
 from trialradar.explorer.outcomes import (
@@ -29,10 +29,6 @@ from trialradar.tables import Tables
 FEATURES = ["disease", "treatment_type", "molecule", "population"]
 _MIN_TRIALS = 4
 _DECIMALS = 4
-
-
-def _empty_extras(nct_id: str) -> StudyExtras:
-    return StudyExtras(nct_id, None, None, None, None, False, (), (), ())
 
 
 def _trial_drugs(
@@ -67,6 +63,7 @@ def _stats(result: LiftResult, by_condition: list[dict[str, Any]]) -> dict[str, 
         "success_rate": result.success_rate,
         "n_averaged": result.n_averaged,
         "n_short": result.n_short,
+        "p_value": result.p_value,
         "by_condition": by_condition,
     }
 
@@ -78,18 +75,20 @@ def build_explorer(
     aliases: Mapping[str, str],
     previous: Mapping[str, tuple[float, float, float]],
     day: date,
+    warnings: list[str] | None = None,
 ) -> tuple[dict[str, Any], pl.DataFrame]:
     """The ``explorer.json`` document and the (unrounded) coordinates frame for ``day``.
 
     ``aliases`` are the intervention aliases; ``previous`` the last saved coordinates,
-    which the new layout is aligned to (empty: the raw layout is used)."""
+    which the new layout is aligned to (empty: the raw layout is used). Degradations
+    (a failed layout) are appended to ``warnings``."""
     ex = cfg.explorer
     trial_rows = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     ids = sorted(trial_rows)
-    full = {nct: extras.get(nct) or _empty_extras(nct) for nct in ids}
+    full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
     drugs = _trial_drugs(ids, full, aliases, cfg)
     outcomes: dict[str, Outcome] = label_outcomes(tables.trial, drugs)
-    pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n]) for n in ids]
+    pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n], bool(drugs[n])) for n in ids]
     succeeded = [outcomes[n] == "succeeded" for n in ids]
 
     by_condition = []
@@ -136,7 +135,7 @@ def build_explorer(
         seed=ex.seed,
         min_successes=ex.min_successes,
     )
-    coords = align(ids, embed(features, ex.n_neighbors, ex.min_dist, ex.seed), previous)
+    coords = align(ids, embed(features, ex.n_neighbors, ex.min_dist, ex.seed, warnings), previous)
     coords = np.asarray(coords, dtype=np.float64)
 
     trials: list[dict[str, Any]] = []
