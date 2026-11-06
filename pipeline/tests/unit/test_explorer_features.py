@@ -6,8 +6,9 @@ import pytest
 
 from trialradar.explorer.extras import StudyExtras
 from trialradar.explorer.features import build_features
+from trialradar.explorer.mechanisms import TrialMechanisms
 
-W = {"disease": 1.0, "treatment_type": 1.0, "molecule": 1.0, "population": 1.0}
+W = {"disease": 1.0, "treatment_type": 1.0, "molecule": 1.0, "mechanism": 1.0, "population": 1.0}
 
 
 def _x(nct: str, **kw: object) -> StudyExtras:
@@ -25,10 +26,10 @@ def _x(nct: str, **kw: object) -> StudyExtras:
     return replace(base, **kw)  # type: ignore[arg-type]
 
 
-def _build(extras: dict[str, StudyExtras], drugs: dict[str, frozenset[str]], w=W):  # type: ignore[no-untyped-def]
+def _build(extras: dict[str, StudyExtras], drugs: dict[str, frozenset[str]], w=W, mechs=None):  # type: ignore[no-untyped-def]
     ids = sorted(extras)
     types = {i: frozenset({"DRUG"}) for i in ids}
-    return build_features(ids, extras, drugs, types, w)
+    return build_features(ids, extras, drugs, types, w, mechs or {})
 
 
 def _cos(m, i: int, j: int) -> float:  # type: ignore[no-untyped-def]
@@ -39,7 +40,7 @@ def _cos(m, i: int, j: int) -> float:  # type: ignore[no-untyped-def]
 
 def test_signature_has_no_outcome_inputs() -> None:
     params = set(inspect.signature(build_features).parameters)
-    assert params == {"ids", "extras", "drugs", "intervention_types", "weights"}
+    assert params == {"ids", "extras", "drugs", "intervention_types", "weights", "mechanisms"}
     ex = {"NCT1": _x("NCT1"), "NCT2": _x("NCT2")}
     drugs = {"NCT1": frozenset({"a"}), "NCT2": frozenset({"b"})}
     a = _build(ex, drugs)
@@ -78,7 +79,7 @@ def test_null_eligibility_ok() -> None:
 
 
 def test_zero_ids() -> None:
-    f = build_features([], {}, {}, {}, W)
+    f = build_features([], {}, {}, {}, W, {})
     assert f.ids == []
     assert f.matrix.shape[0] == 0
     assert set(f.block_slices) == set(W)
@@ -98,7 +99,7 @@ def test_empty_disease_vocab_and_no_drugs() -> None:
 
 def _pop(**kw: object) -> list[float]:
     ex = {"NCT1": _x("NCT1", mesh_terms=(), condition_labels=(), **kw)}
-    f = build_features(["NCT1"], ex, {}, {"NCT1": frozenset()}, {**W, "population": 1.0})
+    f = build_features(["NCT1"], ex, {}, {"NCT1": frozenset()}, {**W, "population": 1.0}, {})
     sl = f.block_slices["population"]
     row = f.matrix[0, sl.start : sl.stop].toarray().ravel()
     return [float(v > 0) for v in row]
@@ -117,8 +118,8 @@ def test_deterministic_under_shuffle() -> None:
     ex = {f"NCT{i}": _x(f"NCT{i}") for i in range(4)}
     drugs = {f"NCT{i}": frozenset({f"d{i % 2}"}) for i in range(4)}
     types = {i: frozenset({"DRUG"}) for i in ex}
-    a = build_features(["NCT0", "NCT1", "NCT2", "NCT3"], ex, drugs, types, W)
-    b = build_features(["NCT3", "NCT1", "NCT0", "NCT2"], ex, drugs, types, W)
+    a = build_features(["NCT0", "NCT1", "NCT2", "NCT3"], ex, drugs, types, W, {})
+    b = build_features(["NCT3", "NCT1", "NCT0", "NCT2"], ex, drugs, types, W, {})
     assert a.ids == b.ids
     assert a.block_slices == b.block_slices
     assert (a.matrix != b.matrix).nnz == 0
@@ -128,5 +129,66 @@ def test_missing_weight_raises() -> None:
     ex = {"NCT1": _x("NCT1")}
     with pytest.raises(KeyError, match="molecule"):
         build_features(
-            ["NCT1"], ex, {}, {}, {"disease": 1.0, "treatment_type": 1.0, "population": 1.0}
+            ["NCT1"],
+            ex,
+            {},
+            {},
+            {"disease": 1.0, "treatment_type": 1.0, "population": 1.0, "mechanism": 1.0},
+            {},
         )
+
+
+def _mech_ids(
+    ex: dict[str, StudyExtras],
+    mechs: dict[str, TrialMechanisms],
+    w=W,  # type: ignore[no-untyped-def]
+):
+    drugs = {k: frozenset({"d"}) for k in ex}  # same molecule everywhere
+    return _build(ex, drugs, {**w, "disease": 0.0, "treatment_type": 0.0, "molecule": 0.0}, mechs)
+
+
+def test_mechanism_block_groups_by_class_and_target() -> None:
+    ex = {f"NCT{i}": _x(f"NCT{i}") for i in (1, 2, 3)}
+    mechs = {
+        "NCT1": TrialMechanisms(("S1P modulator",), ("S1PR1",), ("small_molecule",)),
+        "NCT2": TrialMechanisms(("S1P modulator",), ("S1PR1",), ("small_molecule",)),
+        "NCT3": TrialMechanisms(("anti-CD20",), ("MS4A1",), ("antibody",)),
+    }
+    f = _mech_ids(ex, mechs)
+    sl = f.block_slices["mechanism"]
+    assert sl.stop - sl.start == 4  # class:x2 + target:x2
+    m = f.matrix[:, sl.start : sl.stop]
+    assert m.shape == (3, 4)
+    assert _cos(m, 0, 1) > 0.999
+    assert _cos(m, 0, 2) < 0.01
+
+
+def test_mechanism_block_zero_for_drug_free_trials() -> None:
+    ex = {f"NCT{i}": _x(f"NCT{i}") for i in (1, 2)}
+    mechs = {"NCT1": TrialMechanisms(("a",), ("T",), ("antibody",))}  # NCT2 absent
+    f = _mech_ids(ex, mechs)
+    sl = f.block_slices["mechanism"]
+    row = f.matrix[1, sl.start : sl.stop].toarray().ravel()
+    assert (row == 0).all()
+    assert np.isfinite(f.matrix.toarray()).all()
+    assert f.matrix[0, sl.start : sl.stop].nnz > 0
+
+
+def test_mechanism_zero_weight_and_no_mapping() -> None:
+    ex = {f"NCT{i}": _x(f"NCT{i}") for i in (1, 2)}
+    mechs = {"NCT1": TrialMechanisms(("a",), ("T",)), "NCT2": TrialMechanisms(("b",), ("U",))}
+    f = _build(ex, {}, {**W, "mechanism": 0.0}, mechs)
+    assert (f.matrix[:, f.block_slices["mechanism"]].toarray() == 0).all()
+    g = _build(ex, {}, W, {})
+    sl = g.block_slices["mechanism"]
+    assert sl.stop == sl.start
+
+
+def test_mechanism_block_has_no_outcome_leakage() -> None:
+    ex = {"NCT1": _x("NCT1"), "NCT2": _x("NCT2")}
+    mechs = {"NCT1": TrialMechanisms(("a",), ("T",)), "NCT2": TrialMechanisms(("b",), ("U",))}
+    a = _build(ex, {}, W, mechs)
+    flipped = {k: replace(v, has_results=True) for k, v in ex.items()}
+    b = _build(flipped, {}, W, mechs)
+    assert (a.matrix != b.matrix).nnz == 0
+    assert "outcome" not in inspect.signature(build_features).parameters

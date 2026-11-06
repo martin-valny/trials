@@ -16,9 +16,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 from trialradar.explorer.extras import StudyExtras
+from trialradar.explorer.mechanisms import TrialMechanisms
 from trialradar.explorer.outcomes import TrialDrugs
 
-_BLOCKS = ("disease", "treatment_type", "molecule", "population")
+_BLOCKS = ("disease", "treatment_type", "molecule", "mechanism", "population")
 _ADULT_LO, _ADULT_HI, _OLDER = 18.0, 65.0, 65.0
 
 
@@ -63,6 +64,12 @@ def _sex(x: StudyExtras) -> list[float]:
     return [float(x.sex == "FEMALE"), float(x.sex == "MALE")]
 
 
+def _mechanism_tokens(m: TrialMechanisms | None) -> list[str]:
+    if m is None:
+        return []
+    return sorted([f"class:{c}" for c in m.mechanisms] + [f"target:{g}" for g in m.targets])
+
+
 def _l2(m: sp.csr_matrix) -> sp.csr_matrix:
     # sklearn leaves all-zero rows as zero (no NaN) but rejects zero-width input.
     if m.shape[0] == 0 or m.shape[1] == 0:
@@ -76,6 +83,7 @@ def build_features(
     drugs: TrialDrugs,
     intervention_types: Mapping[str, frozenset[str]],
     weights: Mapping[str, float],
+    mechanisms: Mapping[str, TrialMechanisms],
 ) -> Features:
     missing = [k for k in _BLOCKS if k not in weights]
     if missing:
@@ -92,6 +100,7 @@ def build_features(
         else sp.csr_matrix((n, 0), dtype=np.float64),
         "treatment_type": _multi_hot([sorted(intervention_types.get(i, ())) for i in ordered]),
         "molecule": _tfidf([sorted(drugs.get(i, ())) for i in ordered]),
+        "mechanism": _tfidf([_mechanism_tokens(mechanisms.get(i)) for i in ordered]),
         "population": sp.csr_matrix(
             np.array([_population(x) for x in xs], dtype=np.float64).reshape(n, 5)
         ),
