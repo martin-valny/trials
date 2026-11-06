@@ -10,7 +10,11 @@ export interface Filters {
   query: string;
   /** On: only trials with results posted. Off (default): every trial, results or not. */
   resultsOnly: boolean;
+  /** Inclusive start-year range. */
+  years: [number, number];
 }
+
+export type SetKey = "conditions" | "phases" | "outcomes" | "treatmentTypes";
 
 export interface Palette {
   succeeded: string;
@@ -75,6 +79,34 @@ export function diseaseColor(label: string | undefined, palette: Palette, condit
   return i < 0 ? palette.unknown : palette.diseases[i % palette.diseases.length];
 }
 
+/** Filters with one set replaced by ``all``. */
+export function setAll(f: Filters, key: SetKey, all: Iterable<string>): Filters {
+  return { ...f, [key]: new Set(all) };
+}
+
+/** Filters with one set emptied. */
+export const setNone = (f: Filters, key: SetKey): Filters => setAll(f, key, []);
+
+/** Dropdown summary: "all", "none" or "2 of 6". */
+export const filterSummary = (selected: number, total: number): string =>
+  selected >= total ? "all" : selected === 0 ? "none" : `${selected} of ${total}`;
+
+/** Earliest and latest start year among trials that have one; [0, 0] when none do. */
+export function yearBounds(trials: ExplorerTrial[]): [number, number] {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const t of trials) {
+    if (t.start_year === null) continue;
+    lo = Math.min(lo, t.start_year);
+    hi = Math.max(hi, t.start_year);
+  }
+  return lo > hi ? [0, 0] : [lo, hi];
+}
+
+/** True when the year range spans the whole of ``bounds``. */
+export const isFullYears = (f: Filters, bounds: [number, number]): boolean =>
+  f.years[0] <= bounds[0] && f.years[1] >= bounds[1];
+
 /** Filters with every value present in the file switched on. */
 export function allFilters(f: ExplorerFile): Filters {
   const conditions = new Set<string>(f.stats.by_condition.map((c) => c.label));
@@ -85,11 +117,24 @@ export function allFilters(f: ExplorerFile): Filters {
     phases.add(phaseKey(t));
     t.treatment_types.forEach((x) => treatmentTypes.add(x));
   }
-  return { conditions, phases, outcomes: new Set(OUTCOMES), treatmentTypes, query: "", resultsOnly: false };
+  return {
+    conditions,
+    phases,
+    outcomes: new Set(OUTCOMES),
+    treatmentTypes,
+    query: "",
+    resultsOnly: false,
+    years: yearBounds(f.trials),
+  };
 }
 
-/** A trial with no labels or no types cannot be filtered out by those sets. */
-export function matches(t: ExplorerTrial, f: Filters): boolean {
+/**
+ * A trial with no labels or no types cannot be filtered out by those sets. A trial with no start year
+ * passes the year filter only while the range spans all of ``bounds``.
+ */
+export function matches(t: ExplorerTrial, f: Filters, bounds: [number, number]): boolean {
+  if (t.start_year === null ? !isFullYears(f, bounds) : t.start_year < f.years[0] || t.start_year > f.years[1])
+    return false;
   if (t.condition_labels.length > 0 && !t.condition_labels.some((l) => f.conditions.has(l))) return false;
   if (!f.phases.has(phaseKey(t))) return false;
   if (!f.outcomes.has(t.outcome)) return false;
