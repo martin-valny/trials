@@ -95,3 +95,8 @@ test("the To thumb stays on top while From is in the lower half", async () => {
   await open();
   expect(screen.getByRole("slider", { name: "From year" })).not.toHaveClass("front");
 });
+
+test("is not offered when no trial has a start year (bounds [0, 0])", () => {
+  render(<YearRange bounds={[0, 0]} value={[0, 0]} onChange={() => undefined} />);
+  expect(screen.queryByRole("button", { name: /^Years:/ })).not.toBeInTheDocument();
+});

@@ -193,13 +193,17 @@ test("panel c scales to the largest phased column and moves trials without a pha
   expect(h.querySelector(".swatch-inline")).not.toBeNull();
 });
 
-test("under the plate: the colour key, then panel d", async () => {
+test("the colour key is a line under panel a's heading, before the map; panel d sits under the plate", async () => {
   await ready();
-  const key = screen.getByRole("list", { name: /^Colour key/ });
+  const a = screen.getByRole("region", { name: /Embedding of/ });
+  const key = within(a).getByRole("list", { name: /^Colour key/ });
+  const canvas = screen.getByRole("img", { name: /^3D map/ });
   const d = screen.getByRole("region", { name: "Selected trial" });
-  const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-  expect(follows(screen.getByRole("img", { name: /^3D map/ }), key)).toBe(true);
-  expect(follows(key, d)).toBe(true);
+  const follows = (x: Node, y: Node) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  expect(follows(within(a).getByRole("heading"), key)).toBe(true);
+  expect(follows(key, canvas)).toBe(true);
+  expect(follows(canvas, d)).toBe(true);
+  expect(a.contains(d)).toBe(false);
 });
 
 test("unknown outcome swatch is a ring, not a filled dot, in the key and in the Outcome dropdown", async () => {
@@ -259,19 +263,32 @@ test("panel c note is a plain count of shown trials that succeeded", async () =>
   expect(within(c).queryByText(/ of .* shown trials/)).not.toBeInTheDocument();
 });
 
-test("results posted is a switch in the toolbar, off by default, and narrows when on", async () => {
+test("results posted is a narrowing pill in the toolbar with its count, off by default, and narrows when on", async () => {
   await ready();
-  const bar = screen.getByRole("toolbar", { name: "Map controls" });
+  const bar = screen.getByRole("group", { name: "Map controls" });
   const withResults = explorer.trials.filter((t) => t.has_results).length;
   expect(withResults).toBeGreaterThan(0);
-  const sw = within(bar).getByRole("switch", { name: "Results posted" });
-  expect(sw).toHaveAttribute("aria-checked", "false");
+  const pill = within(bar).getByRole("button", { name: `Results posted ${withResults}` });
+  expect(pill).toHaveClass("pill", "narrowing");
+  expect(pill).toHaveAttribute("aria-pressed", "false");
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(sw);
-  expect(sw).toHaveAttribute("aria-checked", "true");
+  await userEvent.click(pill);
+  expect(pill).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByText(`Showing ${withResults} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(sw);
+  await userEvent.click(pill);
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
+});
+
+test("a dropdown is quiet at rest and marked as narrowed once it narrows", async () => {
+  await ready();
+  const phase = screen.getByRole("button", { name: "Phase: all" });
+  expect(phase).toHaveAttribute("data-narrowed", "false");
+  await userEvent.click(phase);
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  const narrowed = screen.getByRole("button", { name: "Phase: none" });
+  expect(narrowed).toHaveAttribute("data-narrowed", "true");
+  expect(narrowed.querySelector(".dropdown-value")).toHaveTextContent("none");
+  expect(screen.getByRole("button", { name: "Years: all" })).toHaveAttribute("data-narrowed", "false");
 });
 
 test("on narrow screens a selected trial gets a short sticky line with a Details link", async () => {
@@ -287,4 +304,18 @@ test("on narrow screens a selected trial gets a short sticky line with a Details
   await userEvent.click(within(bar).getByRole("button", { name: /Details/ }));
   expect(scroll).toHaveBeenCalled();
   expect(scroll.mock.contexts[0]).toBe(screen.getByRole("region", { name: "Selected trial" }));
+});
+
+test("in Disease mode the Disease dropdown shows a swatch only for conditions some trial lists first", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Disease" }));
+  await userEvent.click(screen.getByRole("button", { name: "Disease: all" }));
+  const first = new Set(explorer.trials.map((t) => t.condition_labels[0]).filter(Boolean));
+  const rows = [...document.querySelectorAll<HTMLElement>(".popover .check")];
+  expect(rows.length).toBeGreaterThan(first.size);
+  for (const row of rows) {
+    const label = row.querySelector(".check-label")!.textContent!;
+    // Disease colour goes by a trial's first label, so a condition never listed first is never painted.
+    expect(row.querySelector(".swatch") !== null).toBe(first.has(label));
+  }
 });

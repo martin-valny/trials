@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T10:50:15.649908Z",
+  "generatedAt": "2026-11-06T18:00:00Z",
   "title": "Design System: Trial Radar",
   "extensions": {
     "colorMeta": {
@@ -53,6 +53,16 @@
         "role": "neutral",
         "displayName": "Slide Ink",
         "canonical": "#eceae4"
+      },
+      "disease-quiet": {
+        "role": "secondary",
+        "displayName": "Disease quiet (dominant condition)",
+        "canonical": "#8592a0"
+      },
+      "dark-disease-quiet": {
+        "role": "secondary",
+        "displayName": "Dark disease quiet (dominant condition)",
+        "canonical": "#7d8287"
       }
     },
     "typographyMeta": {
@@ -92,9 +102,14 @@
     "shadows": [],
     "motion": [
       {
-        "name": "auto-rotate",
-        "value": "0.0022 rad/frame, tilt 0.32; off under prefers-reduced-motion: reduce",
-        "purpose": "Slow cloud rotation."
+        "name": "turn",
+        "value": "starts still; Play turns 0.0022 rad/frame, tilt 0.32, until Pause; pauses on hover; no turn and no Play control under prefers-reduced-motion: reduce",
+        "purpose": "Opt-in slow cloud rotation."
+      },
+      {
+        "name": "chevron",
+        "value": "rotate 180deg, 160ms cubic-bezier(0.16,1,0.3,1) (no-preference only)",
+        "purpose": "Dropdown open state."
       },
       {
         "name": "plate-pulse",
@@ -123,20 +138,12 @@
       "css": ".ds-pill{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-pill:hover{border-color:var(--ink,#111)}.ds-pill[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-pill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
     },
     {
-      "name": "Filter pill",
-      "kind": "chip",
-      "refersTo": "pill-filter-on",
-      "description": "Multi-select; outline when on, muted and struck through when off.",
-      "html": "<button class=\"ds-fpill\" aria-pressed=\"true\"><span class=\"ds-sw\"></span>Succeeded <span class=\"ds-n\">42</span></button> <button class=\"ds-fpill\" aria-pressed=\"false\"><span class=\"ds-sw\"></span>Stopped <span class=\"ds-n\">9</span></button>",
-      "css": ".ds-fpill{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--ink,#111);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-fpill[aria-pressed=false]{color:var(--muted,#5b6268);border-color:var(--rule,#d6dadd);text-decoration:line-through}.ds-fpill[aria-pressed=false] .ds-sw{opacity:.35}.ds-fpill:hover{border-color:var(--ink,#111)}.ds-sw{width:9px;height:9px;border-radius:50%;border:1px solid currentColor;background:var(--red,#c8102e)}.ds-n{color:var(--muted,#5b6268);font-variant-numeric:tabular-nums}.ds-fpill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
-    },
-    {
       "name": "Find input",
       "kind": "input",
       "refersTo": "find-input",
-      "description": "Pill-shaped search.",
-      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"Find a trial\">",
-      "css": ".ds-find{font:inherit;font-size:13px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px;width:min(22rem,100%)}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+      "description": "Pill-shaped search in the toolbar with a drawn hairline magnifier.",
+      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"NCT, drug or sponsor\">",
+      "css": ".ds-find{font:inherit;font-size:12.5px;line-height:18px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px 4px 28px;width:12.5rem}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
     },
     {
       "name": "Panel bar",
@@ -145,17 +152,65 @@
       "description": "Panel b bar with average tick.",
       "html": "<div class=\"ds-bar\"><span>Disease</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:60%\"></i><i class=\"ds-avg\" style=\"left:45%\"></i></div></div>",
       "css": ".ds-bar{display:grid;grid-template-columns:8rem 1fr;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-track{position:relative;height:12px;background:var(--pale,#e4e8eb)}.ds-fill{position:absolute;inset:0 auto 0 0;background:var(--ink,#111)}.ds-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink,#111);box-shadow:0 0 0 1px var(--plate,#fff)}"
+    },
+    {
+      "name": "Dropdown (filter)",
+      "kind": "chip",
+      "refersTo": "dropdown-rest",
+      "description": "Toolbar filter: hairline border and muted value at rest; ink border and 700 value once it narrows. Opens a flat plate inset with an ink top edge; a 44dvh bottom sheet with a 1px ink top rule on phones, scrolling the map into view above it.",
+      "html": "<button class=\"ds-dd\" data-narrowed=\"false\">Phase: <span class=\"ds-v\">all</span></button> <button class=\"ds-dd\" data-narrowed=\"true\">Disease: <span class=\"ds-v\">2 of 6</span></button>",
+      "css": ".ds-dd{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--rule,#d6dadd);border-radius:999px;padding:4px 10px;cursor:pointer;font-variant-numeric:tabular-nums}.ds-dd .ds-v{color:var(--muted,#5b6268)}.ds-dd[data-narrowed=true]{border-color:var(--ink,#111)}.ds-dd[data-narrowed=true] .ds-v{color:var(--ink,#111);font-weight:700}.ds-dd:hover{border-color:var(--ink,#111)}.ds-dd:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Years range",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "From/To pill fields over a hairline track; the span is a 2px ink bar between square-ended plate handles with ink borders.",
+      "html": "<div class=\"ds-yr\"><i class=\"ds-yr-bar\" style=\"left:20%;right:10%\"></i></div>",
+      "css": ".ds-yr{position:relative;height:18px;width:15rem}.ds-yr::before{content:'';position:absolute;left:5px;right:5px;top:50%;height:1px;background:var(--rule,#d6dadd)}.ds-yr-bar{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--ink,#111)}"
+    },
+    {
+      "name": "Narrowing pill",
+      "kind": "chip",
+      "refersTo": "pill-narrowing-on",
+      "description": "Results posted: off is show-all (ink text, muted border, never struck through); on is solid ink. Tabular count.",
+      "html": "<button class=\"ds-np\" aria-pressed=\"false\">Results posted <span class=\"ds-n\">602</span></button> <button class=\"ds-np\" aria-pressed=\"true\">Results posted <span class=\"ds-n\">602</span></button>",
+      "css": ".ds-np{display:inline-flex;gap:7px;font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-np .ds-n{color:var(--muted,#5b6268);font-variant-numeric:tabular-nums}.ds-np[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-np[aria-pressed=true] .ds-n{color:var(--plate,#fff)}"
+    },
+    {
+      "name": "Hover card",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Mouse/pen only. Two lines on a flat plate with a 1px ink border, max 18rem, centred above the dot (below only at the top edge), with a 1px ink leader to the dot's ring.",
+      "html": "<div class=\"ds-hc\"><p><b>NCT00000001</b> · Trial title</p><p class=\"ds-f\">drug · Drug · Phase 3 · 2014–2019</p></div>",
+      "css": ".ds-hc{max-width:18rem;padding:7px 10px 8px;background:var(--plate,#fff);border:1px solid var(--ink,#111);font-size:12px;line-height:1.4;color:var(--ink,#111)}.ds-hc p{margin:0}.ds-hc b{font-weight:800}.ds-f{color:var(--muted,#5b6268);margin-top:3px!important}"
+    },
+    {
+      "name": "Theme switch",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Header text control cycling System, Light, Dark; 9px key circle empty/solid/half.",
+      "html": "<button class=\"ds-th\"><span class=\"ds-k\"></span><span class=\"ds-tk\">Theme</span> Light</button>",
+      "css": ".ds-th{display:inline-flex;align-items:center;gap:.45rem;font:inherit;background:none;border:0;color:var(--ink,#111);cursor:pointer}.ds-k{width:9px;height:9px;border:1px solid currentColor;border-radius:50%}.ds-tk{color:var(--muted,#5b6268)}"
+    },
+    {
+      "name": "Play / pause",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's corner; absent under reduced motion.",
+      "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M2.5 1.25 8.5 5l-6 3.75z\"/></svg>Play</button>",
+      "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
     }
   ],
   "narrative": {
     "northStar": "The Figure Plate",
-    "overview": "The Explore page is Figure 1 of a paper: a flat white plate with lettered panels a-d, hairline rules, Hanken Grotesk only, and one red reserved for succeeded trials. Dark mode is a Dark slide with orange in red's place. Governs the Explore route only; other routes are not yet restyled.",
+    "overview": "The Explore page is Figure 1 of a paper: a flat white plate with lettered panels a-d, a toolbar set as the figure's legend line above it, a one-line figure key under panel a's heading, panel d under an ink rule, hairline rules, Hanken Grotesk only, and one red reserved for succeeded trials. Dark mode (a manual System/Light/Dark choice in the header) is a Dark slide with orange in red's place. Governs the Explore route only; other routes are not yet restyled.",
     "keyCharacteristics": [
       "White plate, near-black ink, hairline rules; flat",
       "Red means succeeded and nothing else",
       "Bold lowercase panel letters a-d",
-      "Pills for all controls",
-      "Slowly rotating canvas hero"
+      "Pills for all controls, in one toolbar above the plate",
+      "Canvas starts still; Play turns it slowly"
     ],
     "rules": [
       {
@@ -176,8 +231,8 @@
     ],
     "dos": [
       "Do letter panels with bold lowercase a, b, c, d at 22px/800.",
-      "Do separate regions with 1px rules: ink above the legend, hairline elsewhere.",
-      "Do keep controls as pills with the three defined states.",
+      "Do separate regions with 1px rules: ink above panel d, hairline under the toolbar and elsewhere.",
+      "Do keep controls as pills: solid ink when chosen or narrowing; hairline and muted value at rest; ink border and 700 value when a dropdown narrows.",
       "Do size dots by capped square-root enrollment and encode unknown by ring shape.",
       "Do honour both schemes via tokens."
     ],

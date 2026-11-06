@@ -5,6 +5,8 @@ import {
   allFilters,
   colorFor,
   DARK_PALETTE,
+  diseaseRanking,
+  emphasisFor,
   LIGHT_PALETTE,
   matches,
   yearBounds,
@@ -13,7 +15,7 @@ import {
 } from "../../lib/explorer";
 import { useTheme } from "../../lib/theme";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
-import { LegendBar } from "./LegendBar";
+import { ColourKey, LegendBar } from "./LegendBar";
 import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
@@ -69,13 +71,15 @@ function summary(shown: ExplorerTrial[]): string {
   );
 }
 
-/** Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. */
+/**
+ * Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. Its name says
+ * what a press will do ("Play rotation" / "Pause rotation"), so it carries no aria-pressed as well.
+ */
 function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () => void }) {
   return (
     <button
       type="button"
       className="spin-toggle"
-      aria-pressed={spinning}
       aria-label={spinning ? "Pause rotation" : "Play rotation"}
       onClick={onToggle}
     >
@@ -87,8 +91,7 @@ function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () =>
   );
 }
 
-/** Outcome colouring lifts succeeded trials above the cloud and draws unknown outcomes as rings. */
-const isSucceeded = (t: ExplorerTrial): boolean => t.outcome === "succeeded";
+/** Outcome colouring draws unknown outcomes as rings. */
 const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
 
 function Title({ area }: { area: string | null }) {
@@ -147,6 +150,9 @@ export function Explore() {
 function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const dark = useTheme().theme === "dark";
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  // A touch screen has no hover, so the caption does not offer one.
+  const coarse = useMediaQuery("(pointer: coarse)");
+  const phone = useMediaQuery("(max-width: 640px)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
   const [selected, setSelected] = useState<string | null>(null);
@@ -159,9 +165,12 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => meta?.conditions ?? file.stats.by_condition.map((c) => c.label),
     [meta, file],
   );
+  // Disease colours by descending share: the dominant condition is quiet, the minorities carry the hues.
+  const ranked = useMemo(() => diseaseRanking(file.trials, order), [file, order]);
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
-  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, order), [mode, palette, order]);
+  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, ranked), [mode, palette, ranked]);
+  const emphasis = useMemo(() => emphasisFor(mode, ranked), [mode, ranked]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
   const conditions = useMemo(() => {
@@ -191,7 +200,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         onFilters={setFilters}
         bounds={bounds}
         conditions={conditions}
-        order={order}
+        ranked={ranked}
         mode={mode}
         onMode={setMode}
         palette={palette}
@@ -207,14 +216,17 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             <span className="panel-l">a</span>
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
-          <div className="panel-a-body">
+          <ColourKey trials={file.trials} ranked={ranked} mode={mode} palette={palette} />
+          {/* A phone sheet scrolls this into view above itself (see Dropdown). */}
+          <div className="panel-a-body" data-sheet-reveal="">
             <PlateCanvas
               trials={file.trials}
               visible={visible}
               color={color}
-              emphasis={mode === "outcome" ? isSucceeded : undefined}
+              emphasis={emphasis}
               hollow={mode === "outcome" ? isUnknownOutcome : undefined}
               labels={order}
+              labelColumn={phone}
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}
@@ -225,7 +237,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             {!reducedMotion && total > 0 && (
               <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />
             )}
-            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} />}
+            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} r={hover.r} />}
             {total === 0 ? (
               <div className="plate-empty" role="status">
                 <p>The map needs at least 4 trials in this area.</p>
@@ -233,15 +245,22 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             ) : shown.length === 0 ? (
               <div className="plate-empty" role="status">
                 <p>No trials match these filters.</p>
-                <button type="button" onClick={reset}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    reset();
+                    // The button leaves with the empty state: hand focus to Find, as Reset all does.
+                    document.getElementById("explore-find")?.focus();
+                  }}
+                >
                   Reset filters
                 </button>
               </div>
             ) : null}
           </div>
           <p className="panel-note plate-caption">
-            Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn,
-            hover for details, click to open.
+            Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
+            {coarse ? "Drag to turn, tap to open." : "Drag to turn, hover for details, click to open."}
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}
@@ -250,7 +269,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         <PanelSuccess stats={file.stats} k={file.method.k} />
         <PanelPhase trials={shown} />
       </div>
-      <LegendBar trials={file.trials} conditions={conditions} order={order} mode={mode} palette={palette}>
+      <LegendBar>
         <SelectedTrial trial={selectedTrial} />
       </LegendBar>
       <SelectedBar trial={selectedTrial} />

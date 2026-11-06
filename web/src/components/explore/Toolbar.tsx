@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import {
   diseaseColor,
+  firstLabels,
   filterCounts,
   filtersFor,
   MODES,
@@ -25,7 +26,8 @@ export interface ToolbarProps {
   bounds: [number, number];
   /** Every condition label in the file, in the area's order. */
   conditions: string[];
-  order: string[];
+  /** Conditions by descending share, for disease colours (diseaseRanking). */
+  ranked: string[];
   mode: ColorMode;
   onMode(m: ColorMode): void;
   palette: Palette;
@@ -49,7 +51,7 @@ function FindGlyph() {
 
 /**
  * The controls above the map, set like a figure's legend line: find, colour, then the filters as
- * dropdowns, the results switch and Reset all, with the count of trials shown closing the row.
+ * dropdowns, the results pill and Reset all, with the count of trials shown closing the row.
  */
 export function Toolbar(p: ToolbarProps) {
   const { trials, filters, mode, palette } = p;
@@ -61,14 +63,19 @@ export function Toolbar(p: ToolbarProps) {
     [trials, filters, p.conditions, p.bounds],
   );
 
+  const withResults = useMemo(() => trials.filter((t) => t.has_results).length, [trials]);
+
   const set = (key: SetKey) => (next: Set<string>) => p.onFilters({ ...filters, [key]: next });
 
+  const first = useMemo(() => firstLabels(trials), [trials]);
+
   const options = useMemo(() => {
+    // Disease colour goes by a trial's first label: a condition no trial lists first is never painted.
     const disease: MultiSelectOption[] = p.conditions.map((c) => ({
       value: c,
       label: c,
       n: counts.conditions.get(c) ?? 0,
-      swatch: mode === "disease" ? diseaseColor(c, palette, p.order) : undefined,
+      swatch: mode === "disease" && first.has(c) ? diseaseColor(c, palette, p.ranked) : undefined,
     }));
     const phase: MultiSelectOption[] = phasesOf(counts.phases).map((ph) => ({
       value: ph,
@@ -87,10 +94,10 @@ export function Toolbar(p: ToolbarProps) {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([x, n]) => ({ value: x, label: treatmentLabel(x), n }));
     return { disease, phase, outcome, treatment };
-  }, [counts, mode, palette, p.conditions, p.order]);
+  }, [counts, mode, palette, p.conditions, p.ranked, first]);
 
   return (
-    <div className="toolbar" role="toolbar" aria-label="Map controls">
+    <div className="toolbar" role="group" aria-label="Map controls">
       <div className="tb-find">
         <label className="visually-hidden" htmlFor="explore-find">
           Find a trial
@@ -154,15 +161,11 @@ export function Toolbar(p: ToolbarProps) {
         {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}
         <button
           type="button"
-          role="switch"
-          aria-checked={filters.resultsOnly}
-          className="tb-switch"
+          className="pill narrowing"
+          aria-pressed={filters.resultsOnly}
           onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
         >
-          <span className="switch-track" aria-hidden="true">
-            <span className="switch-knob" />
-          </span>
-          Results posted
+          Results posted <span className="pill-n">{fmt(withResults)}</span>
         </button>
       </div>
 

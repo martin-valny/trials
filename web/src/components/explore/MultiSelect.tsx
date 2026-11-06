@@ -15,6 +15,22 @@ const fmt = (n: number): string => n.toLocaleString("en-US");
 
 /** Popovers keep this far (px) from the viewport's right edge. */
 const EDGE = 16;
+/** Clear space (px) kept between the revealed map and the top of a phone sheet. */
+const SHEET_GAP = 8;
+
+/**
+ * On a phone the popover is a sheet over the bottom of the viewport. Scroll the page so the element
+ * marked ``data-sheet-reveal`` (the map) sits just above the sheet, letting the filter's effect be seen
+ * while it is chosen; if the map is taller than the space left, its top is kept in view instead.
+ */
+function revealAboveSheet(sheet: HTMLElement) {
+  const target = document.querySelector<HTMLElement>("[data-sheet-reveal]");
+  if (!target) return;
+  const room = sheet.getBoundingClientRect().top - SHEET_GAP;
+  const box = target.getBoundingClientRect();
+  const delta = box.height <= room ? box.bottom - room : box.top;
+  if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior: "instant" });
+}
 
 /**
  * A toolbar button that opens a popover beneath it. Escape closes it and returns focus to the button;
@@ -22,7 +38,17 @@ const EDGE = 16;
  * It opens from the button's left edge, or from its right edge where it would run off the viewport. On a
  * phone it is a bottom sheet headed by ``title`` and a Done button.
  */
-export function Dropdown(props: { text: string; title?: string; className?: string; children: ReactNode }) {
+export function Dropdown(props: {
+  /** The filter's name ("Phase"). */
+  label: string;
+  /** What it shows now ("all", "2 of 6", "2014–2019"); the button reads "label: value". */
+  value: string;
+  /** True once it hides something: the button goes from quiet (hairline, muted value) to ink. */
+  narrowed: boolean;
+  title?: string;
+  className?: string;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -33,7 +59,10 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
     const pop = popover.current;
     if (!open || !pop) return;
     delete pop.dataset.align;
-    if (getComputedStyle(pop).position === "fixed") return; // the phone sheet spans the viewport already
+    if (getComputedStyle(pop).position === "fixed") {
+      revealAboveSheet(pop); // the phone sheet spans the viewport already
+      return;
+    }
     if (pop.getBoundingClientRect().right > document.documentElement.clientWidth - EDGE) pop.dataset.align = "end";
   }, [open]);
 
@@ -76,9 +105,12 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
         className="dropdown-button"
         aria-expanded={open}
         aria-controls={id}
+        data-narrowed={props.narrowed}
         onClick={() => setOpen((o) => !o)}
       >
-        <span>{props.text}</span>
+        <span>
+          {props.label}: <span className="dropdown-value">{props.value}</span>
+        </span>
         <svg className="chevron" width="9" height="6" viewBox="0 0 9 6" aria-hidden="true">
           <path d="M0.5 0.75 4.5 4.75 8.5 0.75" />
         </svg>
@@ -86,7 +118,7 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
       {open ? (
         <div className="popover" id={id} ref={popover}>
           <div className="sheet-head">
-            <span className="sheet-title">{props.title ?? props.text}</span>
+            <span className="sheet-title">{props.title ?? props.label}</span>
             <button type="button" className="text-button" onClick={close}>
               Done
             </button>
@@ -119,7 +151,12 @@ export function MultiSelect(props: {
 }) {
   const { label, options, selected, onChange } = props;
   return (
-    <Dropdown className="multiselect" title={label} text={`${label}: ${filterSummary(selected.size, options.length)}`}>
+    <Dropdown
+      className="multiselect"
+      label={label}
+      value={filterSummary(selected.size, options.length)}
+      narrowed={options.some((o) => !selected.has(o.value))}
+    >
       <MultiSelectBody label={label} options={options} selected={selected} onChange={onChange} searchable={props.searchable} />
     </Dropdown>
   );

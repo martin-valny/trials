@@ -5,7 +5,8 @@ const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.m
 
 /**
  * A start-year range: two number fields (From, To) above a two-thumb track. Values are clamped to
- * `bounds`, and moving one end past the other drags the other along, so from <= to always holds.
+ * `bounds`, and moving one end past the other drags the other along, so from <= to always holds. Not
+ * shown when no trial has a start year (bounds [0, 0]).
  */
 export function YearRange(props: {
   bounds: [number, number];
@@ -15,8 +16,10 @@ export function YearRange(props: {
   const [lo, hi] = props.bounds;
   const [from, to] = props.value;
   const all = from <= lo && to >= hi;
+  // With no start year anywhere (yearBounds gives [0, 0]) there is nothing to narrow by.
+  if (lo === 0 && hi === 0) return null;
   return (
-    <Dropdown className="yearrange" title="Start year" text={all ? "Years: all" : `Years: ${from}–${to}`}>
+    <Dropdown className="yearrange" title="Start year" label="Years" value={all ? "all" : `${from}–${to}`} narrowed={!all}>
       <YearRangeBody {...props} />
     </Dropdown>
   );

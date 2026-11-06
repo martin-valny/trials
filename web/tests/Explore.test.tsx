@@ -52,6 +52,25 @@ test("panel a carries a caption on how to read the map", async () => {
   ).toBeInTheDocument();
 });
 
+test("on a coarse pointer the caption says tap to open and never mentions hover", async () => {
+  withCanvas();
+  stubFetch();
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("pointer: coarse"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+  renderAt(<Explore />, "/explore");
+  const a = await screen.findByRole("region", { name: /Embedding of/ });
+  const caption = within(a).getByText(/^Dot size: enrollment\./);
+  expect(caption).toHaveTextContent("Drag to turn, tap to open.");
+  expect(caption.textContent).not.toMatch(/hover/i);
+});
+
 test("missing explorer shows explanation", async () => {
   withCanvas();
   stubFetch({ "explorer.json": 404 });
@@ -71,6 +90,8 @@ test("zero matches shows reset and reset restores", async () => {
   expect(await screen.findByText(/^0 trials;/, {}, { timeout: 2000 })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
   expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
+  // The button is gone with the empty state, so focus goes on to Find rather than falling to the page.
+  expect(screen.getByLabelText("Find a trial")).toHaveFocus();
   expect(box).toHaveValue("");
   const n = explorer.trials.length;
   expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
@@ -122,11 +143,12 @@ test("the map starts still, with a play control that toggles to pause", async ()
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
+  // The name says what a press will do, so it carries no pressed state as well.
   const play = await screen.findByRole("button", { name: "Play rotation" });
-  expect(play).toHaveAttribute("aria-pressed", "false");
+  expect(play).not.toHaveAttribute("aria-pressed");
   await userEvent.click(play);
   const pause = screen.getByRole("button", { name: "Pause rotation" });
-  expect(pause).toHaveAttribute("aria-pressed", "true");
+  expect(pause).not.toHaveAttribute("aria-pressed");
   expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
 });
 
@@ -147,9 +169,21 @@ test("with reduced motion there is no rotation control", async () => {
   expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });
 
+test("the hover card draws a 1px leader to the dot's ring", () => {
+  const t = explorer.trials[0];
+  const { container } = render(
+    <div style={{ position: "relative" }}>
+      <HoverCard trial={t} x={10} y={10} r={6} />
+    </div>,
+  );
+  const leader = container.querySelector("svg.hover-leader line");
+  expect(leader).not.toBeNull();
+  expect(container.querySelector("svg.hover-leader")).toHaveAttribute("aria-hidden", "true");
+});
+
 test("the hover card is a tooltip with the trial's id, title and facts", () => {
   const t = explorer.trials[0];
-  render(<HoverCard trial={t} x={10} y={10} />);
+  render(<HoverCard trial={t} x={10} y={10} r={6} />);
   const card = screen.getByRole("tooltip");
   expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
   expect(card).toHaveTextContent("dimethyl fumarate · Behavioral, Device · Phase 4 · 2015–2016");
@@ -162,14 +196,18 @@ test("the map controls toolbar comes before the canvas", async () => {
   stubFetch();
   renderAt(<Explore />, "/explore");
   const canvas = await screen.findByRole("img", { name: /^3D map of/ });
-  const bar = screen.getByRole("toolbar", { name: "Map controls" });
+  const bar = screen.getByRole("group", { name: "Map controls" });
   expect(follows(bar, canvas)).toBe(true);
   expect(within(bar).getByLabelText("Find a trial")).toBeInTheDocument();
   expect(within(bar).getByRole("group", { name: "Colour" })).toBeInTheDocument();
   for (const name of ["Disease: all", "Phase: all", "Outcome: all", "Treatment: all", "Years: all"]) {
     expect(within(bar).getByRole("button", { name })).toBeInTheDocument();
   }
-  expect(within(bar).getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  const withResults = explorer.trials.filter((t) => t.has_results).length;
+  expect(within(bar).getByRole("button", { name: `Results posted ${withResults}` })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   expect(within(bar).getByText(`Showing ${explorer.trials.length} of ${explorer.trials.length} trials`)).toBeInTheDocument();
 });
 
@@ -193,12 +231,12 @@ test("Reset all is disabled until a filter changes, and resets every filter", as
   renderAt(<Explore />, "/explore");
   const reset = await screen.findByRole("button", { name: "Reset all" });
   expect(reset).toBeDisabled();
-  await userEvent.click(screen.getByRole("switch", { name: "Results posted" }));
+  await userEvent.click(screen.getByRole("button", { name: /^Results posted/ }));
   expect(reset).toBeEnabled();
   await userEvent.type(screen.getByLabelText("Find a trial"), "zzz");
   await userEvent.click(reset);
   expect(reset).toBeDisabled();
-  expect(screen.getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  expect(screen.getByRole("button", { name: /^Results posted/ })).toHaveAttribute("aria-pressed", "false");
   expect(screen.getByLabelText("Find a trial")).toHaveValue("");
   const n = explorer.trials.length;
   expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
@@ -208,7 +246,7 @@ test("Reset all hands keyboard focus to the Find field instead of dropping it", 
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
-  const sw = await screen.findByRole("switch", { name: "Results posted" });
+  const sw = await screen.findByRole("button", { name: /^Results posted/ });
   await userEvent.click(sw);
   const reset = screen.getByRole("button", { name: "Reset all" });
   reset.focus();

@@ -34,10 +34,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .panel { position: relative; min-height: 0; min-width: 0; }
 .panel-a { grid-row: 1 / 3; display: flex; flex-direction: column; min-height: 62vh; }
+/* Side by side, panel a is sized to the viewport rather than stretched to the right column, so its key
+   and the "Dot size" caption both land above the fold. */
+@media (min-width: 901px) {
+  .panel-a { align-self: start; min-height: 0; height: max(420px, min(62vh, calc(100dvh - 330px))); }
+}
 .panel-h { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.3; }
 .panel-l { margin-right: 10px; font-size: 22px; font-weight: 800; line-height: 1; }
-.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; }
-.plate-caption { margin-top: 6px; }
+.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; margin-top: 4px; }
+.panel-note.plate-caption { margin-top: 6px; max-width: 84ch; }
 .plate-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; color: var(--ink); }
 .plate-canvas:active { cursor: grabbing; }
 
@@ -57,7 +62,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate);
   border: 1px solid var(--muted); border-radius: 999px; padding: 4px 10px; cursor: pointer;
 }
-.explore button:hover, .find input:hover { border-color: var(--ink); }
+.explore button:hover { border-color: var(--ink); }
 .explore button[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
 .explore :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
@@ -66,8 +71,9 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .panel-note, .panel-claim { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 52ch; }
 .panel-claim { font-size: 14px; font-weight: 500; color: var(--ink); text-wrap: pretty; }
 .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 13px; }
-.bar { display: grid; grid-template-columns: minmax(6rem, 10.5rem) 1fr 2.6rem 3.6rem; align-items: center; gap: 8px; }
-.bar-label { overflow-wrap: anywhere; line-height: 1.2; }
+/* Labels wrap by word, so the track keeps at least 110px to be read against. */
+.bar { display: grid; grid-template-columns: minmax(6rem, 10.5rem) minmax(110px, 1fr) 2.6rem 3.6rem; align-items: center; gap: 8px; }
+.bar-label { overflow-wrap: break-word; line-height: 1.2; }
 .bar-track { position: relative; height: 12px; background: var(--pale); }
 .bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
 .bar-avg { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); box-shadow: 0 0 0 1px var(--plate); }
@@ -91,30 +97,18 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   display: grid; grid-template-columns: 6.5rem 1fr; gap: 6px 18px; align-items: center;
   font-size: 13px; line-height: 1.5; color: var(--muted);
 }
-.legend-key { border-top: 1px solid var(--ink); padding: 12px 0 10px; grid-template-columns: 6.5rem 1fr auto; align-items: baseline; }
-.legend-key .legend-k { align-self: baseline; padding-top: 0; }
-.legend-d { padding: 10px 0 18px; border-top: 1px solid var(--rule); margin-top: 0; }
+.legend-d { padding: 12px 0 18px; border-top: 1px solid var(--ink); margin-top: 0; }
 .legend-k { color: var(--ink); font-weight: 700; align-self: start; padding-top: 3px; }
 .legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
-.find input {
-  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
-  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px; width: min(22rem, 100%);
-}
-.find input::placeholder { color: var(--muted); }
-.find input::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
-.count { font-variant-numeric: tabular-nums; }
 .pill { display: inline-flex; align-items: center; gap: 6px; }
 .pill-n { font-variant-numeric: tabular-nums; color: var(--muted); }
-/* Multi-select filters are quiet: an ink outline when on; muted, hairline and struck through when off. */
-.explore .pill[aria-pressed="true"] { background: var(--plate); color: var(--ink); border-color: var(--ink); }
-.explore .pill[aria-pressed="false"] { color: var(--muted); border-color: var(--rule); text-decoration: line-through; text-decoration-color: var(--muted); }
-.pill[aria-pressed="false"] .swatch { opacity: 0.35; }
-.explore .pill:hover { border-color: var(--ink); }
 .swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
 .swatch.ring { background: transparent; }
-/* A narrowing toggle ("Results posted"): off means "show all", so it is never struck through; on is filled. */
-.explore .pill.narrowing { margin-left: 8px; }
-.explore .pill.narrowing[aria-pressed="false"] { color: var(--ink); border-color: var(--muted); text-decoration: none; }
+/* A narrowing toggle ("Results posted"): off means "show all", so it sits quiet like a dropdown at
+   rest; on is solid ink. Its count is tabular. */
+.explore .pill.narrowing { margin-left: 8px; gap: 7px; }
+.explore .pill.narrowing[aria-pressed="false"] { color: var(--ink); border-color: var(--muted); }
+.explore .pill.narrowing[aria-pressed="false"]:hover { border-color: var(--ink); }
 .explore .pill.narrowing[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
 .explore .pill.narrowing[aria-pressed="true"] .pill-n { color: var(--plate); }
 
@@ -140,9 +134,14 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 @keyframes plate-pulse { from { opacity: 1; } to { opacity: 0.55; } }
 
+/* Laptop widths: the right column takes two fifths, so panel b's bars stay long enough to compare. */
+@media (min-width: 901px) and (max-width: 1279px) {
+  .plate { grid-template-columns: 3fr 2fr; }
+  .bar { grid-template-columns: minmax(5rem, 8.5rem) minmax(110px, 1fr) 2.6rem 3.6rem; }
+}
 @media (max-width: 900px) {
   .plate { grid-template-columns: 1fr; grid-template-rows: auto; }
-  .panel-a { grid-row: auto; min-height: 60vh; }
+  .panel-a { grid-row: auto; min-height: 60vh; padding-bottom: 18px; }
   /* Once a trial is chosen, only its facts line stays in view at the bottom, with a link down to d. */
   .selected-bar {
     position: sticky; bottom: 0; z-index: 1;
@@ -163,6 +162,13 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .legend { margin: 0 16px; grid-template-columns: 1fr; gap: 4px; }
   .legend-v + .legend-k { margin-top: 8px; }
   .flow { gap: 4px; }
+  /* Phone: the label and its numbers share a line, the track runs the full width beneath them. */
+  .bars { gap: 10px; }
+  .bar { grid-template-columns: 1fr auto auto; grid-template-areas: "label n k" "track track track"; gap: 3px 8px; align-items: baseline; }
+  .bar-label { grid-area: label; }
+  .bar-n { grid-area: n; }
+  .bar-k { grid-area: k; min-width: 3.6rem; text-align: right; }
+  .bar-track { grid-area: track; }
   .flow li { font-size: 11px; }
   .explore-message { padding: 16px; }
   .selected-bar { padding: 8px 16px; }
@@ -175,19 +181,20 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   padding: 5px 8px; font-size: 12.5px; font-weight: 500; line-height: 1.2;
   color: var(--ink); background: transparent; border-color: transparent;
 }
-.explore .spin-toggle[aria-pressed="true"] { background: transparent; color: var(--ink); border-color: transparent; }
 .explore .spin-toggle:hover { border-color: var(--rule); }
 .spin-glyph { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5px; stroke-linejoin: miter; stroke-linecap: butt; }
 
 /* Hover card: two lines on the trial under the pointer, a flat plate with a 1px ink rule; never takes the pointer. */
 .hover-card {
   position: absolute; left: 0; top: 0; z-index: 2;
-  width: max-content; max-width: min(22rem, calc(100% - 8px));
+  width: max-content; max-width: min(18rem, calc(100% - 8px));
   padding: 7px 10px 8px; pointer-events: none;
   background: var(--plate); border: 1px solid var(--ink);
   font-size: 12px; line-height: 1.4; color: var(--muted);
 }
 .hover-card p { margin: 0; }
+.hover-leader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; overflow: visible; pointer-events: none; }
+.hover-leader line { stroke: var(--ink); stroke-width: 1; shape-rendering: crispEdges; }
 .hover-card-head {
   color: var(--ink); font-weight: 500; text-wrap: pretty;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
@@ -286,9 +293,9 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 @media (max-width: 640px) {
   .popover {
     position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30;
-    min-width: 0; max-width: none; max-height: 72dvh;
-    padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
-    border-width: 2px 0 0; border-top-color: var(--ink); /* heavier than a hairline: its edge reads against the page */
+    min-width: 0; max-width: none; max-height: 44dvh; /* the map stays in view above it */
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0; border-top-color: var(--ink);
   }
   .checklist { max-height: none; flex: 1 1 auto; min-height: 0; margin: 0 -16px; }
   .check { padding: 8px 16px; }
@@ -306,9 +313,12 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* Toolbar: one line of controls above the plate, read like a figure's legend line. Groups sit 18px
    apart, controls within a group 6px; every item shares one 28px line so the text baselines align. */
 .toolbar {
+  position: relative;
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
   padding: 10px 40px 12px; font-size: 12.5px; color: var(--muted);
 }
+/* A hairline under the controls, inside the gutters, so they read as the figure's legend line. */
+.toolbar::after { content: ""; position: absolute; left: 40px; right: 40px; bottom: 0; height: 1px; background: var(--rule); pointer-events: none; }
 .toolbar > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .toolbar .tb-filters { flex-wrap: wrap; row-gap: 8px; }
 .toolbar .tb-count { margin-left: auto; }
@@ -331,23 +341,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .segmented button { border: 0; padding: 3px 10px; line-height: 18px; }
 .explore .segmented button:hover:not([aria-pressed="true"]) { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
 
-.explore .toolbar .dropdown-button, .explore .tb-switch { line-height: 18px; }
+.explore .toolbar .dropdown-button, .explore .toolbar .pill { line-height: 18px; }
 
-/* Results posted: a drawn switch. Off is a hairline track with an ink knob at the left; on fills the
-   track with ink and knocks the knob out in plate colour at the right. Never red. */
-.explore .tb-switch {
-  display: inline-flex; align-items: center; gap: 8px; margin-left: 8px;
-  border-color: transparent; padding-left: 0; padding-right: 0; background: transparent;
-}
-.explore .tb-switch:hover { border-color: transparent; }
-.explore .tb-switch:hover .switch-track { border-color: var(--ink); }
-.switch-track { position: relative; flex: none; width: 22px; height: 12px; border: 1px solid var(--muted); border-radius: 999px; box-sizing: border-box; }
-.switch-knob { position: absolute; top: 2px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
-.tb-switch[aria-checked="true"] .switch-track { background: var(--ink); border-color: var(--ink); }
-.tb-switch[aria-checked="true"] .switch-knob { left: 12px; background: var(--plate); }
-@media (prefers-reduced-motion: no-preference) {
-  .switch-knob { transition: left 160ms cubic-bezier(0.16, 1, 0.3, 1); }
-}
+/* Filters read as a figure's legend line, not a filter bar: at rest ("all") a dropdown is a hairline
+   pill with its value muted; once it narrows the map it turns ink, its value set in 700. */
+.explore .dropdown-button[data-narrowed="false"] { border-color: var(--rule); }
+.explore .dropdown-button[data-narrowed="false"] .dropdown-value { color: var(--muted); }
+.explore .dropdown-button[data-narrowed="true"] { border-color: var(--ink); }
+.explore .dropdown-button[data-narrowed="true"] .dropdown-value { font-weight: 700; }
+.explore .dropdown-button:hover, .explore .dropdown-button[aria-expanded="true"] { border-color: var(--ink); }
 
 /* Reset all: a word, idle (muted, no underline) until there is something to reset. */
 .explore .text-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
@@ -357,10 +359,17 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* The sheet header (title and Done) exists only on the phone sheet. */
 .sheet-head { display: none; }
 
-/* The colour key: swatches and words in a row, then a quiet link to the list. */
-.key-list { list-style: none; margin: 0; padding: 0; color: var(--ink); }
-.key-list li { display: inline-flex; align-items: center; gap: 6px; }
-.key-list-link { white-space: nowrap; }
+/* The figure key: one 12px line of swatches and words under panel a's heading, like the key printed
+   under a figure panel's title; a quiet link to the list closes it. */
+.figure-key {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+  margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--muted); column-gap: 14px;
+}
+/* The list's items share the key's one wrapping line with the link, which keeps to the line's end. */
+.key-list { list-style: none; margin: 0; padding: 0; display: contents; color: var(--ink); }
+.key-list li { display: inline-flex; align-items: center; gap: 5px; }
+.key-list .swatch { width: 8px; height: 8px; }
+.key-list-link { white-space: nowrap; margin-left: auto; }
 
 /* Laptop widths: the full set needs about 1,350px, so it is set on two deliberate lines instead of
    wrapping wherever it breaks: find, colour and the count on the first; the filters and Reset all under
@@ -383,9 +392,9 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 @media (max-width: 640px) {
   .toolbar { padding: 8px 16px 10px; gap: 10px 14px; }
   .toolbar .tb-find { width: 100%; }
-  .explore .tb-switch { margin-left: 0; } /* flush with the line start when it wraps */
+  .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
+  .toolbar::after { left: 16px; right: 16px; }
   .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
-  .legend-key { grid-template-columns: 1fr; }
   .sheet-head {
     display: flex; align-items: baseline; justify-content: space-between;
     padding-bottom: 8px; border-bottom: 1px solid var(--rule);

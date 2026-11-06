@@ -1,10 +1,19 @@
 # Trial Radar — Handoff for the next agent
 
-Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of session 4 for the Explorer (branch `feat/explorer-figure-plate`, committed locally, not pushed — see section 00). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of sessions 4 and 5 for the Explorer (branch `feat/explorer-figure-plate`, committed locally, not pushed — see section 00). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
 
 ---
 
-## 00. Current state — end of session 4 (2026-11-06), read this first
+## 00. Current state — end of session 5 (2026-11-06), read this first
+
+**Session 5 — phase 1 (map usability) is done, on the same unpushed branch.**
+- **Where:** committed locally on **`feat/explorer-figure-plate`** (task branches `p1/task*` merge into it; the finish-review fixes are on `p1/task7`); still **not pushed** (same org block as below; the user pushes). No PR.
+- **What was built:** a toolbar above the map set as the figure's legend line (Find, Colour, dropdown filters for Disease/Phase/Outcome/Treatment, a Years range, a Results posted narrowing pill with its count, Reset all, "Showing N of M"); dropdowns open as flat insets, and as a 44dvh bottom sheet on phones that scrolls the map into view above it; a hover card (mouse/pen) centred above the dot with a 1px ink leader to its ring; the map starts still with a Play/Pause control (none under reduced motion); a System/Light/Dark theme switch in the header. The design finish review's 8 fixes are applied: the colour key is a one-line figure key under panel a's heading (panel d alone under the ink rule) and panel a is sized so key and caption sit above the fold; disease colours by share (quiet dominant condition, minorities in hues, drawn on top); panel b bars keep a readable track at laptop and phone widths; quiet-at-rest / ink-when-narrowed dropdowns; phone cluster labels stack in a column; `DESIGN.md` and `.impeccable/design.json` record the final state.
+- **Gates at hand-off:** pipeline `pytest` 488 passed; web vitest 206 passed; eslint + `tsc --noEmit` clean; Playwright e2e 22/22 (desktop 1280 + mobile 375, fixtures). A final whole-branch review found minors only; its fix wave is applied. Real-data screenshots: `.superpowers/sdd/2026-11-06-phase1-map-usability/shots-final/`.
+- **Process note:** the `impeccable` skill was blocked by org policy, so the design finish review ran through the `impeccable-finish-reviewer` agent instead (`.superpowers/sdd/2026-11-06-phase1-map-usability/finish-review.md`).
+- **Next step:** write the phase 2 plan (mechanism data) from `docs/superpowers/specs/2026-11-06-mechanisms-and-graph-design.md` (use `writing-plans`), then execute it.
+
+**Session 4 (kept for context):**
 
 - **The Explorer is finished but NOT pushed.** Everything is committed locally on branch **`feat/explorer-figure-plate`** in the user's Mac checkout (`~/Desktop/trials`), 40+ commits on top of `main` (`253c15b`). No PR exists. `main`, the live site and the daily workflow are unchanged.
 - **Why not pushed:** `git push` from the agent's shell is blocked by the user's org policy (git network calls return nothing; `gh api` works). The user rejected bypassing the sandbox. **Do not retry pushes or disable the sandbox.** The user pushes themselves: `git push -u origin feat/explorer-figure-plate`, then `gh pr create --base main` (PR body: summarise section 6, end with the Claude Code attribution line). After CI is green, merge only when the user says so.

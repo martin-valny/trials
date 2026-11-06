@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { clusterAnchors, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
+import { clusterAnchors, columnLabels, columnSide, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
 import type { ExplorerTrial } from "../../types";
 
 export interface PlateCanvasProps {
@@ -12,6 +12,8 @@ export interface PlateCanvasProps {
   hollow?: (t: ExplorerTrial) => boolean;
   /** Condition labels, in the area's order, to annotate at each condition's densest point (see clusterAnchors). */
   labels?: string[];
+  /** Set the cluster labels in a column at the right edge (phone widths), not beside each cluster. */
+  labelColumn?: boolean;
   selected: string | null;
   onSelect: (nct: string | null) => void;
   reducedMotion: boolean;
@@ -23,10 +25,12 @@ export interface PlateCanvasProps {
   ringColor?: string;
 }
 
+/** The hovered trial's dot, in canvas CSS px: its centre and the radius of the ring drawn around it. */
 export interface PlateHover {
   nct: string;
   x: number;
   y: number;
+  r: number;
 }
 
 const SPIN = 0.0022; // radians per frame, as in the approved plate
@@ -37,6 +41,9 @@ const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
 const LABEL_FONT = '600 11.5px "Hanken Grotesk", system-ui, sans-serif';
 const LABEL_OFFSET = 8; // px right of and above the anchor dot
+const COLUMN_TOP = 40; // px: the phone label column starts below the play control
+const RING_GAP = 4; // px between a dot and its selection or hover ring
+const RING_WIDTH = 1.5;
 
 /** True when this browser gives a 2D canvas context (jsdom and some locked-down browsers do not). */
 function canDraw(): boolean {
@@ -130,15 +137,16 @@ export function PlateCanvas(props: PlateCanvasProps) {
     () => clusterAnchors(trials, points, labels ?? []),
     [trials, points, labels],
   );
+  const side = useMemo(() => columnSide(anchors), [anchors]);
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
-  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink: "", plate: "" });
+  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink: "", plate: "" });
   const dirty = useRef(true);
   useEffect(() => {
     // Theme colours are read here, once per render, never per frame.
     const css = canvasRef.current ? getComputedStyle(canvasRef.current) : null;
     const ink = css?.color || "#111";
     const plate = css?.getPropertyValue("--plate").trim() || "#fff";
-    live.current = { ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink, plate };
+    live.current = { ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink, plate };
     dirty.current = true;
   });
 
@@ -177,6 +185,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const draw = () => {
       const { trials, points: pts, mask, colors, emph, rings, anchors, scale, extents, selected, ringColor, ink, plate } =
         live.current;
+      const { labelColumn, side } = live.current;
       ctx.clearRect(0, 0, w, h);
       const zoom = fitZoom(extents, w, h, ZOOM);
       projected = project(pts, angle, TILT, w, h, zoom);
@@ -228,21 +237,22 @@ export function PlateCanvas(props: PlateCanvasProps) {
         ctx.textBaseline = "middle";
         ctx.lineJoin = "round";
         const widths = anchors.map((a) => ctx.measureText(a.label).width);
-        const spots = placeLabels(
-          anchors.map((_, k) => ({
-            sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
-            sy: at[k].sy - LABEL_OFFSET,
-            width: widths[k],
-          })),
-          w,
-          h,
-        );
+        const items = anchors.map((_, k) => ({
+          sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
+          sy: at[k].sy - LABEL_OFFSET,
+          width: widths[k],
+        }));
+        // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
+        // from the clusters, below the play control, each with a leader down to its cluster.
+        const spots: { x: number; y: number; lx?: number }[] = labelColumn
+          ? columnLabels(items, w, COLUMN_TOP, side)
+          : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
         anchors.forEach((_, k) => {
           ctx.beginPath();
           ctx.moveTo(at[k].sx, at[k].sy);
-          ctx.lineTo(spots[k].x - widths[k] / 2 - 2, spots[k].y);
+          ctx.lineTo(spots[k].lx ?? spots[k].x - widths[k] / 2 - 2, spots[k].y);
           ctx.stroke();
         });
         ctx.lineWidth = 2;
@@ -258,9 +268,9 @@ export function PlateCanvas(props: PlateCanvasProps) {
         const p = projected[i];
         const r = dotRadius(trials[i].enrollment, p.f, scale);
         ctx.strokeStyle = ring;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = RING_WIDTH;
         ctx.beginPath();
-        ctx.arc(p.sx, p.sy, Math.max(emph[i] ? EMPHASIS_MIN_R : 0, r) + 4, 0, Math.PI * 2);
+        ctx.arc(p.sx, p.sy, Math.max(emph[i] ? EMPHASIS_MIN_R : 0, r) + RING_GAP, 0, Math.PI * 2);
         ctx.stroke();
       }
     };
@@ -306,23 +316,31 @@ export function PlateCanvas(props: PlateCanvasProps) {
       if (alive) dirty.current = true;
     });
 
+    /** Index of the visible trial under the pointer, or -1. */
+    const hitIndex = (e: PointerEvent): number => {
+      const box = canvas.getBoundingClientRect();
+      return nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, live.current.mask);
+    };
     /** The visible trial under the pointer, or null. */
     const hit = (e: PointerEvent): string | null => {
-      const box = canvas.getBoundingClientRect();
-      const { trials, mask } = live.current;
-      const i = nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, mask);
-      return i < 0 ? null : trials[i].nct_id;
+      const i = hitIndex(e);
+      return i < 0 ? null : live.current.trials[i].nct_id;
     };
-    /** Change the hovered trial; a mouse or pen hover is reported, so a card can follow it. */
-    const setHover = (next: string | null, e?: PointerEvent) => {
+    /**
+     * Change the hovered trial; a mouse or pen hover is reported with the dot's centre and the outer
+     * edge of its hover ring, so a card can sit above it with a leader to the ring.
+     */
+    const setHover = (next: string | null, e?: PointerEvent, i = -1) => {
       if (next === hover) return;
       hover = next;
       dirty.current = true;
       if (next === null) {
         live.current.onHover?.(null);
-      } else if (e && (e.pointerType === "mouse" || e.pointerType === "pen")) {
-        const box = canvas.getBoundingClientRect();
-        live.current.onHover?.({ nct: next, x: e.clientX - box.left, y: e.clientY - box.top });
+      } else if (e && i >= 0 && (e.pointerType === "mouse" || e.pointerType === "pen")) {
+        const { trials, emph, scale } = live.current;
+        const p = projected[i];
+        const r = Math.max(emph[i] ? EMPHASIS_MIN_R : 0, dotRadius(trials[i].enrollment, p.f, scale));
+        live.current.onHover?.({ nct: next, x: p.sx, y: p.sy, r: r + RING_GAP + RING_WIDTH / 2 });
       }
     };
 
@@ -341,9 +359,10 @@ export function PlateCanvas(props: PlateCanvasProps) {
         dirty.current = true;
         return;
       }
-      const next = hit(e);
+      const i = hitIndex(e);
+      const next = i < 0 ? null : live.current.trials[i].nct_id;
       canvas.style.cursor = next ? "pointer" : "grab";
-      setHover(next, e);
+      setHover(next, e, i);
     };
     const up = (e: PointerEvent) => {
       if (!dragging) return;

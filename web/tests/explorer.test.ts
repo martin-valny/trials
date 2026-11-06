@@ -5,6 +5,10 @@ import {
   allFilters,
   clusterAnchors,
   colorFor,
+  columnLabels,
+  columnSide,
+  diseaseRanking,
+  emphasisFor,
   labelPosition,
   placeLabels,
   liftSentence,
@@ -202,16 +206,55 @@ describe("colorFor", () => {
     expect(colorFor(trial({ phase: null }), "phase", LIGHT_PALETTE, order)).toBe("#e4e8eb");
     expect(colorFor(trial({ phase: null }), "phase", DARK_PALETTE, order)).toBe("#2b2e33");
   });
-  it("disease mode uses first label index, mod length", () => {
-    expect(colorFor(trial(), "disease", LIGHT_PALETTE, order)).toBe("#111111");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, order)).toBe("#7a5c2e");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, order)).toBe("#c8a96a");
-    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ["Alpha", "Beta", "Gamma"])).toBe(
-      "#5f8a7a",
-    );
+  it("disease mode: the dominant condition is the quiet value, minorities take the hues in rank order", () => {
+    const ranked = ["Beta", "Alpha", "Gamma"];
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#8592a0");
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, ranked)).toBe("#7d8287");
+    expect(colorFor(trial(), "disease", LIGHT_PALETTE, ranked)).toBe("#3b6ea5");
+    expect(colorFor(trial(), "disease", DARK_PALETTE, ranked)).toBe("#7fb2e5");
+    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#7a5c2e");
     const long = Array.from({ length: 8 }, (_, i) => `L${i}`);
-    expect(colorFor(trial({ condition_labels: ["L7"] }), "disease", LIGHT_PALETTE, long)).toBe("#7a5c2e");
-    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
+    // L0 is quiet; L1..L5 take the five hues; L6 cycles back to the first hue.
+    expect(colorFor(trial({ condition_labels: ["L6"] }), "disease", LIGHT_PALETTE, long)).toBe("#3b6ea5");
+    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, ranked)).toBe("#e4e8eb");
+  });
+});
+
+describe("diseaseRanking", () => {
+  it("orders conditions by how many trials list them first, ties in the area's order", () => {
+    const ts = [
+      trial({ condition_labels: ["Beta"] }),
+      trial({ condition_labels: ["Beta", "Alpha"] }),
+      trial({ condition_labels: ["Gamma"] }),
+      trial({ condition_labels: ["Alpha"] }),
+      trial({ condition_labels: [] }),
+    ];
+    expect(diseaseRanking(ts, ["Alpha", "Beta", "Gamma", "Delta"])).toEqual(["Beta", "Alpha", "Gamma", "Delta"]);
+  });
+});
+
+describe("emphasisFor", () => {
+  it("lifts succeeded trials in outcome mode, minority conditions in disease mode, nothing in phase mode", () => {
+    const ranked = ["Beta", "Alpha"];
+    const out = emphasisFor("outcome", ranked)!;
+    expect(out(trial())).toBe(true);
+    expect(out(trial({ outcome: "stopped" }))).toBe(false);
+    const dis = emphasisFor("disease", ranked)!;
+    expect(dis(trial({ condition_labels: ["Alpha", "Beta"] }))).toBe(true);
+    expect(dis(trial({ condition_labels: ["Beta", "Alpha"] }))).toBe(false);
+    expect(dis(trial({ condition_labels: [] }))).toBe(false);
+    expect(emphasisFor("phase", ranked)).toBeUndefined();
+  });
+});
+
+describe("disease series", () => {
+  it("has no ink in it: ink is reserved for stopped trials and the plate's text", () => {
+    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.stopped);
+    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.stopped);
+    expect(LIGHT_PALETTE.diseaseQuiet).toBe("#8592a0");
+    expect(DARK_PALETTE.diseaseQuiet).toBe("#7d8287");
+    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.diseaseQuiet);
+    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.diseaseQuiet);
   });
 });
 
@@ -327,7 +370,7 @@ describe("light palette legibility", () => {
       const [hue, sat] = hueSat(c);
       if (sat > 0.2) expect(hue > 30 && hue < 330).toBe(true);
     }
-    expect(contrast(LIGHT_PALETTE.diseases[2], "#ffffff")).toBeGreaterThanOrEqual(3);
+    for (const c of LIGHT_PALETTE.diseases) expect(contrast(c, "#ffffff")).toBeGreaterThanOrEqual(2.5);
   });
 });
 
@@ -453,18 +496,51 @@ describe("popupLines", () => {
 });
 
 describe("popupPosition", () => {
-  it("sits 12px right of and below the pointer", () => {
-    expect(popupPosition(10, 10, 200, 60, 1000, 600)).toEqual({ left: 22, top: 22 });
+  it("sits centred above the dot, its bottom edge 10px above it", () => {
+    expect(popupPosition(500, 300, 200, 60, 1000, 600)).toEqual({ left: 400, top: 230, below: false });
   });
 
-  it("flips left and up near the far edges and stays inside the panel", () => {
-    const p = popupPosition(990, 590, 200, 60, 1000, 600);
-    expect(p.left).toBeLessThanOrEqual(1000 - 200 - 4);
-    expect(p.top).toBeLessThanOrEqual(600 - 60 - 4);
-    expect(p).toEqual({ left: 990 - 12 - 200, top: 590 - 12 - 60 });
+  it("takes a larger gap, so the card can clear the dot's ring", () => {
+    expect(popupPosition(500, 300, 200, 60, 1000, 600, 18)).toEqual({ left: 400, top: 222, below: false });
   });
 
-  it("clamps to a 4px margin when the card cannot fit either side", () => {
-    expect(popupPosition(100, 30, 300, 80, 320, 100)).toEqual({ left: 4, top: 4 });
+  it("flips below the dot only at the top edge", () => {
+    expect(popupPosition(500, 40, 200, 60, 1000, 600)).toEqual({ left: 400, top: 50, below: true });
+    // Near the bottom it still sits above.
+    expect(popupPosition(500, 590, 200, 60, 1000, 600)).toEqual({ left: 400, top: 520, below: false });
+  });
+
+  it("is clamped horizontally to a 4px margin inside the panel", () => {
+    expect(popupPosition(20, 300, 200, 60, 1000, 600).left).toBe(4);
+    expect(popupPosition(990, 300, 200, 60, 1000, 600).left).toBe(1000 - 200 - 4);
+    // Wider than the panel: pinned to the left margin.
+    expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
+  });
+});
+
+describe("columnLabels", () => {
+  const items = [
+    { sx: 120, sy: 200, width: 40 },
+    { sx: 150, sy: 202, width: 60 },
+    { sx: 105, sy: 50, width: 30 },
+  ];
+  it("stacks labels down from the top, in the order of their dots' height", () => {
+    expect(columnLabels(items, 375, 40, "right").map((p) => p.y)).toEqual([40 + 14, 40 + 28, 40]);
+  });
+  it("sets the column on the side given, its inner edge flush, leaders ending on one line", () => {
+    const at = columnLabels(items, 375, 40, "right");
+    at.forEach((p, i) => expect(p.x - items[i].width / 2).toBe(311));
+    expect(new Set(at.map((p) => p.lx))).toEqual(new Set([308]));
+    const left = columnLabels(items, 375, 40, "left");
+    left.forEach((p, i) => expect(p.x + items[i].width / 2).toBe(64));
+    expect(new Set(left.map((p) => p.lx))).toEqual(new Set([67]));
+  });
+});
+
+describe("columnSide", () => {
+  it("puts the column away from the clusters, judged once from their unrotated positions", () => {
+    expect(columnSide([{ x: -0.4 }, { x: 0.1 }])).toBe("right");
+    expect(columnSide([{ x: 0.4 }, { x: 0.1 }])).toBe("left");
+    expect(columnSide([])).toBe("right");
   });
 });

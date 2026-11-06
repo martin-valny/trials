@@ -27,6 +27,9 @@ export interface Palette {
   /** Outcome "unknown": drawn as a hollow ring, so shape (not shade) sets it apart. */
   unknownRing: string;
   phases: Record<string, string>;
+  /** Disease mode: the condition most trials list first, drawn quietly as the ground of the cloud. */
+  diseaseQuiet: string;
+  /** Disease mode: the other conditions, in descending share, cycling. No ink, no red. */
   diseases: string[];
 }
 
@@ -45,7 +48,8 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  diseases: ["#111111", "#7a5c2e", "#5f8a7a", "#3b6ea5", "#7aa6c2", "#8a8f94"],
+  diseaseQuiet: "#8592a0",
+  diseases: ["#3b6ea5", "#7a5c2e", "#5f8a7a", "#6f5f8f", "#7aa6c2"],
 };
 
 export const DARK_PALETTE: Palette = {
@@ -63,7 +67,8 @@ export const DARK_PALETTE: Palette = {
     PHASE4: "#eceae4",
     NA: "#2b2e33",
   },
-  diseases: ["#eceae4", "#c8a96a", "#7fb2e5", "#e5c07b", "#8fc29a", "#7d8287"],
+  diseaseQuiet: "#7d8287",
+  diseases: ["#7fb2e5", "#c8a96a", "#8fc29a", "#b4a3d6", "#e5c07b"],
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
@@ -74,10 +79,33 @@ export const PHASES = ["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "
 /** A trial's phase bucket for filtering; a missing phase counts as "NA". */
 export const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
 
-/** Disease colour for a condition label, by its position in the area's condition order. */
-export function diseaseColor(label: string | undefined, palette: Palette, conditionOrder: string[]): string {
-  const i = label === undefined ? -1 : conditionOrder.indexOf(label);
-  return i < 0 ? palette.unknown : palette.diseases[i % palette.diseases.length];
+/**
+ * Disease colour for a condition label, by its place in ``ranked`` (see diseaseRanking): the dominant
+ * condition (first) gets the quiet value, the rest take the saturated hues in order, cycling.
+ */
+export function diseaseColor(label: string | undefined, palette: Palette, ranked: string[]): string {
+  const i = label === undefined ? -1 : ranked.indexOf(label);
+  if (i < 0) return palette.unknown;
+  return i === 0 ? palette.diseaseQuiet : palette.diseases[(i - 1) % palette.diseases.length];
+}
+
+/** Conditions some trial lists first: the only ones disease colouring can paint. */
+export function firstLabels(trials: ExplorerTrial[]): Set<string> {
+  const out = new Set<string>();
+  for (const t of trials) if (t.condition_labels.length > 0) out.add(t.condition_labels[0]);
+  return out;
+}
+
+/**
+ * The area's conditions in descending share of trials that list them first (disease colours go by a
+ * trial's first label); ties, and conditions no trial lists first, keep the area's order. Computed over
+ * every trial so colours never shift when filtering.
+ */
+export function diseaseRanking(trials: ExplorerTrial[], conditionOrder: string[]): string[] {
+  const n = tally(trials, (t) => (t.condition_labels.length > 0 ? [t.condition_labels[0]] : []));
+  const all = [...new Set([...conditionOrder, ...n.keys()])];
+  const rank = (c: string) => (conditionOrder.includes(c) ? conditionOrder.indexOf(c) : conditionOrder.length);
+  return all.sort((a, b) => (n.get(b) ?? 0) - (n.get(a) ?? 0) || rank(a) - rank(b) || a.localeCompare(b));
 }
 
 /** Filters with one set replaced by ``all``. */
@@ -204,15 +232,22 @@ export function matches(t: ExplorerTrial, f: Filters, bounds: [number, number]):
 export const outcomeColor = (o: Outcome, palette: Palette): string =>
   o === "unknown" ? palette.unknownRing : palette[o];
 
-export function colorFor(
-  t: ExplorerTrial,
-  mode: ColorMode,
-  palette: Palette,
-  conditionOrder: string[],
-): string {
+/**
+ * Which visible trials the canvas redraws on top (opaque, at least 3px, knockout ring): succeeded trials
+ * in outcome mode; in disease mode every trial whose first condition is not the dominant one, so small
+ * conditions are not buried under the large one; none in phase mode.
+ */
+export function emphasisFor(mode: ColorMode, ranked: string[]): ((t: ExplorerTrial) => boolean) | undefined {
+  if (mode === "outcome") return (t) => t.outcome === "succeeded";
+  if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
+  return undefined;
+}
+
+/** ``ranked`` is the disease ranking (diseaseRanking), used in disease mode only. */
+export function colorFor(t: ExplorerTrial, mode: ColorMode, palette: Palette, ranked: string[]): string {
   if (mode === "outcome") return outcomeColor(t.outcome, palette);
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
-  return diseaseColor(t.condition_labels[0], palette, conditionOrder);
+  return diseaseColor(t.condition_labels[0], palette, ranked);
 }
 
 export interface Projected {
@@ -404,6 +439,41 @@ export function placeLabels(
   });
 }
 
+/**
+ * Which edge the phone label column takes: away from the labelled clusters, judged once from their
+ * unrotated (fitted) positions so the column never jumps sides while the map turns. Right by default.
+ */
+export function columnSide(anchors: { x: number }[]): "left" | "right" {
+  if (anchors.length === 0) return "right";
+  const meanX = anchors.reduce((a, p) => a + p.x, 0) / anchors.length;
+  return meanX > 0 ? "left" : "right";
+}
+
+/**
+ * Phone layout for centred labels: a column stacked down from ``top`` on ``side`` (see columnSide), its
+ * inner edge flush so every leader ends on one vertical line (``lx``, 3px off the column) and never runs
+ * through another label. Labels keep the order of their dots' height, so the leaders do not cross.
+ */
+export function columnLabels(
+  items: { sx: number; sy: number; width: number }[],
+  w: number,
+  top: number,
+  side: "left" | "right",
+): { x: number; y: number; lx: number }[] {
+  if (items.length === 0) return [];
+  const widest = Math.max(...items.map((it) => it.width));
+  const right = side === "right";
+  const inner = right ? w - 4 - widest : 4 + widest;
+  const order = items.map((_, i) => i).sort((a, b) => items[a].sy - items[b].sy);
+  const ys = new Array<number>(items.length);
+  order.forEach((i, k) => (ys[i] = top + k * LABEL_LINE));
+  return items.map((it, i) => ({
+    x: right ? inner + it.width / 2 : inner - it.width / 2,
+    y: ys[i],
+    lx: right ? inner - 3 : inner + 3,
+  }));
+}
+
 /** Start and end year with an en dash: "2014–2019", "2021–" (no end), "2021–2025 (est.)", "" when neither. */
 export function yearSpan(t: ExplorerTrial): string {
   if (t.start_year === null && t.end_year === null) return "";
@@ -426,12 +496,14 @@ export function popupLines(t: ExplorerTrial): [string, string] {
   return [`${t.nct_id} · ${t.title}`, parts.filter((p) => p !== "").join(" · ")];
 }
 
-const POPUP_GAP = 12; // px from the pointer
+const POPUP_GAP = 10; // px between the dot and the card's near edge
 const POPUP_MARGIN = 4; // px kept clear of the panel edge
 
 /**
- * Top-left of a cardW x cardH card for a pointer at (x, y) in a w x h panel: 12px right of and below
- * the pointer, flipped to the left or above where it would overflow, then kept 4px inside the panel.
+ * Top-left of a cardW x cardH card for a dot at (x, y) in a w x h panel: centred on the dot with its
+ * bottom edge ``gap`` px above it, so the card never covers the dot or the marks just below it. Only
+ * where that would cross the panel's top edge does it flip below (``below``), if it fits there.
+ * Horizontally it is kept 4px inside the panel.
  */
 export function popupPosition(
   x: number,
@@ -440,11 +512,11 @@ export function popupPosition(
   cardH: number,
   w: number,
   h: number,
-): { left: number; top: number } {
-  const place = (p: number, size: number, limit: number) => {
-    const after = p + POPUP_GAP;
-    const at = after + size > limit - POPUP_MARGIN ? p - POPUP_GAP - size : after;
-    return Math.max(POPUP_MARGIN, Math.min(limit - size - POPUP_MARGIN, at));
-  };
-  return { left: place(x, cardW, w), top: place(y, cardH, h) };
+  gap = POPUP_GAP,
+): { left: number; top: number; below: boolean } {
+  const above = y - gap - cardH;
+  // Below only when above crosses the top edge and below fits; a panel too short for either keeps it above.
+  const below = above < POPUP_MARGIN && y + gap + cardH <= h - POPUP_MARGIN;
+  const left = Math.max(POPUP_MARGIN, Math.min(w - cardW - POPUP_MARGIN, x - cardW / 2));
+  return { left, top: below ? y + gap : Math.max(POPUP_MARGIN, above), below };
 }

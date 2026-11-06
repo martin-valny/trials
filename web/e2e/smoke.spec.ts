@@ -137,7 +137,7 @@ test("explore filters change count", async ({ page }) => {
 test("filters live above the map", async ({ page }) => {
   await page.goto("/#/explore");
   await waitForDraw(page);
-  const bar = page.getByRole("toolbar", { name: "Map controls" });
+  const bar = page.getByRole("group", { name: "Map controls" });
   const barBox = (await bar.boundingBox())!;
   const canvasBox = (await canvasOf(page).boundingBox())!;
   expect(barBox.y).toBeLessThan(canvasBox.y);
