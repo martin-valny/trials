@@ -18,7 +18,7 @@ from trialradar.relevance import filter_relevant
 from trialradar.tables import Tables
 
 DAY = date(2026, 3, 1)
-TOP_KEYS = {"generated_for", "method", "stats", "trials"}
+TOP_KEYS = {"generated_for", "method", "stats", "clusters", "trials"}
 METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k", "min_group"}
 STATS_KEYS = {
     "verdict",
@@ -55,6 +55,7 @@ TRIAL_KEYS = {
     "end_estimated",
     "succeeded_in",
     "in_pool",
+    "cluster",
 }
 OUTCOMES = {"succeeded", "stopped", "completed_unknown", "running", "unknown"}
 
@@ -164,6 +165,7 @@ def test_fewer_than_four_trials_is_insufficient(cfg: AreaConfig) -> None:
     )
     doc, coords = build_explorer(small, extras, cfg, {}, {}, DAY)
     assert doc["trials"] == []
+    assert doc["clusters"] == []
     assert doc["stats"]["verdict"] == "insufficient"
     assert doc["stats"]["lift"] is None
     assert doc["stats"]["baseline_range"] is None
@@ -333,3 +335,32 @@ def test_success_is_counted_only_in_the_label_where_the_drug_progressed(cfg: Are
     by = {r["label"]: r for r in doc["stats"]["by_condition"]}
     assert by[mg]["finished"] == 1 and by[mg]["succeeded"] == 1
     assert by[cidp]["finished"] == 1 and by[cidp]["succeeded"] == 0
+
+
+def test_small_fixture_has_no_clusters_and_null_cluster_everywhere(cfg: AreaConfig) -> None:
+    """Review Focus 4: fewer trials than ``min_cluster_size`` → no clusters, every cluster null."""
+    tables, extras, _ = _inputs(cfg)
+    assert tables.trial.height < cfg.explorer.clusters.min_cluster_size
+    doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY)
+    assert doc["trials"]
+    assert doc["clusters"] == []
+    assert all(t["cluster"] is None for t in doc["trials"])
+
+
+def test_clusters_reach_the_document(cfg: AreaConfig) -> None:
+    """With a tiny ``min_cluster_size`` the fixture forms clusters; ids and anchors line up."""
+    tables, extras, _ = _inputs(cfg)
+    small = cfg.explorer.clusters.model_copy(update={"min_cluster_size": 2, "min_samples": 1})
+    c = cfg.model_copy(update={"explorer": cfg.explorer.model_copy(update={"clusters": small})})
+    doc, _ = build_explorer(tables, extras, c, {}, {}, DAY)
+    clusters = doc["clusters"]
+    assert clusters
+    ids = {k["id"] for k in clusters}
+    for k in clusters:
+        assert set(k) == {"id", "label", "n", "x", "y", "z"}
+        assert k["label"]
+        members = [t for t in doc["trials"] if t["cluster"] == k["id"]]
+        assert k["n"] == len(members)
+        assert (k["x"], k["y"], k["z"]) in {(t["x"], t["y"], t["z"]) for t in members}
+    assert all(t["cluster"] is None or t["cluster"] in ids for t in doc["trials"])
+    json.dumps(doc, allow_nan=False)

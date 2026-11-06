@@ -45,6 +45,14 @@ class _Strict(BaseModel):
 class ConditionSpec(_Strict):
     label: str
     synonyms: list[str] = Field(min_length=1)
+    short: str | None = None  # an abbreviation for cluster names on the map
+
+    @field_validator("short")
+    @classmethod
+    def _short_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("condition short must not be blank")
+        return value
 
     @field_validator("label")
     @classmethod
@@ -84,6 +92,17 @@ class Thresholds(_Strict):
         return self
 
 
+class ClusterConfig(_Strict):
+    """HDBSCAN on the 3D map coordinates and the share thresholds for cluster names."""
+
+    min_cluster_size: int = Field(default=25, ge=2)
+    min_samples: int = Field(default=10, ge=1)
+    disease_share: float = Field(default=0.6, ge=0, le=1)
+    mechanism_share: float = Field(default=0.4, ge=0, le=1)
+    type_share: float = Field(default=0.5, ge=0, le=1)
+    drug_share: float = Field(default=0.15, ge=0, le=1)
+
+
 class ExplorerConfig(_Strict):
     weights: dict[Literal["disease", "treatment_type", "molecule", "population"], float] = Field(
         default_factory=dict, validate_default=True
@@ -96,6 +115,7 @@ class ExplorerConfig(_Strict):
     permutations: int = 10_000
     min_successes: int = 30
     min_group: int = 10
+    clusters: ClusterConfig = ClusterConfig()
 
     @field_validator("min_group")
     @classmethod

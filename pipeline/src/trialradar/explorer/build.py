@@ -11,6 +11,7 @@ import numpy as np
 import polars as pl
 
 from trialradar.config import AreaConfig
+from trialradar.explorer.clusters import build_clusters
 from trialradar.explorer.drugs import clean_drug_name
 from trialradar.explorer.extras import StudyExtras, empty_extras
 from trialradar.explorer.features import build_features
@@ -126,6 +127,7 @@ def build_explorer(
             "generated_for": day.isoformat(),
             "method": method,
             "stats": _stats(result, by_condition),
+            "clusters": [],
             "trials": [],
         }
         return doc, pl.DataFrame(schema=COORDS_SCHEMA)
@@ -181,10 +183,15 @@ def build_explorer(
                 "in_pool": pool[i],
             }
         )
+    shorts = {c.label: c.short for c in cfg.conditions if c.short}
+    clusters, cluster_of = build_clusters(coords, trials, shorts, ex.clusters)
+    for t, cid in zip(trials, cluster_of, strict=True):
+        t["cluster"] = cid
     doc = {
         "generated_for": day.isoformat(),
         "method": method,
         "stats": _stats(result, by_condition),
+        "clusters": clusters,
         "trials": trials,
     }
     frame = pl.DataFrame(

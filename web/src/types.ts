@@ -92,6 +92,7 @@ export interface TrialsIndex {
 export type Outcome = "succeeded" | "stopped" | "completed_unknown" | "running" | "unknown";
 
 export interface ExplorerTrial {
+  cluster: number | null; // id in ExplorerFile.clusters; null = noise or no clusters
   condition_labels: string[];
   drugs: string[];
   end_estimated: boolean;
@@ -130,7 +131,18 @@ export interface ExplorerStats {
   verdict: "insufficient" | "chance" | "clustered";
 }
 
+/** A named HDBSCAN cluster on the map; x/y/z is a member trial (the one nearest the median). */
+export interface ExplorerCluster {
+  id: number;
+  label: string;
+  n: number;
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface ExplorerFile {
+  clusters: ExplorerCluster[]; // empty when no clusters were found
   generated_for: string;
   method: {
     algorithm: string;
