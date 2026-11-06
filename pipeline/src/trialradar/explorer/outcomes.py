@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Literal
 
@@ -113,9 +113,15 @@ def label_outcomes(
     trial: pl.DataFrame, drugs: TrialDrugs, labels: TrialLabels
 ) -> dict[str, Outcome]:
     """One outcome per trial; ``"succeeded"`` iff :func:`success_labels` is non-empty."""
-    won = success_labels(trial, drugs, labels)
-    rows = trial.select("nct_id", "phases", "overall_status").iter_rows()
-    return {nct_id: _label(status, bool(won[nct_id])) for nct_id, _, status in rows}
+    return outcomes_from_success(trial, success_labels(trial, drugs, labels))
+
+
+def outcomes_from_success(
+    trial: pl.DataFrame, won: Mapping[str, frozenset[str]]
+) -> dict[str, Outcome]:
+    """Outcomes from an already computed :func:`success_labels` result (saves a second pass)."""
+    rows = trial.select("nct_id", "overall_status").iter_rows()
+    return {nct_id: _label(status, bool(won[nct_id])) for nct_id, status in rows}
 
 
 def _label(status: str | None, succeeded: bool) -> Outcome:

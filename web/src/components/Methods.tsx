@@ -92,6 +92,10 @@ export function Methods() {
             Only this therapeutic area is tracked, so progress in another indication is missed.
           </li>
           <li>
+            Progress in another disease within this area is deliberately not counted: a trial
+            succeeds only where its drug moved on in the same disease.
+          </li>
+          <li>
             A later-phase trial does not prove the earlier one met its endpoint.
           </li>
           <li>

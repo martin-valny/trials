@@ -264,3 +264,52 @@ def test_layout_fallback_reaches_the_warning_sink(
     doc, _ = build_explorer(tables, extras, cfg, {}, {}, DAY, warnings=sink)
     assert any(w.startswith("explorer_layout_fallback: ") for w in sink)
     assert doc["trials"]
+
+
+def test_success_is_counted_only_in_the_label_where_the_drug_progressed(cfg: AreaConfig) -> None:
+    """R21: a pool trial labelled {MG, CIDP} whose drug progresses only in an MG trial
+    succeeds in MG and counts as finished-but-not-succeeded in CIDP."""
+    import dataclasses
+
+    mg, cidp = "Myasthenia gravis", "CIDP"
+    assert {mg, cidp} <= {c.label for c in cfg.conditions}
+    tables, extras, _ = _inputs(cfg)
+    a, b = "NCT90000001", "NCT90000002"
+    early, late = date(2015, 1, 1), date(2018, 1, 1)
+    trial = tables.trial.with_columns(
+        pl.when(pl.col("nct_id") == a)
+        .then(pl.lit("COMPLETED"))
+        .when(pl.col("nct_id") == b)
+        .then(pl.lit("RECRUITING"))
+        .otherwise(pl.col("overall_status"))
+        .alias("overall_status"),
+        pl.when(pl.col("nct_id") == a)
+        .then(pl.lit(["PHASE2"]))
+        .when(pl.col("nct_id") == b)
+        .then(pl.lit(["PHASE3"]))
+        .otherwise(pl.col("phases"))
+        .alias("phases"),
+        pl.when(pl.col("nct_id") == a)
+        .then(pl.lit(early))
+        .when(pl.col("nct_id") == b)
+        .then(pl.lit(late))
+        .otherwise(pl.col("start_date"))
+        .alias("start_date"),
+    )
+    patched = dict(extras)
+    patched[a] = dataclasses.replace(
+        extras[a], condition_labels=(mg, cidp), experimental_drugs=("zorbimab",)
+    )
+    patched[b] = dataclasses.replace(
+        extras[b], condition_labels=(mg,), experimental_drugs=("zorbimab",)
+    )
+    doc, _ = build_explorer(dataclasses.replace(tables, trial=trial), patched, cfg, {}, {}, DAY)
+
+    assert len(doc["trials"]) >= 4  # a real build, not the "insufficient" short-cut
+    rows = {t["nct_id"]: t for t in doc["trials"]}
+    assert rows[a]["outcome"] == "succeeded"
+    assert rows[a]["in_pool"] is True
+    assert rows[a]["succeeded_in"] == [mg]
+    by = {r["label"]: r for r in doc["stats"]["by_condition"]}
+    assert by[mg]["finished"] == 1 and by[mg]["succeeded"] == 1
+    assert by[cidp]["finished"] == 1 and by[cidp]["succeeded"] == 0

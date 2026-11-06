@@ -31,6 +31,7 @@ test("methods has map section with success definition", async () => {
   expect(container.querySelector("#map")).not.toBeNull();
   expect(screen.getByText(/had no Phase 3 or 4 trial in the same disease before it started/)).toBeInTheDocument();
   expect(screen.getByText(/higher-phase trial of the same drug in the same disease/)).toBeInTheDocument();
+  expect(screen.getByText(/another disease within this area is deliberately not counted/)).toBeInTheDocument();
   expect(screen.getByText(/share any of its drugs/)).toBeInTheDocument();
   expect(screen.getByText(/10,000 shuffles/)).toBeInTheDocument();
   expect(screen.getByText(/below 0\.025/)).toBeInTheDocument();

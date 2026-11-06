@@ -19,7 +19,7 @@ from trialradar.explorer.outcomes import (
     Outcome,
     TrialDrugs,
     in_pool,
-    label_outcomes,
+    outcomes_from_success,
     success_labels,
     top_phase,
 )
@@ -89,8 +89,8 @@ def build_explorer(
     full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
     drugs = _trial_drugs(ids, full, aliases, cfg)
     labels = {n: frozenset(full[n].condition_labels) for n in ids}
-    outcomes: dict[str, Outcome] = label_outcomes(tables.trial, drugs, labels)
     succeeded_in = success_labels(tables.trial, drugs, labels)
+    outcomes: dict[str, Outcome] = outcomes_from_success(tables.trial, succeeded_in)
     pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n], bool(drugs[n])) for n in ids]
     succeeded = [outcomes[n] == "succeeded" for n in ids]
 
