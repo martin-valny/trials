@@ -1,4 +1,4 @@
-/* The Figure Plate: a white plate with panels a-d. Dark mode is the "Dark slide". */
+/* The Figure Plate: a white plate with panels a-d. Dark theme (html[data-theme=dark]) is the "Dark slide". */
 .explore {
   --ink: #111; --muted: #5b6268; --rule: #d6dadd; --red: #c8102e; --pale: #e4e8eb; --plate: #fff;
   font-family: "Hanken Grotesk", system-ui, sans-serif;
@@ -7,18 +7,14 @@
   display: flex; flex-direction: column;
   flex: 1 1 auto;
 }
-@media (prefers-color-scheme: dark) {
-  .explore { --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --red: #ff8a3d; --pale: #2b2e33; --plate: #17191c; }
-}
+:root[data-theme="dark"] .explore { --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --red: #ff8a3d; --pale: #2b2e33; --plate: #17191c; }
 
 /* The plate takes over the page: full width, and the shared header adopts its tokens. */
 :root:has(.explore) {
   --bg: #fff; --fg: #111; --muted: #5b6268; --line: #d6dadd; --accent: #111; --ok: #3b4a57;
   scrollbar-color: #a9b2b9 #fff;
 }
-@media (prefers-color-scheme: dark) {
-  :root:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #eceae4; --ok: #9b9d9f; scrollbar-color: #4a4e54 #17191c; }
-}
+:root[data-theme="dark"]:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #eceae4; --ok: #9b9d9f; scrollbar-color: #4a4e54 #17191c; }
 :root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
 /* The page is a column filling the viewport; the plate takes whatever the header leaves. */
 #root:has(.explore) { min-height: 100dvh; display: flex; flex-direction: column; }

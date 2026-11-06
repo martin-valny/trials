@@ -1,13 +1,13 @@
 :root {
   --bg: #fff; --fg: #1a1d21; --muted: #5a6370; --line: #d9dde3; --accent: #0b5cad;
   --ok: #1d6b3a; --warn-bg: #fff3cd; --warn-fg: #6b4e00; --card: #f6f8fa;
-  color-scheme: light dark;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171a; --fg: #e8eaed; --muted: #9aa3ad; --line: #2e343b; --accent: #6cb0f5;
-    --ok: #6fcf97; --warn-bg: #3d3200; --warn-fg: #ffd866; --card: #1b1f23;
-  }
+/* The theme is a choice (System, Light, Dark) resolved onto <html data-theme> before first paint. */
+:root[data-theme="dark"] {
+  --bg: #14171a; --fg: #e8eaed; --muted: #9aa3ad; --line: #2e343b; --accent: #6cb0f5;
+  --ok: #6fcf97; --warn-bg: #3d3200; --warn-fg: #ffd866; --card: #1b1f23;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 "Hanken Grotesk", system-ui, sans-serif; }
@@ -21,6 +21,17 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .site-header .badge { order: 1; }
 .site-header nav a { color: var(--muted); text-decoration: none; }
 .site-header nav a[aria-current="page"] { color: var(--fg); font-weight: 700; }
+/* Theme: a setting, not a destination. Set off from the nav by a hairline, in the nav's type,
+   with a 9px key that reads like the plate's legend swatches: empty light, solid dark, half system. */
+.theme-switch { order: 3; display: inline-flex; align-items: center; gap: .45rem;
+  padding: .1rem 0 .1rem 1.5rem; border: 0; border-left: 1px solid var(--line); background: none;
+  font: inherit; font-size: .875rem; line-height: 1.5; color: var(--fg); cursor: pointer; }
+.theme-switch-k { color: var(--muted); transition: color .15s; }
+.theme-switch:hover .theme-switch-k { color: var(--fg); }
+.theme-switch-v { min-width: 3.4em; text-align: left; }
+.theme-switch-key { width: 9px; height: 9px; flex: none; border: 1px solid currentColor; border-radius: 50%; }
+.theme-switch[data-choice="dark"] .theme-switch-key { background: currentColor; }
+.theme-switch[data-choice="system"] .theme-switch-key { background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
 .badge { font-size: .85rem; padding: .15rem .6rem; border-radius: 1rem; border: 1px solid var(--line); }
 .badge.ok { color: var(--ok); }
 .badge.warn { background: var(--warn-bg); color: var(--warn-fg); }
@@ -43,6 +54,8 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
 
 @media (max-width: 640px) {
   .site-header nav { gap: .25rem 1rem; }
+  /* On a phone the switch shares the brand's row, right-aligned; no rule to hang off a line start. */
+  .site-header .theme-switch { order: 0; margin-left: auto; padding-left: 0; border-left: 0; }
   table.changes thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   table.changes, table.changes tbody, table.changes tr, table.changes td, table.changes caption { display: block; width: 100%; }
   table.changes tr { border: 1px solid var(--line); border-radius: .5rem; background: var(--card); margin-bottom: .75rem; padding: .25rem 0; }

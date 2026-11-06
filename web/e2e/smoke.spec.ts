@@ -156,3 +156,21 @@ test("negative control: without reduced motion the map moves", async ({ page }) 
   const b = await canvas.screenshot();
   expect(a.equals(b)).toBe(false);
 });
+
+test("theme switch persists across reload", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/#/methods");
+  const button = page.getByRole("button", { name: /^theme:/i });
+  await expect(button).toHaveAccessibleName(/theme: system/i);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await button.click();
+  await expect(button).toHaveAccessibleName(/theme: light/i);
+  await button.click();
+  await expect(button).toHaveAccessibleName(/theme: dark/i);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  await page.goto("/#/explore", { waitUntil: "domcontentloaded" });
+  // Set by the pre-paint script, before React or the data load.
+  expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
+  await expect(page.getByRole("button", { name: /theme: dark/i })).toHaveText(/Dark/);
+});
