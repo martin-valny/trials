@@ -54,15 +54,90 @@
         "displayName": "Slide Ink",
         "canonical": "#eceae4"
       },
-      "disease-quiet": {
+      "outcome-stopped": {
         "role": "secondary",
-        "displayName": "Disease quiet (dominant condition)",
-        "canonical": "#8592a0"
+        "displayName": "Stopped (outcome)",
+        "canonical": "#222222"
       },
-      "dark-disease-quiet": {
+      "outcome-completed": {
         "role": "secondary",
-        "displayName": "Dark disease quiet (dominant condition)",
-        "canonical": "#7d8287"
+        "displayName": "Completed, outcome unknown (pale ground)",
+        "canonical": "#c9d1d8"
+      },
+      "outcome-running": {
+        "role": "secondary",
+        "displayName": "Still running (navy)",
+        "canonical": "#3c5488"
+      },
+      "dark-outcome-completed": {
+        "role": "secondary",
+        "displayName": "Dark completed, outcome unknown",
+        "canonical": "#50575f"
+      },
+      "dark-outcome-running": {
+        "role": "secondary",
+        "displayName": "Dark still running",
+        "canonical": "#8da3d6"
+      },
+      "disease-ms": {
+        "role": "secondary",
+        "displayName": "Disease: Multiple sclerosis",
+        "canonical": "#3c5488"
+      },
+      "disease-nmosd": {
+        "role": "secondary",
+        "displayName": "Disease: NMOSD",
+        "canonical": "#00a087"
+      },
+      "disease-mogad": {
+        "role": "secondary",
+        "displayName": "Disease: MOGAD",
+        "canonical": "#8e5ea2"
+      },
+      "disease-mg": {
+        "role": "secondary",
+        "displayName": "Disease: Myasthenia gravis",
+        "canonical": "#4dbbd5"
+      },
+      "disease-cidp": {
+        "role": "secondary",
+        "displayName": "Disease: CIDP",
+        "canonical": "#e0a030"
+      },
+      "disease-ae": {
+        "role": "secondary",
+        "displayName": "Disease: Autoimmune encephalitis",
+        "canonical": "#7e6148"
+      },
+      "dark-disease-ms": {
+        "role": "secondary",
+        "displayName": "Dark disease: Multiple sclerosis",
+        "canonical": "#8da3d6"
+      },
+      "dark-disease-nmosd": {
+        "role": "secondary",
+        "displayName": "Dark disease: NMOSD",
+        "canonical": "#3cc7a8"
+      },
+      "dark-disease-mogad": {
+        "role": "secondary",
+        "displayName": "Dark disease: MOGAD",
+        "canonical": "#cf8fd6"
+      },
+      "dark-disease-mg": {
+        "role": "secondary",
+        "displayName": "Dark disease: Myasthenia gravis",
+        "canonical": "#7fd3e6"
+      },
+      "dark-disease-cidp": {
+        "role": "secondary",
+        "displayName": "Dark disease: CIDP",
+        "canonical": "#f0c060"
+      },
+      "dark-disease-ae": {
+        "role": "secondary",
+        "displayName": "Dark disease: Autoimmune encephalitis",
+        "canonical": "#b8977a"
       }
     },
     "typographyMeta": {
@@ -115,6 +190,11 @@
         "name": "plate-pulse",
         "value": "1.6s cubic-bezier(0.16,1,0.3,1) infinite alternate, opacity 1 to 0.55 (no-preference only)",
         "purpose": "Skeleton loading."
+      },
+      {
+        "name": "zoom",
+        "value": "wheel / pinch / + - 0 on the focused canvas, 1x to 8x about the pointer; screen-space after projection (dots keep their size); zoomed, drag pans and Shift-drag turns; not persisted; unaffected by reduced motion",
+        "purpose": "Separate dense clusters."
       }
     ],
     "breakpoints": [
@@ -199,6 +279,14 @@
       "refersTo": "",
       "description": "Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's corner; absent under reduced motion.",
       "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M2.5 1.25 8.5 5l-6 3.75z\"/></svg>Play</button>",
+      "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
+    },
+    {
+      "name": "Reset view",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Shown only while the map is zoomed, beside Play, in the same quiet style: text plus a drawn 10px four-corner frame glyph (1.5px ink stroke). Never red.",
+      "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M1 3.5V1h2.5M6.5 1H9v2.5M9 6.5V9H6.5M3.5 9H1V6.5\"/></svg>Reset view</button>",
       "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
     }
   ],

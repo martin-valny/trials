@@ -9,17 +9,30 @@ colors:
   pale: "#e4e8eb"
   rubric-red: "#c8102e"
   slate: "#3b4a57"
-  slate-mid: "#7d8a95"
   slate-ring: "#8796a3"
-  slate-light: "#8592a0"
+  outcome-stopped: "#222222"
+  outcome-completed: "#c9d1d8"
+  outcome-running: "#3c5488"
   dark-plate: "#17191c"
   dark-ink: "#eceae4"
   dark-muted: "#9b9d9f"
   dark-rule: "#34373c"
   dark-pale: "#2b2e33"
   slide-orange: "#ff8a3d"
-  disease-quiet: "#8592a0"
-  dark-disease-quiet: "#7d8287"
+  dark-outcome-completed: "#50575f"
+  dark-outcome-running: "#8da3d6"
+  disease-ms: "#3c5488"
+  disease-nmosd: "#00a087"
+  disease-mogad: "#8e5ea2"
+  disease-mg: "#4dbbd5"
+  disease-cidp: "#e0a030"
+  disease-ae: "#7e6148"
+  dark-disease-ms: "#8da3d6"
+  dark-disease-nmosd: "#3cc7a8"
+  dark-disease-mogad: "#cf8fd6"
+  dark-disease-mg: "#7fd3e6"
+  dark-disease-cidp: "#f0c060"
+  dark-disease-ae: "#b8977a"
 typography:
   plate-title:
     fontFamily: "Hanken Grotesk, system-ui, sans-serif"
@@ -126,12 +139,13 @@ Monochrome ink on white with blue-grey supporting values and a single red.
 
 ### Neutral
 - **Plate White** (#fff, `--plate`) / dark **Slide Ground** (#17191c): page and control ground.
-- **Ink** (#111, `--ink`) / dark (#eceae4): text, bars, the rule above panel d, selected pills, focus rings, links, stopped trials, Phase 4.
+- **Ink** (#111, `--ink`) / dark (#eceae4): text, bars, the rule above panel d, selected pills, focus rings, links, Phase 4 (stopped trials are the near-ink #222222).
 - **Muted Slate** (#5b6268, `--muted`) / dark (#9b9d9f): secondary text, off pills, placeholder, pill borders at rest.
 - **Hairline** (#d6dadd, `--rule`) / dark (#34373c): off-pill borders, sticky panel d top border on phone.
 - **Pale** (#e4e8eb, `--pale`) / dark (#2b2e33): bar tracks, skeletons, unknown/early phase fill.
-- **Blue-grey ramp** (light): #3b4a57 (Phase 3), #7d8a95 (completed, outcome unknown), #8796a3 (Phase 2, unknown-outcome ring), #8592a0 (running, 3.2:1 on white), #c9d1d7 (Phase 1). Dark ramp: #7fb2e5 Phase 3, #6c7f93 Phase 2, #3d4147 Phase 1, #7d8287 completed/unknown, #5f666e running.
-- **Disease series** (Disease colour mode; no ink, no red). Conditions are ranked by how many trials list them first, over all trials so colours never shift when filtering. The dominant condition is drawn in a quiet value (light #8592a0, dark #7d8287); the minorities take the hues in rank order, cycling: light #3b6ea5, #7a5c2e, #5f8a7a, #6f5f8f, #7aa6c2; dark #7fb2e5, #c8a96a, #8fc29a, #b4a3d6, #e5c07b. Minority trials are redrawn in the emphasis pass so small conditions stay visible.
+- **Outcomes (editorial journal)**, light: succeeded #c8102e (red, reserved), stopped #222222, completed with outcome unknown #c9d1d8 (the pale ground of the cloud, deliberately under 3:1), running #3c5488 (navy); the unknown-outcome ring stays mid grey #8796a3, distinct from completed. Dark: succeeded #ff8a3d, stopped #eceae4, completed #50575f, running #8da3d6, unknown ring #6c7f93.
+- **Phase ramp** (blue-grey), light: #c9d1d7 Phase 1, #8796a3 Phase 2, #3b4a57 Phase 3, ink Phase 4. Dark: #3d4147 Phase 1, #6c7f93 Phase 2, #7fb2e5 Phase 3, ink Phase 4.
+- **Disease series (editorial journal)** (Disease colour mode; no ink, no red). Each condition keeps its own hue, dealt in the area's configured condition order (then any other first-listed condition, alphabetically), cycling past six; share plays no part, so colours never shift. Light: MS #3c5488, NMOSD #00a087, MOGAD #8e5ea2, myasthenia gravis #4dbbd5, CIDP #e0a030, autoimmune encephalitis #7e6148. Dark (tuned on real data): #8da3d6, #3cc7a8, #cf8fd6, #7fd3e6, #f0c060, #b8977a. The cyan and ochre sit near 2.2:1 on white; they are dots with a named key, never text. Trials of every condition but the largest are redrawn in the emphasis pass so small conditions stay visible.
 - Selection ring on the canvas uses ink (the stopped colour), never red.
 
 ### Named Rules
@@ -211,13 +225,16 @@ Off is "show all", so it is never struck through: ink text, muted border. On: so
 A word, not a pill: muted and idle while nothing is narrowed; ink with a muted underline once there is something to reset; resetting hands focus to Find.
 
 ### Figure key
-Under panel a's heading: one 12px line of 8px swatches and words (ink), wrapping as needed, naming the active colouring; nothing to press. Unknown outcome is a ring swatch. Disease mode lists conditions largest first, and only those some trial lists first (the Disease dropdown shows swatches for the same set). "View as list" (ink link) keeps to the line's end.
+Under panel a's heading: one 12px line of 8px swatches and words (ink), wrapping as needed, naming the active colouring; nothing to press. Unknown outcome is a ring swatch. Disease mode lists conditions in the area's order (the order their hues are dealt in), and only those some trial lists first (the Disease dropdown shows swatches for the same set). "View as list" (ink link) keeps to the line's end.
 
 ### Hover card
 Mouse and pen only, never touch. Two lines (id and title, 2-line clamp; then drugs, treatment, phase, years) on a flat plate with a 1px ink border, 12px, max 18rem, no pointer events. Centred above the hovered dot with its bottom edge 10px above the dot's ring, flipped below only at the panel's top edge, kept 4px inside the panel horizontally; a 1px ink leader runs from the card to the ring, like the cluster labels' leaders. The spin pauses while a dot is hovered.
 
 ### Play / pause
 Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's top-right corner, not a filled pill: "Play" when still, "Pause" while turning; its accessible name says what a press will do ("Play rotation" / "Pause rotation"), with no pressed state. Absent under `prefers-reduced-motion: reduce`.
+
+### Reset view
+Shown only while the map is zoomed past 1x, beside Play (to its left) in panel a's top-right corner, in the same quiet style: 12.5px text and a drawn 10px four-corner frame glyph (1.5px ink stroke), hairline border on hover, ink only (never red). A press returns to 1x and hands focus to the map.
 
 ### Theme switch
 In the shared header: one quiet text control, "Theme" (muted) then the choice, cycling System, Light, Dark; a 9px key circle is empty for Light, solid for Dark, half-filled for System.
@@ -229,7 +246,9 @@ Under the ink rule, left key "d". Empty state is muted. Selected: bold-800 facts
 Skeleton in plate shape using Pale blocks; opacity pulse 1 to 0.55 over 1.6s only under `prefers-reduced-motion: no-preference`. Empty canvas shows a bold centred message and a button.
 
 ### Motion
-The canvas starts still. Play turns it slowly (0.0022 rad per frame, tilt 0.32) until Pause; it also pauses while a dot is hovered and stops drawing while scrolled off screen. Dragging rotates (0.008 rad per px); a click (under 4px travel) selects. Under `prefers-reduced-motion: reduce` there is no turn and no Play control, and the canvas redraws only on change.
+The canvas starts still. Play turns it slowly (0.0022 rad per frame, tilt 0.32) until Pause; it also pauses while a dot is hovered and stops drawing while scrolled off screen. Dragging rotates (0.008 rad per px); a click (under 4px travel) selects.
+
+**Zoom.** Wheel (only while the pointer is over the canvas, which then never scrolls the page), trackpad or touch pinch, and `+` / `-` / `0` while the focusable canvas has focus zoom from 1x to 8x about the pointer (keys: about the centre). It is a screen-space transform after projection: positions scale; dots, rings, labels and leaders keep their size, so dense clusters separate. Pan is clamped so the 1x frame always fills the canvas. Zoomed in, a plain drag pans and Shift-drag turns; a cluster label whose anchor leaves the canvas is hidden. Zoom is not kept across reload or a theme change, and reduced motion does not affect it (zoom is not motion). Under `prefers-reduced-motion: reduce` there is no turn and no Play control, and the canvas redraws only on change.
 
 ## Do's and Don'ts
 
