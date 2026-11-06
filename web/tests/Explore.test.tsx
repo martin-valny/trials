@@ -1,0 +1,82 @@
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, expect, test, vi } from "vitest";
+import { Explore } from "../src/components/explore/Explore";
+import type { ExplorerFile, Meta } from "../src/types";
+import { readFixture, renderAt, stubFetch } from "./helpers";
+
+const explorer = readFixture<ExplorerFile>("explorer.json");
+const meta = readFixture<Meta>("meta.json");
+
+/** A 2D context that accepts every call the renderer makes and draws nothing. */
+function fakeContext(): CanvasRenderingContext2D {
+  const noop = () => undefined;
+  return new Proxy({} as CanvasRenderingContext2D, {
+    get: (_t, key) => (key === "canvas" ? undefined : noop),
+    set: () => true,
+  });
+}
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+});
+
+const withCanvas = () =>
+  vi
+    .spyOn(HTMLCanvasElement.prototype, "getContext")
+    .mockImplementation((() => fakeContext()) as unknown as HTMLCanvasElement["getContext"]);
+
+test("renders figure title from meta area", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const title = await screen.findByRole("heading", { level: 1 });
+  expect(title).toHaveTextContent(/^Figure 1 \|/);
+  expect(title).toHaveTextContent(meta.area);
+  expect(
+    screen.getByRole("img", { name: `3D map of ${explorer.trials.length} trials` }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(new RegExp(`^${explorer.trials.length} trials;`))).toBeInTheDocument();
+});
+
+test("missing explorer shows explanation", async () => {
+  withCanvas();
+  stubFetch({ "explorer.json": 404 });
+  renderAt(<Explore />, "/explore");
+  expect(await screen.findByText(/The map appears after the next daily update\./)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /trial list/i })).toHaveAttribute("href", "/trials");
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+});
+
+test("zero matches shows reset and reset restores", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const box = await screen.findByLabelText("Find a trial");
+  await userEvent.type(box, "zzz-no-such-trial");
+  expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
+  expect(screen.getByText(/^0 trials;/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+  expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
+  expect(box).toHaveValue("");
+  const n = explorer.trials.length;
+  expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
+});
+
+test("canvas fallback when no 2d context", async () => {
+  stubFetch();
+  // jsdom has no canvas backend: getContext returns null (and logs "not implemented").
+  vi.spyOn(console, "error").mockImplementation(() => undefined);
+  renderAt(<Explore />, "/explore");
+  await screen.findByRole("heading", { level: 1 });
+  expect(screen.getByText(/cannot draw the 3D map/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /trial list/i })).toHaveAttribute("href", "#/trials");
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+});
+
+test("shows a skeleton while loading", () => {
+  withCanvas();
+  vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+  renderAt(<Explore />, "/explore");
+  expect(screen.getByText("Loading the map…")).toBeInTheDocument();
+});

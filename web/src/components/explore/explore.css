@@ -1,0 +1,98 @@
+/* The Figure Plate: a white plate with panels a-d. Dark mode is the "Dark slide". */
+.explore {
+  --ink: #111; --muted: #5b6268; --rule: #d6dadd; --red: #c8102e; --pale: #e4e8eb; --plate: #fff;
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--plate);
+  display: flex; flex-direction: column;
+  min-height: calc(100dvh - 3.25rem);
+}
+@media (prefers-color-scheme: dark) {
+  .explore { --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --red: #ff8a3d; --pale: #2b2e33; --plate: #17191c; }
+}
+
+/* The plate takes over the page: full width, and the shared header adopts its tokens. */
+:root:has(.explore) {
+  --bg: #fff; --fg: #111; --muted: #5b6268; --line: #d6dadd; --accent: #c8102e;
+  scrollbar-color: #a9b2b9 #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #ff8a3d; scrollbar-color: #4a4e54 #17191c; }
+}
+:root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
+main:has(> .explore) { max-width: none; padding: 0; }
+
+.plate-title {
+  margin: 0; padding: 22px 40px 8px;
+  font-size: clamp(20px, 2vw, 28px); font-weight: 500; line-height: 1.2;
+  max-width: calc(70ch + 80px); text-wrap: balance; letter-spacing: -0.005em;
+}
+.plate-title b { font-weight: 800; }
+
+.plate {
+  flex: 1 1 auto;
+  display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 0 36px; padding: 12px 40px; min-height: 0;
+}
+.panel { position: relative; min-height: 0; min-width: 0; }
+.panel-a { grid-row: 1 / 3; display: flex; flex-direction: column; min-height: 62vh; }
+.panel-h { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.3; }
+.panel-l { margin-right: 10px; font-size: 22px; font-weight: 800; line-height: 1; }
+.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; }
+.plate-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; color: var(--ink); }
+.plate-canvas:active { cursor: grabbing; }
+
+.plate-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; font-size: 15px; pointer-events: none;
+}
+.plate-empty p { margin: 0; font-weight: 700; }
+.plate-empty button { pointer-events: auto; }
+
+.plate-fallback, .explore-message { margin: 0; padding: 24px 0; max-width: 60ch; font-size: 15px; line-height: 1.5; }
+.explore-message { padding: 16px 40px; }
+.explore a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--red); }
+
+.explore button {
+  font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+}
+.explore button:hover { border-color: var(--ink); }
+.explore button[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
+.explore :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* Legend bar: a full-width ink rule, then key/value rows. Task 11 fills the rest. */
+.legend {
+  border-top: 1px solid var(--ink); margin: 0 40px; padding: 12px 0 18px;
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: center;
+  font-size: 13px; line-height: 1.5; color: var(--muted);
+}
+.legend-k { color: var(--ink); font-weight: 700; }
+.legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
+.find input {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--red);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; width: min(22rem, 100%);
+}
+.find input::placeholder { color: var(--muted); }
+.find input::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
+.count { font-variant-numeric: tabular-nums; }
+
+/* Loading: the plate's shape, without content. */
+.skeleton-line { height: 1.2em; width: min(42rem, calc(100% - 80px)); margin: 22px 40px 8px; padding: 0; background: var(--pale); }
+.skeleton-block { background: var(--pale); }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-line, .skeleton-block { animation: plate-pulse 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate; }
+}
+@keyframes plate-pulse { from { opacity: 1; } to { opacity: 0.55; } }
+
+@media (max-width: 900px) {
+  .plate { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .panel-a { grid-row: auto; min-height: 60vh; }
+}
+@media (max-width: 640px) {
+  .plate-title { padding: 18px 16px 6px; }
+  .skeleton-line { margin: 18px 16px 6px; width: calc(100% - 32px); }
+  .plate { padding: 10px 16px; }
+  .legend { margin: 0 16px; grid-template-columns: 1fr; gap: 4px; }
+  .explore-message { padding: 16px; }
+}

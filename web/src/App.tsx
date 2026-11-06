@@ -1,5 +1,6 @@
-import { HashRouter, Link, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import { ChangesFeed } from "./components/ChangesFeed";
+import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { Methods } from "./components/Methods";
 import { TrialDetail } from "./components/TrialDetail";
@@ -9,24 +10,26 @@ export function App() {
   return (
     <HashRouter>
       <header className="site-header">
-        <Link to="/changes" className="brand">
+        <Link to="/explore" className="brand">
           Trial Radar
         </Link>
         <nav aria-label="Main">
-          <Link to="/changes">Changes</Link>
-          <Link to="/trials">Trials</Link>
-          <Link to="/methods">Methods</Link>
+          <NavLink to="/explore">Explore</NavLink>
+          <NavLink to="/changes">Changes</NavLink>
+          <NavLink to="/trials">Trials</NavLink>
+          <NavLink to="/methods">Methods</NavLink>
         </nav>
         <FreshnessBadge />
       </header>
       <main>
         <Routes>
-          <Route path="/" element={<Navigate to="/changes" replace />} />
+          <Route path="/" element={<Navigate to="/explore" replace />} />
+          <Route path="/explore" element={<Explore />} />
           <Route path="/changes" element={<ChangesFeed />} />
           <Route path="/trials" element={<TrialsList />} />
           <Route path="/trial/:nct" element={<TrialDetail />} />
           <Route path="/methods" element={<Methods />} />
-          <Route path="*" element={<Navigate to="/changes" replace />} />
+          <Route path="*" element={<Navigate to="/explore" replace />} />
         </Routes>
       </main>
     </HashRouter>
