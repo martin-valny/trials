@@ -49,7 +49,7 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  // Editorial journal: MS, NMOSD, MOGAD, myasthenia gravis, CIDP, autoimmune encephalitis.
+  // Editorial journal: one hue per condition, in the area's condition order.
   diseases: ["#3c5488", "#00a087", "#8e5ea2", "#4dbbd5", "#e0a030", "#7e6148"],
 };
 
