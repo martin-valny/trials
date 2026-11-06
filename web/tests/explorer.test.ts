@@ -61,8 +61,22 @@ describe("allFilters / matches", () => {
     expect(matches(trial(), { ...all(), treatmentTypes: new Set(["DEVICE"]) })).toBe(false);
   });
 
-  it("null phase is matched by phase NA bucket handling: null never matches an empty set", () => {
+  it("null phase falls in the NA bucket", () => {
+    expect(matches(trial({ phase: null }), { ...all(), phases: new Set(["NA"]) })).toBe(true);
     expect(matches(trial({ phase: null }), { ...all(), phases: new Set() })).toBe(false);
+  });
+
+  it("empty condition_labels or treatment_types always pass that filter", () => {
+    const flt = all();
+    for (const t of [trial({ condition_labels: [] }), trial({ treatment_types: [] })]) {
+      expect(matches(t, flt)).toBe(true);
+      expect(matches(t, { ...all(), conditions: new Set(["Gamma"]) })).toBe(t.condition_labels.length === 0);
+      expect(matches(t, { ...all(), treatmentTypes: new Set(["DEVICE"]) })).toBe(t.treatment_types.length === 0);
+    }
+    const off = { ...flt, conditions: new Set([...flt.conditions].slice(1)) };
+    expect(matches(trial({ condition_labels: [] }), off)).toBe(true);
+    const offT = { ...flt, treatmentTypes: new Set([...flt.treatmentTypes].slice(1)) };
+    expect(matches(trial({ treatment_types: [] }), offT)).toBe(true);
   });
 
   it("query matches nct_id, title, drugs, sponsor case-insensitively", () => {

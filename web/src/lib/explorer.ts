@@ -72,11 +72,12 @@ export function allFilters(f: ExplorerFile): Filters {
   return { conditions, phases, outcomes: new Set(OUTCOMES), treatmentTypes, query: "" };
 }
 
+/** A trial with no labels or no types cannot be filtered out by those sets. */
 export function matches(t: ExplorerTrial, f: Filters): boolean {
-  if (!t.condition_labels.some((l) => f.conditions.has(l))) return false;
+  if (t.condition_labels.length > 0 && !t.condition_labels.some((l) => f.conditions.has(l))) return false;
   if (!f.phases.has(phaseKey(t))) return false;
   if (!f.outcomes.has(t.outcome)) return false;
-  if (!t.treatment_types.some((x) => f.treatmentTypes.has(x))) return false;
+  if (t.treatment_types.length > 0 && !t.treatment_types.some((x) => f.treatmentTypes.has(x))) return false;
   const q = f.query.trim().toLowerCase();
   if (q) {
     const hay = [t.nct_id, t.title, ...t.drugs, t.lead_sponsor ?? ""];
