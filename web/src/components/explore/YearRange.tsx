@@ -51,8 +51,10 @@ function YearRangeBody(props: { bounds: [number, number]; value: [number, number
         <YearField label="To" value={to} lo={lo} hi={hi} commit={setTo} />
       </div>
       <div className="years-track" style={fill}>
+        {/* Both thumbs meet at the top end when from = to = hi; From must then be on top or it can't move. */}
         <input
           type="range"
+          className={from - lo > span / 2 ? "front" : undefined}
           aria-label="From year"
           min={lo}
           max={hi}

@@ -111,3 +111,22 @@ test("searchable: Select none clears only the visible ones", async () => {
   await user.click(screen.getByRole("button", { name: "Select none" }));
   expect(screen.getByRole("button", { name: "Disease: 2 of 3" })).toBeInTheDocument();
 });
+
+test("Tab moving focus out of the popover closes it", async () => {
+  render(
+    <div>
+      <MultiSelect label="Disease" options={OPTIONS} selected={new Set(ALL)} onChange={() => undefined} />
+      <button type="button">after</button>
+    </div>,
+  );
+  const user = userEvent.setup();
+  const button = screen.getByRole("button", { name: "Disease: all" });
+  await user.click(button);
+  // button, Select all, Select none, then the three checkboxes; one more Tab leaves the wrapper.
+  for (let i = 0; i < 5; i++) await user.tab();
+  expect(screen.getByRole("checkbox", { name: /Melanoma/ })).toHaveFocus();
+  expect(button).toHaveAttribute("aria-expanded", "true");
+  await user.tab();
+  expect(screen.getByRole("button", { name: "after" })).toHaveFocus();
+  expect(button).toHaveAttribute("aria-expanded", "false");
+});

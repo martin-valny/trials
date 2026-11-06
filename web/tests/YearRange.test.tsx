@@ -60,3 +60,38 @@ test("Escape closes and returns focus to the button", async () => {
   expect(button).toHaveAttribute("aria-expanded", "false");
   expect(button).toHaveFocus();
 });
+
+test("a partial From entry is held as a draft until blur or Enter, then clamped", async () => {
+  render(<Host initial={[2012, 2018]} />);
+  const { user, button } = await open();
+  const from = screen.getByRole("spinbutton", { name: "From" });
+  await user.clear(from);
+  await user.type(from, "20");
+  expect(from).toHaveValue(20);
+  expect(button).toHaveTextContent("Years: 2012–2018");
+  await user.keyboard("{Enter}");
+  expect(from).toHaveValue(2010);
+  expect(button).toHaveTextContent("Years: 2010–2018");
+});
+
+test("a To value below From pulls From down", async () => {
+  render(<Host initial={[2014, 2018]} />);
+  const { user, button } = await open();
+  const to = screen.getByRole("spinbutton", { name: "To" });
+  await user.clear(to);
+  await user.type(to, "2011");
+  expect(screen.getByRole("spinbutton", { name: "From" })).toHaveValue(2011);
+  expect(button).toHaveTextContent("Years: 2011–2011");
+});
+
+test("the From thumb is stacked above To when From sits in the upper half, so the range can be widened", async () => {
+  render(<Host initial={[2026, 2026]} />);
+  await open();
+  expect(screen.getByRole("slider", { name: "From year" })).toHaveClass("front");
+});
+
+test("the To thumb stays on top while From is in the lower half", async () => {
+  render(<Host initial={[2010, 2010]} />);
+  await open();
+  expect(screen.getByRole("slider", { name: "From year" })).not.toHaveClass("front");
+});

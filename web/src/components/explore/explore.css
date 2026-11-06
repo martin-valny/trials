@@ -275,3 +275,5 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .years-track::before { left: 7px; right: 7px; }
   .years-track::after { left: calc(7px + (100% - 14px) * var(--from)); right: calc(7px + (100% - 14px) * (1 - var(--to))); }
 }
+/* From's thumb sits above To's once it is in the upper half of the range (see YearRange). */
+.years-track input.front { z-index: 2; }

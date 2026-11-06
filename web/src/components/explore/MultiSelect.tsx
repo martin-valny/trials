@@ -1,11 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
 import { filterSummary } from "../../lib/explorer";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
 
 /**
  * A toolbar button that opens a popover beneath it. Escape closes it and returns focus to the button;
- * a pointer press anywhere outside closes it. The popover is only mounted while open.
+ * a pointer press anywhere outside, or Tab moving focus out, closes it. The popover is only mounted while open.
  */
 export function Dropdown(props: { text: string; className?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -29,8 +29,19 @@ export function Dropdown(props: { text: string; className?: string; children: Re
     button.current?.focus();
   };
 
+  // Tabbing out closes. A null relatedTarget (a click on bare popover padding) is left to the pointer handler.
+  const onBlur = (e: FocusEvent) => {
+    const next = e.relatedTarget as Node | null;
+    if (open && next && !root.current?.contains(next)) setOpen(false);
+  };
+
   return (
-    <div className={props.className ? `dropdown ${props.className}` : "dropdown"} ref={root} onKeyDown={onKeyDown}>
+    <div
+      className={props.className ? `dropdown ${props.className}` : "dropdown"}
+      ref={root}
+      onKeyDown={onKeyDown}
+      onBlur={onBlur}
+    >
       <button
         ref={button}
         type="button"
