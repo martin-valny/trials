@@ -319,3 +319,23 @@ test("in Disease mode the Disease dropdown shows a swatch only for conditions so
     expect(row.querySelector(".swatch") !== null).toBe(first.has(label));
   }
 });
+
+test("success panel switches between disease, modality and mechanism", async () => {
+  await ready();
+  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  const group = within(b).getByRole("group", { name: "Group by" });
+  const buttons = within(group).getAllByRole("button").map((x) => x.textContent);
+  expect(buttons).toEqual(["By disease", "By modality", "By mechanism"]);
+  expect(within(group).getByRole("button", { name: "By disease" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(b).queryByText("Trials with several mechanisms count in each.")).not.toBeInTheDocument();
+  await userEvent.click(within(group).getByRole("button", { name: "By mechanism" }));
+  expect(within(group).getByRole("button", { name: "By mechanism" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(b).getByText("Trials with several mechanisms count in each.")).toBeInTheDocument();
+  expect(within(b).getByText("anti-CD20")).toBeInTheDocument();
+  expect(within(b).getByText(/too few to tell \(1 finished; needs ≥10\)/)).toBeInTheDocument();
+  expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
+  await userEvent.click(within(group).getByRole("button", { name: "By modality" }));
+  expect(within(b).getByText("Trials with several mechanisms count in each.")).toBeInTheDocument();
+  await userEvent.click(within(group).getByRole("button", { name: "By disease" }));
+  expect(within(b).queryByText("Trials with several mechanisms count in each.")).not.toBeInTheDocument();
+});

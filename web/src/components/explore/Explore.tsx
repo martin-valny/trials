@@ -302,7 +302,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             {announced}
           </p>
         </section>
-        <PanelSuccess stats={file.stats} k={file.method.k} />
+        <PanelSuccess stats={file.stats} k={file.method.k} trials={file.trials} minGroup={file.method.min_group} />
         <PanelPhase trials={shown} />
       </div>
       <LegendBar>

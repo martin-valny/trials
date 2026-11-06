@@ -31,6 +31,7 @@ import {
   popupLines,
   popupPosition,
   yearSpan,
+  successGroups,
 } from "../src/lib/explorer";
 import type { Filters } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
@@ -637,5 +638,49 @@ describe("columnSide", () => {
     expect(columnSide([{ x: -0.4 }, { x: 0.1 }])).toBe("right");
     expect(columnSide([{ x: 0.4 }, { x: 0.1 }])).toBe("left");
     expect(columnSide([])).toBe("right");
+  });
+});
+
+describe("successGroups", () => {
+  const many = (n: number, o: Partial<ExplorerTrial>, ok = 0): ExplorerTrial[] =>
+    Array.from({ length: n }, (_, i) =>
+      trial({ in_pool: true, outcome: i < ok ? "succeeded" : "unknown", ...o }),
+    );
+
+  it("counts a multi-mechanism trial in each group and ignores trials outside the pool", () => {
+    const ts = [
+      trial({ mechanisms: ["PD-1", "CTLA-4"], outcome: "succeeded" }),
+      trial({ mechanisms: ["PD-1"], outcome: "unknown" }),
+      trial({ mechanisms: ["PD-1"], in_pool: false, outcome: "succeeded" }),
+    ];
+    expect(successGroups(ts, "mechanism", 1)).toEqual([
+      { group: "PD-1", finished: 2, succeeded: 1, rate: 0.5 },
+      { group: "CTLA-4", finished: 1, succeeded: 1, rate: 1 },
+    ]);
+  });
+
+  it("nulls the rate below min_group: 9 finished is too few, 10 is not", () => {
+    const nine = successGroups(many(9, { modalities: ["antibody"] }, 3), "modality", 10);
+    expect(nine).toEqual([{ group: "antibody", finished: 9, succeeded: 3, rate: null }]);
+    const ten = successGroups(many(10, { modalities: ["antibody"] }, 3), "modality", 10);
+    expect(ten[0].rate).toBeCloseTo(0.3);
+  });
+
+  it("sorts by finished desc, then name, and keeps the top N", () => {
+    const ts = [
+      ...many(3, { modalities: ["b"] }),
+      ...many(5, { modalities: ["a"] }),
+      ...many(3, { modalities: ["c"] }),
+    ];
+    expect(successGroups(ts, "modality", 1, 2).map((g) => g.group)).toEqual(["a", "b"]);
+  });
+
+  it("disease view matches stats.by_condition on the fixture, in area order", () => {
+    const f = readFixture<ExplorerFile>("explorer.json");
+    const order = f.stats.by_condition.map((c) => c.label);
+    const got = successGroups(f.trials, "disease", f.method.min_group, 8, order);
+    expect(got.map(({ group, finished, succeeded }) => ({ label: group, finished, succeeded }))).toEqual(
+      f.stats.by_condition,
+    );
   });
 });

@@ -364,6 +364,48 @@ export function formatP(p: number): string {
   return p < 0.001 ? "< 0.001" : String(Number(p.toPrecision(2)));
 }
 
+export type SuccessBy = "disease" | "modality" | "mechanism";
+export interface SuccessGroup {
+  group: string;
+  finished: number;
+  succeeded: number;
+  rate: number | null;
+}
+
+/**
+ * Panel b grouping: finished trials that could succeed (the pool), counted in every group they touch.
+ * Disease groups use succeeded_in (per-condition success); the others use the trial's own outcome.
+ * `rate` is null below minGroup. Sorted by finished desc; with `order` (disease view) the area order is kept
+ * and every listed group appears, even with none finished.
+ */
+export function successGroups(
+  trials: ExplorerTrial[],
+  by: SuccessBy,
+  minGroup: number,
+  topN = 8,
+  order?: string[],
+): SuccessGroup[] {
+  const acc = new Map<string, { finished: number; succeeded: number }>();
+  for (const g of order ?? []) acc.set(g, { finished: 0, succeeded: 0 });
+  for (const t of trials) {
+    if (!t.in_pool) continue;
+    const groups = by === "disease" ? t.condition_labels : by === "modality" ? t.modalities : t.mechanisms;
+    for (const g of new Set(groups)) {
+      const row = acc.get(g) ?? { finished: 0, succeeded: 0 };
+      row.finished += 1;
+      if (by === "disease" ? t.succeeded_in.includes(g) : t.outcome === "succeeded") row.succeeded += 1;
+      acc.set(g, row);
+    }
+  }
+  const rows = [...acc].map(([group, r]) => ({
+    group,
+    ...r,
+    rate: r.finished >= minGroup && r.finished > 0 ? r.succeeded / r.finished : null,
+  }));
+  if (order) return rows;
+  return rows.sort((a, b) => b.finished - a.finished || a.group.localeCompare(b.group)).slice(0, topN);
+}
+
 /** "p = 0.058" or "p < 0.001", with non-breaking spaces so the clause never wraps. */
 const pClause = (p: number): string => {
   const f = formatP(p);
