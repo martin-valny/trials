@@ -5,6 +5,8 @@ import {
   allFilters,
   colorFor,
   DARK_PALETTE,
+  diseaseRanking,
+  emphasisFor,
   LIGHT_PALETTE,
   matches,
   yearBounds,
@@ -87,8 +89,7 @@ function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () =>
   );
 }
 
-/** Outcome colouring lifts succeeded trials above the cloud and draws unknown outcomes as rings. */
-const isSucceeded = (t: ExplorerTrial): boolean => t.outcome === "succeeded";
+/** Outcome colouring draws unknown outcomes as rings. */
 const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
 
 function Title({ area }: { area: string | null }) {
@@ -161,9 +162,12 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => meta?.conditions ?? file.stats.by_condition.map((c) => c.label),
     [meta, file],
   );
+  // Disease colours by descending share: the dominant condition is quiet, the minorities carry the hues.
+  const ranked = useMemo(() => diseaseRanking(file.trials, order), [file, order]);
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
-  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, order), [mode, palette, order]);
+  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, ranked), [mode, palette, ranked]);
+  const emphasis = useMemo(() => emphasisFor(mode, ranked), [mode, ranked]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
   const conditions = useMemo(() => {
@@ -193,7 +197,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         onFilters={setFilters}
         bounds={bounds}
         conditions={conditions}
-        order={order}
+        ranked={ranked}
         mode={mode}
         onMode={setMode}
         palette={palette}
@@ -209,13 +213,13 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             <span className="panel-l">a</span>
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
-          <ColourKey trials={file.trials} conditions={conditions} order={order} mode={mode} palette={palette} />
+          <ColourKey trials={file.trials} ranked={ranked} mode={mode} palette={palette} />
           <div className="panel-a-body">
             <PlateCanvas
               trials={file.trials}
               visible={visible}
               color={color}
-              emphasis={mode === "outcome" ? isSucceeded : undefined}
+              emphasis={emphasis}
               hollow={mode === "outcome" ? isUnknownOutcome : undefined}
               labels={order}
               selected={selected}

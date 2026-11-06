@@ -27,6 +27,9 @@ export interface Palette {
   /** Outcome "unknown": drawn as a hollow ring, so shape (not shade) sets it apart. */
   unknownRing: string;
   phases: Record<string, string>;
+  /** Disease mode: the condition most trials list first, drawn quietly as the ground of the cloud. */
+  diseaseQuiet: string;
+  /** Disease mode: the other conditions, in descending share, cycling. No ink, no red. */
   diseases: string[];
 }
 
@@ -45,7 +48,8 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  diseases: ["#111111", "#7a5c2e", "#5f8a7a", "#3b6ea5", "#7aa6c2", "#8a8f94"],
+  diseaseQuiet: "#8592a0",
+  diseases: ["#3b6ea5", "#7a5c2e", "#5f8a7a", "#6f5f8f", "#7aa6c2"],
 };
 
 export const DARK_PALETTE: Palette = {
@@ -63,7 +67,8 @@ export const DARK_PALETTE: Palette = {
     PHASE4: "#eceae4",
     NA: "#2b2e33",
   },
-  diseases: ["#eceae4", "#c8a96a", "#7fb2e5", "#e5c07b", "#8fc29a", "#7d8287"],
+  diseaseQuiet: "#7d8287",
+  diseases: ["#7fb2e5", "#c8a96a", "#8fc29a", "#b4a3d6", "#e5c07b"],
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
@@ -74,10 +79,26 @@ export const PHASES = ["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "
 /** A trial's phase bucket for filtering; a missing phase counts as "NA". */
 export const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
 
-/** Disease colour for a condition label, by its position in the area's condition order. */
-export function diseaseColor(label: string | undefined, palette: Palette, conditionOrder: string[]): string {
-  const i = label === undefined ? -1 : conditionOrder.indexOf(label);
-  return i < 0 ? palette.unknown : palette.diseases[i % palette.diseases.length];
+/**
+ * Disease colour for a condition label, by its place in ``ranked`` (see diseaseRanking): the dominant
+ * condition (first) gets the quiet value, the rest take the saturated hues in order, cycling.
+ */
+export function diseaseColor(label: string | undefined, palette: Palette, ranked: string[]): string {
+  const i = label === undefined ? -1 : ranked.indexOf(label);
+  if (i < 0) return palette.unknown;
+  return i === 0 ? palette.diseaseQuiet : palette.diseases[(i - 1) % palette.diseases.length];
+}
+
+/**
+ * The area's conditions in descending share of trials that list them first (disease colours go by a
+ * trial's first label); ties, and conditions no trial lists first, keep the area's order. Computed over
+ * every trial so colours never shift when filtering.
+ */
+export function diseaseRanking(trials: ExplorerTrial[], conditionOrder: string[]): string[] {
+  const n = tally(trials, (t) => (t.condition_labels.length > 0 ? [t.condition_labels[0]] : []));
+  const all = [...new Set([...conditionOrder, ...n.keys()])];
+  const rank = (c: string) => (conditionOrder.includes(c) ? conditionOrder.indexOf(c) : conditionOrder.length);
+  return all.sort((a, b) => (n.get(b) ?? 0) - (n.get(a) ?? 0) || rank(a) - rank(b) || a.localeCompare(b));
 }
 
 /** Filters with one set replaced by ``all``. */
@@ -204,15 +225,22 @@ export function matches(t: ExplorerTrial, f: Filters, bounds: [number, number]):
 export const outcomeColor = (o: Outcome, palette: Palette): string =>
   o === "unknown" ? palette.unknownRing : palette[o];
 
-export function colorFor(
-  t: ExplorerTrial,
-  mode: ColorMode,
-  palette: Palette,
-  conditionOrder: string[],
-): string {
+/**
+ * Which visible trials the canvas redraws on top (opaque, at least 3px, knockout ring): succeeded trials
+ * in outcome mode; in disease mode every trial whose first condition is not the dominant one, so small
+ * conditions are not buried under the large one; none in phase mode.
+ */
+export function emphasisFor(mode: ColorMode, ranked: string[]): ((t: ExplorerTrial) => boolean) | undefined {
+  if (mode === "outcome") return (t) => t.outcome === "succeeded";
+  if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
+  return undefined;
+}
+
+/** ``ranked`` is the disease ranking (diseaseRanking), used in disease mode only. */
+export function colorFor(t: ExplorerTrial, mode: ColorMode, palette: Palette, ranked: string[]): string {
   if (mode === "outcome") return outcomeColor(t.outcome, palette);
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
-  return diseaseColor(t.condition_labels[0], palette, conditionOrder);
+  return diseaseColor(t.condition_labels[0], palette, ranked);
 }
 
 export interface Projected {

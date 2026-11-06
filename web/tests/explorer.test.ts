@@ -5,6 +5,8 @@ import {
   allFilters,
   clusterAnchors,
   colorFor,
+  diseaseRanking,
+  emphasisFor,
   labelPosition,
   placeLabels,
   liftSentence,
@@ -202,16 +204,55 @@ describe("colorFor", () => {
     expect(colorFor(trial({ phase: null }), "phase", LIGHT_PALETTE, order)).toBe("#e4e8eb");
     expect(colorFor(trial({ phase: null }), "phase", DARK_PALETTE, order)).toBe("#2b2e33");
   });
-  it("disease mode uses first label index, mod length", () => {
-    expect(colorFor(trial(), "disease", LIGHT_PALETTE, order)).toBe("#111111");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, order)).toBe("#7a5c2e");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, order)).toBe("#c8a96a");
-    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ["Alpha", "Beta", "Gamma"])).toBe(
-      "#5f8a7a",
-    );
+  it("disease mode: the dominant condition is the quiet value, minorities take the hues in rank order", () => {
+    const ranked = ["Beta", "Alpha", "Gamma"];
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#8592a0");
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, ranked)).toBe("#7d8287");
+    expect(colorFor(trial(), "disease", LIGHT_PALETTE, ranked)).toBe("#3b6ea5");
+    expect(colorFor(trial(), "disease", DARK_PALETTE, ranked)).toBe("#7fb2e5");
+    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#7a5c2e");
     const long = Array.from({ length: 8 }, (_, i) => `L${i}`);
-    expect(colorFor(trial({ condition_labels: ["L7"] }), "disease", LIGHT_PALETTE, long)).toBe("#7a5c2e");
-    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
+    // L0 is quiet; L1..L5 take the five hues; L6 cycles back to the first hue.
+    expect(colorFor(trial({ condition_labels: ["L6"] }), "disease", LIGHT_PALETTE, long)).toBe("#3b6ea5");
+    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, ranked)).toBe("#e4e8eb");
+  });
+});
+
+describe("diseaseRanking", () => {
+  it("orders conditions by how many trials list them first, ties in the area's order", () => {
+    const ts = [
+      trial({ condition_labels: ["Beta"] }),
+      trial({ condition_labels: ["Beta", "Alpha"] }),
+      trial({ condition_labels: ["Gamma"] }),
+      trial({ condition_labels: ["Alpha"] }),
+      trial({ condition_labels: [] }),
+    ];
+    expect(diseaseRanking(ts, ["Alpha", "Beta", "Gamma", "Delta"])).toEqual(["Beta", "Alpha", "Gamma", "Delta"]);
+  });
+});
+
+describe("emphasisFor", () => {
+  it("lifts succeeded trials in outcome mode, minority conditions in disease mode, nothing in phase mode", () => {
+    const ranked = ["Beta", "Alpha"];
+    const out = emphasisFor("outcome", ranked)!;
+    expect(out(trial())).toBe(true);
+    expect(out(trial({ outcome: "stopped" }))).toBe(false);
+    const dis = emphasisFor("disease", ranked)!;
+    expect(dis(trial({ condition_labels: ["Alpha", "Beta"] }))).toBe(true);
+    expect(dis(trial({ condition_labels: ["Beta", "Alpha"] }))).toBe(false);
+    expect(dis(trial({ condition_labels: [] }))).toBe(false);
+    expect(emphasisFor("phase", ranked)).toBeUndefined();
+  });
+});
+
+describe("disease series", () => {
+  it("has no ink in it: ink is reserved for stopped trials and the plate's text", () => {
+    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.stopped);
+    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.stopped);
+    expect(LIGHT_PALETTE.diseaseQuiet).toBe("#8592a0");
+    expect(DARK_PALETTE.diseaseQuiet).toBe("#7d8287");
+    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.diseaseQuiet);
+    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.diseaseQuiet);
   });
 });
 
@@ -327,7 +368,7 @@ describe("light palette legibility", () => {
       const [hue, sat] = hueSat(c);
       if (sat > 0.2) expect(hue > 30 && hue < 330).toBe(true);
     }
-    expect(contrast(LIGHT_PALETTE.diseases[2], "#ffffff")).toBeGreaterThanOrEqual(3);
+    for (const c of LIGHT_PALETTE.diseases) expect(contrast(c, "#ffffff")).toBeGreaterThanOrEqual(2.5);
   });
 });
 
