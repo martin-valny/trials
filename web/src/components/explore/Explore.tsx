@@ -7,6 +7,7 @@ import {
   DARK_PALETTE,
   LIGHT_PALETTE,
   matches,
+  yearBounds,
   type ColorMode,
   type Filters,
 } from "../../lib/explorer";
@@ -134,7 +135,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => meta?.conditions ?? file.stats.by_condition.map((c) => c.label),
     [meta, file],
   );
-  const visible = useCallback((t: ExplorerTrial) => matches(t, filters), [filters]);
+  const bounds = useMemo(() => yearBounds(file.trials), [file]);
+  const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
   const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, order), [mode, palette, order]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;

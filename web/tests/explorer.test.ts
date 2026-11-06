@@ -9,10 +9,16 @@ import {
   placeLabels,
   liftSentence,
   formatP,
+  filterSummary,
+  isFullYears,
   matches,
+  setAll,
+  setNone,
+  yearBounds,
   nearestIndex,
   project,
 } from "../src/lib/explorer";
+import type { Filters } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
 
@@ -34,6 +40,8 @@ const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
   ...o,
 });
 
+const B: [number, number] = [2010, 2026];
+
 const file = (): ExplorerFile => readFixture<ExplorerFile>("explorer.json");
 
 describe("allFilters / matches", () => {
@@ -41,7 +49,7 @@ describe("allFilters / matches", () => {
     const f = file();
     const flt = allFilters(f);
     expect(f.trials.length).toBeGreaterThan(0);
-    for (const t of f.trials) expect(matches(t, flt)).toBe(true);
+    for (const t of f.trials) expect(matches(t, flt, B)).toBe(true);
   });
 
   const all = () => ({
@@ -51,45 +59,46 @@ describe("allFilters / matches", () => {
     treatmentTypes: new Set(["DRUG"]),
     query: "",
     resultsOnly: false,
+    years: B,
   });
 
-  it("matches with all filters on", () => expect(matches(trial(), all())).toBe(true));
+  it("matches with all filters on", () => expect(matches(trial(), all(), B)).toBe(true));
 
   it("any label on is enough; none on excludes", () => {
-    expect(matches(trial(), { ...all(), conditions: new Set(["Beta"]) })).toBe(true);
-    expect(matches(trial(), { ...all(), conditions: new Set(["Gamma"]) })).toBe(false);
+    expect(matches(trial(), { ...all(), conditions: new Set(["Beta"]) }, B)).toBe(true);
+    expect(matches(trial(), { ...all(), conditions: new Set(["Gamma"]) }, B)).toBe(false);
   });
 
   it("filters phase, outcome and treatment type", () => {
-    expect(matches(trial(), { ...all(), phases: new Set(["PHASE3"]) })).toBe(false);
-    expect(matches(trial(), { ...all(), outcomes: new Set(["stopped" as const]) })).toBe(false);
-    expect(matches(trial(), { ...all(), treatmentTypes: new Set(["DEVICE"]) })).toBe(false);
+    expect(matches(trial(), { ...all(), phases: new Set(["PHASE3"]) }, B)).toBe(false);
+    expect(matches(trial(), { ...all(), outcomes: new Set(["stopped" as const]) }, B)).toBe(false);
+    expect(matches(trial(), { ...all(), treatmentTypes: new Set(["DEVICE"]) }, B)).toBe(false);
   });
 
   it("null phase falls in the NA bucket", () => {
-    expect(matches(trial({ phase: null }), { ...all(), phases: new Set(["NA"]) })).toBe(true);
-    expect(matches(trial({ phase: null }), { ...all(), phases: new Set() })).toBe(false);
+    expect(matches(trial({ phase: null }), { ...all(), phases: new Set(["NA"]) }, B)).toBe(true);
+    expect(matches(trial({ phase: null }), { ...all(), phases: new Set() }, B)).toBe(false);
   });
 
   it("empty condition_labels or treatment_types always pass that filter", () => {
     const flt = all();
     for (const t of [trial({ condition_labels: [] }), trial({ treatment_types: [] })]) {
-      expect(matches(t, flt)).toBe(true);
-      expect(matches(t, { ...all(), conditions: new Set(["Gamma"]) })).toBe(t.condition_labels.length === 0);
-      expect(matches(t, { ...all(), treatmentTypes: new Set(["DEVICE"]) })).toBe(t.treatment_types.length === 0);
+      expect(matches(t, flt, B)).toBe(true);
+      expect(matches(t, { ...all(), conditions: new Set(["Gamma"]) }, B)).toBe(t.condition_labels.length === 0);
+      expect(matches(t, { ...all(), treatmentTypes: new Set(["DEVICE"]) }, B)).toBe(t.treatment_types.length === 0);
     }
     const off = { ...flt, conditions: new Set([...flt.conditions].slice(1)) };
-    expect(matches(trial({ condition_labels: [] }), off)).toBe(true);
+    expect(matches(trial({ condition_labels: [] }), off, B)).toBe(true);
     const offT = { ...flt, treatmentTypes: new Set([...flt.treatmentTypes].slice(1)) };
-    expect(matches(trial({ treatment_types: [] }), offT)).toBe(true);
+    expect(matches(trial({ treatment_types: [] }), offT, B)).toBe(true);
   });
 
   it("results posted: off shows all, on keeps only trials with results", () => {
-    expect(matches(trial({ has_results: false }), all())).toBe(true);
-    expect(matches(trial({ has_results: false }), { ...all(), resultsOnly: true })).toBe(false);
-    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true })).toBe(true);
+    expect(matches(trial({ has_results: false }), all(), B)).toBe(true);
+    expect(matches(trial({ has_results: false }), { ...all(), resultsOnly: true }, B)).toBe(false);
+    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true }, B)).toBe(true);
     // Combines with the other filters.
-    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true, phases: new Set(["PHASE3"]) })).toBe(
+    expect(matches(trial({ has_results: true }), { ...all(), resultsOnly: true, phases: new Set(["PHASE3"]) }, B)).toBe(
       false,
     );
     expect(allFilters(file()).resultsOnly).toBe(false);
@@ -97,9 +106,52 @@ describe("allFilters / matches", () => {
 
   it("query matches nct_id, title, drugs, sponsor case-insensitively", () => {
     for (const q of ["nct00000001", "THINGS", "FOOUMAB", "acme"])
-      expect(matches(trial(), { ...all(), query: q })).toBe(true);
-    expect(matches(trial(), { ...all(), query: "zzz" })).toBe(false);
-    expect(matches(trial({ lead_sponsor: null }), { ...all(), query: "acme" })).toBe(false);
+      expect(matches(trial(), { ...all(), query: q }, B)).toBe(true);
+    expect(matches(trial(), { ...all(), query: "zzz" }, B)).toBe(false);
+    expect(matches(trial({ lead_sponsor: null }), { ...all(), query: "acme" }, B)).toBe(false);
+  });
+});
+
+describe("year range", () => {
+  const all = () => allFilters({ ...file(), trials: [trial({ start_year: 2010 }), trial({ start_year: 2026 })] });
+  const narrow = (): Filters => ({ ...all(), years: [2020, 2024] });
+  it("yearBounds takes min/max non-null start years, [0, 0] when none", () => {
+    const ys = [2015, null, 2022].map((start_year) => trial({ start_year }));
+    expect(yearBounds(ys)).toEqual([2015, 2022]);
+    expect(yearBounds([trial({ start_year: null })])).toEqual([0, 0]);
+    expect(yearBounds([])).toEqual([0, 0]);
+  });
+  it("allFilters sets years to the bounds", () => {
+    expect(all().years).toEqual(B);
+  });
+  it("range includes both boundaries", () => {
+    for (const y of [2020, 2022, 2024]) expect(matches(trial({ start_year: y }), narrow(), B)).toBe(true);
+    for (const y of [2019, 2025]) expect(matches(trial({ start_year: y }), narrow(), B)).toBe(false);
+  });
+  it("null start year shows at full range, hidden when narrowed", () => {
+    const t = trial({ start_year: null });
+    expect(isFullYears(all(), B)).toBe(true);
+    expect(matches(t, all(), B)).toBe(true);
+    expect(isFullYears(narrow(), B)).toBe(false);
+    expect(matches(t, narrow(), B)).toBe(false);
+  });
+});
+
+describe("setAll / setNone / filterSummary", () => {
+  const f = allFilters(file());
+  it("setNone empties only that key; setAll restores it", () => {
+    const none = setNone(f, "phases");
+    expect(none.phases.size).toBe(0);
+    expect(none.conditions).toBe(f.conditions);
+    expect(none.outcomes).toBe(f.outcomes);
+    expect(none.treatmentTypes).toBe(f.treatmentTypes);
+    expect(f.phases.size).toBeGreaterThan(0);
+    expect(setAll(none, "phases", f.phases).phases).toEqual(f.phases);
+  });
+  it("filterSummary", () => {
+    expect(filterSummary(6, 6)).toBe("all");
+    expect(filterSummary(0, 6)).toBe("none");
+    expect(filterSummary(2, 6)).toBe("2 of 6");
   });
 });
 
