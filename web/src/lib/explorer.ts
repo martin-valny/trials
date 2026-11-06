@@ -134,17 +134,25 @@ export function project(
   });
 }
 
-/** Index of the projected point nearest (x, y) within maxPx, or -1. */
-export function nearestIndex(projected: Projected[], x: number, y: number, maxPx = 12): number {
+/** Index of the projected point nearest (x, y) within maxPx, or -1. Points with mask[i] === 0 are skipped. */
+export function nearestIndex(
+  projected: Projected[],
+  x: number,
+  y: number,
+  maxPx = 12,
+  mask?: ArrayLike<number>,
+): number {
   let best = -1;
   let bestD = maxPx * maxPx;
-  projected.forEach((p, i) => {
+  for (let i = 0; i < projected.length; i++) {
+    if (mask && !mask[i]) continue;
+    const p = projected[i];
     const d = (p.sx - x) ** 2 + (p.sy - y) ** 2;
     if (d <= bestD) {
       bestD = d;
       best = i;
     }
-  });
+  }
   return best;
 }
 

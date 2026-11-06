@@ -5,7 +5,7 @@
   color: var(--ink);
   background: var(--plate);
   display: flex; flex-direction: column;
-  min-height: calc(100dvh - 3.25rem);
+  flex: 1 1 auto;
 }
 @media (prefers-color-scheme: dark) {
   .explore { --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --red: #ff8a3d; --pale: #2b2e33; --plate: #17191c; }
@@ -20,7 +20,9 @@
   :root:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #ff8a3d; scrollbar-color: #4a4e54 #17191c; }
 }
 :root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
-main:has(> .explore) { max-width: none; padding: 0; }
+/* The page is a column filling the viewport; the plate takes whatever the header leaves. */
+#root:has(.explore) { min-height: 100dvh; display: flex; flex-direction: column; }
+main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
 
 .plate-title {
   margin: 0; padding: 22px 40px 8px;
@@ -55,9 +57,9 @@ main:has(> .explore) { max-width: none; padding: 0; }
 
 .explore button {
   font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate);
-  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 10px; cursor: pointer;
 }
-.explore button:hover { border-color: var(--ink); }
+.explore button:hover, .find input:hover { border-color: var(--ink); }
 .explore button[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
 .explore :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
@@ -71,7 +73,7 @@ main:has(> .explore) { max-width: none; padding: 0; }
 .legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
 .find input {
   font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--red);
-  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; width: min(22rem, 100%);
+  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px; width: min(22rem, 100%);
 }
 .find input::placeholder { color: var(--muted); }
 .find input::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }

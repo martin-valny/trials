@@ -28,13 +28,18 @@ function canDraw(): boolean {
   }
 }
 
-/** Centre the cloud on its centroid and scale it so the farthest trial sits on the unit sphere. */
+/**
+ * Centre the cloud on its centroid and scale it so the 98th-percentile trial sits on the unit sphere.
+ * Computed over the full trial set (never per filter) so the cloud does not jump when filtering;
+ * the few trials beyond the percentile may clip at the panel edge.
+ */
 export function fitToUnit(trials: ExplorerTrial[]): { x: number; y: number; z: number }[] {
   const n = trials.length || 1;
   const cx = trials.reduce((a, t) => a + t.x, 0) / n;
   const cy = trials.reduce((a, t) => a + t.y, 0) / n;
   const cz = trials.reduce((a, t) => a + t.z, 0) / n;
-  const r = Math.max(1e-9, ...trials.map((t) => Math.hypot(t.x - cx, t.y - cy, t.z - cz)));
+  const radii = trials.map((t) => Math.hypot(t.x - cx, t.y - cy, t.z - cz)).sort((a, b) => a - b);
+  const r = Math.max(1e-9, radii[Math.min(radii.length - 1, Math.floor(0.98 * (radii.length - 1)))] ?? 0);
   return trials.map((t) => ({ x: (t.x - cx) / r, y: (t.y - cy) / r, z: (t.z - cz) / r }));
 }
 
@@ -44,12 +49,17 @@ const radius = (t: ExplorerTrial, f: number): number => (1.6 + Math.sqrt(t.enrol
 export function PlateCanvas(props: PlateCanvasProps) {
   const [drawable] = useState(canDraw);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const points = useMemo(() => fitToUnit(props.trials), [props.trials]);
+  const { trials, visible, color } = props;
+  const points = useMemo(() => fitToUnit(trials), [trials]);
+  // Visibility and colour are resolved once per change of trials, filters or colouring;
+  // the draw loop and hit testing only read these arrays.
+  const mask = useMemo(() => Uint8Array.from(trials, (t) => (visible(t) ? 1 : 0)), [trials, visible]);
+  const colors = useMemo(() => trials.map((t) => color(t)), [trials, color]);
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
-  const live = useRef({ ...props, points });
+  const live = useRef({ ...props, points, mask, colors });
   const dirty = useRef(true);
   useEffect(() => {
-    live.current = { ...props, points };
+    live.current = { ...props, points, mask, colors };
     dirty.current = true;
   });
 
@@ -84,7 +94,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     observer?.observe(canvas);
 
     const draw = () => {
-      const { trials, points: pts, visible, color, selected, ringColor } = live.current;
+      const { trials, points: pts, mask, colors, selected, ringColor } = live.current;
       ctx.clearRect(0, 0, w, h);
       projected = project(pts, angle, TILT, w, h, ZOOM);
       // Painter's order: farthest (smallest depth) first.
@@ -94,8 +104,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
         const t = trials[i];
         const p = projected[i];
         const r = radius(t, p.f);
-        ctx.globalAlpha = visible(t) ? Math.max(0.35, Math.min(1, 0.55 + 0.45 * (p.f - 0.6))) : 0.08;
-        ctx.fillStyle = color(t);
+        ctx.globalAlpha = mask[i] ? Math.max(0.35, Math.min(1, 0.55 + 0.45 * (p.f - 0.6))) : 0.08;
+        ctx.fillStyle = colors[i];
         ctx.beginPath();
         ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
         ctx.fill();
@@ -125,9 +135,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
     /** The visible trial under the pointer, or null. */
     const hit = (e: PointerEvent): string | null => {
       const box = canvas.getBoundingClientRect();
-      const { trials, visible } = live.current;
-      const shown = projected.map((p, i) => (visible(trials[i]) ? p : { ...p, sx: Infinity, sy: Infinity }));
-      const i = nearestIndex(shown, e.clientX - box.left, e.clientY - box.top);
+      const { trials, mask } = live.current;
+      const i = nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, mask);
       return i < 0 ? null : trials[i].nct_id;
     };
 
@@ -157,6 +166,10 @@ export function PlateCanvas(props: PlateCanvasProps) {
       dragging = false;
       if (moved < CLICK_SLOP) live.current.onSelect(hit(e));
     };
+    // A cancelled gesture (scroll takeover, lost capture) only ends the drag; it never selects.
+    const cancel = () => {
+      dragging = false;
+    };
     const leave = () => {
       if (hover !== null) {
         hover = null;
@@ -166,7 +179,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     canvas.addEventListener("pointerdown", down);
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
-    canvas.addEventListener("pointercancel", up);
+    canvas.addEventListener("pointercancel", cancel);
     canvas.addEventListener("pointerleave", leave);
 
     return () => {
@@ -175,7 +188,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
       canvas.removeEventListener("pointerdown", down);
       canvas.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerup", up);
-      canvas.removeEventListener("pointercancel", up);
+      canvas.removeEventListener("pointercancel", cancel);
       canvas.removeEventListener("pointerleave", leave);
     };
   }, [drawable]);
