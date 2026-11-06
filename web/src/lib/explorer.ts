@@ -56,7 +56,7 @@ export const LIGHT_PALETTE: Palette = {
 export const DARK_PALETTE: Palette = {
   succeeded: "#ff8a3d",
   stopped: "#eceae4",
-  completed_unknown: "#4a5057",
+  completed_unknown: "#50575f",
   running: "#8da3d6",
   unknown: "#2b2e33",
   unknownRing: "#6c7f93",
@@ -68,7 +68,7 @@ export const DARK_PALETTE: Palette = {
     PHASE4: "#eceae4",
     NA: "#2b2e33",
   },
-  diseases: ["#8da3d6", "#3cc7a8", "#c49ad6", "#7fd3e6", "#f0c060", "#b8977a"],
+  diseases: ["#8da3d6", "#3cc7a8", "#cf8fd6", "#7fd3e6", "#f0c060", "#b8977a"],
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
