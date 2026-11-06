@@ -49,3 +49,30 @@ describe("readChoice / writeChoice", () => {
     expect(() => writeChoice("dark")).not.toThrow();
   });
 });
+
+describe("useTheme", () => {
+  it("puts data-theme on <html> before any child's effects read the page's colours", async () => {
+    const { render, cleanup } = await import("@testing-library/react");
+    const { useEffect } = await import("react");
+    const { useTheme } = await import("../src/lib/theme");
+    document.documentElement.dataset.theme = "light";
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: q.includes("dark"),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const seen: (string | undefined)[] = [];
+    function Child() {
+      useEffect(() => void seen.push(document.documentElement.dataset.theme));
+      return null;
+    }
+    function Parent() {
+      useTheme();
+      return <Child />;
+    }
+    render(<Parent />);
+    expect(seen[0]).toBe("dark");
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+});

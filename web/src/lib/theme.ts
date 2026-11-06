@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useLayoutEffect, useSyncExternalStore } from "react";
 
 /** What the reader picked; "system" follows the OS colour scheme. */
 export type ThemeChoice = "system" | "light" | "dark";
@@ -67,7 +67,8 @@ export function useTheme(): { choice: ThemeChoice; theme: Theme; setChoice(c: Th
   const systemDark = useSyncExternalStore(subscribeSystem, getSystemDark, () => false);
   const theme = resolveTheme(choice, systemDark);
 
-  useEffect(() => apply(theme), [theme]);
+  // Before paint and before any passive effect (the map canvas reads the theme's CSS colours in one).
+  useLayoutEffect(() => apply(theme), [theme]);
 
   const setChoice = useCallback((c: ThemeChoice) => {
     current = c;
