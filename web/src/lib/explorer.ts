@@ -375,8 +375,9 @@ export interface SuccessGroup {
 /**
  * Panel b grouping: finished trials that could succeed (the pool), counted in every group they touch.
  * Disease groups use succeeded_in (per-condition success); the others use the trial's own outcome.
- * `rate` is null below minGroup. Sorted by finished desc; with `order` (disease view) the area order is kept
- * and every listed group appears, even with none finished.
+ * `rate` is null below minGroup. Sorted by finished desc, capped at topN.
+ * `order` is for the disease view only: it keeps that area order, lists every group even with none finished,
+ * and disables sorting and topN.
  */
 export function successGroups(
   trials: ExplorerTrial[],

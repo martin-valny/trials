@@ -675,6 +675,16 @@ describe("successGroups", () => {
     expect(successGroups(ts, "modality", 1, 2).map((g) => g.group)).toEqual(["a", "b"]);
   });
 
+  it("disease view counts success per condition (succeeded_in), not the trial outcome", () => {
+    const ts = [
+      trial({ condition_labels: ["A", "B"], succeeded_in: ["A"], outcome: "succeeded", in_pool: true }),
+    ];
+    expect(successGroups(ts, "disease", 1, 8, ["A", "B"])).toEqual([
+      { group: "A", finished: 1, succeeded: 1, rate: 1 },
+      { group: "B", finished: 1, succeeded: 0, rate: 0 },
+    ]);
+  });
+
   it("disease view matches stats.by_condition on the fixture, in area order", () => {
     const f = readFixture<ExplorerFile>("explorer.json");
     const order = f.stats.by_condition.map((c) => c.label);

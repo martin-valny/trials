@@ -71,6 +71,8 @@ export function PanelSuccess({
             const few = row.finished < minGroup;
             // Disease view keeps today's outlined bar; modality and mechanism say it in words.
             const tooFew = few && row.finished > 0 && by !== "disease";
+            // Disease view computes the share from the counts, not row.rate (null below min_group), so rows
+            // under min_group still draw an outlined bar, as before.
             const rate = by === "disease" ? (row.finished > 0 ? row.succeeded / row.finished : null) : row.rate;
             return (
               <li className={few ? "bar few" : "bar"} key={row.group}>
