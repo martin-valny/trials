@@ -11,6 +11,7 @@ import {
   type ColorMode,
   type Filters,
 } from "../../lib/explorer";
+import { useTheme } from "../../lib/theme";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
 import { LegendBar } from "./LegendBar";
 import { PanelPhase } from "./PanelPhase";
@@ -124,7 +125,7 @@ export function Explore() {
 }
 
 function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
-  const dark = useMediaQuery("(prefers-color-scheme: dark)");
+  const dark = useTheme().theme === "dark";
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");

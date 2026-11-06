@@ -3,6 +3,7 @@ import { ChangesFeed } from "./components/ChangesFeed";
 import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { Methods } from "./components/Methods";
+import { ThemeSwitch } from "./components/ThemeSwitch";
 import { TrialDetail } from "./components/TrialDetail";
 import { TrialsList } from "./components/TrialsList";
 
@@ -20,6 +21,7 @@ export function App() {
           <NavLink to="/methods">Methods</NavLink>
         </nav>
         <FreshnessBadge />
+        <ThemeSwitch />
       </header>
       <main>
         <Routes>
