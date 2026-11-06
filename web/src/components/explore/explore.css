@@ -71,8 +71,9 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .panel-note, .panel-claim { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 52ch; }
 .panel-claim { font-size: 14px; font-weight: 500; color: var(--ink); text-wrap: pretty; }
 .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 13px; }
-.bar { display: grid; grid-template-columns: minmax(6rem, 10.5rem) 1fr 2.6rem 3.6rem; align-items: center; gap: 8px; }
-.bar-label { overflow-wrap: anywhere; line-height: 1.2; }
+/* The label column is capped and its words wrap, so the track keeps at least 110px to be read against. */
+.bar { display: grid; grid-template-columns: minmax(5rem, 8.5rem) minmax(110px, 1fr) 2.6rem 3.6rem; align-items: center; gap: 8px; }
+.bar-label { overflow-wrap: break-word; line-height: 1.2; }
 .bar-track { position: relative; height: 12px; background: var(--pale); }
 .bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
 .bar-avg { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); box-shadow: 0 0 0 1px var(--plate); }
@@ -143,6 +144,10 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 @keyframes plate-pulse { from { opacity: 1; } to { opacity: 0.55; } }
 
+/* Laptop widths: the right column takes two fifths, so panel b's bars stay long enough to compare. */
+@media (min-width: 901px) and (max-width: 1279px) {
+  .plate { grid-template-columns: 3fr 2fr; }
+}
 @media (max-width: 900px) {
   .plate { grid-template-columns: 1fr; grid-template-rows: auto; }
   .panel-a { grid-row: auto; min-height: 60vh; padding-bottom: 18px; }
@@ -166,6 +171,13 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .legend { margin: 0 16px; grid-template-columns: 1fr; gap: 4px; }
   .legend-v + .legend-k { margin-top: 8px; }
   .flow { gap: 4px; }
+  /* Phone: the label and its numbers share a line, the track runs the full width beneath them. */
+  .bars { gap: 10px; }
+  .bar { grid-template-columns: 1fr auto auto; grid-template-areas: "label n k" "track track track"; gap: 3px 8px; align-items: baseline; }
+  .bar-label { grid-area: label; }
+  .bar-n { grid-area: n; }
+  .bar-k { grid-area: k; min-width: 3.6rem; text-align: right; }
+  .bar-track { grid-area: track; }
   .flow li { font-size: 11px; }
   .explore-message { padding: 16px; }
   .selected-bar { padding: 8px 16px; }
