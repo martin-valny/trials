@@ -1,0 +1,21 @@
+{
+ "mechanisms": [
+  {
+   "action_type": "AGONIST",
+   "mechanism_of_action": "Sphingosine 1-phosphate receptor agonist",
+   "molecule_chembl_id": "CHEMBL544665",
+   "parent_molecule_chembl_id": "CHEMBL314854",
+   "target_chembl_id": "CHEMBL2363041"
+  },
+  {
+   "action_type": "BINDING AGENT",
+   "mechanism_of_action": "Sphingosine 1-phosphate receptor binding agent",
+   "molecule_chembl_id": "CHEMBL5095050",
+   "parent_molecule_chembl_id": "CHEMBL314854",
+   "target_chembl_id": "CHEMBL2363041"
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}

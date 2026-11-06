@@ -1,0 +1,52 @@
+{
+ "pref_name": "Sphingosine 1-phosphate receptor",
+ "target_chembl_id": "CHEMBL2363041",
+ "target_components": [
+  {
+   "accession": "Q9H228",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "S1PR5",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  },
+  {
+   "accession": "O95136",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "S1PR2",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  },
+  {
+   "accession": "O95977",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "S1PR4",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  },
+  {
+   "accession": "Q99500",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "S1PR3",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  },
+  {
+   "accession": "P21453",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "S1PR1",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  }
+ ],
+ "target_type": "PROTEIN FAMILY"
+}

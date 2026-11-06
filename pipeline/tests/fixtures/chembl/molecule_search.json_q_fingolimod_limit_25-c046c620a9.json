@@ -1,0 +1,212 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL314854",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL314854"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Fingolimod"
+    },
+    {
+     "molecule_synonym": "Fingolimod"
+    },
+    {
+     "molecule_synonym": "Fingolimod"
+    },
+    {
+     "molecule_synonym": "Fingolimod"
+    },
+    {
+     "molecule_synonym": "FTY-720"
+    }
+   ],
+   "molecule_type": "Small molecule",
+   "pref_name": "FINGOLIMOD"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL5095050",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL314854"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Fingolimod lauryl sulfate"
+    },
+    {
+     "molecule_synonym": "Tascenso"
+    },
+    {
+     "molecule_synonym": "Tascenso odt"
+    }
+   ],
+   "molecule_type": "Small molecule",
+   "pref_name": "FINGOLIMOD LAURYL SULFATE"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL544665",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL314854"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Fingolimod"
+    },
+    {
+     "molecule_synonym": "Fingolimod accord"
+    },
+    {
+     "molecule_synonym": "Fingolimod (as hydrochloride)"
+    },
+    {
+     "molecule_synonym": "Fingolimod hcl"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochlorid"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod hydrochloride"
+    },
+    {
+     "molecule_synonym": "Fingolimod mylan"
+    },
+    {
+     "molecule_synonym": "FTY720"
+    },
+    {
+     "molecule_synonym": "FTY-720 HYDROCHLORIDE"
+    },
+    {
+     "molecule_synonym": "FTY720 HYDROCHLORIDE"
+    },
+    {
+     "molecule_synonym": "Gilenia"
+    },
+    {
+     "molecule_synonym": "Gilenya"
+    }
+   ],
+   "molecule_type": "Small molecule",
+   "pref_name": "FINGOLIMOD HYDROCHLORIDE"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3526818",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL314854"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL5429897",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL5429897"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": null,
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL5430893",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL5430893"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": null,
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL485099",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL485099"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL1191567",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL1191567"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL10159",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL10159"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL169107",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL169107"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL1773676",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL1773676"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL366208",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL366208"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "FTY-720P"
+    },
+    {
+     "molecule_synonym": "Fty720-p"
+    }
+   ],
+   "molecule_type": "Small molecule",
+   "pref_name": "FTY720-P"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL114606",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL114606"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}
