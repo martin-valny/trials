@@ -154,3 +154,52 @@ test("the hover card is a tooltip with the trial's id, title and facts", () => {
   expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
   expect(card).toHaveTextContent("dimethyl fumarate · Behavioral, Device · Phase 4 · 2015–2016");
 });
+
+const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+test("the map controls toolbar comes before the canvas", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const canvas = await screen.findByRole("img", { name: /^3D map of/ });
+  const bar = screen.getByRole("toolbar", { name: "Map controls" });
+  expect(follows(bar, canvas)).toBe(true);
+  expect(within(bar).getByLabelText("Find a trial")).toBeInTheDocument();
+  expect(within(bar).getByRole("group", { name: "Colour" })).toBeInTheDocument();
+  for (const name of ["Disease: all", "Phase: all", "Outcome: all", "Treatment: all", "Years: all"]) {
+    expect(within(bar).getByRole("button", { name })).toBeInTheDocument();
+  }
+  expect(within(bar).getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  expect(within(bar).getByText(`Showing ${explorer.trials.length} of ${explorer.trials.length} trials`)).toBeInTheDocument();
+});
+
+test("Select none in Phase empties the map, and Reset filters brings every trial back", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  await userEvent.click(await screen.findByRole("button", { name: "Phase: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Phase: none" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+  expect(screen.queryByText("No trials match these filters.")).not.toBeInTheDocument();
+  expect(screen.getByText("Showing 14 of 14 trials")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Phase: all" })).toBeInTheDocument();
+});
+
+test("Reset all is disabled until a filter changes, and resets every filter", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const reset = await screen.findByRole("button", { name: "Reset all" });
+  expect(reset).toBeDisabled();
+  await userEvent.click(screen.getByRole("switch", { name: "Results posted" }));
+  expect(reset).toBeEnabled();
+  await userEvent.type(screen.getByLabelText("Find a trial"), "zzz");
+  await userEvent.click(reset);
+  expect(reset).toBeDisabled();
+  expect(screen.getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  expect(screen.getByLabelText("Find a trial")).toHaveValue("");
+  const n = explorer.trials.length;
+  expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
+});

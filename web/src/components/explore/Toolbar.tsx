@@ -1,0 +1,202 @@
+import { useMemo } from "react";
+import {
+  diseaseColor,
+  filtersFor,
+  OUTCOMES,
+  outcomeColor,
+  PHASES,
+  phaseKey,
+  sameFilters,
+  tally,
+  type ColorMode,
+  type Filters,
+  type Palette,
+  type SetKey,
+} from "../../lib/explorer";
+import { outcomeLabel, phaseLabel, treatmentLabel } from "../../lib/format";
+import type { ExplorerTrial } from "../../types";
+import { MultiSelect, type MultiSelectOption } from "./MultiSelect";
+import { YearRange } from "./YearRange";
+
+export interface ToolbarProps {
+  trials: ExplorerTrial[];
+  filters: Filters;
+  onFilters(f: Filters): void;
+  bounds: [number, number];
+  /** Every condition label in the file, in the area's order. */
+  conditions: string[];
+  order: string[];
+  mode: ColorMode;
+  onMode(m: ColorMode): void;
+  palette: Palette;
+  shown: number;
+  /** Enter in the search box: select the first matching trial. */
+  onFind(): void;
+  onReset(): void;
+}
+
+export const MODES: [ColorMode, string][] = [
+  ["outcome", "Outcome"],
+  ["phase", "Phase"],
+  ["disease", "Disease"],
+];
+
+const fmt = (n: number): string => n.toLocaleString("en-US");
+
+/** Counts per value of each filter, over every trial in the file (not just those shown). */
+export function useCounts(trials: ExplorerTrial[]) {
+  return useMemo(
+    () => ({
+      conditions: tally(trials, (t) => t.condition_labels),
+      phases: tally(trials, (t) => [phaseKey(t)]),
+      outcomes: tally(trials, (t) => [t.outcome]),
+      treatmentTypes: tally(trials, (t) => t.treatment_types),
+    }),
+    [trials],
+  );
+}
+
+/** Phase keys present in the data, in reading order (unknown keys after, alphabetically). */
+export function phasesOf(counts: Map<string, number>): string[] {
+  const rank = (k: string) => (PHASES.includes(k) ? PHASES.indexOf(k) : PHASES.length);
+  return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** A small drawn magnifier, hairline ink, set inside the search pill. */
+function FindGlyph() {
+  return (
+    <svg className="find-glyph" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+      <circle cx="5" cy="5" r="3.75" />
+      <path d="M7.75 7.75 11 11" />
+    </svg>
+  );
+}
+
+/**
+ * The controls above the map, set like a figure's legend line: find, colour, then the filters as
+ * dropdowns, the results switch and Reset all, with the count of trials shown closing the row.
+ */
+export function Toolbar(p: ToolbarProps) {
+  const { trials, filters, mode, palette } = p;
+  const counts = useCounts(trials);
+  // Reset all returns to every value in the file and the full year span; it is idle while that is shown.
+  const pristine = useMemo(
+    () => sameFilters(filters, { ...filtersFor(trials, p.conditions), years: p.bounds }),
+    [trials, filters, p.conditions, p.bounds],
+  );
+
+  const set = (key: SetKey) => (next: Set<string>) => p.onFilters({ ...filters, [key]: next });
+
+  const options = useMemo(() => {
+    const disease: MultiSelectOption[] = p.conditions.map((c) => ({
+      value: c,
+      label: c,
+      n: counts.conditions.get(c) ?? 0,
+      swatch: mode === "disease" ? diseaseColor(c, palette, p.order) : undefined,
+    }));
+    const phase: MultiSelectOption[] = phasesOf(counts.phases).map((ph) => ({
+      value: ph,
+      label: phaseLabel(ph),
+      n: counts.phases.get(ph) ?? 0,
+      swatch: mode === "phase" ? (palette.phases[ph] ?? palette.unknown) : undefined,
+    }));
+    const outcome: MultiSelectOption[] = OUTCOMES.map((o) => ({
+      value: o,
+      label: outcomeLabel(o),
+      n: counts.outcomes.get(o) ?? 0,
+      swatch: mode === "outcome" ? outcomeColor(o, palette) : undefined,
+      ring: o === "unknown",
+    }));
+    const treatment: MultiSelectOption[] = [...counts.treatmentTypes.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([x, n]) => ({ value: x, label: treatmentLabel(x), n }));
+    return { disease, phase, outcome, treatment };
+  }, [counts, mode, palette, p.conditions, p.order]);
+
+  return (
+    <div className="toolbar" role="toolbar" aria-label="Map controls">
+      <div className="tb-find">
+        <label className="visually-hidden" htmlFor="explore-find">
+          Find a trial
+        </label>
+        <FindGlyph />
+        <input
+          id="explore-find"
+          type="search"
+          value={filters.query}
+          placeholder="NCT, drug or sponsor"
+          aria-describedby="explore-find-hint"
+          onChange={(e) => p.onFilters({ ...filters, query: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              p.onFind();
+            }
+          }}
+        />
+        <span className="visually-hidden" id="explore-find-hint">
+          Matches NCT number, drug, sponsor or title. Press Enter to open the first match in panel d.
+        </span>
+      </div>
+
+      <div className="tb-colour">
+        <span className="tb-k" id="tb-colour" aria-hidden="true">
+          Colour
+        </span>
+        <div className="segmented" role="group" aria-label="Colour">
+          {MODES.map(([m, label]) => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => p.onMode(m)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="tb-filters">
+        <MultiSelect
+          label="Disease"
+          options={options.disease}
+          selected={filters.conditions}
+          onChange={set("conditions")}
+          searchable={options.disease.length > 8}
+        />
+        <MultiSelect label="Phase" options={options.phase} selected={filters.phases} onChange={set("phases")} />
+        <MultiSelect
+          label="Outcome"
+          options={options.outcome}
+          selected={filters.outcomes as ReadonlySet<string>}
+          onChange={set("outcomes")}
+        />
+        <MultiSelect
+          label="Treatment"
+          options={options.treatment}
+          selected={filters.treatmentTypes}
+          onChange={set("treatmentTypes")}
+        />
+        <YearRange bounds={p.bounds} value={filters.years} onChange={(years) => p.onFilters({ ...filters, years })} />
+        {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={filters.resultsOnly}
+          className="tb-switch"
+          onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
+        >
+          <span className="switch-track" aria-hidden="true">
+            <span className="switch-knob" />
+          </span>
+          Results posted
+        </button>
+      </div>
+
+      <div className="tb-end">
+        <button type="button" className="text-button tb-reset" disabled={pristine} onClick={p.onReset}>
+          Reset all
+        </button>
+        <span className="tb-count">
+          Showing {fmt(p.shown)} of {fmt(trials.length)} trials
+        </span>
+      </div>
+    </div>
+  );
+}

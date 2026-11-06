@@ -268,6 +268,11 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const tick = () => {
       frame = 0;
       if (!onscreen) return; // paused: resumed by the intersection observer
+      // A filter change can hide the hovered trial: let go of it so its card and ring go too.
+      if (hover !== null && dirty.current) {
+        const i = live.current.trials.findIndex((t) => t.nct_id === hover);
+        if (i < 0 || !live.current.mask[i]) setHover(null);
+      }
       const turning = live.current.spinning && !live.current.reducedMotion && !dragging && hover === null;
       if (turning) angle += SPIN;
       if (turning || dirty.current) {

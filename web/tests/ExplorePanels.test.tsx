@@ -60,18 +60,21 @@ test("success panel shows lift sentence and definition link", async () => {
   expect(within(c).getByText("Phase 2")).toBeInTheDocument();
 });
 
-test("toggling a disease updates the visible count", async () => {
+test("unchecking a disease in its dropdown updates the visible count", async () => {
   await ready();
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
   const label = explorer.stats.by_condition[0].label;
   const withLabel = explorer.trials.filter((t) => t.condition_labels.includes(label)).length;
-  const esc = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pill = screen.getByRole("button", { name: new RegExp(`^${esc} \\d`) });
-  expect(pill).toHaveAttribute("aria-pressed", "true");
-  await userEvent.click(pill);
-  expect(pill).toHaveAttribute("aria-pressed", "false");
-  expect(screen.getByText(`Showing ${N - withLabel} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(pill);
+  const others = explorer.trials.filter(
+    (t) => t.condition_labels.includes(label) && t.condition_labels.every((l) => l === label),
+  ).length;
+  await userEvent.click(screen.getByRole("button", { name: "Disease: all" }));
+  const box = screen.getByRole("checkbox", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} ${withLabel}$`) });
+  expect(box).toBeChecked();
+  await userEvent.click(box);
+  expect(box).not.toBeChecked();
+  expect(screen.getByText(`Showing ${N - others} of ${N} trials`)).toBeInTheDocument();
+  await userEvent.click(box);
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
 });
 
@@ -119,22 +122,37 @@ test("selecting a trial loads its summary", async () => {
   );
 });
 
-test("outcome legend shows text labels not only colour", async () => {
+test("the colour key names each outcome in words and is not a control", async () => {
   await ready();
-  const n = (o: string) => explorer.trials.filter((t) => t.outcome === o).length;
-  const labels: [string, string][] = [
-    ["succeeded", "Succeeded (drug moved to a later phase)"],
-    ["stopped", "Stopped early"],
-    ["completed_unknown", "Completed, outcome unknown"],
-    ["running", "Still running"],
-    ["unknown", "Status unknown"],
+  const key = screen.getByRole("list", { name: "Colour key: Outcome" });
+  const labels = [
+    "Succeeded (drug moved to a later phase)",
+    "Stopped early",
+    "Completed, outcome unknown",
+    "Still running",
+    "Status unknown",
   ];
-  for (const [key, text] of labels) {
-    expect(screen.getByRole("button", { name: `${text} ${n(key)}` })).toHaveAttribute("aria-pressed", "true");
-  }
-  // Toggling an outcome off filters it out.
-  await userEvent.click(screen.getByRole("button", { name: `Still running ${n("running")}` }));
-  expect(screen.getByText(`Showing ${N - n("running")} of ${N} trials`)).toBeInTheDocument();
+  const present = labels.filter((_, i) =>
+    explorer.trials.some((t) => t.outcome === ["succeeded", "stopped", "completed_unknown", "running", "unknown"][i]),
+  );
+  expect(within(key).getAllByRole("listitem").map((li) => li.textContent)).toEqual(present);
+  expect(within(key).queryByRole("button")).not.toBeInTheDocument();
+  // Filtering an outcome happens in the toolbar's Outcome dropdown.
+  const running = explorer.trials.filter((t) => t.outcome === "running").length;
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: all" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: `Still running ${running}` }));
+  expect(screen.getByText(`Showing ${N - running} of ${N} trials`)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Outcome: 4 of 5" })).toBeInTheDocument();
+});
+
+test("the colour key follows the colour mode", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Phase" }));
+  const key = screen.getByRole("list", { name: "Colour key: Phase" });
+  expect(within(key).getByText("Phase 2")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Disease" }));
+  const first = explorer.trials[0].condition_labels[0];
+  expect(within(screen.getByRole("list", { name: "Colour key: Disease" })).getByText(first)).toBeInTheDocument();
 });
 
 test("enter with an empty query selects nothing", async () => {
@@ -175,23 +193,24 @@ test("panel c scales to the largest phased column and moves trials without a pha
   expect(h.querySelector(".swatch-inline")).not.toBeNull();
 });
 
-test("legend leads with panel d, then Find, then Colour", async () => {
+test("under the plate: the colour key, then panel d", async () => {
   await ready();
+  const key = screen.getByRole("list", { name: /^Colour key/ });
   const d = screen.getByRole("region", { name: "Selected trial" });
-  const find = screen.getByLabelText("Find a trial");
-  const colour = screen.getByRole("group", { name: "Colour" });
   const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-  expect(follows(d, find)).toBe(true);
-  expect(follows(find, colour)).toBe(true);
+  expect(follows(screen.getByRole("img", { name: /^3D map/ }), key)).toBe(true);
+  expect(follows(key, d)).toBe(true);
 });
 
-test("unknown outcome legend swatch is a ring, not a filled dot", async () => {
+test("unknown outcome swatch is a ring, not a filled dot, in the key and in the Outcome dropdown", async () => {
   await ready();
+  const key = screen.getByRole("list", { name: "Colour key: Outcome" });
+  expect(within(key).getByText("Status unknown").querySelector(".swatch.ring")).not.toBeNull();
+  expect(within(key).getByText("Still running").querySelector(".swatch.ring")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Outcome: all" }));
   const n = explorer.trials.filter((t) => t.outcome === "unknown").length;
-  const pill = screen.getByRole("button", { name: `Status unknown ${n}` });
-  expect(pill.querySelector(".swatch.ring")).not.toBeNull();
-  const running = explorer.trials.filter((t) => t.outcome === "running").length;
-  expect(screen.getByRole("button", { name: `Still running ${running}` }).querySelector(".swatch.ring")).toBeNull();
+  const row = screen.getByRole("checkbox", { name: `Status unknown ${n}` }).closest("label")!;
+  expect(row.querySelector(".swatch.ring")).not.toBeNull();
 });
 
 const withStats = (o: Partial<ExplorerFile["stats"]>): ExplorerFile => ({
@@ -240,18 +259,18 @@ test("panel c note is a plain count of shown trials that succeeded", async () =>
   expect(within(c).queryByText(/ of .* shown trials/)).not.toBeInTheDocument();
 });
 
-test("results posted is one pill in the outcome row, off by default, and narrows when on", async () => {
+test("results posted is a switch in the toolbar, off by default, and narrows when on", async () => {
   await ready();
-  const row = screen.getByRole("group", { name: "Outcome" });
+  const bar = screen.getByRole("toolbar", { name: "Map controls" });
   const withResults = explorer.trials.filter((t) => t.has_results).length;
   expect(withResults).toBeGreaterThan(0);
-  const pill = within(row).getByRole("button", { name: `Results posted ${withResults}` });
-  expect(pill).toHaveAttribute("aria-pressed", "false");
+  const sw = within(bar).getByRole("switch", { name: "Results posted" });
+  expect(sw).toHaveAttribute("aria-checked", "false");
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(pill);
-  expect(pill).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(sw);
+  expect(sw).toHaveAttribute("aria-checked", "true");
   expect(screen.getByText(`Showing ${withResults} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(pill);
+  await userEvent.click(sw);
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
 });
 

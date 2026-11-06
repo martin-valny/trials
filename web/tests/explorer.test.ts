@@ -14,6 +14,8 @@ import {
   matches,
   setAll,
   setNone,
+  sameFilters,
+  tally,
   yearBounds,
   nearestIndex,
   project,
@@ -157,6 +159,28 @@ describe("setAll / setNone / filterSummary", () => {
     expect(filterSummary(6, 6)).toBe("all");
     expect(filterSummary(0, 6)).toBe("none");
     expect(filterSummary(2, 6)).toBe("2 of 6");
+  });
+});
+
+describe("tally / sameFilters", () => {
+  it("tally counts every key each trial yields", () => {
+    const ts = [trial({ condition_labels: ["A", "B"] }), trial({ condition_labels: ["B"] }), trial({ condition_labels: [] })];
+    const m = tally(ts, (t) => t.condition_labels);
+    expect([...m.entries()]).toEqual([
+      ["A", 1],
+      ["B", 2],
+    ]);
+  });
+  it("sameFilters compares sets by content, plus query, results and years", () => {
+    const a = allFilters(file());
+    const b = allFilters(file());
+    expect(sameFilters(a, b)).toBe(true);
+    expect(sameFilters(a, setNone(b, "phases"))).toBe(false);
+    expect(sameFilters(a, { ...b, query: "x" })).toBe(false);
+    expect(sameFilters(a, { ...b, resultsOnly: true })).toBe(false);
+    expect(sameFilters(a, { ...b, years: [b.years[0] + 1, b.years[1]] })).toBe(false);
+    // Same members, different insertion order: still the same.
+    expect(sameFilters(a, { ...b, phases: new Set([...b.phases].reverse()) })).toBe(true);
   });
 });
 

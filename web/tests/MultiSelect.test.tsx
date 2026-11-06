@@ -39,7 +39,7 @@ test("button reads the summary and opens a labelled group of checkboxes with cou
   const group = screen.getByRole("group", { name: "Disease" });
   expect(button).toHaveAttribute("aria-controls", group.closest("[id]")?.id);
   for (const o of OPTIONS) {
-    const box = within(group).getByRole("checkbox", { name: new RegExp(o.label) });
+    const box = within(group).getByRole("checkbox", { name: `${o.label} ${o.n}` });
     expect(box).toBeChecked();
     expect(box.closest("label")).toHaveTextContent(String(o.n));
   }
@@ -122,11 +122,23 @@ test("Tab moving focus out of the popover closes it", async () => {
   const user = userEvent.setup();
   const button = screen.getByRole("button", { name: "Disease: all" });
   await user.click(button);
-  // button, Select all, Select none, then the three checkboxes; one more Tab leaves the wrapper.
-  for (let i = 0; i < 5; i++) await user.tab();
+  // Done (the phone sheet's header; CSS hides it on wide screens, jsdom has no CSS), Select all, Select none,
+  // then the three checkboxes; one more Tab leaves the wrapper.
+  for (let i = 0; i < 6; i++) await user.tab();
   expect(screen.getByRole("checkbox", { name: /Melanoma/ })).toHaveFocus();
   expect(button).toHaveAttribute("aria-expanded", "true");
   await user.tab();
   expect(screen.getByRole("button", { name: "after" })).toHaveFocus();
   expect(button).toHaveAttribute("aria-expanded", "false");
+});
+
+test("the sheet's Done button closes it and returns focus to the dropdown button", async () => {
+  const { user } = setup();
+  const button = screen.getByRole("button", { name: "Disease: all" });
+  await user.click(button);
+  const pop = document.getElementById(button.getAttribute("aria-controls")!)!;
+  expect(within(pop).getByText("Disease", { selector: ".sheet-title" })).toBeInTheDocument();
+  await user.click(within(pop).getByRole("button", { name: "Done" }));
+  expect(button).toHaveAttribute("aria-expanded", "false");
+  expect(button).toHaveFocus();
 });

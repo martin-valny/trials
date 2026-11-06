@@ -327,23 +327,26 @@ const renderHoverable = () => {
   } as DOMRect);
   const onHover = vi.fn();
   const first = trials[0].nct_id;
-  render(
+  const ui = (visible: (t: ExplorerTrial) => boolean) => (
     <PlateCanvas
       trials={trials}
-      visible={() => true}
+      visible={visible}
       color={(t) => (t.nct_id === first ? "#0f0" : "#111")}
       selected={null}
       onSelect={() => undefined}
       reducedMotion={false}
       spinning={false}
       onHover={onHover}
-    />,
+    />
   );
+  const { rerender } = render(ui(() => true));
   step();
   const dot = marks.find((m) => m.fill === "#0f0");
   if (!dot) throw new Error("first trial not drawn");
+  rerenderHoverable = (visible) => rerender(ui(visible));
   return { onHover, dot, first, canvas: screen.getByRole("img") };
 };
+let rerenderHoverable: (visible: (t: ExplorerTrial) => boolean) => void = () => undefined;
 
 test("hovering a dot with a mouse reports the trial and where the pointer is", () => {
   const { onHover, dot, first, canvas } = renderHoverable();
@@ -387,4 +390,13 @@ test("the spin pauses while a dot is hovered", () => {
   step();
   step();
   expect(clears).toBe(drawn);
+});
+
+test("a hovered trial that the filters hide is no longer hovered", () => {
+  const { onHover, dot, first, canvas } = renderHoverable();
+  fireEvent.pointerMove(canvas, { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
+  expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ nct: first }));
+  rerenderHoverable((t) => t.nct_id !== first);
+  step();
+  expect(onHover).toHaveBeenLastCalledWith(null);
 });

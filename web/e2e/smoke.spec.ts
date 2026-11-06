@@ -123,11 +123,44 @@ test("explore filters change count", async ({ page }) => {
   const count = page.getByText(/^Showing \d+ of \d+ trials$/);
   await expect(count).toBeVisible();
   const before = await count.textContent();
-  const pill = page.getByRole("group", { name: "Outcome" }).getByRole("button").filter({ hasNot: page.locator(".pill-n", { hasText: /^0$/ }) }).first();
-  await expect(pill).toHaveAttribute("aria-pressed", "true");
-  await pill.click();
+  await page.getByRole("button", { name: "Outcome: all" }).click();
+  // The first outcome that some trial has: unchecking it must hide trials.
+  const row = page.getByRole("group", { name: "Outcome" }).locator("label.check").filter({ hasNot: page.locator(".check-n", { hasText: /^0$/ }) }).first();
+  const box = row.getByRole("checkbox");
+  await expect(box).toBeChecked();
+  await row.click();
   await expect(count).not.toHaveText(before ?? "");
-  await expect(pill).toHaveAttribute("aria-pressed", "false");
+  await expect(box).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "Outcome: 4 of 5" })).toBeVisible();
+});
+
+test("filters live above the map", async ({ page }) => {
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  const bar = page.getByRole("toolbar", { name: "Map controls" });
+  const barBox = (await bar.boundingBox())!;
+  const canvasBox = (await canvasOf(page).boundingBox())!;
+  expect(barBox.y).toBeLessThan(canvasBox.y);
+  expect(barBox.y + barBox.height).toBeLessThanOrEqual(canvasBox.y);
+  const vw = page.viewportSize()!.width;
+  await bar.getByRole("button", { name: "Disease: all" }).click();
+  const sheet = page.locator(".popover");
+  await expect(sheet).toBeVisible();
+  const s = (await sheet.boundingBox())!;
+  expect(s.x).toBeGreaterThanOrEqual(0);
+  expect(s.x + s.width).toBeLessThanOrEqual(vw);
+  if (vw <= 640) {
+    // On a phone the popover is a sheet across the bottom of the viewport, above everything else.
+    expect(s.width).toBe(vw);
+    expect(Math.round(s.y + s.height)).toBe(page.viewportSize()!.height);
+    await expect(sheet.getByRole("button", { name: "Done" })).toBeVisible();
+    await sheet.getByRole("button", { name: "Done" }).click();
+    await expect(sheet).toHaveCount(0);
+  } else {
+    await expect(sheet.getByRole("button", { name: "Done" })).toBeHidden();
+  }
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test("explore canvas draws", async ({ page }) => {
@@ -146,11 +179,13 @@ test("reduced motion keeps the map still", async ({ page }) => {
   expect(a.equals(b)).toBe(true);
 });
 
-test("negative control: without reduced motion the map moves", async ({ page }) => {
+test("negative control: without reduced motion the map turns once Play is pressed", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/#/explore");
   await waitForDraw(page);
   const canvas = canvasOf(page);
+  // The map starts still; the turn is opt-in.
+  await page.getByRole("button", { name: "Play rotation" }).click();
   const a = await canvas.screenshot();
   await page.waitForTimeout(500);
   const b = await canvas.screenshot();

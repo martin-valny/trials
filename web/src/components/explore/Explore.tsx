@@ -14,6 +14,7 @@ import {
 import { useTheme } from "../../lib/theme";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
 import { LegendBar } from "./LegendBar";
+import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
 import { HoverCard } from "./HoverCard";
@@ -174,14 +175,32 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => (selected === null ? null : (file.trials.find((t) => t.nct_id === selected) ?? null)),
     [file, selected],
   );
-  const hoverTrial = useMemo(
-    () => (hover === null ? null : (file.trials.find((t) => t.nct_id === hover.nct) ?? null)),
-    [file, hover],
-  );
+  // A trial the filters have just hidden loses its card at once (the canvas then lets go of it too).
+  const hoverTrial = useMemo(() => {
+    const t = hover === null ? undefined : file.trials.find((x) => x.nct_id === hover.nct);
+    return t !== undefined && visible(t) ? t : null;
+  }, [file, hover, visible]);
+  const reset = () => setFilters(allFilters(file));
 
   return (
     <div className="explore">
       <Title area={meta?.area ?? null} />
+      <Toolbar
+        trials={file.trials}
+        filters={filters}
+        onFilters={setFilters}
+        bounds={bounds}
+        conditions={conditions}
+        order={order}
+        mode={mode}
+        onMode={setMode}
+        palette={palette}
+        shown={shown.length}
+        onFind={() => {
+          if (filters.query.trim() !== "" && shown.length > 0) setSelected(shown[0].nct_id);
+        }}
+        onReset={reset}
+      />
       <div className="plate">
         <section className="panel panel-a" aria-labelledby="panel-a-h">
           <h2 className="panel-h" id="panel-a-h">
@@ -214,7 +233,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             ) : shown.length === 0 ? (
               <div className="plate-empty" role="status">
                 <p>No trials match these filters.</p>
-                <button type="button" onClick={() => setFilters(allFilters(file))}>
+                <button type="button" onClick={reset}>
                   Reset filters
                 </button>
               </div>
@@ -231,20 +250,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         <PanelSuccess stats={file.stats} k={file.method.k} />
         <PanelPhase trials={shown} />
       </div>
-      <LegendBar
-        trials={file.trials}
-        filters={filters}
-        onFilters={setFilters}
-        conditions={conditions}
-        order={order}
-        mode={mode}
-        onMode={setMode}
-        palette={palette}
-        shown={shown.length}
-        onFind={() => {
-          if (filters.query.trim() !== "" && shown.length > 0) setSelected(shown[0].nct_id);
-        }}
-      >
+      <LegendBar trials={file.trials} conditions={conditions} order={order} mode={mode} palette={palette}>
         <SelectedTrial trial={selectedTrial} />
       </LegendBar>
       <SelectedBar trial={selectedTrial} />

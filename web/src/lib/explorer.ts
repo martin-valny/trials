@@ -92,6 +92,30 @@ export const setNone = (f: Filters, key: SetKey): Filters => setAll(f, key, []);
 export const filterSummary = (selected: number, total: number): string =>
   selected >= total ? "all" : selected === 0 ? "none" : `${selected} of ${total}`;
 
+/** How many trials carry each key; a trial adds one to every key ``keys`` returns for it. */
+export function tally(trials: ExplorerTrial[], keys: (t: ExplorerTrial) => string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of trials) for (const k of keys(t)) m.set(k, (m.get(k) ?? 0) + 1);
+  return m;
+}
+
+const sameSet = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
+  a.size === b.size && [...a].every((x) => b.has(x));
+
+/** True when two filter states select the same trials by the same rules (sets compared by members). */
+export function sameFilters(a: Filters, b: Filters): boolean {
+  return (
+    sameSet(a.conditions, b.conditions) &&
+    sameSet(a.phases, b.phases) &&
+    sameSet(a.outcomes, b.outcomes) &&
+    sameSet(a.treatmentTypes, b.treatmentTypes) &&
+    a.query === b.query &&
+    a.resultsOnly === b.resultsOnly &&
+    a.years[0] === b.years[0] &&
+    a.years[1] === b.years[1]
+  );
+}
+
 /** Earliest and latest start year among trials that have one; [0, 0] when none do. */
 export function yearBounds(trials: ExplorerTrial[]): [number, number] {
   let lo = Infinity;
@@ -109,11 +133,15 @@ export const isFullYears = (f: Filters, bounds: [number, number]): boolean =>
   f.years[0] <= bounds[0] && f.years[1] >= bounds[1];
 
 /** Filters with every value present in the file switched on. */
-export function allFilters(f: ExplorerFile): Filters {
-  const conditions = new Set<string>(f.stats.by_condition.map((c) => c.label));
+export const allFilters = (f: ExplorerFile): Filters =>
+  filtersFor(f.trials, f.stats.by_condition.map((c) => c.label));
+
+/** Filters with every value among ``trials`` switched on, plus the ``conditions`` named (labels with no trials). */
+export function filtersFor(trials: ExplorerTrial[], conditionLabels: Iterable<string>): Filters {
+  const conditions = new Set<string>(conditionLabels);
   const phases = new Set<string>();
   const treatmentTypes = new Set<string>();
-  for (const t of f.trials) {
+  for (const t of trials) {
     t.condition_labels.forEach((l) => conditions.add(l));
     phases.add(phaseKey(t));
     t.treatment_types.forEach((x) => treatmentTypes.add(x));
@@ -125,7 +153,7 @@ export function allFilters(f: ExplorerFile): Filters {
     treatmentTypes,
     query: "",
     resultsOnly: false,
-    years: yearBounds(f.trials),
+    years: yearBounds(trials),
   };
 }
 

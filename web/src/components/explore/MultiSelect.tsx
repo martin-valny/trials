@@ -1,17 +1,46 @@
-import { useEffect, useId, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { filterSummary } from "../../lib/explorer";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
 
+/** Popovers keep this far (px) from the viewport's right edge. */
+const EDGE = 16;
+
 /**
  * A toolbar button that opens a popover beneath it. Escape closes it and returns focus to the button;
  * a pointer press anywhere outside, or Tab moving focus out, closes it. The popover is only mounted while open.
+ * It opens from the button's left edge, or from its right edge where it would run off the viewport. On a
+ * phone it is a bottom sheet headed by ``title`` and a Done button.
  */
-export function Dropdown(props: { text: string; className?: string; children: ReactNode }) {
+export function Dropdown(props: { text: string; title?: string; className?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const popover = useRef<HTMLDivElement>(null);
   const id = useId();
+
+  useLayoutEffect(() => {
+    const pop = popover.current;
+    if (!open || !pop) return;
+    delete pop.dataset.align;
+    if (getComputedStyle(pop).position === "fixed") return; // the phone sheet spans the viewport already
+    if (pop.getBoundingClientRect().right > document.documentElement.clientWidth - EDGE) pop.dataset.align = "end";
+  }, [open]);
+
+  const close = () => {
+    setOpen(false);
+    button.current?.focus();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -25,8 +54,7 @@ export function Dropdown(props: { text: string; className?: string; children: Re
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key !== "Escape" || !open) return;
     e.stopPropagation();
-    setOpen(false);
-    button.current?.focus();
+    close();
   };
 
   // Tabbing out closes. A null relatedTarget (a click on bare popover padding) is left to the pointer handler.
@@ -56,7 +84,13 @@ export function Dropdown(props: { text: string; className?: string; children: Re
         </svg>
       </button>
       {open ? (
-        <div className="popover" id={id}>
+        <div className="popover" id={id} ref={popover}>
+          <div className="sheet-head">
+            <span className="sheet-title">{props.title ?? props.text}</span>
+            <button type="button" className="text-button" onClick={close}>
+              Done
+            </button>
+          </div>
           {props.children}
         </div>
       ) : null}
@@ -85,7 +119,7 @@ export function MultiSelect(props: {
 }) {
   const { label, options, selected, onChange } = props;
   return (
-    <Dropdown className="multiselect" text={`${label}: ${filterSummary(selected.size, options.length)}`}>
+    <Dropdown className="multiselect" title={label} text={`${label}: ${filterSummary(selected.size, options.length)}`}>
       <MultiSelectBody label={label} options={options} selected={selected} onChange={onChange} searchable={props.searchable} />
     </Dropdown>
   );
@@ -158,7 +192,8 @@ function MultiSelectBody(props: {
                 aria-hidden="true"
               />
             ) : null}
-            <span className="check-label">{o.label}</span>
+            <span className="check-label">{o.label}</span>{" "}
+            {/* The space keeps the accessible name "Lung cancer 12", not "Lung cancer12". */}
             <span className="check-n">{fmt(o.n)}</span>
           </label>
         ))}
