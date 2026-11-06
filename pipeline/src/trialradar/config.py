@@ -95,6 +95,14 @@ class ExplorerConfig(_Strict):
     k: int = 10
     permutations: int = 10_000
     min_successes: int = 30
+    min_group: int = 10
+
+    @field_validator("min_group")
+    @classmethod
+    def _min_group_positive(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("min_group must be >= 1")
+        return value
 
     @field_validator("weights")
     @classmethod
@@ -123,6 +131,7 @@ class AreaConfig(_Strict):
     tracked_fields: list[str]
     thresholds: Thresholds = Thresholds()
     aliases_dir: Path
+    mechanisms_dir: Path = Path("mechanisms")
     explorer: ExplorerConfig = ExplorerConfig()
 
     @field_validator("tracked_fields")
@@ -139,7 +148,7 @@ class AreaConfig(_Strict):
 
 
 def load_config(path: Path) -> AreaConfig:
-    """Load and validate a config YAML; ``aliases_dir`` resolves relative to the file."""
+    """Load and validate a config YAML; ``aliases_dir`` and ``mechanisms_dir`` resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -150,4 +159,9 @@ def load_config(path: Path) -> AreaConfig:
         cfg = AreaConfig.model_validate(raw)
     except ValidationError as exc:
         raise ConfigError(str(exc)) from exc
-    return cfg.model_copy(update={"aliases_dir": (path.parent / cfg.aliases_dir).resolve()})
+    return cfg.model_copy(
+        update={
+            "aliases_dir": (path.parent / cfg.aliases_dir).resolve(),
+            "mechanisms_dir": (path.parent / cfg.mechanisms_dir).resolve(),
+        }
+    )

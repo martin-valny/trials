@@ -195,7 +195,7 @@ def test_alias_edit_between_days_emits_no_changes(env: Env, cfg: AreaConfig) -> 
 
     result = env.run(FakeClient(TS2, studies), D2)
 
-    assert result == RunResult("success", 0, [], [])
+    assert result == RunResult("success", 0, ["mechanism_unmapped: 1 drugs (8 trials)"], [])
     assert env.store.changes().height == 0
     doc = json.loads((env.site_dir / "trials" / "NCT90000001.json").read_text())
     assert doc["lead_sponsor"] == "Example Pharmaceuticals Inc"

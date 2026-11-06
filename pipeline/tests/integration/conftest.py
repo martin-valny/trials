@@ -119,7 +119,11 @@ class Env:
     """Directories and a deterministic clock for one simulated deployment."""
 
     def __init__(self, root: Path, cfg: AreaConfig) -> None:
-        self.cfg = cfg
+        self.cfg = cfg.model_copy(
+            update={
+                "mechanisms_dir": Path(__file__).resolve().parents[1] / "fixtures" / "mechanisms"
+            }
+        )
         self.store_root = root / "data"
         self.raw_dir = root / "raw"
         self.site_dir = root / "site"

@@ -15,6 +15,7 @@ from trialradar.explorer.drugs import clean_drug_name
 from trialradar.explorer.extras import StudyExtras, empty_extras
 from trialradar.explorer.features import build_features
 from trialradar.explorer.layout import align, embed
+from trialradar.explorer.mechanisms import load_trial_mechanisms
 from trialradar.explorer.outcomes import (
     Outcome,
     TrialDrugs,
@@ -87,6 +88,9 @@ def build_explorer(
     ids = sorted(trial_rows)
     full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
     drugs = _trial_drugs(ids, full, aliases, cfg)
+    if warnings is None:
+        warnings = []
+    mechs = load_trial_mechanisms(cfg, drugs, warnings)
     outcomes: dict[str, Outcome] = label_outcomes(tables.trial, drugs)
     pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n], bool(drugs[n])) for n in ids]
     succeeded = [outcomes[n] == "succeeded" for n in ids]
@@ -108,6 +112,7 @@ def build_explorer(
         "seed": ex.seed,
         "features": list(FEATURES),
         "k": ex.k,
+        "min_group": ex.min_group,
     }
     if len(ids) < _MIN_TRIALS:
         n_pool, n_succ = sum(pool), sum(s for s, p in zip(succeeded, pool, strict=True) if p)
@@ -160,6 +165,9 @@ def build_explorer(
                 "has_results": x.has_results,
                 "treatment_types": sorted(types.get(nct, ())),
                 "drugs": sorted(drugs[nct]),
+                "mechanisms": list(mechs[nct].mechanisms),
+                "targets": list(mechs[nct].targets),
+                "modalities": list(mechs[nct].modalities),
                 "enrollment": r["enrollment"],
                 "lead_sponsor": r["lead_sponsor"],
                 "start_year": start.year if start is not None else None,
