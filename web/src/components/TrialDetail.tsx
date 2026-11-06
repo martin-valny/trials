@@ -68,6 +68,17 @@ export function TrialDetail() {
     ["Sites", `${t.site_count} ${t.site_count === 1 ? "site" : "sites"} in ${t.countries.length} ${t.countries.length === 1 ? "country" : "countries"}`],
   ];
 
+  const e = t.eligibility;
+  const ages =
+    e.min_age_years !== null && e.max_age_years !== null
+      ? `${e.min_age_years}–${e.max_age_years} years`
+      : e.min_age_years !== null
+        ? `${e.min_age_years}+ years`
+        : e.max_age_years !== null
+          ? `up to ${e.max_age_years} years`
+          : null;
+  const eligibility = [e.sex, ages].filter((x): x is string => x !== null).join(", ");
+
   return (
     <article aria-labelledby="trial-title">
       <p>
@@ -90,6 +101,20 @@ export function TrialDetail() {
           </div>
         ))}
       </dl>
+
+      <section className="summary" aria-labelledby="summary-h">
+        <h2 id="summary-h">Summary</h2>
+        <p className="muted">From the registry</p>
+        {t.brief_summary ? <p className="summary-text">{t.brief_summary}</p> : null}
+        {eligibility ? <p>Eligibility: {eligibility}</p> : null}
+        {t.has_results ? (
+          <p>
+            <a href={`${t.source_url}#results`} target="_blank" rel="noopener noreferrer">
+              Results posted
+            </a>
+          </p>
+        ) : null}
+      </section>
 
       <p className="placeholder">Target: not yet mapped (coming in enrichment)</p>
 

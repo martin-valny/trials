@@ -97,3 +97,42 @@ test("load error is reported", async () => {
   show();
   expect(await screen.findByRole("alert")).toHaveTextContent("Could not load trial");
 });
+
+test("trial detail shows registry summary and eligibility", async () => {
+  stubFetch({
+    [`trials/${NCT}.json`]: {
+      ...trial,
+      brief_summary: "A plain registry summary.",
+      eligibility: { sex: "ALL", min_age_years: 18, max_age_years: 55 },
+    },
+  });
+  show();
+  expect(await screen.findByRole("heading", { name: "Summary" })).toBeInTheDocument();
+  expect(screen.getByText("From the registry")).toBeInTheDocument();
+  expect(screen.getByText("A plain registry summary.")).toBeInTheDocument();
+  expect(screen.getByText("Eligibility: ALL, 18–55 years")).toBeInTheDocument();
+});
+
+test("eligibility omits unknown parts", async () => {
+  stubFetch({
+    [`trials/${NCT}.json`]: {
+      ...trial,
+      brief_summary: null,
+      eligibility: { sex: null, min_age_years: 18, max_age_years: null },
+    },
+  });
+  show();
+  expect(await screen.findByText("Eligibility: 18+ years")).toBeInTheDocument();
+});
+
+test("results link shown only when has_results", async () => {
+  stubFetch({ [`trials/${NCT}.json`]: { ...trial, has_results: true } });
+  const { unmount } = show();
+  const link = await screen.findByRole("link", { name: /Results posted/ });
+  expect(link).toHaveAttribute("href", `${trial.source_url}#results`);
+  unmount();
+  stubFetch({ [`trials/${NCT}.json`]: { ...trial, has_results: false } });
+  show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  expect(screen.queryByRole("link", { name: /Results posted/ })).toBeNull();
+});

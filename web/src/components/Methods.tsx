@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { loadMeta } from "../data";
 import type { Meta } from "../types";
 
@@ -14,6 +15,11 @@ export function Methods() {
       live = false;
     };
   }, []);
+
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView?.();
+  }, [hash]);
 
   return (
     <article>
@@ -44,6 +50,67 @@ export function Methods() {
         recorded when a tracked field differs after normalising text (case, whitespace, sponsor and
         intervention name aliases). Cosmetic edits do not create rows.
       </p>
+
+      <section id="map" aria-labelledby="map-h">
+        <h2 id="map-h">How the map is made</h2>
+        <p>
+          The Explore map places each trial as a point. Nothing here uses AI; it is all computed
+          from registry data.
+        </p>
+
+        <h3>What decides where a trial sits</h3>
+        <p>Four groups of features, and only these:</p>
+        <ul>
+          <li>Disease: the condition labels for this area plus the registry MeSH terms.</li>
+          <li>Treatment type: drug, device, behavioural and so on.</li>
+          <li>Molecule: the cleaned names of the drugs in the experimental arms.</li>
+          <li>Population: age bands and sex.</li>
+        </ul>
+        <p>
+          Status, phase, dates, enrollment, results, why stopped, sponsor, sites and outcomes are
+          left out of placement, so they can be compared against the map rather than built into it.
+        </p>
+
+        <h3>Layout</h3>
+        <p>
+          The features are projected to three dimensions with UMAP using cosine distance and a fixed
+          seed. Each day the new map is aligned to the previous day&apos;s map (rotation,
+          reflection and scale), so it stays recognisable from one day to the next.
+        </p>
+
+        <h3>What counts as success</h3>
+        <p>
+          A trial succeeded when it is a completed trial in Early Phase 1 to Phase 2/3, its
+          experimental-arm drug had no Phase 3 or 4 trial before it started, and that drug later
+          appears in a later-phase tracked trial that started afterwards and was not withdrawn.
+        </p>
+        <p>Limits:</p>
+        <ul>
+          <li>
+            Only this therapeutic area is tracked, so progress in another indication is missed.
+          </li>
+          <li>
+            A later-phase trial does not prove the earlier one met its endpoint.
+          </li>
+          <li>
+            Phase 3 and 4 trials get no success label until approval data is added.
+          </li>
+        </ul>
+        <p>Start dates given only to the month are compared as if on the first day of that month.</p>
+
+        <h3>Do successes cluster?</h3>
+        <p>
+          For each succeeded trial we take its 10 nearest neighbours by what they study, among
+          finished trials that could succeed. Trials that share any of its drugs are excluded:
+          drugs both place trials and define success, so those neighbours would agree by
+          construction. The share of neighbours that also succeeded is compared with 1,000 shuffles
+          of the success labels.
+        </p>
+        <p>
+          With fewer than 30 successes the result is withheld. When the observed value falls inside
+          the shuffled range, the map says successes cluster no more than chance.
+        </p>
+      </section>
 
       <h2>Limitations</h2>
       <ul>
