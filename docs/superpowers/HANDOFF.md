@@ -144,14 +144,16 @@ Open design questions to settle in the spec: what is retrievable (trial records,
 ### Rulings that matter
 - **R4:** drugs come only from EXPERIMENTAL arms when arm groups exist; fall back to all DRUG/BIOLOGICAL interventions only when a trial has no arm groups. Comparators must not count.
 - **R5/R6:** drug cleaning. "fumarate" is not a stripped salt (fumarate esters are distinct); exclusion terms also match the casefolded original name ("0.9% sodium chloride" is excluded); config exclude terms include sodium chloride and normal saline.
-- **R7:** pool eligibility is "phases that can succeed": phases include Early Phase 1, 1 or 2 and top phase is at most 3 (so Phase 2/3 is in, pure 3/4/NA is not). `in_pool(phases, outcome)`.
-- **R8:** verdict `clustered` only when lift exceeds the shuffled range; inside or below it is `chance`; no usable neighbours is `insufficient`. Fewer than 4 trials gives an empty trials list with `insufficient` (R1).
+- **R7:** pool eligibility is "phases that can succeed": phases include Early Phase 1, 1 or 2 and top phase is at most 3 (so Phase 2/3 is in, pure 3/4/NA is not). `in_pool(phases, outcome, has_drug)` (R18 adds the drug condition).
+- **R8 (superseded by R18 for the verdict):** no usable neighbours is `insufficient`. Fewer than 4 trials gives an empty trials list with `insufficient` (R1).
 - **R9:** `explorer.json` stats include `n_averaged` and `n_short` (coverage of the headline number) beyond the spec's key list; web types mirror them.
 - **R10/R11:** the fixture staleness test does not byte-compare UMAP coordinates (macOS and Linux CI differ); it compares `explorer.json` with x/y/z excluded. e2e must not depend on exact positions. The day-2 alignment test uses the 14-trial integration set.
+- **R18:** pool = phases that can succeed AND at least one cleaned experimental drug AND a finished outcome; the same pool for `success_rate`, `by_condition` and panel b. Verdict by a one-sided permutation p-value over 10,000 shuffles: `clustered` only when p < 0.025, else `chance`; `p_value` is exported. Rows are L2-normalised inside `neighbourhood_lift`.
+- **R19:** explorer-only work never fails the daily run: `extract_extras` falls back per study (`extras_fallback:` warning); a failed explorer build is an `explorer: <Exc>: <msg>` run warning, the site is exported without `explorer.json` (a stale one is removed, so the page shows "the map appears after the next daily update"), and coordinates are not saved. The UMAP zero-layout fallback is an `explorer_layout_fallback:` warning.
 - **R12 to R17 (visual):** selection ring is ink (R12); dot radius uses enrollment clamped at the 98th percentile with a count scale, isotropic cloud fit (R13); filter pills and Colour group styling as amended (R14); red is only for succeeded trials (R15); e2e pixel check counts non-transparent canvas pixels (R16); cluster labels sit at each condition's densest point and are skipped when too diffuse (R17).
 
 ### First real-data result (a dated observation, not a standing claim)
-2026-11-05 snapshot: 2,986 trials, pool 622, 66 succeeded (rate 0.106), lift 1.44 against shuffled 0.59 to 1.41, so **clustered, barely**. The explorer stage took about 12 s. Numbers change daily; re-measure before quoting.
+2026-11-05 snapshot, after R18: 2,986 trials, pool 478 (finished, could succeed, with an experimental drug), 66 succeeded (rate 0.138), lift 1.31 against shuffled 0.64 to 1.39, p = 0.058 over 10,000 shuffles, so **no more than chance** (also under seeds 1, 2 and 3: p 0.058 to 0.062). Before R18 the pool held 1,030 more drug-free finished trials and read "clustered, barely" (lift 1.44, range 0.59 to 1.41). The explorer stage took about 12 s, nearly all UMAP; the statistic itself takes about 0.15 s. Numbers change daily; re-measure before quoting.
 
 ### Local dev notes
 - `uv` is installed via Homebrew on the user's Mac (`brew install uv`); this work was done in the local checkout, not the cloud container, so section 3's network limits do not apply to it.
@@ -160,11 +162,11 @@ Open design questions to settle in the spec: what is retrievable (trial records,
 
 ### Deferred minors (copied from the git-ignored ledger)
 - Config: pattern-building duplicated between `relevance._pattern` and `condition_labels`; `condition_labels` recompiles per call; other `ExplorerConfig` ints unvalidated.
-- Extras/drugs: `parse_age_years` TypeError on non-str; malformed arm entries; missing nctId KeyError undocumented; exclusion is substring not word-boundary; inconsistent salt forms fragment names; extras exceptions quarantine via DataError.
+- Extras/drugs: exclusion is substring not word-boundary; inconsistent salt forms fragment names.
 - Outcomes: O(k^2) per-drug scans; month-precision start dates compared as days (also noted in Methods).
-- Features/layout/stats: `_OLDER` duplicates `_ADULT_HI`; literal 5 for population width; fallback log prints shape as reason; `neighbourhood_lift` assumes L2-normalised rows; per-row exclusion loop is Python (fine to about 5k).
+- Features/layout/stats: `_OLDER` duplicates `_ADULT_HI`; literal 5 for population width; per-row exclusion loop is Python (fine to about 5k).
 - Build: same-day rerun byte idempotence relies on rounding.
-- Web: disease colour uses first label only; `nearestIndex` ties go to the later index; `.badge.ok` green is a second accent on /explore; canvas keyboard selection relies on search and the panel; dark disease colours idx1 and idx3 close in hue; light disease palette salmon and brown near the success red; 375px cloud leaves vertical whitespace; panel b bars on a 0-100% scale sit left; sub-year age rounding edge; e2e click grid worst case may exceed the 30 s timeout.
+- Web: disease colour uses first label only; `nearestIndex` ties go to the later index; `.badge.ok` green is a second accent on /explore; canvas keyboard selection relies on search and the panel; dark disease colours idx1 and idx3 close in hue; light disease palette brown (#7a5c2e) still warm next to the success red; 375px cloud leaves vertical whitespace; panel b bars on a 0-100% scale sit left; sub-year age rounding edge; light running (#8592a0) and completed-unknown (#7d8a95) greys are now close.
 
 ---
 

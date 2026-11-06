@@ -5,7 +5,7 @@ primary_target: "web/src/components/explore/Explore.tsx"
 related_targets: []
 ---
 
-Scope: the Explore route (web/src/components/explore/*), the site's new home. Visitor mode: Experience (the work leads from the first viewport). Audience: a hiring panel first (minutes, not hours), then clinical-ops / CI leads, then researchers. Job: understand the trial landscape in one view and test "do successful trials cluster?" in a few clicks. Constraints: static, $0, config-driven (no condition names in source), honest labelling of the success proxy.
+Scope: the Explore route (web/src/components/explore/*), the site's new home. Visitor mode: Experience (the work leads from the first viewport). Audience: a hiring panel first (minutes, not hours), then clinical-ops / CI leads, then researchers. Job: understand the trial landscape in one view and test "do trials that succeeded cluster?" in a few clicks. Constraints: static, $0, config-driven (no condition names in source), honest labelling of the success proxy.
 
 ## Direction contract
 

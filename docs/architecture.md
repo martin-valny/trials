@@ -28,12 +28,12 @@ flowchart LR
 
 After the store write and snapshot promotion, and before export, `pipeline._explorer` builds the Explore map (`trialradar.explorer.build.build_explorer`) in its own logged stage:
 
-1. `extras` reads fields the normalized tables do not carry (summary, eligibility, arm groups, whether results are posted) straight from the raw study.
-2. `drugs` cleans experimental-arm drug names (salts, doses and placebo-like terms removed, aliases applied); `outcomes` derives the success proxy and pool eligibility; `features` builds content-only vectors (disease, treatment type, molecule, population); `layout` runs a seeded UMAP and aligns it to the previous day's layout; `stats` computes the neighbourhood statistic against shuffled labels.
+1. `extras` reads fields the normalized tables do not carry (summary, eligibility, arm groups, whether results are posted) straight from the raw study. A study whose fields are malformed there gets empty extras and an `extras_fallback` warning; it never fails the run.
+2. `drugs` cleans experimental-arm drug names (salts, doses and placebo-like terms removed, aliases applied); `outcomes` derives the success proxy and pool eligibility; `features` builds content-only vectors (disease, treatment type, molecule, population); `layout` runs a seeded UMAP and aligns it to the previous day's layout; `stats` computes the neighbourhood statistic over the pool (finished trials that could succeed, with an experimental drug) and a one-sided p-value from 10,000 label shuffles (`clustered` only when p < 0.025).
 3. The previous layout is read from `data/explorer/coords.parquet` (missing means first run) and the new one is saved there after a successful export, so dots stay put from day to day.
-4. The result is written to the site as `explorer.json`. Trial files gain `summary`, `eligibility` and `has_results`.
+4. The result is written to the site as `explorer.json`. Trial files gain `brief_summary`, `eligibility` and `has_results`.
 
-Like the export, a failed explorer build fails the run and leaves stored state untouched. `rebuild` runs the same stage for the final day.
+Unlike the export, a failed explorer build does not fail the run: it becomes an `explorer:` run warning, the site is exported without `explorer.json` (a stale one is removed, so the page says the map appears after the next daily update) and the saved coordinates are kept. A UMAP failure that falls back to a flat layout is an `explorer_layout_fallback:` warning. `rebuild` runs the same stage for the final day, with the same handling.
 
 ## Principles
 

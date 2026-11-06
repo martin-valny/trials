@@ -11,7 +11,7 @@ colors:
   slate: "#3b4a57"
   slate-mid: "#7d8a95"
   slate-ring: "#8796a3"
-  slate-light: "#9aa6b0"
+  slate-light: "#8592a0"
   dark-plate: "#17191c"
   dark-ink: "#eceae4"
   dark-muted: "#9b9d9f"
@@ -123,8 +123,8 @@ Monochrome ink on white with blue-grey supporting values and a single red.
 - **Muted Slate** (#5b6268, `--muted`) / dark (#9b9d9f): secondary text, off pills, placeholder, pill borders at rest.
 - **Hairline** (#d6dadd, `--rule`) / dark (#34373c): off-pill borders, sticky panel d top border on phone.
 - **Pale** (#e4e8eb, `--pale`) / dark (#2b2e33): bar tracks, skeletons, unknown/early phase fill.
-- **Blue-grey ramp** (light): #3b4a57 (Phase 3), #7d8a95 (completed, outcome unknown), #8796a3 (Phase 2, unknown-outcome ring), #9aa6b0 (running), #c9d1d7 (Phase 1). Dark ramp: #7fb2e5 Phase 3, #6c7f93 Phase 2, #3d4147 Phase 1, #7d8287 completed/unknown, #5f666e running.
-- **Disease series** (Disease colour mode, assigned by condition order, cycling): light #111, #7a5c2e, #e07a5f, #3b6ea5, #7aa6c2, #8a8f94; dark #eceae4, #c8a96a, #7fb2e5, #e5c07b, #8fc29a, #7d8287.
+- **Blue-grey ramp** (light): #3b4a57 (Phase 3), #7d8a95 (completed, outcome unknown), #8796a3 (Phase 2, unknown-outcome ring), #8592a0 (running, 3.2:1 on white), #c9d1d7 (Phase 1). Dark ramp: #7fb2e5 Phase 3, #6c7f93 Phase 2, #3d4147 Phase 1, #7d8287 completed/unknown, #5f666e running.
+- **Disease series** (Disease colour mode, assigned by condition order, cycling): light #111, #7a5c2e, #5f8a7a, #3b6ea5, #7aa6c2, #8a8f94; dark #eceae4, #c8a96a, #7fb2e5, #e5c07b, #8fc29a, #7d8287.
 - Selection ring on the canvas uses ink (the stopped colour), never red.
 
 ### Named Rules

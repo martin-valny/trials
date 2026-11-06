@@ -80,7 +80,7 @@ The page reads as **Figure 1 of the paper you would write about this landscape**
 
 - **World:** white plate, near-black ink, one red accent (`#c8102e`) reserved for "succeeded"; supporting blue-grey; hairline rules; bold lowercase panel letters; figure title in "Figure 1 |" form; Hanken Grotesk (self-hosted, not Google CDN, to keep the CSP tight; exact face may change in the finish review).
 - **Panel a (3D map):** canvas, slow auto-rotation, drag to rotate, click/tap to select, hover highlight; dot size = enrollment (sqrt-scaled); filtered-out trials drop to ~8% opacity rather than vanish, so the shape stays readable.
-- **Panel b:** share of finished trials that succeeded, per disease (config condition labels), with an average tick; plus the neighbourhood statistic (6.4) as one sentence with its baseline.
+- **Panel b:** share of the pool (finished trials that could succeed, 6.4) that succeeded, per disease (config condition labels), with an average tick; plus the neighbourhood statistic (6.4) as one sentence with its baseline.
 - **Panel c:** trial counts by phase, with the "moved on" share highlighted.
 - **Panel d / legend bar:** colour mode (Outcome / Phase / Disease), disease toggles, phase and treatment-type filters, search box; the selected trial's one-line facts, the first ~2 sentences of its brief summary, links to its Trial Radar page and ClinicalTrials.gov. A one-line definition of "succeeded" with a link to Methods.
 - **States:** loading (skeleton plate), data missing / old data (reuse existing freshness rules; the explorer shows an explanation instead of an empty canvas), no trial selected, filters that match nothing ("No trials match these filters" + reset), canvas unsupported (fall back to the Trials list link).
@@ -123,19 +123,21 @@ Experimental-arm drugs come from the registry's `armsInterventionsModule.armGrou
 
 **Drug-name matching:** the intervention alias file is empty today. Add an automatic cleaning step (lower-case, strip dose/unit/route/regimen words, bracketed text and common salt suffixes) plus a seed alias list for the ~30 most frequent drugs in the snapshot (brand ↔ INN ↔ code name). Wider curation is a follow-up.
 
-Wording on the page is always "Succeeded (drug moved to a later phase)", never bare "successful". Methods states the limits: our set covers one therapeutic area, so progress in another indication is missed; a later-phase trial does not prove the earlier one met its endpoint; Phase 3/4 have no success label until external approval data is added. Combined phases (e.g. PHASE2|PHASE3) use the highest phase.
+Wording on the page is always "Succeeded (drug moved to a later phase)", never bare "successful". Methods states the limits: our set covers one therapeutic area, so progress in another indication is missed; a later-phase trial does not prove the earlier one met its endpoint; Phase 3-only and Phase 4 trials have no success label until external approval data is added (Phase 2/3 can succeed); recent years undercount success (right-censoring). Combined phases (e.g. PHASE2|PHASE3) use the highest phase.
 
 ### 6.4 The headline statistic
 
-**Pool:** finished trials in phases that can succeed (Early Phase 1 – Phase 2/3; COMPLETED or stopped early). Panel b's "finished" counts and `success_rate` use the same pool.
+**Pool (R18):** finished trials that could succeed: phases that can succeed (Early Phase 1 – Phase 2/3), at least one cleaned experimental-arm drug (a drug-free trial cannot succeed), and outcome succeeded, stopped early or completed without a known result. Panel b's "finished" counts, `by_condition` and `success_rate` use the same pool.
 
 **Statistic ("neighbourhood lift"):** for each succeeded trial in the pool, find its k = 10 nearest neighbours **within the pool**, in the **original feature space** (cosine), **excluding neighbours that share any experimental-arm drug with it**. Lift = mean share of those neighbours that also succeeded ÷ the pool's success rate. Same-drug neighbours are excluded because the molecule block places same-drug trials together and the label is defined through drugs, so they would agree by construction; Methods says this in one sentence.
 
-**Baseline:** shuffle labels within the pool 1,000 times (fixed seed), recompute; report the mean and the 2.5–97.5% range.
+Rows are L2-normalised inside the statistic, so neighbours are by cosine distance whatever the caller passes.
 
-**Honesty rules on the page:** fewer than 30 succeeded trials → the number is withheld ("Too few successes in this area to measure clustering yet"). Lift inside the shuffled range → "Successful trials cluster no more than chance would". Otherwise e.g. "Successful trials' neighbours succeed 1.4× more often than chance (shuffled: 0.9–1.1×)". Export carries `n_pool`, `n_succeeded` and a `verdict` (`insufficient|chance|clustered`).
+**Baseline and test:** shuffle labels within the pool 10,000 times (fixed seed, config `permutations`), recompute; report the mean and the 2.5–97.5% range for display, and the one-sided p-value = (1 + #{shuffled lift ≥ observed}) / (1 + #valid shuffles), exported as `p_value`.
 
-Computed in the pipeline and covered by tests on synthetic data: a planted cluster yields `clustered`; shuffled labels yield `chance`; same-drug neighbours are excluded; below 30 gives `insufficient`.
+**Honesty rules on the page:** fewer than 30 succeeded trials → the number is withheld ("Too few successes in this area to measure clustering yet"). `clustered` only when p < 0.025, else `chance`. Chance → "Trials that succeeded cluster no more than chance would (p = 0.058)." Clustered → e.g. "Trials that succeeded have neighbours that succeed 1.40× as often as the average finished trial (shuffled labels: 0.90–1.10×; p = 0.004)." p is shown to two significant digits, floored at "< 0.001". Export carries `n_pool`, `n_succeeded`, `p_value` and a `verdict` (`insufficient|chance|clustered`).
+
+Computed in the pipeline and covered by tests on synthetic data: a planted cluster yields `clustered` with p < 0.025 for every seed tried; random labels yield `chance` with p ≥ 0.025; same-drug neighbours are excluded; drug-free trials are not in the pool; below 30 gives `insufficient`.
 
 ### 6.4a Day-to-day stability
 
@@ -193,7 +195,7 @@ Sorted by `nct_id`, compact JSON like the other files. Brief summaries are **not
 7. Dark mode uses the "Dark slide" palette.
 8. The lift excludes same-drug neighbours and is computed in feature space, not on the 3D coordinates (6.4).
 9. One pool (finished, Early Phase 1 – Phase 2/3) for the lift, panel b and the success rate.
-10. Fewer than 30 successes withholds the number; a lift within the shuffled range is reported as "no more than chance".
+10. Fewer than 30 successes withholds the number; a one-sided permutation p-value of 0.025 or more (10,000 shuffles) is reported as "no more than chance".
 11. Automatic drug-name cleaning plus a ~30-drug seed alias list; fuller curation later.
 12. Daily Procrustes alignment to yesterday's map, with coordinates stored on the `data` branch.
 13. Withdrawn later-phase trials do not count as progress.
