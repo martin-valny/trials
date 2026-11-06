@@ -17,6 +17,6 @@ STORY: The visitor sees every trial of the area as one rotating cloud and reads 
 
 FIRST VIEWPORT: Slim top bar (brand left; Explore, Changes, Trials, Methods right; freshness badge). Figure title across the top-left, ~28px, max 70ch. Below, a 2:1 grid: panel a (canvas) spans two rows on the left, at least 60% of viewport width and ~70% of the remaining height; panel b (success by disease bars with average tick + lift sentence) top right; panel c (trials by phase, red = moved on) bottom right. A full-width 1px ink rule, then the legend bar: Colour [Outcome|Phase|Disease], Show [disease pills], phase/outcome/type pills, "Find a trial" search, "Showing N of M trials", and panel d (selected trial line + 2-sentence summary). The canvas auto-rotates slowly; drag rotates; click selects. Primary action: click a dot.
 
-FORM: Impeccable's pick, "The Figure Plate" (grounded candidate 1 of 7, user-chosen over the roll and two re-rolls). seed: seed:60730230eacb10e5
+FORM: Impeccable's pick, "The Figure Plate" (grounded candidate 1 of 7, user-chosen over the roll and two re-rolls). seed:60730230eacb10e5
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
