@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import {
   diseaseColor,
+  firstLabels,
   filterCounts,
   filtersFor,
   MODES,
@@ -66,12 +67,15 @@ export function Toolbar(p: ToolbarProps) {
 
   const set = (key: SetKey) => (next: Set<string>) => p.onFilters({ ...filters, [key]: next });
 
+  const first = useMemo(() => firstLabels(trials), [trials]);
+
   const options = useMemo(() => {
+    // Disease colour goes by a trial's first label: a condition no trial lists first is never painted.
     const disease: MultiSelectOption[] = p.conditions.map((c) => ({
       value: c,
       label: c,
       n: counts.conditions.get(c) ?? 0,
-      swatch: mode === "disease" ? diseaseColor(c, palette, p.ranked) : undefined,
+      swatch: mode === "disease" && first.has(c) ? diseaseColor(c, palette, p.ranked) : undefined,
     }));
     const phase: MultiSelectOption[] = phasesOf(counts.phases).map((ph) => ({
       value: ph,
@@ -90,7 +94,7 @@ export function Toolbar(p: ToolbarProps) {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([x, n]) => ({ value: x, label: treatmentLabel(x), n }));
     return { disease, phase, outcome, treatment };
-  }, [counts, mode, palette, p.conditions, p.ranked]);
+  }, [counts, mode, palette, p.conditions, p.ranked, first]);
 
   return (
     <div className="toolbar" role="group" aria-label="Map controls">

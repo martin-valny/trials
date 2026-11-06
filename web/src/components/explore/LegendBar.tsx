@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 import {
   diseaseColor,
+  firstLabels,
   filterCounts,
   MODES,
   OUTCOMES,
@@ -47,7 +48,7 @@ export function ColourKey(p: ColourKeyProps) {
       }));
     // Disease colours go by a trial's first label, so the key lists the conditions that come first
     // somewhere, largest first: the quiet dominant one, then the coloured minorities.
-    const first = new Set(trials.map((t) => t.condition_labels[0]).filter((c) => c !== undefined));
+    const first = firstLabels(trials);
     return ranked.filter((c) => first.has(c)).map((c) => ({ label: c, swatch: diseaseColor(c, palette, ranked) }));
   }, [mode, palette, ranked, counts, trials]);
   const name = MODES.find(([m]) => m === mode)?.[1] ?? "";

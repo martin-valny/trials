@@ -89,6 +89,13 @@ export function diseaseColor(label: string | undefined, palette: Palette, ranked
   return i === 0 ? palette.diseaseQuiet : palette.diseases[(i - 1) % palette.diseases.length];
 }
 
+/** Conditions some trial lists first: the only ones disease colouring can paint. */
+export function firstLabels(trials: ExplorerTrial[]): Set<string> {
+  const out = new Set<string>();
+  for (const t of trials) if (t.condition_labels.length > 0) out.add(t.condition_labels[0]);
+  return out;
+}
+
 /**
  * The area's conditions in descending share of trials that list them first (disease colours go by a
  * trial's first label); ties, and conditions no trial lists first, keep the area's order. Computed over

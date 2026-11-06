@@ -305,3 +305,17 @@ test("on narrow screens a selected trial gets a short sticky line with a Details
   expect(scroll).toHaveBeenCalled();
   expect(scroll.mock.contexts[0]).toBe(screen.getByRole("region", { name: "Selected trial" }));
 });
+
+test("in Disease mode the Disease dropdown shows a swatch only for conditions some trial lists first", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Disease" }));
+  await userEvent.click(screen.getByRole("button", { name: "Disease: all" }));
+  const first = new Set(explorer.trials.map((t) => t.condition_labels[0]).filter(Boolean));
+  const rows = [...document.querySelectorAll<HTMLElement>(".popover .check")];
+  expect(rows.length).toBeGreaterThan(first.size);
+  for (const row of rows) {
+    const label = row.querySelector(".check-label")!.textContent!;
+    // Disease colour goes by a trial's first label, so a condition never listed first is never painted.
+    expect(row.querySelector(".swatch") !== null).toBe(first.has(label));
+  }
+});
