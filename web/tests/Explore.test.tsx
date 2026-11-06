@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
@@ -35,7 +35,9 @@ test("renders figure title from meta area", async () => {
   expect(title).toHaveTextContent(/^Figure 1 \|/);
   expect(title).toHaveTextContent(meta.area);
   expect(
-    screen.getByRole("img", { name: `3D map of ${explorer.trials.length} trials` }),
+    screen.getByRole("img", {
+      name: `3D map of ${explorer.trials.length} trials. Scroll or press + and − to zoom, 0 to reset.`,
+    }),
   ).toBeInTheDocument();
   expect(screen.getByText(new RegExp(`^${explorer.trials.length} trials;`))).toBeInTheDocument();
 });
@@ -47,7 +49,7 @@ test("panel a carries a caption on how to read the map", async () => {
   const a = await screen.findByRole("region", { name: /Embedding of/ });
   expect(
     within(a).getByText(
-      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn, hover for details, click to open.",
+      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom, drag to turn, hover for details, click to open.",
     ),
   ).toBeInTheDocument();
 });
@@ -67,7 +69,7 @@ test("on a coarse pointer the caption says tap to open and never mentions hover"
   renderAt(<Explore />, "/explore");
   const a = await screen.findByRole("region", { name: /Embedding of/ });
   const caption = within(a).getByText(/^Dot size: enrollment\./);
-  expect(caption).toHaveTextContent("Drag to turn, tap to open.");
+  expect(caption).toHaveTextContent("Pinch to zoom, drag to turn, tap to open.");
   expect(caption.textContent).not.toMatch(/hover/i);
 });
 
@@ -150,6 +152,35 @@ test("the map starts still, with a play control that toggles to pause", async ()
   const pause = screen.getByRole("button", { name: "Pause rotation" });
   expect(pause).not.toHaveAttribute("aria-pressed");
   expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
+});
+
+test("Reset view appears once the map is zoomed, and a press returns it to 1x", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const canvas = await screen.findByRole("img", { name: /3D map of/ });
+  expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
+  act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -300, cancelable: true, bubbles: true })));
+  const reset = await screen.findByRole("button", { name: "Reset view" });
+  // It sits with Play, in the same quiet text style.
+  expect(reset).toHaveClass("plate-control");
+  expect(screen.getByRole("button", { name: "Play rotation" })).toHaveClass("plate-control");
+  await userEvent.click(reset);
+  expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
+  // The control leaves with the zoom: focus goes to the map, not to the page.
+  expect(canvas).toHaveFocus();
+});
+
+test("+ zooms and 0 resets while the map has focus", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const canvas = await screen.findByRole("img", { name: /3D map of/ });
+  canvas.focus();
+  await userEvent.keyboard("+");
+  expect(await screen.findByRole("button", { name: "Reset view" })).toBeInTheDocument();
+  await userEvent.keyboard("0");
+  expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
 });
 
 test("with reduced motion there is no rotation control", async () => {

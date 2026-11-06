@@ -174,14 +174,17 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .selected-bar { padding: 8px 16px; }
 }
 
-/* Play/pause for the map's turn: quiet text and a drawn glyph in the corner of panel a, not a filled pill. */
-.explore .spin-toggle {
+/* Play/pause and Reset view: quiet text and a drawn glyph in the corner of panel a, not filled pills. */
+.explore .plate-controls {
   position: absolute; top: -2px; right: -8px; z-index: 1; /* text, not padding, meets the panel edge */
+  display: flex; align-items: center; gap: 2px;
+}
+.explore .plate-control {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 5px 8px; font-size: 12.5px; font-weight: 500; line-height: 1.2;
   color: var(--ink); background: transparent; border-color: transparent;
 }
-.explore .spin-toggle:hover { border-color: var(--rule); }
+.explore .plate-control:hover { border-color: var(--rule); }
 .spin-glyph { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5px; stroke-linejoin: miter; stroke-linecap: butt; }
 
 /* Hover card: two lines on the trial under the pointer, a flat plate with a 1px ink rule; never takes the pointer. */

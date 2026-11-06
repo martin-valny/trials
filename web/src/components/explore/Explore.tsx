@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { loadExplorer, loadMeta } from "../../data";
 import {
@@ -21,7 +21,7 @@ import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
 import { HoverCard } from "./HoverCard";
-import { PlateCanvas, type PlateHover } from "./PlateCanvas";
+import { PlateCanvas, type PlateCanvasHandle, type PlateHover } from "./PlateCanvas";
 import { SelectedBar, SelectedTrial } from "./SelectedTrial";
 import "./explore.css";
 
@@ -80,7 +80,7 @@ function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () =>
   return (
     <button
       type="button"
-      className="spin-toggle"
+      className="plate-control spin-toggle"
       aria-label={spinning ? "Pause rotation" : "Play rotation"}
       onClick={onToggle}
     >
@@ -88,6 +88,18 @@ function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () =>
         {spinning ? <path d="M2.75 1.5v7M7.25 1.5v7" /> : <path d="M2.5 1.25 8.5 5l-6 3.75z" />}
       </svg>
       {spinning ? "Pause" : "Play"}
+    </button>
+  );
+}
+
+/** Back to 1x: shown only while the map is zoomed, beside Play, with a drawn 10px frame glyph. */
+function ResetView({ onReset }: { onReset: () => void }) {
+  return (
+    <button type="button" className="plate-control" onClick={onReset}>
+      <svg className="spin-glyph" viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
+        <path d="M1 3.5V1h2.5M6.5 1H9v2.5M9 6.5V9H6.5M3.5 9H1V6.5" />
+      </svg>
+      Reset view
     </button>
   );
 }
@@ -160,6 +172,12 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   // The map starts still; the turn is opt-in, and never offered under reduced motion.
   const [spinning, setSpinning] = useState(false);
   const [hover, setHover] = useState<PlateHover | null>(null);
+  // Zoom lives in the canvas; React only learns whether it is past 1x, to offer Reset view.
+  const [zoomed, setZoomed] = useState(false);
+  const canvas = useRef<PlateCanvasHandle>(null);
+  const onZoomChange = useCallback((z: number) => setZoomed(z > 1), []);
+  // Zoom is not kept across a theme change.
+  useEffect(() => canvas.current?.resetView(), [dark]);
 
   const palette = dark ? DARK_PALETTE : LIGHT_PALETTE;
   const order = useMemo(
@@ -223,6 +241,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           {/* A phone sheet scrolls this into view above itself (see Dropdown). */}
           <div className="panel-a-body" data-sheet-reveal="">
             <PlateCanvas
+              ref={canvas}
               trials={file.trials}
               visible={visible}
               color={color}
@@ -236,9 +255,21 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               spinning={spinning}
               onHover={setHover}
               ringColor={palette.stopped}
+              onZoomChange={onZoomChange}
             />
-            {!reducedMotion && total > 0 && (
-              <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />
+            {total > 0 && (zoomed || !reducedMotion) && (
+              <div className="plate-controls">
+                {zoomed && (
+                  <ResetView
+                    onReset={() => {
+                      canvas.current?.resetView();
+                      // The button leaves with the zoom: hand focus to the map it acted on.
+                      canvas.current?.focus();
+                    }}
+                  />
+                )}
+                {!reducedMotion && <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />}
+              </div>
             )}
             {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} r={hover.r} />}
             {total === 0 ? (
@@ -263,7 +294,9 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           </div>
           <p className="panel-note plate-caption">
             Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
-            {coarse ? "Drag to turn, tap to open." : "Drag to turn, hover for details, click to open."}
+            {coarse
+              ? "Pinch to zoom, drag to turn, tap to open."
+              : "Scroll to zoom, drag to turn, hover for details, click to open."}
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}

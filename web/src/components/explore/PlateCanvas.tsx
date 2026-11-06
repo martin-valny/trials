@@ -1,5 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { clusterAnchors, columnLabels, columnSide, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import {
+  clusterAnchors,
+  clampView,
+  columnLabels,
+  columnSide,
+  IDENTITY_VIEW,
+  nearestIndex,
+  panBy,
+  placeLabels,
+  project,
+  viewPoints,
+  zoomAt,
+  type Projected,
+  type View,
+} from "../../lib/explorer";
 import type { ExplorerTrial } from "../../types";
 
 export interface PlateCanvasProps {
@@ -23,6 +37,16 @@ export interface PlateCanvasProps {
   onHover?: (h: PlateHover | null) => void;
   /** Ring drawn around the selected and hovered dot; defaults to the canvas's CSS colour. */
   ringColor?: string;
+  /** The zoom level, reported only when it crosses 1x (zoomed in, or back to 1x). */
+  onZoomChange?: (zoom: number) => void;
+  ref?: Ref<PlateCanvasHandle>;
+}
+
+export interface PlateCanvasHandle {
+  /** Back to 1x with no pan; the turn is kept. */
+  resetView(): void;
+  /** Move keyboard focus to the map (its zoom keys work while it has focus). */
+  focus(): void;
 }
 
 /** The hovered trial's dot, in canvas CSS px: its centre and the radius of the ring drawn around it. */
@@ -44,6 +68,9 @@ const LABEL_OFFSET = 8; // px right of and above the anchor dot
 const COLUMN_TOP = 40; // px: the phone label column starts below the play control
 const RING_GAP = 4; // px between a dot and its selection or hover ring
 const RING_WIDTH = 1.5;
+const KEY_ZOOM = 1.5; // per press of + or -
+const WHEEL_ZOOM = 0.0015; // per wheel pixel; a trackpad pinch (ctrl + wheel) sends small deltas, so 0.01
+const PINCH_WHEEL_ZOOM = 0.01;
 
 /** True when this browser gives a 2D canvas context (jsdom and some locked-down browsers do not). */
 function canDraw(): boolean {
@@ -117,7 +144,7 @@ export function dotScale(trials: ExplorerTrial[]): DotScale {
 export const dotRadius = (enrollment: number | null, f: number, s: DotScale): number =>
   (1.6 + Math.sqrt(Math.min(enrollment ?? 0, s.e98)) / 7) * s.k * f;
 
-export function PlateCanvas(props: PlateCanvasProps) {
+export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
   const [drawable] = useState(canDraw);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { trials, visible, color, emphasis, hollow, labels } = props;
@@ -141,6 +168,13 @@ export function PlateCanvas(props: PlateCanvasProps) {
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
   const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink: "", plate: "" });
   const dirty = useRef(true);
+  // Set by the draw loop's effect; the handle reaches the live view through it.
+  const resetView = useRef<() => void>(() => undefined);
+  useImperativeHandle(
+    ref,
+    () => ({ resetView: () => resetView.current(), focus: () => canvasRef.current?.focus() }),
+    [],
+  );
   useEffect(() => {
     // Theme colours are read here, once per render, never per frame.
     const css = canvasRef.current ? getComputedStyle(canvasRef.current) : null;
@@ -159,10 +193,19 @@ export function PlateCanvas(props: PlateCanvasProps) {
     let w = 0;
     let h = 0;
     let angle = 0;
-    let dragging = false;
+    /** Zoom and pan, on screen after projection (see View); never React state, so it costs no render. */
+    let view: View = IDENTITY_VIEW;
+    /** The gesture under way: a one-pointer turn or pan, a two-pointer pinch, or none. */
+    let gesture: "none" | "turn" | "pan" | "pinch" = "none";
+    const pointers = new Map<number, { x: number; y: number }>();
     let lastX = 0;
+    let lastY = 0;
+    let pinch = { d: 0, x: 0, y: 0 };
     let moved = 0;
     let hover: string | null = null;
+    /** The last mouse or pen position, to find the dot under it again after a zoom. */
+    let lastPointer: { clientX: number; clientY: number; pointerType: string } | null = null;
+    let rehover = false;
     let projected: Projected[] = [];
     let frame = 0;
     let onscreen = true;
@@ -176,11 +219,14 @@ export function PlateCanvas(props: PlateCanvasProps) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      view = clampView(view, w, h);
       dirty.current = true;
     };
     resize();
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(resize) : null;
     observer?.observe(canvas);
+
+    const inside = (p: { sx: number; sy: number }) => p.sx >= 0 && p.sx <= w && p.sy >= 0 && p.sy <= h;
 
     const draw = () => {
       const { trials, points: pts, mask, colors, emph, rings, anchors, scale, extents, selected, ringColor, ink, plate } =
@@ -188,7 +234,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
       const { labelColumn, side } = live.current;
       ctx.clearRect(0, 0, w, h);
       const zoom = fitZoom(extents, w, h, ZOOM);
-      projected = project(pts, angle, TILT, w, h, zoom);
+      projected = viewPoints(project(pts, angle, TILT, w, h, zoom), view);
       // Painter's order: farthest (smallest depth) first.
       const order = projected.map((_, i) => i).sort((a, b) => projected[a].depth - projected[b].depth);
       const marked: number[] = [];
@@ -230,14 +276,18 @@ export function PlateCanvas(props: PlateCanvasProps) {
       }
       // Cluster labels: beside each condition's densest trial, projected with the cloud, in ink on a
       // plate halo, with a 1px leader back to the dot.
-      if (anchors.length > 0) {
-        const at = project(anchors, angle, TILT, w, h, zoom);
+      // Zoomed in, a cluster whose anchor is off the canvas loses its label rather than pinning it to the edge.
+      const allAt = viewPoints(project(anchors, angle, TILT, w, h, zoom), view);
+      const keep = anchors.map((_, k) => k).filter((k) => view.k === 1 || inside(allAt[k]));
+      if (keep.length > 0) {
+        const at = keep.map((k) => allAt[k]);
+        const shownAnchors = keep.map((k) => anchors[k]);
         ctx.font = LABEL_FONT;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.lineJoin = "round";
-        const widths = anchors.map((a) => ctx.measureText(a.label).width);
-        const items = anchors.map((_, k) => ({
+        const widths = shownAnchors.map((a) => ctx.measureText(a.label).width);
+        const items = shownAnchors.map((_, k) => ({
           sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
           sy: at[k].sy - LABEL_OFFSET,
           width: widths[k],
@@ -249,7 +299,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
           : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
-        anchors.forEach((_, k) => {
+        shownAnchors.forEach((_, k) => {
           ctx.beginPath();
           ctx.moveTo(at[k].sx, at[k].sy);
           ctx.lineTo(spots[k].lx ?? spots[k].x - widths[k] / 2 - 2, spots[k].y);
@@ -258,7 +308,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
         ctx.lineWidth = 2;
         ctx.strokeStyle = plate;
         ctx.fillStyle = ink;
-        anchors.forEach((a, k) => {
+        shownAnchors.forEach((a, k) => {
           ctx.strokeText(a.label, spots[k].x, spots[k].y);
           ctx.fillText(a.label, spots[k].x, spots[k].y);
         });
@@ -283,11 +333,19 @@ export function PlateCanvas(props: PlateCanvasProps) {
         const i = live.current.trials.findIndex((t) => t.nct_id === hover);
         if (i < 0 || !live.current.mask[i]) setHover(null);
       }
-      const turning = live.current.spinning && !live.current.reducedMotion && !dragging && hover === null;
+      const turning = live.current.spinning && !live.current.reducedMotion && gesture === "none" && hover === null;
       if (turning) angle += SPIN;
       if (turning || dirty.current) {
         dirty.current = false;
         draw();
+      }
+      // After a zoom the dots have moved under a still pointer: find the one under it now.
+      if (rehover) {
+        rehover = false;
+        if (lastPointer && gesture === "none") {
+          const i = hitIndex(lastPointer);
+          setHover(i < 0 ? null : live.current.trials[i].nct_id, lastPointer, i, true);
+        }
       }
       frame = requestAnimationFrame(tick);
     };
@@ -317,7 +375,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     });
 
     /** Index of the visible trial under the pointer, or -1. */
-    const hitIndex = (e: PointerEvent): number => {
+    const hitIndex = (e: { clientX: number; clientY: number }): number => {
       const box = canvas.getBoundingClientRect();
       return nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, live.current.mask);
     };
@@ -330,8 +388,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
      * Change the hovered trial; a mouse or pen hover is reported with the dot's centre and the outer
      * edge of its hover ring, so a card can sit above it with a leader to the ring.
      */
-    const setHover = (next: string | null, e?: PointerEvent, i = -1) => {
-      if (next === hover) return;
+    const setHover = (next: string | null, e?: { pointerType: string }, i = -1, again = false) => {
+      if (next === hover && !(again && next !== null)) return;
       hover = next;
       dirty.current = true;
       if (next === null) {
@@ -344,41 +402,125 @@ export function PlateCanvas(props: PlateCanvasProps) {
       }
     };
 
+    /** Move to ``next`` (already clamped); report crossing 1x, and let a zoomed map pan under a finger. */
+    const setView = (next: View) => {
+      if (next.k === view.k && next.x === view.x && next.y === view.y) return;
+      const crossed = next.k > 1 !== view.k > 1;
+      view = next;
+      dirty.current = true;
+      rehover = hover !== null || lastPointer !== null;
+      if (crossed) {
+        canvas.style.touchAction = view.k > 1 ? "none" : "";
+        live.current.onZoomChange?.(view.k);
+      }
+    };
+    resetView.current = () => setView(IDENTITY_VIEW);
+    /** Pointer position in canvas CSS px. */
+    const local = (e: { clientX: number; clientY: number }) => {
+      const box = canvas.getBoundingClientRect();
+      return { x: e.clientX - box.left, y: e.clientY - box.top };
+    };
+    const pinchOf = () => {
+      const [a, b] = [...pointers.values()];
+      return { d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    };
+
     const down = (e: PointerEvent) => {
-      dragging = true;
-      lastX = e.clientX;
-      moved = 0;
-      setHover(null); // the card would trail behind a turning map
+      pointers.set(e.pointerId ?? 0, local(e));
+      setHover(null); // the card would trail behind a moving map
       canvas.setPointerCapture?.(e.pointerId);
+      if (pointers.size === 2) {
+        // A second finger turns the gesture into a pinch; it never selects.
+        gesture = "pinch";
+        pinch = pinchOf();
+        moved = Infinity;
+        return;
+      }
+      if (pointers.size > 2) return;
+      // Zoomed in, a plain drag pans and Shift-drag turns; at 1x a drag turns.
+      gesture = view.k > 1 && !e.shiftKey ? "pan" : "turn";
+      lastX = e.clientX;
+      lastY = e.clientY;
+      moved = 0;
     };
     const move = (e: PointerEvent) => {
-      if (dragging) {
-        angle += (e.clientX - lastX) * DRAG;
-        moved += Math.abs(e.clientX - lastX);
+      const id = e.pointerId ?? 0;
+      if (pointers.has(id)) pointers.set(id, local(e));
+      if (gesture === "pinch") {
+        if (pointers.size < 2) return;
+        const next = pinchOf();
+        let v = zoomAt(view, next.d / pinch.d, next.x, next.y, w, h);
+        v = panBy(v, next.x - pinch.x, next.y - pinch.y, w, h);
+        pinch = next;
+        setView(v);
+        return;
+      }
+      if (gesture === "turn" || gesture === "pan") {
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        if (gesture === "turn") angle += dx * DRAG;
+        else setView(panBy(view, dx, dy, w, h));
+        moved += Math.abs(dx) + (gesture === "pan" ? Math.abs(dy) : 0);
         lastX = e.clientX;
+        lastY = e.clientY;
         dirty.current = true;
         return;
       }
+      if (e.pointerType === "mouse" || e.pointerType === "pen")
+        lastPointer = { clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType };
       const i = hitIndex(e);
       const next = i < 0 ? null : live.current.trials[i].nct_id;
       canvas.style.cursor = next ? "pointer" : "grab";
       setHover(next, e, i);
     };
     const up = (e: PointerEvent) => {
-      if (!dragging) return;
-      dragging = false;
-      if (moved < CLICK_SLOP) live.current.onSelect(hit(e));
+      if (!pointers.delete(e.pointerId ?? 0)) return;
+      if (pointers.size > 0) {
+        // One finger of a pinch lifted: the other does nothing until it lifts too.
+        if (gesture === "pinch") gesture = "none";
+        return;
+      }
+      const was = gesture;
+      gesture = "none";
+      if ((was === "turn" || was === "pan") && moved < CLICK_SLOP) live.current.onSelect(hit(e));
     };
     // A cancelled gesture (scroll takeover, lost capture) only ends the drag; it never selects.
-    const cancel = () => {
-      dragging = false;
+    const cancel = (e: PointerEvent) => {
+      pointers.delete(e.pointerId ?? 0);
+      if (pointers.size === 0 || gesture === "pinch") gesture = "none";
     };
-    const leave = () => setHover(null);
+    const leave = () => {
+      lastPointer = null;
+      setHover(null);
+    };
+    // The wheel zooms about the pointer, only while it is over the canvas (this listener is on the
+    // canvas), and never scrolls the page from here: passive: false so preventDefault holds.
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? h || 400 : 1;
+      const rate = e.ctrlKey ? PINCH_WHEEL_ZOOM : WHEEL_ZOOM;
+      const factor = Math.min(2, Math.max(0.5, Math.exp(-e.deltaY * unit * rate)));
+      const p = local(e);
+      setView(zoomAt(view, factor, p.x, p.y, w, h));
+    };
+    // With the canvas focused: + and - zoom about the centre, 0 resets.
+    const key = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return; // the browser's own zoom
+      let next: View | null = null;
+      if (e.key === "+" || e.key === "=") next = zoomAt(view, KEY_ZOOM, w / 2, h / 2, w, h);
+      else if (e.key === "-" || e.key === "_") next = zoomAt(view, 1 / KEY_ZOOM, w / 2, h / 2, w, h);
+      else if (e.key === "0") next = IDENTITY_VIEW;
+      if (next === null) return;
+      e.preventDefault();
+      setView(next);
+    };
     canvas.addEventListener("pointerdown", down);
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
     canvas.addEventListener("pointercancel", cancel);
     canvas.addEventListener("pointerleave", leave);
+    canvas.addEventListener("wheel", wheel, { passive: false });
+    canvas.addEventListener("keydown", key);
 
     return () => {
       alive = false;
@@ -390,6 +532,9 @@ export function PlateCanvas(props: PlateCanvasProps) {
       canvas.removeEventListener("pointerup", up);
       canvas.removeEventListener("pointercancel", cancel);
       canvas.removeEventListener("pointerleave", leave);
+      canvas.removeEventListener("wheel", wheel);
+      canvas.removeEventListener("keydown", key);
+      resetView.current = () => undefined;
     };
   }, [drawable]);
 
@@ -406,7 +551,8 @@ export function PlateCanvas(props: PlateCanvasProps) {
       ref={canvasRef}
       className="plate-canvas"
       role="img"
-      aria-label={`3D map of ${props.trials.length} trials`}
+      tabIndex={0}
+      aria-label={`3D map of ${trials.length} trials. Scroll or press + and − to zoom, 0 to reset.`}
     />
   );
 }

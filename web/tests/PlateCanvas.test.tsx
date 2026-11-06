@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { dotRadius, dotScale, fitToUnit, fitZoom, plateExtents, PlateCanvas } from "../src/components/explore/PlateCanvas";
+import type React from "react";
+import { dotRadius, dotScale, fitToUnit, fitZoom, plateExtents, PlateCanvas, type PlateCanvasHandle } from "../src/components/explore/PlateCanvas";
 import { nearestIndex, type Projected } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
@@ -400,4 +401,117 @@ test("a hovered trial that the filters hide is no longer hovered", () => {
   rerenderHoverable((t) => t.nct_id !== first);
   step();
   expect(onHover).toHaveBeenLastCalledWith(null);
+});
+
+/** A 400 x 400 still canvas that reports zoom changes; the first trial drawn in a colour of its own. */
+const renderZoomable = (extra: Partial<React.ComponentProps<typeof PlateCanvas>> = {}) => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockReturnValue({
+    left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400, x: 0, y: 0, toJSON: () => ({}),
+  } as DOMRect);
+  const onZoomChange = vi.fn();
+  const onHover = vi.fn();
+  const first = trials[0].nct_id;
+  const ref = { current: null as PlateCanvasHandle | null };
+  render(
+    <PlateCanvas
+      ref={ref}
+      trials={trials}
+      visible={() => true}
+      color={(t) => (t.nct_id === first ? "#0f0" : "#111")}
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={false}
+      spinning={false}
+      onHover={onHover}
+      onZoomChange={onZoomChange}
+      {...extra}
+    />,
+  );
+  step();
+  const canvas = screen.getByRole("img");
+  return { canvas, onZoomChange, onHover, ref, first };
+};
+/** Where the first trial's dot was last drawn. */
+const firstDot = () => {
+  const m = marks.filter((x) => x.fill === "#0f0");
+  return m[m.length - 1];
+};
+
+test("the wheel over the canvas zooms about the pointer, scaling positions but not dot size", () => {
+  const { canvas, onZoomChange } = renderZoomable();
+  const before = firstDot();
+  const wheel = new WheelEvent("wheel", { deltaY: -500, clientX: 200, clientY: 200, bubbles: true, cancelable: true });
+  act(() => void canvas.dispatchEvent(wheel));
+  expect(wheel.defaultPrevented).toBe(true); // the page does not scroll under the map
+  expect(onZoomChange).toHaveBeenCalledTimes(1);
+  const k = onZoomChange.mock.calls[0][0] as number;
+  expect(k).toBeGreaterThan(1);
+  step();
+  const after = firstDot();
+  expect(after.x).toBeCloseTo(200 + k * (before.x - 200));
+  expect(after.y).toBeCloseTo(200 + k * (before.y - 200));
+  expect(after.r).toBeCloseTo(before.r);
+  // Further zooming in does not report again: only crossing 1x is reported.
+  act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -100, clientX: 200, clientY: 200, cancelable: true })));
+  expect(onZoomChange).toHaveBeenCalledTimes(1);
+});
+
+test("the canvas is focusable, names its zoom keys, and + / - / 0 zoom and reset", () => {
+  const { canvas, onZoomChange } = renderZoomable();
+  expect(canvas).toHaveAttribute("tabindex", "0");
+  expect(canvas).toHaveAccessibleName(/zoom/i);
+  expect(canvas.getAttribute("aria-label")).toMatch(/\+/);
+  fireEvent.keyDown(canvas, { key: "+" });
+  expect(onZoomChange).toHaveBeenLastCalledWith(expect.any(Number));
+  expect(onZoomChange.mock.calls[0][0]).toBeGreaterThan(1);
+  fireEvent.keyDown(canvas, { key: "0" });
+  expect(onZoomChange).toHaveBeenLastCalledWith(1);
+  fireEvent.keyDown(canvas, { key: "=" });
+  fireEvent.keyDown(canvas, { key: "-" });
+  fireEvent.keyDown(canvas, { key: "-" });
+  fireEvent.keyDown(canvas, { key: "-" });
+  expect(onZoomChange).toHaveBeenLastCalledWith(1);
+});
+
+test("resetView returns to 1x and redraws", () => {
+  const { canvas, onZoomChange, ref } = renderZoomable();
+  const before = firstDot();
+  fireEvent.keyDown(canvas, { key: "+" });
+  step();
+  expect(firstDot().x).not.toBeCloseTo(before.x);
+  act(() => ref.current?.resetView());
+  expect(onZoomChange).toHaveBeenLastCalledWith(1);
+  step();
+  expect(firstDot().x).toBeCloseTo(before.x);
+});
+
+test("zoomed in, a plain drag pans and Shift-drag turns; at 1x a drag turns", () => {
+  const { canvas } = renderZoomable();
+  const drag = (dx: number, shiftKey = false) => {
+    fireEvent.pointerDown(canvas, { clientX: 200, clientY: 200, pointerId: 1, shiftKey });
+    fireEvent.pointerMove(canvas, { clientX: 200 + dx, clientY: 210, pointerId: 1, shiftKey });
+    fireEvent.pointerUp(canvas, { clientX: 200 + dx, clientY: 210, pointerId: 1, shiftKey });
+    step();
+  };
+  fireEvent.keyDown(canvas, { key: "+" });
+  fireEvent.keyDown(canvas, { key: "+" });
+  step();
+  const zoomed = firstDot();
+  drag(-30);
+  const panned = firstDot();
+  expect(panned.x).toBeCloseTo(zoomed.x - 30);
+  expect(panned.y).toBeCloseTo(zoomed.y + 10);
+  drag(-30, true);
+  const turned = firstDot();
+  // A turn moves the dot by something other than a plain shift of the drag.
+  expect(Math.abs(turned.y - panned.y) + Math.abs(turned.x - (panned.x - 30))).toBeGreaterThan(0.5);
+});
+
+test("hovering at 2x reports the dot where it is drawn", () => {
+  const { canvas, onHover, first } = renderZoomable();
+  fireEvent.keyDown(canvas, { key: "+" });
+  step();
+  const dot = firstDot();
+  fireEvent.pointerMove(canvas, { clientX: dot.x + 1, clientY: dot.y, pointerType: "mouse" });
+  expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ nct: first, x: dot.x, y: dot.y }));
 });
