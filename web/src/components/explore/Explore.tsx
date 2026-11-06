@@ -214,7 +214,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
           <ColourKey trials={file.trials} ranked={ranked} mode={mode} palette={palette} />
-          <div className="panel-a-body">
+          {/* A phone sheet scrolls this into view above itself (see Dropdown). */}
+          <div className="panel-a-body" data-sheet-reveal="">
             <PlateCanvas
               trials={file.trials}
               visible={visible}

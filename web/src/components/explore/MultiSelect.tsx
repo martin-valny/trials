@@ -15,6 +15,22 @@ const fmt = (n: number): string => n.toLocaleString("en-US");
 
 /** Popovers keep this far (px) from the viewport's right edge. */
 const EDGE = 16;
+/** Clear space (px) kept between the revealed map and the top of a phone sheet. */
+const SHEET_GAP = 8;
+
+/**
+ * On a phone the popover is a sheet over the bottom of the viewport. Scroll the page so the element
+ * marked ``data-sheet-reveal`` (the map) sits just above the sheet, letting the filter's effect be seen
+ * while it is chosen; if the map is taller than the space left, its top is kept in view instead.
+ */
+function revealAboveSheet(sheet: HTMLElement) {
+  const target = document.querySelector<HTMLElement>("[data-sheet-reveal]");
+  if (!target) return;
+  const room = sheet.getBoundingClientRect().top - SHEET_GAP;
+  const box = target.getBoundingClientRect();
+  const delta = box.height <= room ? box.bottom - room : box.top;
+  if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior: "instant" });
+}
 
 /**
  * A toolbar button that opens a popover beneath it. Escape closes it and returns focus to the button;
@@ -33,7 +49,10 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
     const pop = popover.current;
     if (!open || !pop) return;
     delete pop.dataset.align;
-    if (getComputedStyle(pop).position === "fixed") return; // the phone sheet spans the viewport already
+    if (getComputedStyle(pop).position === "fixed") {
+      revealAboveSheet(pop); // the phone sheet spans the viewport already
+      return;
+    }
     if (pop.getBoundingClientRect().right > document.documentElement.clientWidth - EDGE) pop.dataset.align = "end";
   }, [open]);
 

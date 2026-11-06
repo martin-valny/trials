@@ -142,3 +142,31 @@ test("the sheet's Done button closes it and returns focus to the dropdown button
   expect(button).toHaveAttribute("aria-expanded", "false");
   expect(button).toHaveFocus();
 });
+
+test("opened as a phone sheet, it scrolls the page so the map sits in view above the sheet", async () => {
+  const realStyle = window.getComputedStyle;
+  vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+    const s = realStyle(el, pseudo);
+    return (el as Element).classList?.contains("popover") ? ({ ...s, position: "fixed" } as CSSStyleDeclaration) : s;
+  });
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    const box = (top: number, height: number) =>
+      ({ top, bottom: top + height, height, left: 0, right: 375, width: 375, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    if (this.classList.contains("popover")) return box(455, 357);
+    if (this.dataset.sheetReveal !== undefined) return box(600, 343);
+    return box(0, 0);
+  });
+  const scrollBy = vi.fn();
+  vi.stubGlobal("scrollBy", scrollBy);
+  const user = userEvent.setup();
+  render(
+    <div>
+      <MultiSelect label="Disease" options={OPTIONS} selected={new Set(ALL)} onChange={() => undefined} />
+      <div data-sheet-reveal="" />
+    </div>,
+  );
+  await user.click(screen.getByRole("button", { name: /Disease/ }));
+  // The map's bottom (943) moves up to 8px above the sheet's top edge (455).
+  expect(scrollBy).toHaveBeenCalledWith({ top: 943 - 447, behavior: "instant" });
+  vi.restoreAllMocks();
+});
