@@ -31,14 +31,14 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
     };
   }, [nct]);
 
-  const facts = trial
+  const facts: [string, string | null][] = trial
     ? [
-        drugList(trial.drugs),
-        phaseLabel(trial.phase),
-        outcomeLabel(trial.outcome),
-        trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null,
-        trial.lead_sponsor,
-      ].filter((x): x is string => x !== null)
+        ["drugs", drugList(trial.drugs)],
+        ["phase", phaseLabel(trial.phase)],
+        ["outcome", outcomeLabel(trial.outcome)],
+        ["enrollment", trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null],
+        ["sponsor", trial.lead_sponsor],
+      ]
     : [];
   const loaded = summary !== null && summary.nct === nct ? summary : null;
 
@@ -56,9 +56,7 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
           <>
             <p className="selected-facts">
               <b>{trial.nct_id}</b>
-              {facts.map((f) => (
-                <span key={f}> · {f}</span>
-              ))}
+              {facts.map(([field, f]) => (f === null ? null : <span key={field}> · {f}</span>))}
             </p>
             <p className="selected-summary">
               <span className="selected-src">From the registry</span>{" "}

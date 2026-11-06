@@ -101,9 +101,10 @@ describe("colorFor", () => {
   });
   it("disease mode uses first label index, mod length", () => {
     expect(colorFor(trial(), "disease", LIGHT_PALETTE, order)).toBe("#111111");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, order)).toBe("#c8102e");
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, order)).toBe("#7a5c2e");
+    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, order)).toBe("#c8a96a");
     const long = Array.from({ length: 8 }, (_, i) => `L${i}`);
-    expect(colorFor(trial({ condition_labels: ["L7"] }), "disease", LIGHT_PALETTE, long)).toBe("#c8102e");
+    expect(colorFor(trial({ condition_labels: ["L7"] }), "disease", LIGHT_PALETTE, long)).toBe("#7a5c2e");
     expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
   });
 });
@@ -153,4 +154,11 @@ describe("liftSentence", () => {
     expect(liftSentence(s({ verdict: "clustered", lift: 2.345, baseline_range: [0.94, 1.26] }))).toBe(
       "Successful trials' neighbours succeed 2.3× more often than chance (shuffled: 0.9–1.3×).",
     ));
+});
+
+describe("red is reserved for succeeded", () => {
+  it("no disease colour is the succeeded colour", () => {
+    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.succeeded);
+    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.succeeded);
+  });
 });

@@ -13,11 +13,11 @@
 
 /* The plate takes over the page: full width, and the shared header adopts its tokens. */
 :root:has(.explore) {
-  --bg: #fff; --fg: #111; --muted: #5b6268; --line: #d6dadd; --accent: #c8102e;
+  --bg: #fff; --fg: #111; --muted: #5b6268; --line: #d6dadd; --accent: #111;
   scrollbar-color: #a9b2b9 #fff;
 }
 @media (prefers-color-scheme: dark) {
-  :root:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #ff8a3d; scrollbar-color: #4a4e54 #17191c; }
+  :root:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #eceae4; scrollbar-color: #4a4e54 #17191c; }
 }
 :root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
 /* The page is a column filling the viewport; the plate takes whatever the header leaves. */
@@ -53,7 +53,8 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 
 .plate-fallback, .explore-message { margin: 0; padding: 24px 0; max-width: 60ch; font-size: 15px; line-height: 1.5; }
 .explore-message { padding: 16px 40px; }
-.explore a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--red); }
+.explore a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--muted); }
+.explore a:hover { text-decoration-color: var(--ink); }
 
 .explore button {
   font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate);
@@ -61,7 +62,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .explore button:hover, .find input:hover { border-color: var(--ink); }
 .explore button[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
-.explore :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.explore :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 /* Panels b and c: small figures in the right column. */
 .panel-b, .panel-c { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; }
@@ -72,7 +73,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .bar-label { overflow-wrap: anywhere; line-height: 1.2; }
 .bar-track { position: relative; height: 12px; background: var(--pale); }
 .bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
-.bar-avg { position: absolute; top: -3px; bottom: -3px; width: 1.5px; margin-left: -0.75px; background: var(--red); }
+.bar-avg { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); box-shadow: 0 0 0 1px var(--plate); }
 .bar-n { text-align: right; font-variant-numeric: tabular-nums; }
 .flow { list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; gap: 10px; height: 150px; }
 .flow li { flex: 0 1 68px; min-width: 0; display: flex; flex-direction: column; font-size: 12px; text-align: center; }
@@ -80,7 +81,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .flow-col { flex: 1 1 auto; display: flex; flex-direction: column-reverse; margin: 2px 0 4px; }
 .flow-col i { display: block; background: var(--ink); }
 .flow-col i.won { background: var(--red); }
-.flow-x { line-height: 1.2; text-wrap: balance; min-height: 2.4em; overflow-wrap: anywhere; }
+.flow-x { line-height: 1.2; text-wrap: balance; min-height: 2.4em; hyphens: auto; }
 
 /* Legend bar: a full-width ink rule, then key/value rows. */
 .legend {
@@ -91,7 +92,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .legend-k { color: var(--ink); font-weight: 700; align-self: start; padding-top: 3px; }
 .legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
 .find input {
-  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--red);
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
   border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px; width: min(22rem, 100%);
 }
 .find input::placeholder { color: var(--muted); }
@@ -99,8 +100,11 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .count { font-variant-numeric: tabular-nums; }
 .pill { display: inline-flex; align-items: center; gap: 6px; }
 .pill-n { font-variant-numeric: tabular-nums; color: var(--muted); }
-.pill[aria-pressed="true"] .pill-n { color: inherit; opacity: 0.72; }
-.pill[aria-pressed="false"] { color: var(--muted); border-color: var(--rule); }
+/* Multi-select filters are quiet: an ink outline when on; muted, hairline and struck through when off. */
+.explore .pill[aria-pressed="true"] { background: var(--plate); color: var(--ink); border-color: var(--ink); }
+.explore .pill[aria-pressed="false"] { color: var(--muted); border-color: var(--rule); text-decoration: line-through; text-decoration-color: var(--muted); }
+.pill[aria-pressed="false"] .swatch { opacity: 0.35; }
+.explore .pill:hover { border-color: var(--ink); }
 .swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
 
 /* Panel d lives in the legend's last row. */
@@ -132,5 +136,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .plate { padding: 10px 16px; }
   .legend { margin: 0 16px; grid-template-columns: 1fr; gap: 4px; }
   .legend-v + .legend-k { margin-top: 8px; }
+  .flow { gap: 4px; }
+  .flow li { font-size: 11px; }
   .explore-message { padding: 16px; }
 }

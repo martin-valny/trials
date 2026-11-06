@@ -179,7 +179,9 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         onMode={setMode}
         palette={palette}
         shown={shown.length}
-        onFind={() => shown.length > 0 && setSelected(shown[0].nct_id)}
+        onFind={() => {
+          if (filters.query.trim() !== "" && shown.length > 0) setSelected(shown[0].nct_id);
+        }}
       >
         <SelectedTrial trial={selectedTrial} />
       </LegendBar>

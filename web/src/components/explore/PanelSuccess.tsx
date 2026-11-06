@@ -26,7 +26,7 @@ export function PanelSuccess({ stats }: { stats: ExplorerStats }) {
                 {rate !== null ? pct(rate) : "—"}
                 <span className="visually-hidden">
                   {rate !== null
-                    ? ` (${row.succeeded} of ${row.finished} finished trials)`
+                    ? ` (${row.succeeded.toLocaleString("en-US")} of ${row.finished.toLocaleString("en-US")} finished trials)`
                     : " (no finished trials yet)"}
                 </span>
               </span>
@@ -35,7 +35,7 @@ export function PanelSuccess({ stats }: { stats: ExplorerStats }) {
         })}
       </ul>
       {avg !== null ? (
-        <p className="panel-note">Red tick: average across all finished trials ({pct(avg)}).</p>
+        <p className="panel-note">Tick: average across all finished trials ({pct(avg)}).</p>
       ) : null}
       <p className="panel-claim">{liftSentence(stats)}</p>
       <p className="panel-note">

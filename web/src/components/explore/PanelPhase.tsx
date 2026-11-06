@@ -29,7 +29,7 @@ export function PanelPhase({ trials }: { trials: ExplorerTrial[] }) {
       {cols.length === 0 ? null : (
         <ul className="flow">
           {cols.map(([k, c]) => (
-            <li key={k} aria-label={`${phaseLabel(k)}: ${c.n.toLocaleString("en-US")} trials, ${c.won} succeeded`}>
+            <li key={k} aria-label={`${phaseLabel(k)}: ${c.n.toLocaleString("en-US")} trials, ${c.won.toLocaleString("en-US")} succeeded`}>
               <span className="flow-n" aria-hidden="true">
                 {c.n.toLocaleString("en-US")}
               </span>

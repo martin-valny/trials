@@ -34,7 +34,7 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  diseases: ["#111111", "#c8102e", "#e07a5f", "#3b6ea5", "#7aa6c2", "#8a8f94"],
+  diseases: ["#111111", "#7a5c2e", "#e07a5f", "#3b6ea5", "#7aa6c2", "#8a8f94"],
 };
 
 export const DARK_PALETTE: Palette = {
@@ -51,7 +51,7 @@ export const DARK_PALETTE: Palette = {
     PHASE4: "#eceae4",
     NA: "#2b2e33",
   },
-  diseases: ["#eceae4", "#ff8a3d", "#7fb2e5", "#e5c07b", "#8fc29a", "#7d8287"],
+  diseases: ["#eceae4", "#c8a96a", "#7fb2e5", "#e5c07b", "#8fc29a", "#7d8287"],
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];

@@ -25,6 +25,7 @@ function fakeContext(): CanvasRenderingContext2D {
 }
 
 beforeEach(() => {
+  loadTrial.mockClear();
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
     (() => fakeContext()) as unknown as HTMLCanvasElement["getContext"],
   );
@@ -49,6 +50,7 @@ test("success panel shows lift sentence and definition link", async () => {
   for (const row of explorer.stats.by_condition) {
     expect(within(b).getByText(row.label)).toBeInTheDocument();
   }
+  expect(within(b).getByText(/^Tick: average across all finished trials \(\d+%\)\.$/)).toBeInTheDocument();
   const c = screen.getByRole("region", { name: /Trials by phase/ });
   expect(within(c).getByText("Phase 2")).toBeInTheDocument();
 });
@@ -58,7 +60,8 @@ test("toggling a disease updates the visible count", async () => {
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
   const label = explorer.stats.by_condition[0].label;
   const withLabel = explorer.trials.filter((t) => t.condition_labels.includes(label)).length;
-  const pill = screen.getByRole("button", { name: new RegExp(`^${label} \\d`) });
+  const esc = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pill = screen.getByRole("button", { name: new RegExp(`^${esc} \\d`) });
   expect(pill).toHaveAttribute("aria-pressed", "true");
   await userEvent.click(pill);
   expect(pill).toHaveAttribute("aria-pressed", "false");
@@ -127,4 +130,12 @@ test("outcome legend shows text labels not only colour", async () => {
   // Toggling an outcome off filters it out.
   await userEvent.click(screen.getByRole("button", { name: `Still running ${n("running")}` }));
   expect(screen.getByText(`Showing ${N - n("running")} of ${N} trials`)).toBeInTheDocument();
+});
+
+test("enter with an empty query selects nothing", async () => {
+  const box = await ready();
+  await userEvent.type(box, "{Enter}");
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  expect(within(d).getByText(/Click a dot in/)).toBeInTheDocument();
+  expect(loadTrial).not.toHaveBeenCalled();
 });
