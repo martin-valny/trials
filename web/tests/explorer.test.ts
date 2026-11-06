@@ -174,20 +174,25 @@ describe("liftSentence", () => {
     expect(liftSentence(s({}))).toBe("Too few successes in this area to measure clustering yet."));
   it("chance names the p-value", () =>
     expect(liftSentence(s({ verdict: "chance", lift: 1.31, baseline_range: [0.64, 1.39], p_value: 0.058394 }))).toBe(
-      "Trials that succeeded cluster no more than chance would (p = 0.058).",
+      "Trials that succeeded cluster no more than chance would (p\u00a0=\u00a00.058).",
     ));
   it("clustered names the lift, the shuffled range and the p-value", () =>
     expect(
       liftSentence(s({ verdict: "clustered", lift: 2.345, baseline_range: [0.94, 1.26], p_value: 0.0123 })),
     ).toBe(
-      "Trials that succeeded have neighbours that succeed 2.35× as often as the average finished trial (shuffled labels: 0.94–1.26×; p = 0.012).",
+      "Trials that succeeded have neighbours that succeed 2.35× as often as the average finished trial (shuffled labels: 0.94–1.26×; p\u00a0=\u00a00.012).",
     ));
   it("clustered with the smallest p reads as a floor", () =>
     expect(
       liftSentence(s({ verdict: "clustered", lift: 2.5, baseline_range: [0.5, 2], p_value: 1 / 10001 })),
     ).toBe(
-      "Trials that succeeded have neighbours that succeed 2.50× as often as the average finished trial (shuffled labels: 0.50–2.00×; p < 0.001).",
+      "Trials that succeeded have neighbours that succeed 2.50× as often as the average finished trial (shuffled labels: 0.50–2.00×; p\u00a0<\u00a00.001).",
     ));
+  it("the p clause never breaks across lines", () => {
+    const out = liftSentence(s({ verdict: "chance", p_value: 0.058 }));
+    expect(out).toContain("p\u00a0=\u00a00.058");
+    expect(liftSentence(s({ verdict: "chance", p_value: 0.0001 }))).toContain("p\u00a0<\u00a00.001");
+  });
   it("never says a bare 'successful'", () => {
     for (const v of ["insufficient", "chance", "clustered"] as const)
       expect(liftSentence(s({ verdict: v, lift: 1.5, baseline_range: [0.5, 1.2], p_value: 0.01 }))).not.toMatch(

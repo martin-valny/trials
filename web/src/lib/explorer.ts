@@ -180,10 +180,10 @@ export function formatP(p: number): string {
   return p < 0.001 ? "< 0.001" : String(Number(p.toPrecision(2)));
 }
 
-/** "p = 0.058" or "p < 0.001". */
+/** "p = 0.058" or "p < 0.001", with non-breaking spaces so the clause never wraps. */
 const pClause = (p: number): string => {
   const f = formatP(p);
-  return f.startsWith("<") ? `p ${f}` : `p = ${f}`;
+  return (f.startsWith("<") ? `p ${f}` : `p = ${f}`).replace(/ /g, "\u00a0");
 };
 
 export function liftSentence(s: ExplorerStats): string {
