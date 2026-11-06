@@ -319,3 +319,104 @@ test("in Disease mode the Disease dropdown shows a swatch only for conditions so
     expect(row.querySelector(".swatch") !== null).toBe(first.has(label));
   }
 });
+
+const withMech = (cls: string) => explorer.trials.filter((t) => t.mechanisms.includes(cls)).length;
+const noMech = explorer.trials.filter((t) => t.mechanisms.length === 0).length;
+
+test("Mechanism and Modality dropdowns follow Treatment, with 'none' last", async () => {
+  await ready();
+  const bar = screen.getByRole("group", { name: "Map controls" });
+  const names = within(bar)
+    .getAllByRole("button")
+    .map((b) => b.getAttribute("aria-expanded") !== null && b.textContent)
+    .filter(Boolean);
+  const at = (n: string) => names.findIndex((x) => typeof x === "string" && x.startsWith(n));
+  expect(at("Treatment:")).toBeGreaterThanOrEqual(0);
+  expect(at("Mechanism:")).toBe(at("Treatment:") + 1);
+  expect(at("Modality:")).toBe(at("Treatment:") + 2);
+
+  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  // Searchable, rows by trial count, the "none" row last.
+  expect(screen.getByRole("searchbox", { name: "Filter Mechanism" })).toBeInTheDocument();
+  const rows = within(screen.getByRole("group", { name: "Mechanism" })).getAllByRole("checkbox");
+  expect(rows.map((r) => r.closest("label")!.textContent)).toEqual([
+    `anti-CD20 ${withMech("anti-CD20")}`,
+    `NRF2 activator ${withMech("NRF2 activator")}`,
+    `No known mechanism ${noMech}`,
+  ]);
+  await userEvent.keyboard("{Escape}");
+
+  await userEvent.click(screen.getByRole("button", { name: "Modality: all" }));
+  const mods = within(screen.getByRole("group", { name: "Modality" })).getAllByRole("checkbox");
+  expect(mods.map((r) => r.closest("label")!.querySelector(".check-label")!.textContent)).toEqual([
+    "Small molecule",
+    "Antibody",
+    "No known modality",
+  ]);
+});
+
+test("Mechanism: Select none empties the map; one class alone shows just its trials", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("checkbox", { name: `anti-CD20 ${withMech("anti-CD20")}` }));
+  expect(screen.getByText(`Showing ${withMech("anti-CD20")} of ${N} trials`)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("checkbox", { name: `No known mechanism ${noMech}` }));
+  expect(screen.getByText(`Showing ${withMech("anti-CD20") + noMech} of ${N} trials`)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Reset all" })).toBeEnabled();
+});
+
+test("Mechanism and Modality colour modes have their own key", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Mechanism" }));
+  expect(screen.getByRole("button", { name: "Mechanism" })).toHaveAttribute("aria-pressed", "true");
+  const key = screen.getByRole("list", { name: "Colour key: Mechanism" });
+  expect(within(key).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+    "anti-CD20",
+    "NRF2 activator",
+    "No known mechanism",
+  ]);
+  await userEvent.click(screen.getByRole("button", { name: "Modality" }));
+  const mk = screen.getByRole("list", { name: "Colour key: Modality" });
+  expect(within(mk).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+    "Small molecule",
+    "Antibody",
+    "No known modality",
+  ]);
+  // The dropdown rows carry the same swatches.
+  await userEvent.click(screen.getByRole("button", { name: "Modality: all" }));
+  expect(document.querySelectorAll(".popover .check .swatch")).toHaveLength(3);
+});
+
+test("panel d names the trial's mechanism and modality", async () => {
+  const box = await ready();
+  await userEvent.type(box, "NCT02343159{Enter}");
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  expect(within(d).getByText(/NRF2 activator/)).toBeInTheDocument();
+  expect(within(d).getByText(/small molecule/)).toBeInTheDocument();
+});
+
+test("the Labels switch sits in panel a's corner; with no clusters it offers Diseases (default) and Off", async () => {
+  await ready();
+  const a = screen.getByRole("region", { name: /Embedding of/ });
+  const labels = within(a).getByRole("group", { name: "Labels" });
+  expect(within(labels).queryByRole("button", { name: "Clusters" })).not.toBeInTheDocument();
+  const diseases = within(labels).getByRole("button", { name: "Diseases" });
+  const off = within(labels).getByRole("button", { name: "Off" });
+  expect(diseases).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(off);
+  expect(off).toHaveAttribute("aria-pressed", "true");
+  expect(diseases).toHaveAttribute("aria-pressed", "false");
+  // Beside Play, in the same corner.
+  expect(labels.closest(".plate-controls")).toBe(within(a).getByRole("button", { name: "Play rotation" }).closest(".plate-controls"));
+});
+
+test("with named clusters the Labels switch defaults to Clusters", async () => {
+  const t = explorer.trials[6];
+  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Anti-CD20 antibodies", n: 8, x: t.x, y: t.y, z: t.z }] } });
+  await ready();
+  const labels = screen.getByRole("group", { name: "Labels" });
+  expect(within(labels).getAllByRole("button").map((b) => b.textContent)).toEqual(["Clusters", "Diseases", "Off"]);
+  expect(within(labels).getByRole("button", { name: "Clusters" })).toHaveAttribute("aria-pressed", "true");
+});

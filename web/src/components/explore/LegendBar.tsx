@@ -1,9 +1,13 @@
 import { useMemo, type ReactNode } from "react";
 import {
+  categorySeries,
   diseaseColor,
   firstLabels,
   filterCounts,
+  mechanismLabel,
+  modalityLabel,
   MODES,
+  NONE,
   OUTCOMES,
   outcomeColor,
   phasesOf,
@@ -17,6 +21,8 @@ export interface ColourKeyProps {
   trials: ExplorerTrial[];
   /** The disease colour order (diseaseSeries): disease mode lists conditions in this order. */
   series: string[];
+  /** The mechanism classes that take the colour series (mechanismSeries). */
+  mechanismSeries?: string[];
   mode: ColorMode;
   palette: Palette;
 }
@@ -33,6 +39,7 @@ interface Key {
  */
 export function ColourKey(p: ColourKeyProps) {
   const { trials, mode, palette, series } = p;
+  const mechanismSeries = p.mechanismSeries;
   const counts = useMemo(() => filterCounts(trials), [trials]);
   const keys = useMemo((): Key[] => {
     if (mode === "outcome")
@@ -46,11 +53,12 @@ export function ColourKey(p: ColourKeyProps) {
         label: phaseLabel(ph),
         swatch: palette.phases[ph] ?? palette.unknown,
       }));
+    if (mode === "mechanism" || mode === "modality") return categoryKeys(trials, mode, palette, mechanismSeries ?? []);
     // Disease colours go by a trial's first label, so the key lists the conditions that come first
     // somewhere, in the area's order (the order their hues are dealt in).
     const first = firstLabels(trials);
     return series.filter((c) => first.has(c)).map((c) => ({ label: c, swatch: diseaseColor(c, palette, series) }));
-  }, [mode, palette, series, counts, trials]);
+  }, [mode, palette, series, mechanismSeries, counts, trials]);
   const name = MODES.find(([m]) => m === mode)?.[1] ?? "";
 
   return (
@@ -72,6 +80,33 @@ export function ColourKey(p: ColourKeyProps) {
       </a>
     </div>
   );
+}
+
+/**
+ * Mechanism or modality key: only the colours some trial is painted in. The series classes in series
+ * order, then other, more than one, and none.
+ */
+function categoryKeys(trials: ExplorerTrial[], mode: "mechanism" | "modality", palette: Palette, top: string[]): Key[] {
+  const values = (t: ExplorerTrial) => (mode === "mechanism" ? t.mechanisms : t.modalities);
+  const series = categorySeries(mode, top);
+  const single = new Set<string>();
+  let multiple = false;
+  let none = false;
+  for (const t of trials) {
+    const v = values(t);
+    if (v.length === 0) none = true;
+    else if (v.length > 1) multiple = true;
+    else single.add(v[0]);
+  }
+  const name = mode === "mechanism" ? mechanismLabel : modalityLabel;
+  const keys: Key[] = series
+    .filter((k) => single.has(k))
+    .map((k) => ({ label: name(k), swatch: palette.diseases[series.indexOf(k) % palette.diseases.length] }));
+  if ([...single].some((k) => !series.includes(k)))
+    keys.push({ label: mode === "mechanism" ? "Other mechanism" : "Other", swatch: palette.otherCategory });
+  if (multiple) keys.push({ label: `More than one ${mode}`, swatch: palette.multiple });
+  if (none) keys.push({ label: name(NONE), swatch: palette.unknown });
+  return keys;
 }
 
 /**

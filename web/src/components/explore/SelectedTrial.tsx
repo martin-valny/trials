@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadTrial } from "../../data";
+import { mechanismText, modalityText } from "../../lib/explorer";
 import { firstSentences, outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
 
@@ -12,10 +13,15 @@ function drugList(drugs: string[]): string | null {
   return drugs.length > 3 ? `${head} and ${drugs.length - 3} more` : head;
 }
 
-/** The facts line's parts after the NCT number: drugs, phase, outcome, enrollment, sponsor (missing ones left out). */
+/**
+ * The facts line's parts after the NCT number: drugs, mechanism, modality, phase, outcome, enrollment,
+ * sponsor (missing ones left out).
+ */
 function factsOf(trial: ExplorerTrial): [string, string][] {
   const all: [string, string | null][] = [
     ["drugs", drugList(trial.drugs)],
+    ["mechanism", mechanismText(trial)],
+    ["modality", modalityText(trial)],
     ["phase", phaseLabel(trial.phase)],
     ["outcome", outcomeLabel(trial.outcome)],
     ["enrollment", trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null],

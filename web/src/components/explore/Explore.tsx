@@ -10,6 +10,7 @@ import {
   emphasisFor,
   LIGHT_PALETTE,
   matches,
+  mechanismSeries,
   yearBounds,
   type ColorMode,
   type Filters,
@@ -104,6 +105,50 @@ function ResetView({ onReset }: { onReset: () => void }) {
   );
 }
 
+type LabelMode = "clusters" | "diseases" | "off";
+
+/**
+ * Which names the map carries: the named clusters (offered only when the file has some), each disease at
+ * its densest point, or none. Quiet words beside Play, the chosen one in ink.
+ */
+function LabelSwitch({
+  value,
+  onChange,
+  clusters,
+}: {
+  value: LabelMode;
+  onChange: (m: LabelMode) => void;
+  clusters: boolean;
+}) {
+  const modes: [LabelMode, string][] = [
+    ...(clusters ? [["clusters", "Clusters"] as [LabelMode, string]] : []),
+    ["diseases", "Diseases"],
+    ["off", "Off"],
+  ];
+  return (
+    <div className="label-switch" role="group" aria-label="Labels">
+      <span className="label-switch-k" aria-hidden="true">
+        Labels
+      </span>
+      {modes.map(([m, name], i) => (
+        <span key={m} className="label-switch-opt">
+          {i > 0 && (
+            <span className="label-switch-sep" aria-hidden="true">
+              ·
+            </span>
+          )}
+          <button type="button" aria-pressed={value === m} onClick={() => onChange(m)}>
+            {name}
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Labels off: an empty anchor list, so the canvas draws no names. */
+const NO_ANCHORS: { label: string; x: number; y: number; z: number }[] = [];
+
 /** Outcome colouring draws unknown outcomes as rings. */
 const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
 
@@ -168,6 +213,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const phone = useMediaQuery("(max-width: 640px)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
+  // Named clusters label the map when the file has them; otherwise each disease does.
+  const [labelMode, setLabelMode] = useState<LabelMode>(file.clusters.length > 0 ? "clusters" : "diseases");
   const [selected, setSelected] = useState<string | null>(null);
   // The map starts still; the turn is opt-in, and never offered under reduced motion.
   const [spinning, setSpinning] = useState(false);
@@ -189,8 +236,17 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const series = useMemo(() => diseaseSeries(file.trials, order), [file, order]);
   const ranked = useMemo(() => diseaseRanking(file.trials, order), [file, order]);
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
+  // The six commonest mechanism classes over the whole file take the colour series.
+  const mechanisms = useMemo(() => mechanismSeries(file.trials), [file]);
+  const clusterAnchors = useMemo(
+    () => [...file.clusters].sort((a, b) => b.n - a.n).map(({ label, x, y, z }) => ({ label, x, y, z })),
+    [file],
+  );
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
-  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, series), [mode, palette, series]);
+  const color = useCallback(
+    (t: ExplorerTrial) => colorFor(t, mode, palette, series, mechanisms),
+    [mode, palette, series, mechanisms],
+  );
   const emphasis = useMemo(() => emphasisFor(mode, ranked), [mode, ranked]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
@@ -222,6 +278,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         bounds={bounds}
         conditions={conditions}
         series={series}
+        mechanismSeries={mechanisms}
         mode={mode}
         onMode={setMode}
         palette={palette}
@@ -237,7 +294,13 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             <span className="panel-l">a</span>
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
-          <ColourKey trials={file.trials} series={series} mode={mode} palette={palette} />
+          <ColourKey
+            trials={file.trials}
+            series={series}
+            mechanismSeries={mechanisms}
+            mode={mode}
+            palette={palette}
+          />
           {/* A phone sheet scrolls this into view above itself (see Dropdown). */}
           <div className="panel-a-body" data-sheet-reveal="">
             <PlateCanvas
@@ -247,7 +310,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               color={color}
               emphasis={emphasis}
               hollow={mode === "outcome" ? isUnknownOutcome : undefined}
-              labels={order}
+              labels={labelMode === "diseases" ? order : undefined}
+              anchors={labelMode === "clusters" ? clusterAnchors : labelMode === "off" ? NO_ANCHORS : undefined}
               labelColumn={phone}
               selected={selected}
               onSelect={setSelected}
@@ -257,7 +321,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               ringColor={palette.stopped}
               onZoomChange={onZoomChange}
             />
-            {total > 0 && (zoomed || !reducedMotion) && (
+            {total > 0 && (
               <div className="plate-controls">
                 {zoomed && (
                   <ResetView
@@ -268,6 +332,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
                     }}
                   />
                 )}
+                <LabelSwitch value={labelMode} onChange={setLabelMode} clusters={file.clusters.length > 0} />
                 {!reducedMotion && <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />}
               </div>
             )}

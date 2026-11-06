@@ -1,10 +1,17 @@
 import { useMemo, useRef } from "react";
 import {
+  categoryColor,
+  categorySeries,
   diseaseColor,
   firstLabels,
   filterCounts,
   filtersFor,
+  mechanismLabel,
+  mechanismsOf,
+  modalitiesOf,
+  modalityLabel,
   MODES,
+  NONE,
   OUTCOMES,
   outcomeColor,
   phasesOf,
@@ -28,6 +35,8 @@ export interface ToolbarProps {
   conditions: string[];
   /** The order disease colours are dealt in (diseaseSeries). */
   series: string[];
+  /** The mechanism classes that take the colour series (mechanismSeries). */
+  mechanismSeries: string[];
   mode: ColorMode;
   onMode(m: ColorMode): void;
   palette: Palette;
@@ -93,8 +102,23 @@ export function Toolbar(p: ToolbarProps) {
     const treatment: MultiSelectOption[] = [...counts.treatmentTypes.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([x, n]) => ({ value: x, label: treatmentLabel(x), n }));
-    return { disease, phase, outcome, treatment };
-  }, [counts, mode, palette, p.conditions, p.series, first]);
+    // Mechanism and modality: a trial with several classes is listed under each; NONE stands for none.
+    const category = (m: "mechanism" | "modality", keys: string[], c: Map<string, number>, name: (k: string) => string) =>
+      keys.map((k) => ({
+        value: k,
+        label: name(k),
+        n: c.get(k) ?? 0,
+        swatch:
+          mode === m ? categoryColor(k === NONE ? [] : [k], palette, categorySeries(m, p.mechanismSeries)) : undefined,
+      }));
+    // Every set holds NONE (see filtersFor), so its row is always offered, last.
+    const withNone = (c: Map<string, number>) => (c.has(NONE) ? c : new Map([...c, [NONE, 0]]));
+    const mechanisms = withNone(counts.mechanisms);
+    const modalities = withNone(counts.modalities);
+    const mechanism = category("mechanism", mechanismsOf(mechanisms), mechanisms, mechanismLabel);
+    const modality = category("modality", modalitiesOf(modalities), modalities, modalityLabel);
+    return { disease, phase, outcome, treatment, mechanism, modality };
+  }, [counts, mode, palette, p.conditions, p.series, p.mechanismSeries, first]);
 
   return (
     <div className="toolbar" role="group" aria-label="Map controls">
@@ -156,6 +180,19 @@ export function Toolbar(p: ToolbarProps) {
           options={options.treatment}
           selected={filters.treatmentTypes}
           onChange={set("treatmentTypes")}
+        />
+        <MultiSelect
+          label="Mechanism"
+          options={options.mechanism}
+          selected={filters.mechanisms}
+          onChange={set("mechanisms")}
+          searchable
+        />
+        <MultiSelect
+          label="Modality"
+          options={options.modality}
+          selected={filters.modalities}
+          onChange={set("modalities")}
         />
         <YearRange bounds={p.bounds} value={filters.years} onChange={(years) => p.onFilters({ ...filters, years })} />
         {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}

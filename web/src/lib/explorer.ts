@@ -1,13 +1,17 @@
 import type { ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
 import { phaseLabel, treatmentLabel } from "./format";
 
-export type ColorMode = "outcome" | "phase" | "disease";
+export type ColorMode = "outcome" | "phase" | "disease" | "mechanism" | "modality";
 
 export interface Filters {
   conditions: Set<string>;
   phases: Set<string>;
   outcomes: Set<Outcome>;
   treatmentTypes: Set<string>;
+  /** Mechanism classes; NONE stands for trials with no known mechanism. */
+  mechanisms: Set<string>;
+  /** Modalities; NONE stands for trials with no known modality. */
+  modalities: Set<string>;
   query: string;
   /** On: only trials with results posted. Off (default): every trial, results or not. */
   resultsOnly: boolean;
@@ -15,7 +19,7 @@ export interface Filters {
   years: [number, number];
 }
 
-export type SetKey = "conditions" | "phases" | "outcomes" | "treatmentTypes";
+export type SetKey = "conditions" | "phases" | "outcomes" | "treatmentTypes" | "mechanisms" | "modalities";
 
 export interface Palette {
   succeeded: string;
@@ -32,6 +36,10 @@ export interface Palette {
    * No ink, no red: red is reserved for succeeded.
    */
   diseases: string[];
+  /** Mechanism and modality modes: a class outside the six that take the series. */
+  otherCategory: string;
+  /** Mechanism and modality modes: a trial with more than one class. */
+  multiple: string;
 }
 
 export const LIGHT_PALETTE: Palette = {
@@ -51,6 +59,8 @@ export const LIGHT_PALETTE: Palette = {
   },
   // Editorial journal: one hue per condition, in the area's condition order.
   diseases: ["#3c5488", "#00a087", "#8e5ea2", "#4dbbd5", "#e0a030", "#7e6148"],
+  otherCategory: "#9aa5b1",
+  multiple: "#5b6268",
 };
 
 export const DARK_PALETTE: Palette = {
@@ -69,6 +79,8 @@ export const DARK_PALETTE: Palette = {
     NA: "#2b2e33",
   },
   diseases: ["#8da3d6", "#3cc7a8", "#cf8fd6", "#7fd3e6", "#f0c060", "#b8977a"],
+  otherCategory: "#6c7680",
+  multiple: "#b9bdc2",
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
@@ -78,6 +90,77 @@ export const PHASES = ["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "
 
 /** A trial's phase bucket for filtering; a missing phase counts as "NA". */
 export const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
+
+// --- Mechanism and modality -------------------------------------------------------------------------
+
+/** Filter value for trials with no known mechanism (or modality). */
+export const NONE = "__none__";
+
+/** A trial's classes, or [NONE] when it has none: what filters and counts key it under. */
+const orNone = (values: string[]): string[] => (values.length > 0 ? values : [NONE]);
+
+/** Modalities in reading order; the first six take the colour series, "other" the other-category grey. */
+export const MODALITIES = [
+  "small molecule",
+  "antibody",
+  "protein",
+  "oligonucleotide",
+  "cell therapy",
+  "gene therapy",
+  "other",
+];
+const MODALITY_SERIES = MODALITIES.slice(0, 6);
+
+/** "small molecule" -> "Small molecule"; NONE -> "No known modality". */
+export const modalityLabel = (m: string): string =>
+  m === NONE ? "No known modality" : m.charAt(0).toUpperCase() + m.slice(1);
+
+/** A mechanism class as shown; NONE -> "No known mechanism". */
+export const mechanismLabel = (m: string): string => (m === NONE ? "No known mechanism" : m);
+
+/** Modality keys present in ``counts``: the fixed order, then any other alphabetically, NONE last. */
+export function modalitiesOf(counts: Map<string, number>): string[] {
+  const rank = (k: string) => (k === NONE ? Infinity : MODALITIES.includes(k) ? MODALITIES.indexOf(k) : MODALITIES.length);
+  return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** Mechanism keys present in ``counts`` by trial count (ties alphabetically), NONE last. */
+export const mechanismsOf = (counts: Map<string, number>): string[] =>
+  [...counts.keys()].sort(
+    (a, b) => Number(a === NONE) - Number(b === NONE) || counts.get(b)! - counts.get(a)! || a.localeCompare(b),
+  );
+
+/**
+ * The (up to) six commonest mechanism classes over every trial, by trial count (a trial counts in each class
+ * it has), ties alphabetically: the classes that take the colour series, so colours never shift when filtering.
+ */
+export const mechanismSeries = (trials: ExplorerTrial[]): string[] =>
+  mechanismsOf(tally(trials, (t) => t.mechanisms)).slice(0, 6);
+
+/**
+ * Mechanism or modality colour: none -> unknown; more than one -> multiple; one in ``series`` -> its
+ * place in the series; any other -> the other-category grey. Never red.
+ */
+export function categoryColor(values: string[], palette: Palette, series: string[]): string {
+  if (values.length === 0) return palette.unknown;
+  if (values.length > 1) return palette.multiple;
+  const i = series.indexOf(values[0]);
+  return i < 0 ? palette.otherCategory : palette.diseases[i % palette.diseases.length];
+}
+
+/** The colour series for a category mode: mechanism uses ``mechanisms`` (mechanismSeries), modality the fixed order. */
+export const categorySeries = (mode: "mechanism" | "modality", mechanisms: string[]): string[] =>
+  mode === "mechanism" ? mechanisms : MODALITY_SERIES;
+
+/** Panel d's mechanism part: the first class, "+n" for the rest; null when none. */
+export const mechanismText = (t: ExplorerTrial): string | null =>
+  t.mechanisms.length === 0 ? null : firstOf(t.mechanisms, 1);
+
+/** Panel d's modality part, as mechanismText. */
+export const modalityText = (t: ExplorerTrial): string | null =>
+  t.modalities.length === 0 ? null : firstOf(t.modalities, 1);
+
+// --- end mechanism and modality ---------------------------------------------------------------------
 
 /**
  * Disease colour for a condition label, by its place in ``series`` (see diseaseSeries): each condition
@@ -143,6 +226,8 @@ export function filterCounts(trials: ExplorerTrial[]) {
     phases: tally(trials, (t) => [phaseKey(t)]),
     outcomes: tally(trials, (t) => [t.outcome]),
     treatmentTypes: tally(trials, (t) => t.treatment_types),
+    mechanisms: tally(trials, (t) => orNone(t.mechanisms)),
+    modalities: tally(trials, (t) => orNone(t.modalities)),
   };
 }
 
@@ -157,6 +242,8 @@ export const MODES: [ColorMode, string][] = [
   ["outcome", "Outcome"],
   ["phase", "Phase"],
   ["disease", "Disease"],
+  ["mechanism", "Mechanism"],
+  ["modality", "Modality"],
 ];
 
 const sameSet = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
@@ -169,6 +256,8 @@ export function sameFilters(a: Filters, b: Filters): boolean {
     sameSet(a.phases, b.phases) &&
     sameSet(a.outcomes, b.outcomes) &&
     sameSet(a.treatmentTypes, b.treatmentTypes) &&
+    sameSet(a.mechanisms, b.mechanisms) &&
+    sameSet(a.modalities, b.modalities) &&
     a.query === b.query &&
     a.resultsOnly === b.resultsOnly &&
     a.years[0] === b.years[0] &&
@@ -201,16 +290,22 @@ export function filtersFor(trials: ExplorerTrial[], conditionLabels: Iterable<st
   const conditions = new Set<string>(conditionLabels);
   const phases = new Set<string>();
   const treatmentTypes = new Set<string>();
+  const mechanisms = new Set<string>([NONE]);
+  const modalities = new Set<string>([NONE]);
   for (const t of trials) {
     t.condition_labels.forEach((l) => conditions.add(l));
     phases.add(phaseKey(t));
     t.treatment_types.forEach((x) => treatmentTypes.add(x));
+    t.mechanisms.forEach((x) => mechanisms.add(x));
+    t.modalities.forEach((x) => modalities.add(x));
   }
   return {
     conditions,
     phases,
     outcomes: new Set(OUTCOMES),
     treatmentTypes,
+    mechanisms,
+    modalities,
     query: "",
     resultsOnly: false,
     years: yearBounds(trials),
@@ -229,6 +324,8 @@ export function matches(t: ExplorerTrial, f: Filters, bounds: [number, number]):
   if (!f.outcomes.has(t.outcome)) return false;
   if (f.resultsOnly && !t.has_results) return false;
   if (t.treatment_types.length > 0 && !t.treatment_types.some((x) => f.treatmentTypes.has(x))) return false;
+  if (!orNone(t.mechanisms).some((x) => f.mechanisms.has(x))) return false;
+  if (!orNone(t.modalities).some((x) => f.modalities.has(x))) return false;
   const q = f.query.trim().toLowerCase();
   if (q) {
     const hay = [t.nct_id, t.title, ...t.drugs, t.lead_sponsor ?? ""];
@@ -249,13 +346,26 @@ export const outcomeColor = (o: Outcome, palette: Palette): string =>
 export function emphasisFor(mode: ColorMode, ranked: string[]): ((t: ExplorerTrial) => boolean) | undefined {
   if (mode === "outcome") return (t) => t.outcome === "succeeded";
   if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
+  if (mode === "mechanism") return (t) => t.mechanisms.length > 0;
+  if (mode === "modality") return (t) => t.modalities.length > 0;
   return undefined;
 }
 
-/** ``series`` is the disease colour order (diseaseSeries), used in disease mode only. */
-export function colorFor(t: ExplorerTrial, mode: ColorMode, palette: Palette, series: string[]): string {
+/**
+ * ``series`` is the disease colour order (diseaseSeries), used in disease mode only; ``mechanisms`` the
+ * classes that take the series in mechanism mode (mechanismSeries).
+ */
+export function colorFor(
+  t: ExplorerTrial,
+  mode: ColorMode,
+  palette: Palette,
+  series: string[],
+  mechanisms: string[] = [],
+): string {
   if (mode === "outcome") return outcomeColor(t.outcome, palette);
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
+  if (mode === "mechanism") return categoryColor(t.mechanisms, palette, mechanisms);
+  if (mode === "modality") return categoryColor(t.modalities, palette, MODALITY_SERIES);
   return diseaseColor(t.condition_labels[0], palette, series);
 }
 
@@ -541,6 +651,8 @@ const firstOf = (items: string[], n: number): string =>
 export function popupLines(t: ExplorerTrial): [string, string] {
   const parts = [
     firstOf(t.drugs, 2),
+    firstOf(t.mechanisms, 1),
+    firstOf(t.modalities, 1),
     firstOf(t.treatment_types.slice(0, 2).map(treatmentLabel), 2),
     phaseLabel(t.phase),
     yearSpan(t),
