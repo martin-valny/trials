@@ -34,10 +34,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .panel { position: relative; min-height: 0; min-width: 0; }
 .panel-a { grid-row: 1 / 3; display: flex; flex-direction: column; min-height: 62vh; }
+/* Side by side, panel a is sized to the viewport rather than stretched to the right column, so its key
+   and the "Dot size" caption both land above the fold. */
+@media (min-width: 901px) {
+  .panel-a { align-self: start; min-height: 0; height: max(420px, min(62vh, calc(100dvh - 330px))); }
+}
 .panel-h { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.3; }
 .panel-l { margin-right: 10px; font-size: 22px; font-weight: 800; line-height: 1; }
-.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; }
-.plate-caption { margin-top: 6px; }
+.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; margin-top: 4px; }
+.plate-caption { margin-top: 6px; max-width: 84ch; }
 .plate-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; color: var(--ink); }
 .plate-canvas:active { cursor: grabbing; }
 
@@ -91,9 +96,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   display: grid; grid-template-columns: 6.5rem 1fr; gap: 6px 18px; align-items: center;
   font-size: 13px; line-height: 1.5; color: var(--muted);
 }
-.legend-key { border-top: 1px solid var(--ink); padding: 12px 0 10px; grid-template-columns: 6.5rem 1fr auto; align-items: baseline; }
-.legend-key .legend-k { align-self: baseline; padding-top: 0; }
-.legend-d { padding: 10px 0 18px; border-top: 1px solid var(--rule); margin-top: 0; }
+.legend-d { padding: 12px 0 18px; border-top: 1px solid var(--ink); margin-top: 0; }
 .legend-k { color: var(--ink); font-weight: 700; align-self: start; padding-top: 3px; }
 .legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
 .find input {
@@ -142,7 +145,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 
 @media (max-width: 900px) {
   .plate { grid-template-columns: 1fr; grid-template-rows: auto; }
-  .panel-a { grid-row: auto; min-height: 60vh; }
+  .panel-a { grid-row: auto; min-height: 60vh; padding-bottom: 18px; }
   /* Once a trial is chosen, only its facts line stays in view at the bottom, with a link down to d. */
   .selected-bar {
     position: sticky; bottom: 0; z-index: 1;
@@ -357,10 +360,17 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* The sheet header (title and Done) exists only on the phone sheet. */
 .sheet-head { display: none; }
 
-/* The colour key: swatches and words in a row, then a quiet link to the list. */
-.key-list { list-style: none; margin: 0; padding: 0; color: var(--ink); }
-.key-list li { display: inline-flex; align-items: center; gap: 6px; }
-.key-list-link { white-space: nowrap; }
+/* The figure key: one 12px line of swatches and words under panel a's heading, like the key printed
+   under a figure panel's title; a quiet link to the list closes it. */
+.figure-key {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+  margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--muted); column-gap: 14px;
+}
+/* The list's items share the key's one wrapping line with the link, which keeps to the line's end. */
+.key-list { list-style: none; margin: 0; padding: 0; display: contents; color: var(--ink); }
+.key-list li { display: inline-flex; align-items: center; gap: 5px; }
+.key-list .swatch { width: 8px; height: 8px; }
+.key-list-link { white-space: nowrap; margin-left: auto; }
 
 /* Laptop widths: the full set needs about 1,350px, so it is set on two deliberate lines instead of
    wrapping wherever it breaks: find, colour and the count on the first; the filters and Reset all under
@@ -385,7 +395,6 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .toolbar .tb-find { width: 100%; }
   .explore .tb-switch { margin-left: 0; } /* flush with the line start when it wraps */
   .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
-  .legend-key { grid-template-columns: 1fr; }
   .sheet-head {
     display: flex; align-items: baseline; justify-content: space-between;
     padding-bottom: 8px; border-bottom: 1px solid var(--rule);

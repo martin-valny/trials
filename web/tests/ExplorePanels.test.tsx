@@ -193,13 +193,17 @@ test("panel c scales to the largest phased column and moves trials without a pha
   expect(h.querySelector(".swatch-inline")).not.toBeNull();
 });
 
-test("under the plate: the colour key, then panel d", async () => {
+test("the colour key is a line under panel a's heading, before the map; panel d sits under the plate", async () => {
   await ready();
-  const key = screen.getByRole("list", { name: /^Colour key/ });
+  const a = screen.getByRole("region", { name: /Embedding of/ });
+  const key = within(a).getByRole("list", { name: /^Colour key/ });
+  const canvas = screen.getByRole("img", { name: /^3D map/ });
   const d = screen.getByRole("region", { name: "Selected trial" });
-  const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-  expect(follows(screen.getByRole("img", { name: /^3D map/ }), key)).toBe(true);
-  expect(follows(key, d)).toBe(true);
+  const follows = (x: Node, y: Node) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  expect(follows(within(a).getByRole("heading"), key)).toBe(true);
+  expect(follows(key, canvas)).toBe(true);
+  expect(follows(canvas, d)).toBe(true);
+  expect(a.contains(d)).toBe(false);
 });
 
 test("unknown outcome swatch is a ring, not a filled dot, in the key and in the Outcome dropdown", async () => {

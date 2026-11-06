@@ -12,15 +12,13 @@ import {
 import { outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
 
-export interface LegendBarProps {
+export interface ColourKeyProps {
   trials: ExplorerTrial[];
   /** Every condition label in the file, in the area's order. */
   conditions: string[];
   order: string[];
   mode: ColorMode;
   palette: Palette;
-  /** Panel d. */
-  children?: ReactNode;
 }
 
 interface Key {
@@ -30,10 +28,10 @@ interface Key {
 }
 
 /**
- * Under the plate's ink rule: the key to the active colouring (swatches and words, nothing to press),
- * then panel d. Panel d is its own block so on narrow screens it can stick to the bottom of the viewport.
+ * The figure key: one 12px line of swatches and words under panel a's heading, naming the active
+ * colouring (nothing to press), closed by a quiet link to the list.
  */
-export function LegendBar(p: LegendBarProps) {
+export function ColourKey(p: ColourKeyProps) {
   const { trials, mode, palette, order, conditions } = p;
   const counts = useMemo(() => filterCounts(trials), [trials]);
   const keys = useMemo((): Key[] => {
@@ -55,28 +53,30 @@ export function LegendBar(p: LegendBarProps) {
   const name = MODES.find(([m]) => m === mode)?.[1] ?? "";
 
   return (
-    <>
-      <div className="legend legend-key">
-        <span className="legend-k" aria-hidden="true">
-          {name}
-        </span>
-        <ul className="legend-v key-list" aria-label={`Colour key: ${name}`}>
-          {keys.map((k) => (
-            <li key={k.label}>
-              <span
-                className={k.ring ? "swatch ring" : "swatch"}
-                style={k.ring ? { borderColor: k.swatch } : { background: k.swatch }}
-                aria-hidden="true"
-              />
-              {k.label}
-            </li>
-          ))}
-        </ul>
-        <a className="key-list-link" href="#/trials">
-          View as list
-        </a>
-      </div>
-      <div className="legend legend-d">{p.children}</div>
-    </>
+    <div className="figure-key">
+      <ul className="key-list" aria-label={`Colour key: ${name}`}>
+        {keys.map((k) => (
+          <li key={k.label}>
+            <span
+              className={k.ring ? "swatch ring" : "swatch"}
+              style={k.ring ? { borderColor: k.swatch } : { background: k.swatch }}
+              aria-hidden="true"
+            />
+            {k.label}
+          </li>
+        ))}
+      </ul>
+      <a className="key-list-link" href="#/trials">
+        View as list
+      </a>
+    </div>
   );
+}
+
+/**
+ * Under the plate's ink rule: panel d, its own block so on narrow screens it can stick to the bottom
+ * of the viewport.
+ */
+export function LegendBar({ children }: { children?: ReactNode }) {
+  return <div className="legend legend-d">{children}</div>;
 }

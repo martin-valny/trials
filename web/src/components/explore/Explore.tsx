@@ -13,7 +13,7 @@ import {
 } from "../../lib/explorer";
 import { useTheme } from "../../lib/theme";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
-import { LegendBar } from "./LegendBar";
+import { ColourKey, LegendBar } from "./LegendBar";
 import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
@@ -147,6 +147,8 @@ export function Explore() {
 function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const dark = useTheme().theme === "dark";
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  // A touch screen has no hover, so the caption does not offer one.
+  const coarse = useMediaQuery("(pointer: coarse)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
   const [selected, setSelected] = useState<string | null>(null);
@@ -207,6 +209,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             <span className="panel-l">a</span>
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
+          <ColourKey trials={file.trials} conditions={conditions} order={order} mode={mode} palette={palette} />
           <div className="panel-a-body">
             <PlateCanvas
               trials={file.trials}
@@ -240,8 +243,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             ) : null}
           </div>
           <p className="panel-note plate-caption">
-            Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn,
-            hover for details, click to open.
+            Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
+            {coarse ? "Drag to turn, tap to open." : "Drag to turn, hover for details, click to open."}
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}
@@ -250,7 +253,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         <PanelSuccess stats={file.stats} k={file.method.k} />
         <PanelPhase trials={shown} />
       </div>
-      <LegendBar trials={file.trials} conditions={conditions} order={order} mode={mode} palette={palette}>
+      <LegendBar>
         <SelectedTrial trial={selectedTrial} />
       </LegendBar>
       <SelectedBar trial={selectedTrial} />

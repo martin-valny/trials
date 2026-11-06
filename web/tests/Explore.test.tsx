@@ -52,6 +52,25 @@ test("panel a carries a caption on how to read the map", async () => {
   ).toBeInTheDocument();
 });
 
+test("on a coarse pointer the caption says tap to open and never mentions hover", async () => {
+  withCanvas();
+  stubFetch();
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("pointer: coarse"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+  renderAt(<Explore />, "/explore");
+  const a = await screen.findByRole("region", { name: /Embedding of/ });
+  const caption = within(a).getByText(/^Dot size: enrollment\./);
+  expect(caption).toHaveTextContent("Drag to turn, tap to open.");
+  expect(caption.textContent).not.toMatch(/hover/i);
+});
+
 test("missing explorer shows explanation", async () => {
   withCanvas();
   stubFetch({ "explorer.json": 404 });
