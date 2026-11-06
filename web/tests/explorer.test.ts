@@ -442,9 +442,14 @@ function hueSat(h: string): [number, number] {
 
 describe("light palette legibility", () => {
   it("every outcome fill is at least 3:1 on the white plate", () => {
-    // Completed with no known result is the pale ground of the cloud by design (#c9d1d8), so it is exempt.
     for (const o of ["succeeded", "stopped", "running", "unknownRing"] as const)
       expect(contrast(LIGHT_PALETTE[o], "#ffffff")).toBeGreaterThanOrEqual(3);
+  });
+  it("completed is the pale ground: a lower floor, and still apart from the unknown ring", () => {
+    // #c9d1d8 is deliberately quiet (about 1.5:1), but it must not fade into the white plate ...
+    expect(contrast(LIGHT_PALETTE.completed_unknown, "#ffffff")).toBeGreaterThanOrEqual(1.4);
+    // ... nor into the mid-grey unknown-outcome ring.
+    expect(contrast(LIGHT_PALETTE.completed_unknown, LIGHT_PALETTE.unknownRing)).toBeGreaterThanOrEqual(1.5);
   });
   it("no saturated light disease colour sits in the red family (red is for succeeded)", () => {
     for (const c of LIGHT_PALETTE.diseases) {
