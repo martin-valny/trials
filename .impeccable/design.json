@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T10:50:15.649908Z",
+  "title": "Design System: Trial Radar",
+  "extensions": {
+    "colorMeta": {
+      "rubric-red": {
+        "role": "primary",
+        "displayName": "Rubric Red",
+        "canonical": "#c8102e"
+      },
+      "slide-orange": {
+        "role": "primary",
+        "displayName": "Slide Orange (dark-mode --red)",
+        "canonical": "#ff8a3d"
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Plate White",
+        "canonical": "#ffffff"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111111"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#5b6268"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d6dadd"
+      },
+      "pale": {
+        "role": "neutral",
+        "displayName": "Pale",
+        "canonical": "#e4e8eb"
+      },
+      "slate": {
+        "role": "secondary",
+        "displayName": "Phase 3 Slate",
+        "canonical": "#3b4a57"
+      },
+      "dark-plate": {
+        "role": "neutral",
+        "displayName": "Slide Ground",
+        "canonical": "#17191c"
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Slide Ink",
+        "canonical": "#eceae4"
+      }
+    },
+    "typographyMeta": {
+      "plate-title": {
+        "displayName": "Plate title",
+        "purpose": "Figure 1 | claim; bold lead, regular rest."
+      },
+      "panel-letter": {
+        "displayName": "Panel letter",
+        "purpose": "Lowercase a-d."
+      },
+      "panel-heading": {
+        "displayName": "Panel heading",
+        "purpose": "Panel titles."
+      },
+      "claim": {
+        "displayName": "Claim",
+        "purpose": "Panel b's one-sentence answer."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Legend, bars, panel d."
+      },
+      "note": {
+        "displayName": "Note",
+        "purpose": "Muted captions."
+      },
+      "pill": {
+        "displayName": "Pill",
+        "purpose": "Control text."
+      },
+      "canvas-label": {
+        "displayName": "Canvas label",
+        "purpose": "Cluster labels on the plate."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "auto-rotate",
+        "value": "0.0022 rad/frame, tilt 0.32; off under prefers-reduced-motion: reduce",
+        "purpose": "Slow cloud rotation."
+      },
+      {
+        "name": "plate-pulse",
+        "value": "1.6s cubic-bezier(0.16,1,0.3,1) infinite alternate, opacity 1 to 0.55 (no-preference only)",
+        "purpose": "Skeleton loading."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "900px"
+      },
+      {
+        "name": "phone",
+        "value": "640px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Segmented pill (Colour)",
+      "kind": "chip",
+      "refersTo": "pill-segmented-on",
+      "description": "Single-select; solid ink when pressed.",
+      "html": "<button class=\"ds-pill\" aria-pressed=\"true\">Outcome</button> <button class=\"ds-pill\" aria-pressed=\"false\">Phase</button>",
+      "css": ".ds-pill{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-pill:hover{border-color:var(--ink,#111)}.ds-pill[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-pill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Filter pill",
+      "kind": "chip",
+      "refersTo": "pill-filter-on",
+      "description": "Multi-select; outline when on, muted and struck through when off.",
+      "html": "<button class=\"ds-fpill\" aria-pressed=\"true\"><span class=\"ds-sw\"></span>Succeeded <span class=\"ds-n\">42</span></button> <button class=\"ds-fpill\" aria-pressed=\"false\"><span class=\"ds-sw\"></span>Stopped <span class=\"ds-n\">9</span></button>",
+      "css": ".ds-fpill{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--ink,#111);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-fpill[aria-pressed=false]{color:var(--muted,#5b6268);border-color:var(--rule,#d6dadd);text-decoration:line-through}.ds-fpill[aria-pressed=false] .ds-sw{opacity:.35}.ds-fpill:hover{border-color:var(--ink,#111)}.ds-sw{width:9px;height:9px;border-radius:50%;border:1px solid currentColor;background:var(--red,#c8102e)}.ds-n{color:var(--muted,#5b6268);font-variant-numeric:tabular-nums}.ds-fpill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Find input",
+      "kind": "input",
+      "refersTo": "find-input",
+      "description": "Pill-shaped search.",
+      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"Find a trial\">",
+      "css": ".ds-find{font:inherit;font-size:13px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px;width:min(22rem,100%)}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Panel bar",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Panel b bar with average tick.",
+      "html": "<div class=\"ds-bar\"><span>Disease</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:60%\"></i><i class=\"ds-avg\" style=\"left:45%\"></i></div></div>",
+      "css": ".ds-bar{display:grid;grid-template-columns:8rem 1fr;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-track{position:relative;height:12px;background:var(--pale,#e4e8eb)}.ds-fill{position:absolute;inset:0 auto 0 0;background:var(--ink,#111)}.ds-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink,#111);box-shadow:0 0 0 1px var(--plate,#fff)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Figure Plate",
+    "overview": "The Explore page is Figure 1 of a paper: a flat white plate with lettered panels a-d, hairline rules, Hanken Grotesk only, and one red reserved for succeeded trials. Dark mode is a Dark slide with orange in red's place. Governs the Explore route only; other routes are not yet restyled.",
+    "keyCharacteristics": [
+      "White plate, near-black ink, hairline rules; flat",
+      "Red means succeeded and nothing else",
+      "Bold lowercase panel letters a-d",
+      "Pills for all controls",
+      "Slowly rotating canvas hero"
+    ],
+    "rules": [
+      {
+        "name": "The Only-Succeeded Rule",
+        "body": "Red is used only for succeeded data. Never for focus rings, ticks, links, selection, errors or category colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Shape-Not-Shade Rule",
+        "body": "Unknown outcome is a hollow 1px ring, distinguished by shape.",
+        "section": "colors"
+      },
+      {
+        "name": "The Lowercase Letter Rule",
+        "body": "Panels are labelled with bold lowercase letters only.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do letter panels with bold lowercase a, b, c, d at 22px/800.",
+      "Do separate regions with 1px rules: ink above the legend, hairline elsewhere.",
+      "Do keep controls as pills with the three defined states.",
+      "Do size dots by capped square-root enrollment and encode unknown by ring shape.",
+      "Do honour both schemes via tokens."
+    ],
+    "donts": [
+      "Don't use red (or dark-mode orange) for anything but succeeded data.",
+      "Don't add shadows, glows, gradients or card chrome to panels.",
+      "Don't reorder the layout into filters-left / canvas-centre / details-right.",
+      "Don't claim the rest of the site follows this system."
+    ]
+  }
+}

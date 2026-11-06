@@ -2,7 +2,7 @@
 
 **What's changing in clinical trials for a therapeutic area?** Trial Radar downloads the ClinicalTrials.gov registry once a day, compares it with the previous day, and publishes a field-level change feed (status changes, slipped primary-completion dates, enrollment swings, endpoint edits) as a static site. It runs on GitHub Actions and Pages for $0.
 
-> **Status: slice 1 of 6.** The change feed and trial pages are what exists today. Linking trials to drug targets, genetic evidence and preprints is **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
+> **Status: slice 1 of 6, plus the Explore map.** The home page is the Explore map (Figure 1); the change feed and trial pages sit beside it. The pathway graph, external drug data (ChEMBL, Open Targets), genetic evidence and preprints are **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
 
 Live site: <https://martin-valny.github.io/trials/> · Architecture: [docs/architecture.md](docs/architecture.md)
 
@@ -20,9 +20,21 @@ A clinical-operations or competitive-intelligence lead wants to know *what chang
 
 **What Trial Radar does not do:** it is not curated or analyst-reviewed, covers only ClinicalTrials.gov (not EU CTIS or other registries), has no history before the day it started running, and does not predict anything yet.
 
+## The Explore map (Figure 1)
+
+The home page draws every tracked trial as a dot on a single map, so you can see how the trials of an area group together. Dot size follows enrollment; colour can show phase, disease or outcome. Select a dot for the trial summary, eligibility and a link to the registry record. Two small panels beside the map show what the layout implies, in plain words.
+
+**How the layout is made.** Position depends on content only: disease, treatment type, molecule (the cleaned name of the drug in the experimental arms) and study population. Outcomes are never used for position; they only colour the dots. Nearby dots are therefore trials that look alike on paper, and any grouping by outcome is something the map can be tested on rather than something built into it.
+
+**The success proxy.** A trial is marked **"Succeeded (drug moved to a later phase)"** when its experimental-arm drug was not already in Phase 3/4 and the same drug appears afterwards in a later-phase tracked trial that started after this one and was not withdrawn. Only trials that could succeed are in the pool: Early Phase 1 up to Phase 2/3. Limits: this is a proxy, not an efficacy result. A drug can advance for commercial reasons or fail quietly outside the tracked set, drug-name matching is approximate, trials with no experimental-arm drug cannot succeed, and month-precision start dates are compared as days.
+
+**The neighbourhood statistic.** For succeeded trials, the page reports how often their nearest neighbours also succeeded. Neighbours that test the **same drug** are excluded, so a drug cannot cluster with itself. The result is compared with the same statistic computed on shuffled outcome labels, and the page only says "clustered" when the real value is above that shuffled range. A result inside it reads as no more than chance. The page also shows how many trials had too few usable neighbours.
+
+**Not built yet.** The pathway graph and drug data from ChEMBL and Open Targets are **coming next**; nothing on the map uses them.
+
 ## How it works
 
-Daily: fetch → relevance filter → normalize → quality gate → diff → store → export → deploy. Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
+Daily: fetch → relevance filter → normalize → quality gate → diff → store → explorer layout → export → deploy. Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
 
 A change is **notable** when status changes, a primary endpoint changes, enrollment moves by 20% or more, or a primary-completion/completion date slips by 90 days or more (thresholds in `config/area.yaml`).
 
@@ -68,7 +80,7 @@ All data is public ClinicalTrials.gov registry data. It is **self-reported by sp
 - Relevance matches conditions, keywords and MeSH terms as whole phrases against configured synonyms. Titles are not used. Studies that list only a bare abbreviation (for example a two-letter acronym) as their condition are missed.
 - If a trial drops out of the registry response and returns, only an "added" row is recorded; field changes during its absence are not reported.
 - A partial registry response under the 25% drop threshold can still produce a burst of removed/added rows.
-- Slice 1 has no AI and no model: every value comes straight from the registry record.
+- Slice 1 has no AI and no prediction model: every value comes straight from the registry record. The Explore layout is a deterministic dimensionality reduction of registry fields, and its success label is the proxy described above.
 
 ## Evaluation
 
@@ -76,8 +88,8 @@ _Added in later slices._ Planned: a labelled evaluation set for retrieval answer
 
 ## Roadmap
 
-1. Core pipeline and change feed (this slice).
-2. Enrichment: drug→target mapping and Open Targets genetic evidence.
+1. Core pipeline and change feed (this slice), and the Explore map.
+2. Enrichment: drug→target mapping, pathway graph, ChEMBL and Open Targets genetic evidence.
 3. Fuller frontend: landscape views, target pages.
 4. Preprints, retrieval Q&A with citations, evaluation set.
 5. Termination-risk model (with a historical backfill).

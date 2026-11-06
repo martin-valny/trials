@@ -1,15 +1,15 @@
 # Trial Radar — Handoff for the next agent
 
-Rewritten 2026-11-05 at the end of session 3. Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 for the Explorer (branch `feat/explorer-figure-plate`, not yet merged at the time of writing). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
 
 ---
 
 ## 0. TL;DR
 
 1. **Slice 1 is finished, deployed and running.** Live site: <https://martin-valny.github.io/trials/>. The `daily` workflow has run successfully twice (run #2 and #3, both manual dispatches on 2026-11-05). Scheduled runs start 2026-11-06 at 07:17 UTC. The 14-day unattended-run clock started 2026-11-05 (recorded in the README).
-2. **Nothing is half-done in the code.** All gates are green on `main`: pipeline 365 tests, web 50 tests, Playwright e2e 6 tests (desktop and 375px), ruff, mypy (strict), eslint, tsc.
-3. **Two things are waiting for the user's answer or go-ahead:**
-   - **Visual design direction** for the web app ("still looks kinda plain"). The user was asked to pick **A (clinical dashboard, recommended), B (editorial/minimal) or C (dense analyst terminal)**. No answer yet. Do not restyle until they choose. Details in section 6.
+2. **Nothing is half-done in the code.** Gates were green on `main` at slice 1 (pipeline 365 tests, web 50, e2e 6). The Explorer branch adds many more; re-run the gates for current counts. The Explorer is described in section 6.
+3. **Open items:**
+   - **Design direction is resolved** (section 6): Figure Plate on Explore; `DESIGN.md` is the record. Restyling Changes, Trials, Trial detail and Methods to match is a follow-up, not started.
    - **The "Ask" feature spec.** The brainstorming process (architectural path) is partway through. Decisions made are in section 5. Next step is to propose 2–3 approaches, present the design in sections, write the spec, get approval, then `writing-plans`.
 4. **The project is now also a showcase for a job application** (Forward Deployed Engineer, AI prototyping, a large pharma company in Prague). That changed the roadmap priorities (section 5).
 5. **Process rules for this repo:** `main` is protected by rulesets (PR required, checks `pipeline` and `web` required, no force push, no deletion). Never merge a PR without the user saying so (their pattern: "merge it when green"). Never create a PR unless asked (they have asked each time so far). Use the superpowers skills. Read section 3 (environment limits) before trying any GitHub operation.
@@ -44,9 +44,9 @@ Rewritten 2026-11-05 at the end of session 3. Read this file top to bottom befor
 CT.gov API ─ctgov.client(retry,dedupe,CtGovError)→ raw studies (ALL fetched)
  → snapshot.stage → check_raw (schema) → relevance.filter_relevant → normalize → Tables
  → quality.check → tracked_state(prev,curr, SAME current Aliases) → diff → trial_change rows
- → store.save_state + replace_day → snapshot.promote → export (site JSON) → store.append_run(success)
+ → store.save_state + replace_day → snapshot.promote → explorer (build_explorer; previous coords from data/explorer/coords.parquet) → export (site JSON incl. explorer.json) → store.save_explorer_coords → store.append_run(success)
 ```
-Module map (`pipeline/src/trialradar/`): `config, textnorm, tables, normalize, tracked, diff, quality, relevance, snapshot, store, export, pipeline, cli`, `ctgov/{query,client}`. Tests in `pipeline/tests/{unit,integration,live}`; fixtures in `pipeline/tests/fixtures/{studies,http}`. Config: `config/area.yaml`, `config/aliases/{sponsor,intervention}.csv`. Web: `web/` (Vite + React 19 + TypeScript, HashRouter). Docs: `README.md`, `SECURITY.md`, `docs/architecture.md` (Mermaid diagram).
+Module map (`pipeline/src/trialradar/`): `config, textnorm, tables, normalize, tracked, diff, quality, relevance, snapshot, store, export, pipeline, cli`, `explorer/{extras,drugs,outcomes,features,layout,stats,build}`, `ctgov/{query,client}`. Tests in `pipeline/tests/{unit,integration,live}`; fixtures in `pipeline/tests/fixtures/{studies,http}`. Config: `config/area.yaml`, `config/aliases/{sponsor,intervention}.csv`. Web: `web/` (Vite + React 19 + TypeScript, HashRouter). Docs: `README.md`, `SECURITY.md`, `docs/architecture.md` (Mermaid diagram).
 
 ### 2.3 Workflows (`.github/workflows/`)
 - **`ci.yml`**: jobs `pipeline` (ruff, mypy, pytest, pip-audit) and `web` (npm ci, lint, tsc, vitest, npm audit --audit-level=high, build, copy fixtures into dist/data, Playwright install + test). Runs on push and pull_request. The `web` job sometimes takes ~10 minutes (Playwright browser install is slow); it passed anyway.
@@ -64,7 +64,7 @@ Module map (`pipeline/src/trialradar/`): `config, textnorm, tables, normalize, t
 - **Web fixtures** in `web/tests/fixtures/data/` are generated by `pipeline/scripts/make_web_fixtures.py` (runs the real pipeline over two simulated days) and a pipeline test fails if they go stale. After changing `export.py`, run `cd pipeline && uv run python scripts/make_web_fixtures.py` and commit the output.
 
 ### 2.5 Web app (what exists)
-Routes: `/changes` (default; 1/7/30-day tabs, sponsor and field filters, "Notable only" default on, empty state that explains the day-1 situation and links to Trials), `/trials` (search by NCT/title/sponsor, status filter, newest change first), `/trial/:nct` (key facts, timeline, change history, "Target: not yet mapped" placeholder, link to ClinicalTrials.gov), `/methods` (conditions from meta, how detection works, limitations). Header has a freshness badge (warns after 36 hours; "Freshness unknown" when meta is missing). Styling is **plain default CSS** (`web/src/styles.css`), mobile stacks tables into cards under 640px, light/dark via `prefers-color-scheme`.
+Routes: `/` redirects to `/explore` (the Explore map, section 6), `/changes` (1/7/30-day tabs, sponsor and field filters, "Notable only" default on, empty state that explains the day-1 situation and links to Trials), `/trials` (search by NCT/title/sponsor, status filter, newest change first), `/trial/:nct` (key facts, timeline, change history, "Target: not yet mapped" placeholder, link to ClinicalTrials.gov), `/methods` (conditions from meta, how detection works, limitations). Header has a freshness badge (warns after 36 hours; "Freshness unknown" when meta is missing). Outside Explore, styling is **plain default CSS** (`web/src/styles.css`), mobile stacks tables into cards under 640px, light/dark via `prefers-color-scheme`.
 
 ### 2.6 Key behavioural contracts (do not break)
 - Tracked state stores display text and compares by casefolded key sets; sponsors and interventions are re-derived from stored RAW names with the CURRENT aliases for both sides, so editing an alias CSV never creates change rows. Never compare stored `tracked_hash` values across runs.
@@ -130,14 +130,41 @@ Open design questions to settle in the spec: what is retrievable (trial records,
 
 ---
 
-## 6. Design pass (waiting for the user's choice)
+## 6. Explorer and design direction (resolved)
 
-The user said the site "still looks kinda plain". Three directions were offered:
-- **A. Clinical dashboard (recommended):** clean light theme with a restrained blue accent and dark mode; status chips with meaning (green recruiting, red terminated, grey completed, amber pending/other); a small summary strip on Changes ("14 trials tracked · 2 notable this week"); date slips as coloured pills ("slipped 120 days"); reads like a competitive-intelligence tool.
-- **B. Editorial/minimal:** whitespace, serif headings, quiet colour; refined but less status emphasis.
-- **C. Dense analyst terminal:** compact rows, monospace IDs, dark by default; distinctive but less welcoming.
+**Design direction:** the user chose a "Figure Plate" look (a scientific figure on a plate) for the new Explore page. `DESIGN.md` (with `.impeccable/design.json`) at the repo root is the record: tokens, rules and rationale. Restyling Changes, Trials, Trial detail and Methods to match is a follow-up and has not been started. The old A/B/C options are obsolete.
 
-Plan once chosen: apply across Changes, Trials, Trial detail, Methods (styling plus a few presentational components; logic and tests stay). Take screenshots with the preinstalled Chromium at desktop and phone width (a script pattern is in section 8) and show the user before opening the PR. Consider loading the `artifact-design`/`dataviz` skills for guidance. Keep accessibility (contrast, focus outlines, table semantics, `prefers-color-scheme`) and the existing e2e/unit tests green. Keep status colours paired with text (never colour alone).
+### What was built
+`/explore` (also the default route) is Figure 1: all tracked trials as dots on a rotatable UMAP layout, with phase, disease and outcome colouring, search, filters, a selected-trial panel (summary, eligibility, registry link), a panel on phase and a panel on the success proxy with the neighbourhood statistic. Pipeline: a new explorer stage after the store and before export writes `explorer.json` and persists coordinates at `data/explorer/coords.parquet` so the map stays stable day to day. Trial docs gain `summary`, `eligibility`, `has_results`. Spec: `docs/superpowers/specs/2026-11-05-explorer-figure-plate-design.md`; plan: `docs/superpowers/plans/2026-11-05-explorer-figure-plate.md`.
+
+### Where the code lives
+- Pipeline: `pipeline/src/trialradar/explorer/` (`extras, drugs, outcomes, features, layout, stats, build`); wiring in `pipeline.py` (`_explorer`, `_save_coords`); `store.py` coords methods; `export.py` writes `explorer.json`. Settings live under an `explorer` block in `config/area.yaml`. Tests: `pipeline/tests/unit/test_explorer_*.py`; `pipeline/scripts/top_drugs.py` lists top drug names from a real snapshot.
+- Web: `web/src/components/explore/` (`Explore, PlateCanvas, LegendBar, PanelPhase, PanelSuccess, SelectedTrial, explore.css`), `web/src/lib/explorer.ts`. Tests: `web/tests/Explore*.test.tsx, PlateCanvas.test.tsx, explorer.test.ts`; e2e in `web/e2e/smoke.spec.ts`.
+
+### Rulings that matter
+- **R4:** drugs come only from EXPERIMENTAL arms when arm groups exist; fall back to all DRUG/BIOLOGICAL interventions only when a trial has no arm groups. Comparators must not count.
+- **R5/R6:** drug cleaning. "fumarate" is not a stripped salt (fumarate esters are distinct); exclusion terms also match the casefolded original name ("0.9% sodium chloride" is excluded); config exclude terms include sodium chloride and normal saline.
+- **R7:** pool eligibility is "phases that can succeed": phases include Early Phase 1, 1 or 2 and top phase is at most 3 (so Phase 2/3 is in, pure 3/4/NA is not). `in_pool(phases, outcome)`.
+- **R8:** verdict `clustered` only when lift exceeds the shuffled range; inside or below it is `chance`; no usable neighbours is `insufficient`. Fewer than 4 trials gives an empty trials list with `insufficient` (R1).
+- **R9:** `explorer.json` stats include `n_averaged` and `n_short` (coverage of the headline number) beyond the spec's key list; web types mirror them.
+- **R10/R11:** the fixture staleness test does not byte-compare UMAP coordinates (macOS and Linux CI differ); it compares `explorer.json` with x/y/z excluded. e2e must not depend on exact positions. The day-2 alignment test uses the 14-trial integration set.
+- **R12 to R17 (visual):** selection ring is ink (R12); dot radius uses enrollment clamped at the 98th percentile with a count scale, isotropic cloud fit (R13); filter pills and Colour group styling as amended (R14); red is only for succeeded trials (R15); e2e pixel check counts non-transparent canvas pixels (R16); cluster labels sit at each condition's densest point and are skipped when too diffuse (R17).
+
+### First real-data result (a dated observation, not a standing claim)
+2026-11-05 snapshot: 2,986 trials, pool 622, 66 succeeded (rate 0.106), lift 1.44 against shuffled 0.59 to 1.41, so **clustered, barely**. The explorer stage took about 12 s. Numbers change daily; re-measure before quoting.
+
+### Local dev notes
+- `uv` is installed via Homebrew on the user's Mac (`brew install uv`); this work was done in the local checkout, not the cloud container, so section 3's network limits do not apply to it.
+- e2e: `cd web && PW_CHROMIUM="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run e2e`. Kill any leftover `vite preview`.
+- Scratch is git-ignored: `.superpowers/` (SDD ledger, reports, screenshots), `.impeccable/{mocks,review,questions,build}/`, `web/.shoot.cjs`. `DESIGN.md`, `PRODUCT.md`, `.impeccable/design.json` and `.impeccable/surfaces/` are tracked.
+
+### Deferred minors (copied from the git-ignored ledger)
+- Config: pattern-building duplicated between `relevance._pattern` and `condition_labels`; `condition_labels` recompiles per call; other `ExplorerConfig` ints unvalidated.
+- Extras/drugs: `parse_age_years` TypeError on non-str; malformed arm entries; missing nctId KeyError undocumented; exclusion is substring not word-boundary; inconsistent salt forms fragment names; extras exceptions quarantine via DataError.
+- Outcomes: O(k^2) per-drug scans; month-precision start dates compared as days (also noted in Methods).
+- Features/layout/stats: `_OLDER` duplicates `_ADULT_HI`; literal 5 for population width; fallback log prints shape as reason; `neighbourhood_lift` assumes L2-normalised rows; per-row exclusion loop is Python (fine to about 5k).
+- Build: same-day rerun byte idempotence relies on rounding.
+- Web: disease colour uses first label only; `nearestIndex` ties go to the later index; `.badge.ok` green is a second accent on /explore; canvas keyboard selection relies on search and the panel; dark disease colours idx1 and idx3 close in hue; light disease palette salmon and brown near the success red; 375px cloud leaves vertical whitespace; panel b bars on a 0-100% scale sit left; sub-year age rounding edge; e2e click grid worst case may exceed the 30 s timeout.
 
 ---
 
@@ -172,6 +199,8 @@ PW_CHROMIUM=/opt/pw-browsers/chromium npm run e2e          # expect 6 passed
 # Regenerate web fixtures after changing export.py
 cd ../pipeline && uv run python scripts/make_web_fixtures.py
 
+# Explorer e2e on the user's Mac: PW_CHROMIUM="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run e2e
+
 # Screenshots (preview server + Playwright from the global install)
 cd ../web && npm run build && (npx vite preview --port 4173 --strictPort &) ; sleep 2
 # write a small script that does:  const { chromium } = require('playwright');  then
@@ -180,7 +209,7 @@ cd ../web && npm run build && (npx vite preview --port 4173 --strictPort &) ; sl
 # Note: build output has no data/; for screenshots copy fixtures:  cp -r tests/fixtures/data dist/data
 ```
 
-**First message to the user when you resume:** say you have read this handoff, that slice 1 is live and green, and ask for the design direction (A/B/C) and whether to continue the Ask-feature design now or restyle first. Do not re-ask anything this file already answers.
+**First message to the user when you resume:** say you have read this handoff, that slice 1 and the Explorer are built, and ask whether to restyle the other pages to Figure Plate or continue the Ask-feature design first. Do not re-ask anything this file already answers.
 
 ---
 
@@ -193,4 +222,4 @@ cd ../web && npm run build && (npx vite preview --port 4173 --strictPort &) ; sl
 - **Pages deploy** timed out once at `updating_pages` (a Pages-side hang); a re-run fixed it. If it recurs, check Settings → Pages and GitHub status.
 - **Deferred minor findings** (all in the ledger and previous handoff text): Task 1–9b items (config bounds are now fixed), Task 8 crash-window and file-mode items (never pushed on a crashed run), `check_raw` runs twice, live test crawls the whole set, drop-out-then-return only yields an `added` row, a partial registry response under 25% can still publish a burst of removed/added rows, `vite preview` serves index.html with 200 for missing files (Pages returns a real 404; only affects local preview states).
 - **Unverified:** how the live site looks (the container cannot reach it); the real registry `dataTimestamp` cadence relative to 07:17 UTC (if the registry updates later, the daily run may report `skipped` and pick the change up a day later).
-- **Docs to keep current:** README go-live status and clock, `docs/architecture.md`, `SECURITY.md` (permissions claims are backed by tests only for `daily.yml` and `live-check.yml`).
+- **Docs to keep current:** `DESIGN.md`, README go-live status and clock, `docs/architecture.md`, `SECURITY.md` (permissions claims are backed by tests only for `daily.yml` and `live-check.yml`).

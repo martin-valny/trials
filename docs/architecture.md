@@ -15,12 +15,25 @@ flowchart LR
     QC --> DIFF[tracked state + diff<br/>vs previous day]
     DIFF --> STORE[(store: current/, previous/,<br/>history/*.parquet)]
     STORE --> PROMOTE[promote raw snapshot<br/>raw/YYYY-MM-DD.jsonl.gz]
-    PROMOTE --> EXPORT[export site JSON<br/>changes, trials, meta]
-    EXPORT --> LOG[run_log: success]
+    PROMOTE --> EXPL[explorer stage<br/>features, UMAP layout, outcome labels,<br/>neighbourhood statistic]
+    EXPL --> EXPORT[export site JSON<br/>changes, trials, meta, explorer]
+    EXPORT --> COORDS[(save explorer/coords.parquet)]
+    COORDS --> LOG[run_log: success]
     LOG --> DATA[(data branch<br/>orphan commit)]
     LOG --> REL2[(monthly release<br/>snapshots-YYYY-MM)]
     EXPORT --> WEB[Vite build] --> PAGES[GitHub Pages]
 ```
+
+## Explorer stage
+
+After the store write and snapshot promotion, and before export, `pipeline._explorer` builds the Explore map (`trialradar.explorer.build.build_explorer`) in its own logged stage:
+
+1. `extras` reads fields the normalized tables do not carry (summary, eligibility, arm groups, whether results are posted) straight from the raw study.
+2. `drugs` cleans experimental-arm drug names (salts, doses and placebo-like terms removed, aliases applied); `outcomes` derives the success proxy and pool eligibility; `features` builds content-only vectors (disease, treatment type, molecule, population); `layout` runs a seeded UMAP and aligns it to the previous day's layout; `stats` computes the neighbourhood statistic against shuffled labels.
+3. The previous layout is read from `data/explorer/coords.parquet` (missing means first run) and the new one is saved there after a successful export, so dots stay put from day to day.
+4. The result is written to the site as `explorer.json`. Trial files gain `summary`, `eligibility` and `has_results`.
+
+Like the export, a failed explorer build fails the run and leaves stored state untouched. `rebuild` runs the same stage for the final day.
 
 ## Principles
 
@@ -42,7 +55,8 @@ flowchart LR
 | `tracked`, `diff` | Tracked-field state per trial; field-level changes with notable flags |
 | `quality` | Raw schema, null-rate, date-order, duplicate and row-drop checks |
 | `snapshot`, `store` | Raw snapshot staging/promotion; crash-safe Parquet store |
-| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json` |
+| `explorer/*` | Map data: `extras`, `drugs`, `outcomes`, `features`, `layout`, `stats`, `build` (see Explorer stage) |
+| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json`, `explorer.json` |
 | `pipeline`, `cli` | Orchestration, `rebuild`, `trialradar run`, `check`, `rebuild` |
 
 ## Workflows
