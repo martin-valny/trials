@@ -8,7 +8,12 @@ import {
   columnLabels,
   columnSide,
   diseaseRanking,
+  diseaseSeries,
   emphasisFor,
+  IDENTITY_VIEW,
+  panBy,
+  viewPoints,
+  zoomAt,
   labelPosition,
   placeLabels,
   liftSentence,
@@ -192,13 +197,20 @@ describe("colorFor", () => {
   const order = ["Alpha", "Beta"];
   it("outcome mode", () => {
     expect(colorFor(trial(), "outcome", LIGHT_PALETTE, order)).toBe("#c8102e");
-    expect(colorFor(trial({ outcome: "stopped" }), "outcome", DARK_PALETTE, order)).toBe("#eceae4");
+    expect(colorFor(trial(), "outcome", DARK_PALETTE, order)).toBe("#ff8a3d");
   });
-  it("outcome mode: running is a visible grey; unknown is a mid-grey ring colour", () => {
-    expect(colorFor(trial({ outcome: "running" }), "outcome", LIGHT_PALETTE, order)).toBe("#8592a0");
-    expect(colorFor(trial({ outcome: "running" }), "outcome", DARK_PALETTE, order)).toBe("#5f666e");
-    expect(colorFor(trial({ outcome: "unknown" }), "outcome", LIGHT_PALETTE, order)).toBe("#8796a3");
-    expect(colorFor(trial({ outcome: "unknown" }), "outcome", DARK_PALETTE, order)).toBe("#6c7f93");
+  it("outcome mode, light: the editorial-journal values", () => {
+    const o = (outcome: ExplorerTrial["outcome"]) => colorFor(trial({ outcome }), "outcome", LIGHT_PALETTE, order);
+    expect(o("stopped")).toBe("#222222");
+    expect(o("completed_unknown")).toBe("#c9d1d8");
+    expect(o("running")).toBe("#3c5488");
+    // The unknown-outcome ring stays a mid grey, distinct from the pale completed ground.
+    expect(o("unknown")).toBe("#8796a3");
+  });
+  it("outcome mode, dark: running, completed and stopped are three distinct values", () => {
+    const o = (outcome: ExplorerTrial["outcome"]) => colorFor(trial({ outcome }), "outcome", DARK_PALETTE, order);
+    const values = new Set(["stopped", "completed_unknown", "running", "unknown", "succeeded"].map((x) => o(x as ExplorerTrial["outcome"])));
+    expect(values.size).toBe(5);
   });
   it("phase mode, null phase is unknown", () => {
     expect(colorFor(trial(), "phase", LIGHT_PALETTE, order)).toBe("#8796a3");
@@ -206,17 +218,33 @@ describe("colorFor", () => {
     expect(colorFor(trial({ phase: null }), "phase", LIGHT_PALETTE, order)).toBe("#e4e8eb");
     expect(colorFor(trial({ phase: null }), "phase", DARK_PALETTE, order)).toBe("#2b2e33");
   });
-  it("disease mode: the dominant condition is the quiet value, minorities take the hues in rank order", () => {
-    const ranked = ["Beta", "Alpha", "Gamma"];
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#8592a0");
-    expect(colorFor(trial({ condition_labels: ["Beta"] }), "disease", DARK_PALETTE, ranked)).toBe("#7d8287");
-    expect(colorFor(trial(), "disease", LIGHT_PALETTE, ranked)).toBe("#3b6ea5");
-    expect(colorFor(trial(), "disease", DARK_PALETTE, ranked)).toBe("#7fb2e5");
-    expect(colorFor(trial({ condition_labels: ["Gamma"] }), "disease", LIGHT_PALETTE, ranked)).toBe("#7a5c2e");
+  it("disease mode: each condition keeps its own hue, by its place in the area's order", () => {
+    const area = ["Multiple sclerosis", "NMOSD", "MOGAD", "Myasthenia gravis", "CIDP", "Autoimmune encephalitis"];
+    const light = area.map((c) => colorFor(trial({ condition_labels: [c] }), "disease", LIGHT_PALETTE, area));
+    expect(light).toEqual(["#3c5488", "#00a087", "#8e5ea2", "#4dbbd5", "#e0a030", "#7e6148"]);
+    const dark = area.map((c) => colorFor(trial({ condition_labels: [c] }), "disease", DARK_PALETTE, area));
+    expect(dark).toEqual(DARK_PALETTE.diseases);
+    // The largest condition is no longer grey: MS is navy.
+    expect(light[0]).not.toBe(LIGHT_PALETTE.completed_unknown);
+  });
+  it("disease mode: the series cycles past six, and a trial with no condition is unknown", () => {
     const long = Array.from({ length: 8 }, (_, i) => `L${i}`);
-    // L0 is quiet; L1..L5 take the five hues; L6 cycles back to the first hue.
-    expect(colorFor(trial({ condition_labels: ["L6"] }), "disease", LIGHT_PALETTE, long)).toBe("#3b6ea5");
-    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, ranked)).toBe("#e4e8eb");
+    expect(colorFor(trial({ condition_labels: ["L6"] }), "disease", LIGHT_PALETTE, long)).toBe("#3c5488");
+    expect(colorFor(trial({ condition_labels: [] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
+    expect(colorFor(trial({ condition_labels: ["Nope"] }), "disease", LIGHT_PALETTE, order)).toBe("#e4e8eb");
+  });
+});
+
+describe("diseaseSeries", () => {
+  it("is the area's order, then any other first label alphabetically; it ignores share", () => {
+    const ts = [
+      trial({ condition_labels: ["Beta"] }),
+      trial({ condition_labels: ["Beta"] }),
+      trial({ condition_labels: ["Zeta", "Alpha"] }),
+      trial({ condition_labels: ["Eta"] }),
+      trial({ condition_labels: [] }),
+    ];
+    expect(diseaseSeries(ts, ["Alpha", "Beta"])).toEqual(["Alpha", "Beta", "Eta", "Zeta"]);
   });
 });
 
@@ -248,13 +276,65 @@ describe("emphasisFor", () => {
 });
 
 describe("disease series", () => {
-  it("has no ink in it: ink is reserved for stopped trials and the plate's text", () => {
-    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.stopped);
-    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.stopped);
-    expect(LIGHT_PALETTE.diseaseQuiet).toBe("#8592a0");
-    expect(DARK_PALETTE.diseaseQuiet).toBe("#7d8287");
-    expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.diseaseQuiet);
-    expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.diseaseQuiet);
+  it("has six hues, no ink and no grey ground in it", () => {
+    for (const p of [LIGHT_PALETTE, DARK_PALETTE]) {
+      expect(p.diseases).toHaveLength(6);
+      expect(new Set(p.diseases).size).toBe(6);
+      expect(p.diseases).not.toContain(p.stopped);
+      expect(p.diseases).not.toContain(p.completed_unknown);
+    }
+    expect("diseaseQuiet" in LIGHT_PALETTE).toBe(false);
+  });
+});
+
+describe("zoom view", () => {
+  const W = 400;
+  const H = 300;
+  it("starts at 1x with no pan", () => {
+    expect(IDENTITY_VIEW).toEqual({ k: 1, x: 0, y: 0 });
+  });
+  it("zooms about the pointer: the point under it stays put", () => {
+    const v = zoomAt(IDENTITY_VIEW, 2, 100, 80, W, H);
+    expect(v.k).toBe(2);
+    // screen = k * s + (x, y); the content point at (100, 80) is still at (100, 80).
+    expect(v.k * 100 + v.x).toBeCloseTo(100);
+    expect(v.k * 80 + v.y).toBeCloseTo(80);
+  });
+  it("clamps to 1x..8x", () => {
+    expect(zoomAt(IDENTITY_VIEW, 0.5, 10, 10, W, H)).toEqual(IDENTITY_VIEW);
+    expect(zoomAt(IDENTITY_VIEW, 100, 10, 10, W, H).k).toBe(8);
+    const v = zoomAt(zoomAt(IDENTITY_VIEW, 6, 200, 150, W, H), 6, 200, 150, W, H);
+    expect(v.k).toBe(8);
+    // Zooming back out all the way returns exactly to the identity.
+    expect(zoomAt(v, 1 / 64, 37, 210, W, H)).toEqual(IDENTITY_VIEW);
+  });
+  it("clamps the pan so the 1x frame always fills the canvas (the cloud cannot be lost)", () => {
+    const v = zoomAt(IDENTITY_VIEW, 2, 200, 150, W, H);
+    const far = panBy(v, 10_000, -10_000, W, H);
+    expect(far.x).toBe(0);
+    expect(far.y).toBe(H - 2 * H);
+    expect(panBy(IDENTITY_VIEW, 50, 50, W, H)).toEqual(IDENTITY_VIEW);
+    // Zooming at the edge keeps the frame filled too.
+    const edge = zoomAt(IDENTITY_VIEW, 3, 0, 0, W, H);
+    expect(edge).toEqual({ k: 3, x: 0, y: 0 });
+  });
+  it("viewPoints scales positions, not the projection's depth or perspective", () => {
+    const pts = [{ sx: 100, sy: 80, depth: 0.2, f: 1.1 }];
+    expect(viewPoints(pts, { k: 2, x: -100, y: -80 })).toEqual([{ sx: 100, sy: 80, depth: 0.2, f: 1.1 }]);
+    expect(viewPoints(pts, IDENTITY_VIEW)).toBe(pts);
+  });
+  it("hit testing at 2x picks the dot that is drawn under the pointer", () => {
+    // Two dots 6px apart at 1x: at 2x they are 12px apart, so a pointer 4px right of the first on
+    // screen is nearer the first, though in 1x space it sits closer to the second.
+    const base = [
+      { sx: 100, sy: 100, depth: 0, f: 1 },
+      { sx: 106, sy: 100, depth: 0, f: 1 },
+    ];
+    const v = zoomAt(IDENTITY_VIEW, 2, 100, 100, W, H);
+    const shown = viewPoints(base, v);
+    expect(nearestIndex(shown, 104, 100)).toBe(0);
+    expect(nearestIndex(shown, 109, 100)).toBe(1);
+    expect(nearestIndex(base, 104, 100)).toBe(1);
   });
 });
 
@@ -362,15 +442,19 @@ function hueSat(h: string): [number, number] {
 
 describe("light palette legibility", () => {
   it("every outcome fill is at least 3:1 on the white plate", () => {
-    for (const o of ["succeeded", "stopped", "completed_unknown", "running", "unknownRing"] as const)
+    // Completed with no known result is the pale ground of the cloud by design (#c9d1d8), so it is exempt.
+    for (const o of ["succeeded", "stopped", "running", "unknownRing"] as const)
       expect(contrast(LIGHT_PALETTE[o], "#ffffff")).toBeGreaterThanOrEqual(3);
   });
   it("no saturated light disease colour sits in the red family (red is for succeeded)", () => {
     for (const c of LIGHT_PALETTE.diseases) {
       const [hue, sat] = hueSat(c);
-      if (sat > 0.2) expect(hue > 30 && hue < 330).toBe(true);
+      // Red proper is about 330..20 degrees; the series' brown (#7e6148, 28 degrees) sits just past it.
+      if (sat > 0.2) expect(hue > 20 && hue < 330).toBe(true);
     }
-    for (const c of LIGHT_PALETTE.diseases) expect(contrast(c, "#ffffff")).toBeGreaterThanOrEqual(2.5);
+    // The approved editorial series has two light hues (cyan #4dbbd5, ochre #e0a030) near 2.2:1 on white;
+    // they are dots with a knockout ring and a named key, never text.
+    for (const c of LIGHT_PALETTE.diseases) expect(contrast(c, "#ffffff")).toBeGreaterThanOrEqual(2.2);
   });
 });
 

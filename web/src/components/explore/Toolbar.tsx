@@ -26,8 +26,8 @@ export interface ToolbarProps {
   bounds: [number, number];
   /** Every condition label in the file, in the area's order. */
   conditions: string[];
-  /** Conditions by descending share, for disease colours (diseaseRanking). */
-  ranked: string[];
+  /** The order disease colours are dealt in (diseaseSeries). */
+  series: string[];
   mode: ColorMode;
   onMode(m: ColorMode): void;
   palette: Palette;
@@ -75,7 +75,7 @@ export function Toolbar(p: ToolbarProps) {
       value: c,
       label: c,
       n: counts.conditions.get(c) ?? 0,
-      swatch: mode === "disease" && first.has(c) ? diseaseColor(c, palette, p.ranked) : undefined,
+      swatch: mode === "disease" && first.has(c) ? diseaseColor(c, palette, p.series) : undefined,
     }));
     const phase: MultiSelectOption[] = phasesOf(counts.phases).map((ph) => ({
       value: ph,
@@ -94,7 +94,7 @@ export function Toolbar(p: ToolbarProps) {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([x, n]) => ({ value: x, label: treatmentLabel(x), n }));
     return { disease, phase, outcome, treatment };
-  }, [counts, mode, palette, p.conditions, p.ranked, first]);
+  }, [counts, mode, palette, p.conditions, p.series, first]);
 
   return (
     <div className="toolbar" role="group" aria-label="Map controls">

@@ -27,17 +27,18 @@ export interface Palette {
   /** Outcome "unknown": drawn as a hollow ring, so shape (not shade) sets it apart. */
   unknownRing: string;
   phases: Record<string, string>;
-  /** Disease mode: the condition most trials list first, drawn quietly as the ground of the cloud. */
-  diseaseQuiet: string;
-  /** Disease mode: the other conditions, in descending share, cycling. No ink, no red. */
+  /**
+   * Disease mode: one hue per condition, by its place in the area's order (see diseaseSeries), cycling.
+   * No ink, no red: red is reserved for succeeded.
+   */
   diseases: string[];
 }
 
 export const LIGHT_PALETTE: Palette = {
   succeeded: "#c8102e",
-  stopped: "#111111",
-  completed_unknown: "#7d8a95",
-  running: "#8592a0",
+  stopped: "#222222",
+  completed_unknown: "#c9d1d8",
+  running: "#3c5488",
   unknown: "#e4e8eb",
   unknownRing: "#8796a3",
   phases: {
@@ -48,15 +49,15 @@ export const LIGHT_PALETTE: Palette = {
     PHASE4: "#111111",
     NA: "#e4e8eb",
   },
-  diseaseQuiet: "#8592a0",
-  diseases: ["#3b6ea5", "#7a5c2e", "#5f8a7a", "#6f5f8f", "#7aa6c2"],
+  // Editorial journal: MS, NMOSD, MOGAD, myasthenia gravis, CIDP, autoimmune encephalitis.
+  diseases: ["#3c5488", "#00a087", "#8e5ea2", "#4dbbd5", "#e0a030", "#7e6148"],
 };
 
 export const DARK_PALETTE: Palette = {
   succeeded: "#ff8a3d",
   stopped: "#eceae4",
-  completed_unknown: "#7d8287",
-  running: "#5f666e",
+  completed_unknown: "#4a5057",
+  running: "#8da3d6",
   unknown: "#2b2e33",
   unknownRing: "#6c7f93",
   phases: {
@@ -67,8 +68,7 @@ export const DARK_PALETTE: Palette = {
     PHASE4: "#eceae4",
     NA: "#2b2e33",
   },
-  diseaseQuiet: "#7d8287",
-  diseases: ["#7fb2e5", "#c8a96a", "#8fc29a", "#b4a3d6", "#e5c07b"],
+  diseases: ["#8da3d6", "#3cc7a8", "#c49ad6", "#7fd3e6", "#f0c060", "#b8977a"],
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
@@ -80,13 +80,12 @@ export const PHASES = ["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "
 export const phaseKey = (t: ExplorerTrial): string => t.phase ?? "NA";
 
 /**
- * Disease colour for a condition label, by its place in ``ranked`` (see diseaseRanking): the dominant
- * condition (first) gets the quiet value, the rest take the saturated hues in order, cycling.
+ * Disease colour for a condition label, by its place in ``series`` (see diseaseSeries): each condition
+ * keeps its own hue whatever its share, cycling past the end of the palette's series.
  */
-export function diseaseColor(label: string | undefined, palette: Palette, ranked: string[]): string {
-  const i = label === undefined ? -1 : ranked.indexOf(label);
-  if (i < 0) return palette.unknown;
-  return i === 0 ? palette.diseaseQuiet : palette.diseases[(i - 1) % palette.diseases.length];
+export function diseaseColor(label: string | undefined, palette: Palette, series: string[]): string {
+  const i = label === undefined ? -1 : series.indexOf(label);
+  return i < 0 ? palette.unknown : palette.diseases[i % palette.diseases.length];
 }
 
 /** Conditions some trial lists first: the only ones disease colouring can paint. */
@@ -94,6 +93,16 @@ export function firstLabels(trials: ExplorerTrial[]): Set<string> {
   const out = new Set<string>();
   for (const t of trials) if (t.condition_labels.length > 0) out.add(t.condition_labels[0]);
   return out;
+}
+
+/**
+ * The order disease colours are dealt in: the area's conditions as configured, then any other condition
+ * some trial lists first, alphabetically. Share plays no part, so a condition's hue is the same in every
+ * build and never shifts when filtering.
+ */
+export function diseaseSeries(trials: ExplorerTrial[], conditionOrder: string[]): string[] {
+  const extra = [...firstLabels(trials)].filter((c) => !conditionOrder.includes(c)).sort((a, b) => a.localeCompare(b));
+  return [...conditionOrder, ...extra];
 }
 
 /**
@@ -243,11 +252,11 @@ export function emphasisFor(mode: ColorMode, ranked: string[]): ((t: ExplorerTri
   return undefined;
 }
 
-/** ``ranked`` is the disease ranking (diseaseRanking), used in disease mode only. */
-export function colorFor(t: ExplorerTrial, mode: ColorMode, palette: Palette, ranked: string[]): string {
+/** ``series`` is the disease colour order (diseaseSeries), used in disease mode only. */
+export function colorFor(t: ExplorerTrial, mode: ColorMode, palette: Palette, series: string[]): string {
   if (mode === "outcome") return outcomeColor(t.outcome, palette);
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
-  return diseaseColor(t.condition_labels[0], palette, ranked);
+  return diseaseColor(t.condition_labels[0], palette, series);
 }
 
 export interface Projected {
@@ -281,6 +290,49 @@ export function project(
     const f = CAMERA / (CAMERA - z2);
     return { sx: w / 2 + x1 * scale * f, sy: h / 2 + y2 * scale * f, depth: z2, f };
   });
+}
+
+/**
+ * The map's zoom and pan, applied on screen after projection: a point projected at (sx, sy) at 1x is
+ * drawn at (k * sx + x, k * sy + y). Only positions scale; dots, rings and labels keep their size.
+ */
+export interface View {
+  k: number;
+  x: number;
+  y: number;
+}
+
+export const IDENTITY_VIEW: View = { k: 1, x: 0, y: 0 };
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 8;
+
+const clampNum = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * ``view`` with its pan clamped so the 1x frame still covers the whole w x h canvas: the cloud can be
+ * panned to its edge, never out of sight. At 1x that is exactly the identity.
+ */
+export function clampView(view: View, w: number, h: number): View {
+  const k = clampNum(view.k, MIN_ZOOM, MAX_ZOOM);
+  if (k === 1) return IDENTITY_VIEW;
+  return { k, x: clampNum(view.x, w - k * w, 0), y: clampNum(view.y, h - k * h, 0) };
+}
+
+/** Zoom by ``factor`` about the screen point (px, py), which stays under the pointer; 1x to 8x. */
+export function zoomAt(view: View, factor: number, px: number, py: number, w: number, h: number): View {
+  const k = clampNum(view.k * factor, MIN_ZOOM, MAX_ZOOM);
+  const f = k / view.k;
+  return clampView({ k, x: px - f * (px - view.x), y: py - f * (py - view.y) }, w, h);
+}
+
+/** Pan by (dx, dy) screen px, clamped (see clampView). */
+export const panBy = (view: View, dx: number, dy: number, w: number, h: number): View =>
+  clampView({ k: view.k, x: view.x + dx, y: view.y + dy }, w, h);
+
+/** Projected points as drawn under ``view``; the same array at 1x. */
+export function viewPoints(projected: Projected[], view: View): Projected[] {
+  if (view.k === 1 && view.x === 0 && view.y === 0) return projected;
+  return projected.map((p) => ({ ...p, sx: view.k * p.sx + view.x, sy: view.k * p.sy + view.y }));
 }
 
 /** Index of the projected point nearest (x, y) within maxPx, or -1. Points with mask[i] === 0 are skipped. */

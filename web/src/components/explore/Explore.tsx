@@ -6,6 +6,7 @@ import {
   colorFor,
   DARK_PALETTE,
   diseaseRanking,
+  diseaseSeries,
   emphasisFor,
   LIGHT_PALETTE,
   matches,
@@ -165,11 +166,13 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     () => meta?.conditions ?? file.stats.by_condition.map((c) => c.label),
     [meta, file],
   );
-  // Disease colours by descending share: the dominant condition is quiet, the minorities carry the hues.
+  // Each condition keeps its own hue, dealt in the area's order; the share ranking only decides which
+  // trials are redrawn on top (every condition but the largest), so small conditions stay visible.
+  const series = useMemo(() => diseaseSeries(file.trials, order), [file, order]);
   const ranked = useMemo(() => diseaseRanking(file.trials, order), [file, order]);
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
-  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, ranked), [mode, palette, ranked]);
+  const color = useCallback((t: ExplorerTrial) => colorFor(t, mode, palette, series), [mode, palette, series]);
   const emphasis = useMemo(() => emphasisFor(mode, ranked), [mode, ranked]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
@@ -200,7 +203,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         onFilters={setFilters}
         bounds={bounds}
         conditions={conditions}
-        ranked={ranked}
+        series={series}
         mode={mode}
         onMode={setMode}
         palette={palette}
@@ -216,7 +219,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             <span className="panel-l">a</span>
             Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
           </h2>
-          <ColourKey trials={file.trials} ranked={ranked} mode={mode} palette={palette} />
+          <ColourKey trials={file.trials} series={series} mode={mode} palette={palette} />
           {/* A phone sheet scrolls this into view above itself (see Dropdown). */}
           <div className="panel-a-body" data-sheet-reveal="">
             <PlateCanvas

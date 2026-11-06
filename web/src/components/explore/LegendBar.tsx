@@ -15,8 +15,8 @@ import type { ExplorerTrial } from "../../types";
 
 export interface ColourKeyProps {
   trials: ExplorerTrial[];
-  /** Conditions by descending share (diseaseRanking): disease mode lists them in this order. */
-  ranked: string[];
+  /** The disease colour order (diseaseSeries): disease mode lists conditions in this order. */
+  series: string[];
   mode: ColorMode;
   palette: Palette;
 }
@@ -32,7 +32,7 @@ interface Key {
  * colouring (nothing to press), closed by a quiet link to the list.
  */
 export function ColourKey(p: ColourKeyProps) {
-  const { trials, mode, palette, ranked } = p;
+  const { trials, mode, palette, series } = p;
   const counts = useMemo(() => filterCounts(trials), [trials]);
   const keys = useMemo((): Key[] => {
     if (mode === "outcome")
@@ -47,10 +47,10 @@ export function ColourKey(p: ColourKeyProps) {
         swatch: palette.phases[ph] ?? palette.unknown,
       }));
     // Disease colours go by a trial's first label, so the key lists the conditions that come first
-    // somewhere, largest first: the quiet dominant one, then the coloured minorities.
+    // somewhere, in the area's order (the order their hues are dealt in).
     const first = firstLabels(trials);
-    return ranked.filter((c) => first.has(c)).map((c) => ({ label: c, swatch: diseaseColor(c, palette, ranked) }));
-  }, [mode, palette, ranked, counts, trials]);
+    return series.filter((c) => first.has(c)).map((c) => ({ label: c, swatch: diseaseColor(c, palette, series) }));
+  }, [mode, palette, series, counts, trials]);
   const name = MODES.find(([m]) => m === mode)?.[1] ?? "";
 
   return (
