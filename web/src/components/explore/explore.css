@@ -192,3 +192,111 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .hover-card-head b { font-weight: 800; font-variant-numeric: tabular-nums; }
 .hover-card-facts { margin-top: 3px !important; font-variant-numeric: tabular-nums; }
+
+/* Toolbar dropdowns (MultiSelect, YearRange): a pill button with a hairline ink chevron, opening a flat
+   plate-ground sheet with a 1px hairline frame and an ink rule along its top edge, like a figure inset. */
+.dropdown { position: relative; display: inline-block; }
+.explore .dropdown-button { display: inline-flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dropdown-button .chevron { flex: none; fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: square; }
+.dropdown-button[aria-expanded="true"] { border-color: var(--ink); }
+.dropdown-button[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .dropdown-button .chevron { transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1); }
+}
+.popover {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+  min-width: 16rem; max-width: min(24rem, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px;
+  background: var(--plate); color: var(--ink);
+  border: 1px solid var(--rule); border-top-color: var(--ink);
+  font-size: 13px; line-height: 1.4;
+}
+.popover-search {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px; width: 100%; box-sizing: border-box;
+}
+.popover-search::placeholder { color: var(--muted); }
+.popover-search:hover { border-color: var(--ink); }
+.popover-search::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
+.popover-actions { display: flex; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+/* Select all / none are words, not pills: ink text with a muted underline that darkens on hover. */
+.explore .text-button {
+  border: 0; border-radius: 0; padding: 0; background: none; font-size: 12px; color: var(--ink);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted);
+}
+.explore .text-button:hover { text-decoration-color: var(--ink); }
+
+/* The checklist: a square 11px hairline box with an ink check, label, then the count flush right. */
+.checklist { display: flex; flex-direction: column; max-height: 18rem; overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; scrollbar-width: thin; }
+.check { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 6px; cursor: pointer; }
+.check:hover { background: var(--pale); }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.check-box { flex: none; display: grid; place-items: center; width: 11px; height: 11px; border: 1px solid var(--ink); background: var(--plate); }
+.check-box svg { width: 9px; height: 9px; fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: square; visibility: hidden; }
+.check input:checked + .check-box svg { visibility: visible; }
+.check input:focus-visible + .check-box { outline: 2px solid var(--ink); outline-offset: 2px; }
+.check-label { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.check:has(input:not(:checked)) .check-label { color: var(--muted); }
+.check:has(input:not(:checked)) .swatch { opacity: 0.35; }
+.check-n { flex: none; margin-left: 12px; font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+.checklist-empty { margin: 0; padding: 4px 6px; color: var(--muted); }
+
+/* Year range: From – To fields over a hairline track; the chosen span is an ink bar between two
+   square-ended handles. Thumbs are 10px wide, so the bar is inset by half a thumb at each end. */
+.years { display: flex; flex-direction: column; gap: 12px; min-width: 15rem; }
+.years-fields { display: flex; align-items: flex-end; gap: 10px; }
+.years-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.years-field input {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  font-variant-numeric: tabular-nums; width: 6.5ch; padding: 4px 12px;
+  border: 1px solid var(--muted); border-radius: 999px; appearance: textfield; -moz-appearance: textfield;
+}
+.years-field input:hover { border-color: var(--ink); }
+.years-field input::-webkit-outer-spin-button, .years-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.years-dash { padding-bottom: 5px; color: var(--muted); }
+.years-track { position: relative; height: 18px; }
+.years-track::before, .years-track::after { content: ""; position: absolute; top: 50%; height: 1px; margin-top: -0.5px; pointer-events: none; }
+.years-track::before { left: 5px; right: 5px; background: var(--rule); }
+.years-track::after {
+  height: 2px; margin-top: -1px; background: var(--ink);
+  left: calc(5px + (100% - 10px) * var(--from)); right: calc(5px + (100% - 10px) * (1 - var(--to)));
+}
+.years-track input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; z-index: 1;
+  appearance: none; -webkit-appearance: none; background: none; pointer-events: none;
+}
+.years-track input::-webkit-slider-runnable-track { background: none; border: 0; height: 18px; }
+.years-track input::-moz-range-track { background: none; border: 0; }
+.years-track input::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; cursor: ew-resize;
+  width: 10px; height: 18px; border: 1px solid var(--ink); border-radius: 0; background: var(--plate); box-sizing: border-box;
+}
+.years-track input::-moz-range-thumb {
+  pointer-events: auto; cursor: ew-resize;
+  width: 10px; height: 18px; border: 1px solid var(--ink); border-radius: 0; background: var(--plate); box-sizing: border-box;
+}
+.years-track input:focus-visible { outline: none; }
+.years-track input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--ink); outline-offset: 2px; }
+.years-track input:focus-visible::-moz-range-thumb { outline: 2px solid var(--ink); outline-offset: 2px; }
+.years-scale { display: flex; justify-content: space-between; margin-top: -8px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Phone: the popover becomes a sheet across the bottom of the viewport, ink rule on top. */
+@media (max-width: 640px) {
+  .popover {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30;
+    min-width: 0; max-width: none; max-height: 72dvh;
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0; border-top-color: var(--ink);
+  }
+  .checklist { max-height: none; flex: 1 1 auto; min-height: 0; margin: 0 -16px; }
+  .check { padding: 8px 16px; }
+  .years { min-width: 0; }
+  .years-track { height: 28px; }
+  .years-track input::-webkit-slider-runnable-track { height: 28px; }
+  .years-track input::-webkit-slider-thumb { width: 14px; height: 28px; }
+  .years-track input::-moz-range-thumb { width: 14px; height: 28px; }
+  .years-track::before { left: 7px; right: 7px; }
+  .years-track::after { left: calc(7px + (100% - 14px) * var(--from)); right: calc(7px + (100% - 14px) * (1 - var(--to))); }
+}
+/* From's thumb sits above To's once it is in the upper half of the range (see YearRange). */
+.years-track input.front { z-index: 2; }
