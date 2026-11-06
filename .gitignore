@@ -16,3 +16,4 @@ playwright-report/
 .impeccable/questions/
 .impeccable/build/
 web/.shoot.cjs
+pipeline/.cache/
