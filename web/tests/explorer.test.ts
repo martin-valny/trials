@@ -3,7 +3,10 @@ import {
   DARK_PALETTE,
   LIGHT_PALETTE,
   allFilters,
+  clusterAnchors,
   colorFor,
+  labelPosition,
+  placeLabels,
   liftSentence,
   matches,
   nearestIndex,
@@ -93,6 +96,12 @@ describe("colorFor", () => {
     expect(colorFor(trial(), "outcome", LIGHT_PALETTE, order)).toBe("#c8102e");
     expect(colorFor(trial({ outcome: "stopped" }), "outcome", DARK_PALETTE, order)).toBe("#eceae4");
   });
+  it("outcome mode: running is a visible grey; unknown is a mid-grey ring colour", () => {
+    expect(colorFor(trial({ outcome: "running" }), "outcome", LIGHT_PALETTE, order)).toBe("#9aa6b0");
+    expect(colorFor(trial({ outcome: "running" }), "outcome", DARK_PALETTE, order)).toBe("#5f666e");
+    expect(colorFor(trial({ outcome: "unknown" }), "outcome", LIGHT_PALETTE, order)).toBe("#8796a3");
+    expect(colorFor(trial({ outcome: "unknown" }), "outcome", DARK_PALETTE, order)).toBe("#6c7f93");
+  });
   it("phase mode, null phase is unknown", () => {
     expect(colorFor(trial(), "phase", LIGHT_PALETTE, order)).toBe("#8796a3");
     expect(colorFor(trial({ phase: "NA" }), "phase", LIGHT_PALETTE, order)).toBe("#e4e8eb");
@@ -152,7 +161,15 @@ describe("liftSentence", () => {
     ));
   it("clustered", () =>
     expect(liftSentence(s({ verdict: "clustered", lift: 2.345, baseline_range: [0.94, 1.26] }))).toBe(
-      "Successful trials' neighbours succeed 2.3× more often than chance (shuffled: 0.9–1.3×).",
+      "Successful trials' neighbours succeed 2.35× more often than chance (shuffled: 0.94–1.26×).",
+    ));
+  it("clustered, but within 10% of the shuffled maximum", () =>
+    expect(liftSentence(s({ verdict: "clustered", lift: 1.44, baseline_range: [0.59, 1.41] }))).toBe(
+      "Successful trials' neighbours succeed 1.44× more often than chance (shuffled: 0.59–1.41×) — just above the shuffled range.",
+    ));
+  it("clustered well above 1.1 × the shuffled maximum is not hedged", () =>
+    expect(liftSentence(s({ verdict: "clustered", lift: 2.5, baseline_range: [0.5, 2] }))).toBe(
+      "Successful trials' neighbours succeed 2.50× more often than chance (shuffled: 0.50–2.00×).",
     ));
 });
 
@@ -160,5 +177,66 @@ describe("red is reserved for succeeded", () => {
   it("no disease colour is the succeeded colour", () => {
     expect(LIGHT_PALETTE.diseases).not.toContain(LIGHT_PALETTE.succeeded);
     expect(DARK_PALETTE.diseases).not.toContain(DARK_PALETTE.succeeded);
+  });
+});
+
+describe("clusterAnchors", () => {
+  const at = (label: string | null, x: number, y = 0, z = 0) =>
+    trial({ condition_labels: label === null ? [] : [label, "Other"], x, y, z });
+
+  it("averages points by FIRST condition label, in config order, only with at least min trials", () => {
+    const trials = [
+      ...Array.from({ length: 5 }, (_, i) => at("B", 2 + i)), // mean x 4
+      ...Array.from({ length: 4 }, () => at("A", 9)), // too few
+      ...Array.from({ length: 6 }, (_, i) => at("C", -1, i)), // mean y 2.5
+      at(null, 100),
+      trial({ condition_labels: ["Other", "B"], x: 50 }), // B only as a second label: not counted
+    ];
+    const points = trials.map((t) => ({ x: t.x, y: t.y, z: t.z }));
+    const got = clusterAnchors(trials, points, ["A", "B", "C"], 5);
+    expect(got.map((a) => a.label)).toEqual(["B", "C"]);
+    expect(got[0].x).toBeCloseTo(4);
+    expect(got[1].y).toBeCloseTo(2.5);
+    expect(got[1].x).toBeCloseTo(-1);
+  });
+
+  it("keeps at most six labels", () => {
+    const labels = Array.from({ length: 8 }, (_, i) => `L${i}`);
+    const trials = labels.flatMap((l, i) => Array.from({ length: 5 }, () => at(l, i)));
+    const got = clusterAnchors(trials, trials.map((t) => ({ x: t.x, y: t.y, z: t.z })), labels, 5);
+    expect(got.map((a) => a.label)).toEqual(labels.slice(0, 6));
+  });
+});
+
+describe("labelPosition", () => {
+  it("centres the label on its anchor, inside the canvas", () => {
+    expect(labelPosition(100, 80, 40, 400, 300)).toEqual({ x: 100, y: 80 });
+  });
+  it("clamps a label that would run off an edge", () => {
+    expect(labelPosition(5, 80, 40, 400, 300).x).toBe(24); // 20 half-width + 4 margin
+    expect(labelPosition(398, 80, 40, 400, 300).x).toBe(376);
+    expect(labelPosition(100, -10, 40, 400, 300).y).toBe(10);
+    expect(labelPosition(100, 310, 40, 400, 300).y).toBe(290);
+  });
+});
+
+describe("placeLabels", () => {
+  it("leaves labels that do not collide where labelPosition puts them", () => {
+    const got = placeLabels([{ sx: 100, sy: 50, width: 40 }, { sx: 300, sy: 50, width: 40 }], 400, 300);
+    expect(got).toEqual([{ x: 100, y: 50 }, { x: 300, y: 50 }]);
+  });
+  it("moves a colliding label off the earlier one by whole lines", () => {
+    const got = placeLabels(
+      [
+        { sx: 200, sy: 100, width: 80 },
+        { sx: 210, sy: 104, width: 120 },
+        { sx: 195, sy: 98, width: 60 },
+      ],
+      400,
+      300,
+    );
+    expect(got[0]).toEqual({ x: 200, y: 100 });
+    for (let i = 0; i < got.length; i++)
+      for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i].y - got[j].y)).toBeGreaterThanOrEqual(14);
   });
 });

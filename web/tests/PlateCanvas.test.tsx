@@ -2,13 +2,16 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { dotRadius, dotScale, fitToUnit, fitZoom, plateExtents, PlateCanvas } from "../src/components/explore/PlateCanvas";
 import { nearestIndex, type Projected } from "../src/lib/explorer";
-import type { ExplorerFile } from "../src/types";
+import type { ExplorerFile, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
 
 const trials = readFixture<ExplorerFile>("explorer.json").trials;
 
 let frames: FrameRequestCallback[] = [];
 let arcs = 0;
+/** Every arc drawn, with the context state at that moment and whether it was then filled or stroked. */
+let marks: { x: number; r: number; alpha: number; fill: string; stroke: string; op?: "fill" | "stroke" }[] = [];
+let texts: string[] = [];
 
 /** Run every queued animation frame once. */
 const step = () =>
@@ -21,9 +24,29 @@ const step = () =>
 beforeEach(() => {
   frames = [];
   arcs = 0;
+  marks = [];
+  texts = [];
+  const state: Record<string, unknown> = { globalAlpha: 1, fillStyle: "", strokeStyle: "" };
   const ctx = new Proxy({} as CanvasRenderingContext2D, {
-    get: (_t, key) => (key === "arc" ? () => void arcs++ : () => undefined),
-    set: () => true,
+    get: (_t, key) => {
+      if (key === "arc")
+        return (x: number, _y: number, r: number) => {
+          arcs++;
+          marks.push({ x, r, alpha: state.globalAlpha as number, fill: String(state.fillStyle), stroke: String(state.strokeStyle) });
+        };
+      if (key === "fill" || key === "stroke")
+        return () => {
+          const m = marks[marks.length - 1];
+          if (m && m.op === undefined) m.op = key;
+        };
+      if (key === "fillText") return (t: string) => void texts.push(t);
+      if (key === "measureText") return (t: string) => ({ width: t.length * 6 });
+      return () => undefined;
+    },
+    set: (_t, key, v) => {
+      state[key as string] = v;
+      return true;
+    },
   });
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
     (() => ctx) as unknown as HTMLCanvasElement["getContext"],
@@ -34,33 +57,85 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-const renderCanvas = () => {
+const isStopped = (t: ExplorerTrial) => t.outcome === "stopped";
+const isUnknown = (t: ExplorerTrial) => t.outcome === "unknown";
+
+const renderCanvas = (labels?: string[]) => {
   const visible = vi.fn(() => true);
-  const color = vi.fn(() => "#111");
+  const color = vi.fn((t: ExplorerTrial) => (isStopped(t) ? "#e00" : "#111"));
+  const emphasis = vi.fn(isStopped);
+  const hollow = vi.fn(isUnknown);
   const onSelect = vi.fn();
   render(
     <PlateCanvas
       trials={trials}
       visible={visible}
       color={color}
+      emphasis={emphasis}
+      hollow={hollow}
+      labels={labels}
       selected={null}
       onSelect={onSelect}
       reducedMotion={false}
     />,
   );
-  return { visible, color, onSelect };
+  return { visible, color, emphasis, hollow, onSelect };
 };
 
-test("visibility and colour are computed once per change, not per frame", () => {
-  const { visible, color } = renderCanvas();
+/** The marks of the most recent frame (each frame draws one arc per trial plus one per emphasised trial). */
+const lastFrame = () => {
+  const n = trials.length + trials.filter(isStopped).length;
+  return marks.slice(-n);
+};
+
+test("visibility, colour, emphasis and ring shape are computed once per change, not per frame", () => {
+  const { visible, color, emphasis, hollow } = renderCanvas();
   step();
-  const v = visible.mock.calls.length;
-  const c = color.mock.calls.length;
+  const calls = [visible, color, emphasis, hollow].map((f) => f.mock.calls.length);
+  expect(calls.every((c) => c > 0)).toBe(true);
   const drawn = arcs;
   for (let i = 0; i < 5; i++) step();
   expect(arcs).toBeGreaterThan(drawn); // frames really drew
-  expect(visible.mock.calls.length).toBe(v);
-  expect(color.mock.calls.length).toBe(c);
+  expect([visible, color, emphasis, hollow].map((f) => f.mock.calls.length)).toEqual(calls);
+});
+
+test("emphasised dots are drawn last, opaque, at least 3px, with a knockout ring", () => {
+  renderCanvas();
+  step();
+  const k = trials.filter(isStopped).length;
+  expect(k).toBeGreaterThan(0);
+  const frame = lastFrame();
+  // The emphasis pass: for each emphasised dot, a fill then a 1px knockout stroke.
+  const tail = frame.slice(-2 * k);
+  for (let i = 0; i < k; i++) {
+    const dot = tail[2 * i];
+    const ring = tail[2 * i + 1];
+    expect(dot).toMatchObject({ fill: "#e00", alpha: 1, op: "fill" });
+    expect(dot.r).toBeGreaterThanOrEqual(3);
+    expect(ring.op).toBe("stroke");
+    expect(ring.x).toBe(dot.x);
+  }
+  // Every other visible dot is at least 0.8 opaque.
+  for (const m of frame.slice(0, -2 * k)) expect(m.alpha).toBeGreaterThanOrEqual(0.8);
+});
+
+test("hollow trials are stroked rings, not filled dots", () => {
+  renderCanvas();
+  step();
+  const unknownN = trials.filter(isUnknown).length;
+  expect(unknownN).toBeGreaterThan(0);
+  const k = trials.filter(isStopped).length;
+  const base = lastFrame().slice(0, -2 * k);
+  expect(base.filter((m) => m.op === "stroke")).toHaveLength(unknownN);
+  expect(base.filter((m) => m.op === "fill")).toHaveLength(trials.length - k - unknownN);
+});
+
+test("cluster labels are drawn with the canvas, computed from the given condition order", () => {
+  const first = trials[0].condition_labels[0];
+  renderCanvas([first, "No such condition"]);
+  step();
+  expect(texts).toContain(first);
+  expect(texts).not.toContain("No such condition");
 });
 
 test("pointercancel ends a drag without selecting", () => {
@@ -111,12 +186,13 @@ test("dot size is capped at the 98th-percentile enrollment", () => {
   expect(dotRadius(10, 1, scale)).toBeLessThan(dotRadius(e98, 1, scale));
 });
 
-test("dot scale shrinks with crowding, clamped to 0.55..1", () => {
+test("dot scale shrinks with crowding, clamped to 0.75..1", () => {
   const base = { ...trials[0] };
   const many = (n: number) => Array.from({ length: n }, () => ({ ...base }));
   expect(dotScale(many(100)).k).toBe(1);
-  expect(dotScale(many(1200)).k).toBeCloseTo(Math.sqrt(600 / 1200));
-  expect(dotScale(many(5000)).k).toBe(0.55);
+  expect(dotScale(many(900)).k).toBeCloseTo(Math.sqrt(600 / 900));
+  expect(dotScale(many(1200)).k).toBe(0.75);
+  expect(dotScale(many(5000)).k).toBe(0.75);
 });
 
 test("fitToUnit uses the in-plane radius and stays isotropic", () => {

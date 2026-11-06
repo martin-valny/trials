@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
@@ -12,7 +12,7 @@ const meta = readFixture<Meta>("meta.json");
 function fakeContext(): CanvasRenderingContext2D {
   const noop = () => undefined;
   return new Proxy({} as CanvasRenderingContext2D, {
-    get: (_t, key) => (key === "canvas" ? undefined : noop),
+    get: (_t, key) => (key === "canvas" ? undefined : key === "measureText" ? () => ({ width: 0 }) : noop),
     set: () => true,
   });
 }
@@ -37,6 +37,18 @@ test("renders figure title from meta area", async () => {
     screen.getByRole("img", { name: `3D map of ${explorer.trials.length} trials` }),
   ).toBeInTheDocument();
   expect(screen.getByText(new RegExp(`^${explorer.trials.length} trials;`))).toBeInTheDocument();
+});
+
+test("panel a carries a caption on how to read the map", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const a = await screen.findByRole("region", { name: /Embedding of/ });
+  expect(
+    within(a).getByText(
+      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn, click a dot.",
+    ),
+  ).toBeInTheDocument();
 });
 
 test("missing explorer shows explanation", async () => {

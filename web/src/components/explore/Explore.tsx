@@ -55,6 +55,10 @@ function summary(shown: ExplorerTrial[]): string {
   );
 }
 
+/** Outcome colouring lifts succeeded trials above the cloud and draws unknown outcomes as rings. */
+const isSucceeded = (t: ExplorerTrial): boolean => t.outcome === "succeeded";
+const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
+
 function Title({ area }: { area: string | null }) {
   return (
     <h1 className="plate-title">
@@ -148,6 +152,9 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               trials={file.trials}
               visible={visible}
               color={color}
+              emphasis={mode === "outcome" ? isSucceeded : undefined}
+              hollow={mode === "outcome" ? isUnknownOutcome : undefined}
+              labels={order}
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}
@@ -162,6 +169,10 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               </div>
             ) : null}
           </div>
+          <p className="panel-note plate-caption">
+            Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Drag to turn,
+            click a dot.
+          </p>
           <p className="visually-hidden" aria-live="polite">
             {summary(shown)}
           </p>

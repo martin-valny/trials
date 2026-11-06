@@ -15,7 +15,10 @@ export interface Palette {
   stopped: string;
   completed_unknown: string;
   running: string;
+  /** Fallback fill for a missing phase or condition. */
   unknown: string;
+  /** Outcome "unknown": drawn as a hollow ring, so shape (not shade) sets it apart. */
+  unknownRing: string;
   phases: Record<string, string>;
   diseases: string[];
 }
@@ -24,8 +27,9 @@ export const LIGHT_PALETTE: Palette = {
   succeeded: "#c8102e",
   stopped: "#111111",
   completed_unknown: "#7d8a95",
-  running: "#c3cbd1",
+  running: "#9aa6b0",
   unknown: "#e4e8eb",
+  unknownRing: "#8796a3",
   phases: {
     EARLY_PHASE1: "#e4e8eb",
     PHASE1: "#c9d1d7",
@@ -41,8 +45,9 @@ export const DARK_PALETTE: Palette = {
   succeeded: "#ff8a3d",
   stopped: "#eceae4",
   completed_unknown: "#7d8287",
-  running: "#3d4147",
+  running: "#5f666e",
   unknown: "#2b2e33",
+  unknownRing: "#6c7f93",
   phases: {
     EARLY_PHASE1: "#2b2e33",
     PHASE1: "#3d4147",
@@ -95,13 +100,17 @@ export function matches(t: ExplorerTrial, f: Filters): boolean {
   return true;
 }
 
+/** The colour an outcome is drawn in; "unknown" is a ring, so it gets the ring's mid grey. */
+export const outcomeColor = (o: Outcome, palette: Palette): string =>
+  o === "unknown" ? palette.unknownRing : palette[o];
+
 export function colorFor(
   t: ExplorerTrial,
   mode: ColorMode,
   palette: Palette,
   conditionOrder: string[],
 ): string {
-  if (mode === "outcome") return palette[t.outcome];
+  if (mode === "outcome") return outcomeColor(t.outcome, palette);
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
   return diseaseColor(t.condition_labels[0], palette, conditionOrder);
 }
@@ -161,11 +170,95 @@ export function nearestIndex(
   return best;
 }
 
-const one = (n: number): string => n.toFixed(1);
+const two = (n: number): string => n.toFixed(2);
 
 export function liftSentence(s: ExplorerStats): string {
   if (s.verdict === "insufficient") return "Too few successes in this area to measure clustering yet.";
   if (s.verdict === "chance") return "Successful trials cluster no more than chance would.";
   const [lo, hi] = s.baseline_range ?? [NaN, NaN];
-  return `Successful trials' neighbours succeed ${one(s.lift ?? NaN)}× more often than chance (shuffled: ${one(lo)}–${one(hi)}×).`;
+  const lift = s.lift ?? NaN;
+  const base = `Successful trials' neighbours succeed ${two(lift)}× more often than chance (shuffled: ${two(lo)}–${two(hi)}×)`;
+  // A lift barely past the shuffled maximum is real but slight; say so.
+  return lift < 1.1 * hi ? `${base} — just above the shuffled range.` : `${base}.`;
+}
+
+export interface ClusterAnchor {
+  label: string;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * One anchor per condition in the configured order: the 3D centroid of the trials whose FIRST
+ * condition label is that condition. Conditions with fewer than ``min`` such trials get no anchor;
+ * at most ``max`` anchors are returned. ``points`` are the trials' positions, index-aligned.
+ */
+export function clusterAnchors(
+  trials: ExplorerTrial[],
+  points: { x: number; y: number; z: number }[],
+  conditionOrder: string[],
+  min = 5,
+  max = 6,
+): ClusterAnchor[] {
+  const sums = new Map<string, { n: number; x: number; y: number; z: number }>();
+  trials.forEach((t, i) => {
+    const label = t.condition_labels[0];
+    if (label === undefined) return;
+    const s = sums.get(label) ?? { n: 0, x: 0, y: 0, z: 0 };
+    s.n += 1;
+    s.x += points[i].x;
+    s.y += points[i].y;
+    s.z += points[i].z;
+    sums.set(label, s);
+  });
+  const out: ClusterAnchor[] = [];
+  for (const label of conditionOrder) {
+    const s = sums.get(label);
+    if (!s || s.n < min) continue;
+    out.push({ label, x: s.x / s.n, y: s.y / s.n, z: s.z / s.n });
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/**
+ * Where to draw a centred label of ``width`` px anchored at (sx, sy) on a w × h canvas: on the anchor,
+ * pulled in so the whole label (plus a 4px margin, and 10px vertically for the text's height) stays inside.
+ */
+export function labelPosition(sx: number, sy: number, width: number, w: number, h: number): { x: number; y: number } {
+  const clamp = (v: number, lo: number, hi: number) => (hi < lo ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)));
+  return { x: clamp(sx, width / 2 + 4, w - width / 2 - 4), y: clamp(sy, 10, h - 10) };
+}
+
+/** Line height (px) labels are kept apart by. */
+const LABEL_LINE = 14;
+
+/**
+ * Place centred labels in order: each goes where labelPosition puts it, unless that box would touch one
+ * already placed; then it moves by whole lines (down 1, up 1, down 2, up 2, …) to the first free slot.
+ * With no free slot nearby it keeps its own position. Cheap enough per frame for a handful of labels.
+ */
+export function placeLabels(
+  items: { sx: number; sy: number; width: number }[],
+  w: number,
+  h: number,
+): { x: number; y: number }[] {
+  const placed: { x: number; y: number; width: number }[] = [];
+  const hits = (x: number, y: number, width: number) =>
+    placed.some((p) => Math.abs(p.x - x) < (p.width + width) / 2 + 6 && Math.abs(p.y - y) < LABEL_LINE);
+  return items.map(({ sx, sy, width }) => {
+    const home = labelPosition(sx, sy, width, w, h);
+    let at = home;
+    for (let k = 0; k <= 8; k++) {
+      const step = k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 ? 1 : -1);
+      const cand = labelPosition(sx, sy + step * LABEL_LINE, width, w, h);
+      if (!hits(cand.x, cand.y, width)) {
+        at = cand;
+        break;
+      }
+    }
+    placed.push({ ...at, width });
+    return at;
+  });
 }

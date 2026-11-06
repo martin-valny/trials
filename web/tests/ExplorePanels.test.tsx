@@ -19,7 +19,7 @@ const N = explorer.trials.length;
 function fakeContext(): CanvasRenderingContext2D {
   const noop = () => undefined;
   return new Proxy({} as CanvasRenderingContext2D, {
-    get: (_t, key) => (key === "canvas" ? undefined : noop),
+    get: (_t, key) => (key === "canvas" ? undefined : key === "measureText" ? () => ({ width: 0 }) : noop),
     set: () => true,
   });
 }
@@ -138,4 +138,53 @@ test("enter with an empty query selects nothing", async () => {
   const d = screen.getByRole("region", { name: "Selected trial" });
   expect(within(d).getByText(/Click a dot in/)).toBeInTheDocument();
   expect(loadTrial).not.toHaveBeenCalled();
+});
+
+test("panel b shows succeeded/finished per row and outlines rows with fewer than 10 finished", async () => {
+  await ready();
+  const b = screen.getByRole("region", { name: /Share of finished trials that succeeded/ });
+  const rows = within(b).getAllByRole("listitem");
+  expect(rows).toHaveLength(explorer.stats.by_condition.length);
+  explorer.stats.by_condition.forEach((row, i) => {
+    expect(within(rows[i]).getByText(`${row.succeeded}/${row.finished}`)).toBeInTheDocument();
+    expect(rows[i].classList.contains("few")).toBe(row.finished < 10);
+  });
+  expect(within(b).getByText(/Outlined: fewer than 10 finished trials\./)).toBeInTheDocument();
+});
+
+test("panel c scales to the largest phased column and moves trials without a phase to the note", async () => {
+  await ready();
+  const c = screen.getByRole("region", { name: /Trials by phase/ });
+  const na = explorer.trials.filter((t) => t.phase === null || t.phase === "NA").length;
+  expect(na).toBeGreaterThan(0);
+  expect(within(c).queryByText("Not applicable")).not.toBeInTheDocument();
+  expect(within(c).getByText(`+${na} trials without a phase, outside this measure.`)).toBeInTheDocument();
+  // The largest phased column fills the panel height.
+  const heights = [...c.querySelectorAll<HTMLElement>(".flow-col")].map((col) =>
+    [...col.querySelectorAll<HTMLElement>("i")].reduce((a, i) => a + parseFloat(i.style.height), 0),
+  );
+  expect(Math.max(...heights)).toBeCloseTo(100);
+  // The heading names the accent with a swatch, not the word "red".
+  const h = within(c).getByRole("heading");
+  expect(h.textContent).not.toMatch(/red/);
+  expect(h.querySelector(".swatch-inline")).not.toBeNull();
+});
+
+test("legend leads with panel d, then Find, then Colour", async () => {
+  await ready();
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  const find = screen.getByLabelText("Find a trial");
+  const colour = screen.getByRole("group", { name: "Colour" });
+  const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  expect(follows(d, find)).toBe(true);
+  expect(follows(find, colour)).toBe(true);
+});
+
+test("unknown outcome legend swatch is a ring, not a filled dot", async () => {
+  await ready();
+  const n = explorer.trials.filter((t) => t.outcome === "unknown").length;
+  const pill = screen.getByRole("button", { name: `Status unknown ${n}` });
+  expect(pill.querySelector(".swatch.ring")).not.toBeNull();
+  const running = explorer.trials.filter((t) => t.outcome === "running").length;
+  expect(screen.getByRole("button", { name: `Still running ${running}` }).querySelector(".swatch.ring")).toBeNull();
 });
