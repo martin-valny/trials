@@ -81,13 +81,19 @@ export function Methods() {
         <h3>What counts as success</h3>
         <p>
           A trial succeeded when it is a completed trial in Early Phase 1 to Phase 2/3, its
-          experimental-arm drug had no Phase 3 or 4 trial before it started, and that drug later
-          appears in a later-phase tracked trial that started afterwards and was not withdrawn.
+          experimental-arm drug had no Phase 3 or 4 trial in the same disease before it started,
+          and it was followed by a later, higher-phase trial of the same drug in the same disease
+          that was not withdrawn. A trial listed under several diseases succeeds only in those
+          where the drug moved on.
         </p>
         <p>Limits:</p>
         <ul>
           <li>
             Only this therapeutic area is tracked, so progress in another indication is missed.
+          </li>
+          <li>
+            Progress in another disease within this area is deliberately not counted: a trial
+            succeeds only where its drug moved on in the same disease.
           </li>
           <li>
             A later-phase trial does not prove the earlier one met its endpoint.

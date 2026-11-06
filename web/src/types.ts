@@ -98,6 +98,7 @@ export interface ExplorerTrial {
   end_year: number | null;
   enrollment: number | null;
   has_results: boolean;
+  in_pool: boolean; // a finished trial that could succeed (the statistic's pool)
   lead_sponsor: string | null;
   mechanisms: string[];
   modalities: string[];
@@ -106,6 +107,7 @@ export interface ExplorerTrial {
   phase: string | null; // a phase string, "NA", or null
   start_year: number | null;
   targets: string[];
+  succeeded_in: string[]; // condition labels the trial succeeded in (R21), sorted
   title: string;
   treatment_types: string[];
   x: number;

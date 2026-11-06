@@ -20,7 +20,8 @@ from trialradar.explorer.outcomes import (
     Outcome,
     TrialDrugs,
     in_pool,
-    label_outcomes,
+    outcomes_from_success,
+    success_labels,
     top_phase,
 )
 from trialradar.explorer.stats import LiftResult, neighbourhood_lift
@@ -91,7 +92,9 @@ def build_explorer(
     if warnings is None:
         warnings = []
     mechs = load_trial_mechanisms(cfg, drugs, warnings)
-    outcomes: dict[str, Outcome] = label_outcomes(tables.trial, drugs)
+    labels = {n: frozenset(full[n].condition_labels) for n in ids}
+    succeeded_in = success_labels(tables.trial, drugs, labels)
+    outcomes: dict[str, Outcome] = outcomes_from_success(tables.trial, succeeded_in)
     pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n], bool(drugs[n])) for n in ids]
     succeeded = [outcomes[n] == "succeeded" for n in ids]
 
@@ -102,7 +105,8 @@ def build_explorer(
             {
                 "label": cond.label,
                 "finished": len(rows),
-                "succeeded": sum(succeeded[i] for i in rows),
+                # R21: a pool trial counts as succeeded in this label only if it progressed here
+                "succeeded": sum(cond.label in succeeded_in[ids[i]] for i in rows),
             }
         )
 
@@ -173,6 +177,8 @@ def build_explorer(
                 "start_year": start.year if start is not None else None,
                 "end_year": end.year if end is not None else None,
                 "end_estimated": end is not None and end_type == "ESTIMATED",
+                "succeeded_in": sorted(succeeded_in[nct]),
+                "in_pool": pool[i],
             }
         )
     doc = {

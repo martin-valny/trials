@@ -43,7 +43,7 @@ Task 1 depends only on the map-usability merge and may run before phase 2 if Mar
 
 ---
 
-### Task 1: Disease-specific success (R21) and two per-trial fields
+### Task 1: Disease-specific success (R21) and two per-trial fields — done in phase 2 plan Task 1
 
 **Files:**
 - Modify: `pipeline/src/trialradar/explorer/outcomes.py` (`label_outcomes`, `_label`)
@@ -63,8 +63,8 @@ Task 1 depends only on the map-usability merge and may run before phase 2 if Mar
 
 Rule (R21): trial T (completed, can succeed, dated, ranked) succeeded in label L iff L ∈ labels(T) and some drug d of T has a later trial U (start(U) > start(T), rank(U) > rank(T), status(U) ≠ WITHDRAWN, L ∈ labels(U)), **and** d had no trial V with rank(V) ≥ PHASE3, start(V) < start(T) and L ∈ labels(V). The late-phase block is per label too (planner's call: "already late in this disease" is what blocks; flag in the review).
 
-- [ ] **Step 1: Update existing tests** in `test_explorer_outcomes.py`: `_trial` rows keep their shape; every `label_outcomes(t, drugs)` call becomes `label_outcomes(t, drugs, _labels(t, "MS"))` where `_labels` gives every trial `{"MS"}`. All existing assertions stay as they are.
-- [ ] **Step 2: Write failing tests:**
+- [x] **Step 1: Update existing tests** in `test_explorer_outcomes.py`: `_trial` rows keep their shape; every `label_outcomes(t, drugs)` call becomes `label_outcomes(t, drugs, _labels(t, "MS"))` where `_labels` gives every trial `{"MS"}`. All existing assertions stay as they are.
+- [x] **Step 2: Write failing tests:**
 
 ```python
 def test_progression_in_other_disease_does_not_count() -> None:
@@ -96,13 +96,13 @@ def test_unlabelled_trial_never_succeeds() -> None:
 ```
 In `test_explorer_build.py`: add `"succeeded_in"`, `"in_pool"` to the expected key set; assert `by_condition` succeeded counts equal the number of pool trials whose `succeeded_in` contains the label.
 
-- [ ] **Step 3: Run** `cd pipeline && uv run pytest tests/unit/test_explorer_outcomes.py tests/unit/test_explorer_build.py -q` — expect FAIL (signature, missing keys).
-- [ ] **Step 4: Implement** `success_labels` and the new `label_outcomes` signature. The drug index entries gain the trial's label set: `(rank, start, status, labels)`. In `build.py` build `labels = {n: frozenset(full[n].condition_labels) for n in ids}`, pass it, compute `succeeded_in = success_labels(...)`, use it for `by_condition`, and add `succeeded_in` / `in_pool` to each trial dict. `neighbourhood_lift` keeps receiving `succeeded = outcome == "succeeded"`.
-- [ ] **Step 5: Run** the two test files — PASS. Regenerate fixtures; run the full pipeline gate.
-- [ ] **Step 6:** `types.ts` + test factory; web gate passes (map panels need no change: they read `outcome` and `stats`).
-- [ ] **Step 7: Docs.** HANDOFF section 6 gains R21 (text from spec 5.4) and marks the 2026-11-05 result "before R21, re-measure"; Methods' success sentence says "a later, higher-phase trial of the same drug **in the same disease**".
-- [ ] **Step 8: Real-data re-measure** (Martin's Mac, recipe in HANDOFF 00): rebuild the site from the snapshot, record pool, succeeded, rate, lift, baseline range and p-value in HANDOFF section 6 as a dated observation; if the verdict wording on Explore changes, screenshot it.
-- [ ] **Step 9: Commit** `feat(explorer): success counts only progression in the same disease (R21)`.
+- [x] **Step 3: Run** `cd pipeline && uv run pytest tests/unit/test_explorer_outcomes.py tests/unit/test_explorer_build.py -q` — expect FAIL (signature, missing keys).
+- [x] **Step 4: Implement** `success_labels` and the new `label_outcomes` signature. The drug index entries gain the trial's label set: `(rank, start, status, labels)`. In `build.py` build `labels = {n: frozenset(full[n].condition_labels) for n in ids}`, pass it, compute `succeeded_in = success_labels(...)`, use it for `by_condition`, and add `succeeded_in` / `in_pool` to each trial dict. `neighbourhood_lift` keeps receiving `succeeded = outcome == "succeeded"`.
+- [x] **Step 5: Run** the two test files — PASS. Regenerate fixtures; run the full pipeline gate.
+- [x] **Step 6:** `types.ts` + test factory; web gate passes (map panels need no change: they read `outcome` and `stats`).
+- [x] **Step 7: Docs.** HANDOFF section 6 gains R21 (text from spec 5.4) and marks the 2026-11-05 result "before R21, re-measure"; Methods' success sentence says "a later, higher-phase trial of the same drug **in the same disease**".
+- [x] **Step 8: Real-data re-measure** (Martin's Mac, recipe in HANDOFF 00): rebuild the site from the snapshot, record pool, succeeded, rate, lift, baseline range and p-value in HANDOFF section 6 as a dated observation; if the verdict wording on Explore changes, screenshot it.
+- [x] **Step 9: Commit** `feat(explorer): success counts only progression in the same disease (R21)`.
 
 ---
 
