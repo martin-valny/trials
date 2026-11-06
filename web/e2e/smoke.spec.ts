@@ -38,7 +38,7 @@ test("no horizontal scroll", async ({ page }) => {
   }
 });
 
-const canvasOf = (page: Page) => page.getByLabel(/^3D map of \d+ trials$/);
+const canvasOf = (page: Page) => page.getByLabel(/^3D map of \d+ trials\. /);
 const NCT = /NCT\d+/;
 
 /** Waits until the canvas has painted marks. The plate is transparent (clearRect), so any non-transparent pixel is a mark. */
@@ -161,6 +161,24 @@ test("filters live above the map", async ({ page }) => {
   }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("the wheel over the map zooms it; Reset view returns to 1x", async ({ page }) => {
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  const canvas = canvasOf(page);
+  const reset = page.getByRole("button", { name: "Reset view" });
+  await expect(reset).toHaveCount(0);
+  const box = (await canvas.boundingBox())!;
+  const scrollY = await page.evaluate(() => window.scrollY);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -400);
+  await expect(reset).toBeVisible();
+  // The wheel zoomed the map; it did not scroll the page.
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+  await reset.click();
+  await expect(reset).toHaveCount(0);
+  await expect(canvas).toBeFocused();
 });
 
 test("explore canvas draws", async ({ page }) => {
