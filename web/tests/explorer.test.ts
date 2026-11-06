@@ -37,6 +37,7 @@ import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
+  cluster: null,
   condition_labels: ["Alpha", "Beta"],
   drugs: ["fooumab"],
   end_estimated: false,
