@@ -1,0 +1,16 @@
+{
+ "pref_name": "B-lymphocyte antigen CD20",
+ "target_chembl_id": "CHEMBL2058",
+ "target_components": [
+  {
+   "accession": "P11836",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "MS4A1",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  }
+ ],
+ "target_type": "SINGLE PROTEIN"
+}

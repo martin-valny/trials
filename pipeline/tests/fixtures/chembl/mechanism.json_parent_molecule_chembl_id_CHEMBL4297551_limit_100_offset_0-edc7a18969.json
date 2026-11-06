@@ -1,0 +1,14 @@
+{
+ "mechanisms": [
+  {
+   "action_type": "ANTAGONIST",
+   "mechanism_of_action": "IgG receptor FcRn large subunit p51 antagonist",
+   "molecule_chembl_id": "CHEMBL4297551",
+   "parent_molecule_chembl_id": "CHEMBL4297551",
+   "target_chembl_id": "CHEMBL5966"
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}

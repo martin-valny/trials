@@ -1,0 +1,62 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL4297551",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4297551"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Argx-113"
+    },
+    {
+     "molecule_synonym": "ARGX-113"
+    },
+    {
+     "molecule_synonym": "Efgartigimod"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa component of vyvgart hytrulo"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa fcab"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa-fcab"
+    },
+    {
+     "molecule_synonym": "Efgartigimod alfa-qvfc"
+    },
+    {
+     "molecule_synonym": "Vyvgart"
+    },
+    {
+     "molecule_synonym": "Vyvgart"
+    }
+   ],
+   "molecule_type": "Protein",
+   "pref_name": "EFGARTIGIMOD ALFA"
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}
