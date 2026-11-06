@@ -38,16 +38,37 @@ test("no horizontal scroll", async ({ page }) => {
   }
 });
 
-const canvasOf = (page: Page) => page.getByRole("img", { name: /^3D map of \d+ trials$/ }).or(page.locator("canvas.plate-canvas")).first();
+const canvasOf = (page: Page) => page.getByLabel(/^3D map of \d+ trials$/);
+const NCT = /NCT\d+/;
+
+/** Waits until the canvas has painted marks. The plate is transparent (clearRect), so any non-transparent pixel is a mark. */
+async function waitForDraw(page: Page) {
+  const canvas = canvasOf(page);
+  await expect(canvas).toBeVisible();
+  await expect
+    .poll(
+      () =>
+        canvas.evaluate((el) => {
+          const c = el as HTMLCanvasElement;
+          const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+          let n = 0;
+          for (let i = 3; i < d.length; i += 4) if (d[i] !== 0) n++;
+          return n > Math.max(20, Math.floor((c.width * c.height) / 10000));
+        }),
+      { message: "canvas has painted marks" },
+    )
+    .toBe(true);
+}
 
 test("explore selects a trial by search and opens its page", async ({ page }) => {
   await page.goto("/#/explore");
-  await expect(canvasOf(page)).toBeVisible();
+  await waitForDraw(page);
+  const panel = page.getByRole("region", { name: "Selected trial" });
+  await expect(panel).not.toContainText(NCT);
   await page.getByLabel("Find a trial").fill("NCT");
   await page.getByLabel("Find a trial").press("Enter");
-  const panel = page.getByRole("region", { name: "Selected trial" });
-  await expect(panel).toContainText(/NCT\d+/);
-  const nct = (await panel.locator("b").first().textContent()) ?? "";
+  await expect(panel).toContainText(NCT);
+  const nct = ((await panel.textContent()) ?? "").match(NCT)![0];
   await panel.getByRole("link", { name: "Trial page" }).click();
   await expect(page).toHaveURL(new RegExp(`#/trial/${nct}$`));
 });
@@ -55,23 +76,26 @@ test("explore selects a trial by search and opens its page", async ({ page }) =>
 test("explore selects a trial by clicking the map", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#/explore");
-  const canvas = canvasOf(page);
-  await expect(canvas).toBeVisible();
-  await page.waitForTimeout(500);
-  const box = (await canvas.boundingBox())!;
+  await waitForDraw(page);
   const panel = page.getByRole("region", { name: "Selected trial" });
+  await expect(panel).toBeVisible();
+  await expect(panel).not.toContainText(NCT);
+  const box = (await canvasOf(page).boundingBox())!;
   let found = false;
-  outer: for (let gy = 0.15; gy <= 0.86 && !found; gy += 0.05) {
+  outer: for (let gy = 0.15; gy <= 0.86; gy += 0.05) {
     for (let gx = 0.1; gx <= 0.91; gx += 0.05) {
       await page.mouse.click(box.x + box.width * gx, box.y + box.height * gy);
-      if (/NCT\d+/.test((await panel.textContent()) ?? "")) {
+      try {
+        await expect(panel).toContainText(NCT, { timeout: 300 });
         found = true;
         break outer;
+      } catch {
+        /* no dot here */
       }
     }
   }
   expect(found, "a click on the map selected a trial").toBe(true);
-  const nct = (await panel.locator("b").first().textContent()) ?? "";
+  const nct = ((await panel.textContent()) ?? "").match(NCT)![0];
   await panel.getByRole("link", { name: "Trial page" }).click();
   await expect(page).toHaveURL(new RegExp(`#/trial/${nct}$`));
 });
@@ -90,32 +114,27 @@ test("explore filters change count", async ({ page }) => {
 
 test("explore canvas draws", async ({ page }) => {
   await page.goto("/#/explore");
-  const canvas = canvasOf(page);
-  await expect(canvas).toBeVisible();
-  await expect
-    .poll(() =>
-      canvas.evaluate((el) => {
-        const c = el as HTMLCanvasElement;
-        const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
-        const bg = [d[0], d[1], d[2], d[3]];
-        let n = 0;
-        for (let i = 0; i < d.length; i += 4) {
-          if (d[i + 3] !== 0 && (d[i] !== bg[0] || d[i + 1] !== bg[1] || d[i + 2] !== bg[2])) n++;
-        }
-        return n;
-      }),
-    )
-    .toBeGreaterThan(50);
+  await waitForDraw(page);
 });
 
 test("reduced motion keeps the map still", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#/explore");
+  await waitForDraw(page);
   const canvas = canvasOf(page);
-  await expect(canvas).toBeVisible();
-  await page.waitForTimeout(500);
   const a = await canvas.screenshot();
   await page.waitForTimeout(500);
   const b = await canvas.screenshot();
   expect(a.equals(b)).toBe(true);
+});
+
+test("negative control: without reduced motion the map moves", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  const canvas = canvasOf(page);
+  const a = await canvas.screenshot();
+  await page.waitForTimeout(500);
+  const b = await canvas.screenshot();
+  expect(a.equals(b)).toBe(false);
 });
