@@ -10,8 +10,9 @@ const trials = readFixture<ExplorerFile>("explorer.json").trials;
 let frames: FrameRequestCallback[] = [];
 let arcs = 0;
 /** Every arc drawn, with the context state at that moment and whether it was then filled or stroked. */
-let marks: { x: number; r: number; alpha: number; fill: string; stroke: string; op?: "fill" | "stroke" }[] = [];
+let marks: { x: number; y: number; r: number; alpha: number; fill: string; stroke: string; op?: "fill" | "stroke" }[] = [];
 let texts: string[] = [];
+let clears = 0;
 
 /** Run every queued animation frame once. */
 const step = () =>
@@ -26,19 +27,21 @@ beforeEach(() => {
   arcs = 0;
   marks = [];
   texts = [];
+  clears = 0;
   const state: Record<string, unknown> = { globalAlpha: 1, fillStyle: "", strokeStyle: "" };
   const ctx = new Proxy({} as CanvasRenderingContext2D, {
     get: (_t, key) => {
       if (key === "arc")
-        return (x: number, _y: number, r: number) => {
+        return (x: number, y: number, r: number) => {
           arcs++;
-          marks.push({ x, r, alpha: state.globalAlpha as number, fill: String(state.fillStyle), stroke: String(state.strokeStyle) });
+          marks.push({ x, y, r, alpha: state.globalAlpha as number, fill: String(state.fillStyle), stroke: String(state.strokeStyle) });
         };
       if (key === "fill" || key === "stroke")
         return () => {
           const m = marks[marks.length - 1];
           if (m && m.op === undefined) m.op = key;
         };
+      if (key === "clearRect") return () => void clears++;
       if (key === "fillText") return (t: string) => void texts.push(t);
       if (key === "measureText") return (t: string) => ({ width: t.length * 6 });
       return () => undefined;
@@ -77,6 +80,7 @@ const renderCanvas = (labels?: string[], data: ExplorerTrial[] = trials) => {
       selected={null}
       onSelect={onSelect}
       reducedMotion={false}
+      spinning={true}
     />,
   );
   return { visible, color, emphasis, hollow, onSelect };
@@ -238,6 +242,7 @@ const renderStill = () =>
       selected={null}
       onSelect={() => undefined}
       reducedMotion={true}
+      spinning={true}
     />,
   );
 
@@ -293,4 +298,93 @@ test("the draw loop pauses while the canvas is offscreen and resumes when it ret
     vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
     vi.stubGlobal("cancelAnimationFrame", () => undefined);
   }
+});
+
+test("a still map draws once and then stays still", () => {
+  render(
+    <PlateCanvas
+      trials={trials}
+      visible={() => true}
+      color={() => "#111"}
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={false}
+      spinning={false}
+    />,
+  );
+  step();
+  const drawn = clears;
+  expect(drawn).toBeGreaterThan(0);
+  step();
+  step();
+  expect(clears).toBe(drawn);
+});
+
+/** A 400 x 400 still canvas with the first trial drawn in a colour of its own, to find it on screen. */
+const renderHoverable = () => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockReturnValue({
+    left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400, x: 0, y: 0, toJSON: () => ({}),
+  } as DOMRect);
+  const onHover = vi.fn();
+  const first = trials[0].nct_id;
+  render(
+    <PlateCanvas
+      trials={trials}
+      visible={() => true}
+      color={(t) => (t.nct_id === first ? "#0f0" : "#111")}
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={false}
+      spinning={false}
+      onHover={onHover}
+    />,
+  );
+  step();
+  const dot = marks.find((m) => m.fill === "#0f0");
+  if (!dot) throw new Error("first trial not drawn");
+  return { onHover, dot, first, canvas: screen.getByRole("img") };
+};
+
+test("hovering a dot with a mouse reports the trial and where the pointer is", () => {
+  const { onHover, dot, first, canvas } = renderHoverable();
+  fireEvent.pointerMove(canvas, { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
+  expect(onHover).toHaveBeenCalledTimes(1);
+  expect(onHover).toHaveBeenLastCalledWith({ nct: first, x: dot.x, y: dot.y });
+  // Still on the same dot: nothing new to report.
+  fireEvent.pointerMove(canvas, { clientX: dot.x + 1, clientY: dot.y, pointerType: "mouse" });
+  expect(onHover).toHaveBeenCalledTimes(1);
+  fireEvent.pointerLeave(canvas, { pointerType: "mouse" });
+  expect(onHover).toHaveBeenLastCalledWith(null);
+});
+
+test("touch never opens the hover card", () => {
+  const { onHover, dot, canvas } = renderHoverable();
+  fireEvent.pointerMove(canvas, { clientX: dot.x, clientY: dot.y, pointerType: "touch" });
+  expect(onHover).not.toHaveBeenCalled();
+});
+
+test("the spin pauses while a dot is hovered", () => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockReturnValue({
+    left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400, x: 0, y: 0, toJSON: () => ({}),
+  } as DOMRect);
+  render(
+    <PlateCanvas
+      trials={trials}
+      visible={() => true}
+      color={() => "#111"}
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={false}
+      spinning={true}
+      onHover={() => undefined}
+    />,
+  );
+  step();
+  const dot = marks[marks.length - 1];
+  fireEvent.pointerMove(screen.getByRole("img"), { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
+  step(); // redraws once for the hover ring
+  const drawn = clears;
+  step();
+  step();
+  expect(clears).toBe(drawn);
 });

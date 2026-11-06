@@ -15,8 +15,18 @@ export interface PlateCanvasProps {
   selected: string | null;
   onSelect: (nct: string | null) => void;
   reducedMotion: boolean;
+  /** Turn the map slowly; reduced motion overrides it. The spin also pauses while a dot is hovered. */
+  spinning: boolean;
+  /** The trial under a mouse or pen pointer, at the pointer in canvas CSS px; null when it leaves. Never on touch. */
+  onHover?: (h: PlateHover | null) => void;
   /** Ring drawn around the selected and hovered dot; defaults to the canvas's CSS colour. */
   ringColor?: string;
+}
+
+export interface PlateHover {
+  nct: string;
+  x: number;
+  y: number;
 }
 
 const SPIN = 0.0022; // radians per frame, as in the approved plate
@@ -258,9 +268,9 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const tick = () => {
       frame = 0;
       if (!onscreen) return; // paused: resumed by the intersection observer
-      const spinning = !dragging && !live.current.reducedMotion;
-      if (spinning) angle += SPIN;
-      if (spinning || dirty.current) {
+      const turning = live.current.spinning && !live.current.reducedMotion && !dragging && hover === null;
+      if (turning) angle += SPIN;
+      if (turning || dirty.current) {
         dirty.current = false;
         draw();
       }
@@ -298,11 +308,24 @@ export function PlateCanvas(props: PlateCanvasProps) {
       const i = nearestIndex(projected, e.clientX - box.left, e.clientY - box.top, 12, mask);
       return i < 0 ? null : trials[i].nct_id;
     };
+    /** Change the hovered trial; a mouse or pen hover is reported, so a card can follow it. */
+    const setHover = (next: string | null, e?: PointerEvent) => {
+      if (next === hover) return;
+      hover = next;
+      dirty.current = true;
+      if (next === null) {
+        live.current.onHover?.(null);
+      } else if (e && (e.pointerType === "mouse" || e.pointerType === "pen")) {
+        const box = canvas.getBoundingClientRect();
+        live.current.onHover?.({ nct: next, x: e.clientX - box.left, y: e.clientY - box.top });
+      }
+    };
 
     const down = (e: PointerEvent) => {
       dragging = true;
       lastX = e.clientX;
       moved = 0;
+      setHover(null); // the card would trail behind a turning map
       canvas.setPointerCapture?.(e.pointerId);
     };
     const move = (e: PointerEvent) => {
@@ -315,10 +338,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
       }
       const next = hit(e);
       canvas.style.cursor = next ? "pointer" : "grab";
-      if (next !== hover) {
-        hover = next;
-        dirty.current = true;
-      }
+      setHover(next, e);
     };
     const up = (e: PointerEvent) => {
       if (!dragging) return;
@@ -329,12 +349,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const cancel = () => {
       dragging = false;
     };
-    const leave = () => {
-      if (hover !== null) {
-        hover = null;
-        dirty.current = true;
-      }
-    };
+    const leave = () => setHover(null);
     canvas.addEventListener("pointerdown", down);
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);

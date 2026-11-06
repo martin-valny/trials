@@ -1,4 +1,5 @@
 import type { ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
+import { phaseLabel, treatmentLabel } from "./format";
 
 export type ColorMode = "outcome" | "phase" | "disease";
 
@@ -350,4 +351,49 @@ export function placeLabels(
     placed.push({ ...at, width });
     return at;
   });
+}
+
+/** Start and end year with an en dash: "2014–2019", "2021–" (no end), "2021–2025 (est.)", "" when neither. */
+export function yearSpan(t: ExplorerTrial): string {
+  if (t.start_year === null && t.end_year === null) return "";
+  const end = t.end_year === null ? "" : `${t.end_year}${t.end_estimated ? " (est.)" : ""}`;
+  return `${t.start_year ?? ""}–${end}`;
+}
+
+/** The first n items joined with ", ", then "+k" for the rest. */
+const firstOf = (items: string[], n: number): string =>
+  items.slice(0, n).join(", ") + (items.length > n ? ` +${items.length - n}` : "");
+
+/** The hover card's two lines: what the trial is, then what it tests, its phase and its years. */
+export function popupLines(t: ExplorerTrial): [string, string] {
+  const parts = [
+    firstOf(t.drugs, 2),
+    firstOf(t.treatment_types.slice(0, 2).map(treatmentLabel), 2),
+    phaseLabel(t.phase),
+    yearSpan(t),
+  ];
+  return [`${t.nct_id} · ${t.title}`, parts.filter((p) => p !== "").join(" · ")];
+}
+
+const POPUP_GAP = 12; // px from the pointer
+const POPUP_MARGIN = 4; // px kept clear of the panel edge
+
+/**
+ * Top-left of a cardW x cardH card for a pointer at (x, y) in a w x h panel: 12px right of and below
+ * the pointer, flipped to the left or above where it would overflow, then kept 4px inside the panel.
+ */
+export function popupPosition(
+  x: number,
+  y: number,
+  cardW: number,
+  cardH: number,
+  w: number,
+  h: number,
+): { left: number; top: number } {
+  const place = (p: number, size: number, limit: number) => {
+    const after = p + POPUP_GAP;
+    const at = after + size > limit - POPUP_MARGIN ? p - POPUP_GAP - size : after;
+    return Math.max(POPUP_MARGIN, Math.min(limit - size - POPUP_MARGIN, at));
+  };
+  return { left: place(x, cardW, w), top: place(y, cardH, h) };
 }
