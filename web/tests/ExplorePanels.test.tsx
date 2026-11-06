@@ -263,19 +263,32 @@ test("panel c note is a plain count of shown trials that succeeded", async () =>
   expect(within(c).queryByText(/ of .* shown trials/)).not.toBeInTheDocument();
 });
 
-test("results posted is a switch in the toolbar, off by default, and narrows when on", async () => {
+test("results posted is a narrowing pill in the toolbar with its count, off by default, and narrows when on", async () => {
   await ready();
   const bar = screen.getByRole("toolbar", { name: "Map controls" });
   const withResults = explorer.trials.filter((t) => t.has_results).length;
   expect(withResults).toBeGreaterThan(0);
-  const sw = within(bar).getByRole("switch", { name: "Results posted" });
-  expect(sw).toHaveAttribute("aria-checked", "false");
+  const pill = within(bar).getByRole("button", { name: `Results posted ${withResults}` });
+  expect(pill).toHaveClass("pill", "narrowing");
+  expect(pill).toHaveAttribute("aria-pressed", "false");
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(sw);
-  expect(sw).toHaveAttribute("aria-checked", "true");
+  await userEvent.click(pill);
+  expect(pill).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByText(`Showing ${withResults} of ${N} trials`)).toBeInTheDocument();
-  await userEvent.click(sw);
+  await userEvent.click(pill);
   expect(screen.getByText(`Showing ${N} of ${N} trials`)).toBeInTheDocument();
+});
+
+test("a dropdown is quiet at rest and marked as narrowed once it narrows", async () => {
+  await ready();
+  const phase = screen.getByRole("button", { name: "Phase: all" });
+  expect(phase).toHaveAttribute("data-narrowed", "false");
+  await userEvent.click(phase);
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  const narrowed = screen.getByRole("button", { name: "Phase: none" });
+  expect(narrowed).toHaveAttribute("data-narrowed", "true");
+  expect(narrowed.querySelector(".dropdown-value")).toHaveTextContent("none");
+  expect(screen.getByRole("button", { name: "Years: all" })).toHaveAttribute("data-narrowed", "false");
 });
 
 test("on narrow screens a selected trial gets a short sticky line with a Details link", async () => {

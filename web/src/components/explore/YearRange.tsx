@@ -16,7 +16,7 @@ export function YearRange(props: {
   const [from, to] = props.value;
   const all = from <= lo && to >= hi;
   return (
-    <Dropdown className="yearrange" title="Start year" text={all ? "Years: all" : `Years: ${from}–${to}`}>
+    <Dropdown className="yearrange" title="Start year" label="Years" value={all ? "all" : `${from}–${to}`} narrowed={!all}>
       <YearRangeBody {...props} />
     </Dropdown>
   );

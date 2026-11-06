@@ -50,7 +50,7 @@ function FindGlyph() {
 
 /**
  * The controls above the map, set like a figure's legend line: find, colour, then the filters as
- * dropdowns, the results switch and Reset all, with the count of trials shown closing the row.
+ * dropdowns, the results pill and Reset all, with the count of trials shown closing the row.
  */
 export function Toolbar(p: ToolbarProps) {
   const { trials, filters, mode, palette } = p;
@@ -61,6 +61,8 @@ export function Toolbar(p: ToolbarProps) {
     () => sameFilters(filters, { ...filtersFor(trials, p.conditions), years: p.bounds }),
     [trials, filters, p.conditions, p.bounds],
   );
+
+  const withResults = useMemo(() => trials.filter((t) => t.has_results).length, [trials]);
 
   const set = (key: SetKey) => (next: Set<string>) => p.onFilters({ ...filters, [key]: next });
 
@@ -155,15 +157,11 @@ export function Toolbar(p: ToolbarProps) {
         {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}
         <button
           type="button"
-          role="switch"
-          aria-checked={filters.resultsOnly}
-          className="tb-switch"
+          className="pill narrowing"
+          aria-pressed={filters.resultsOnly}
           onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
         >
-          <span className="switch-track" aria-hidden="true">
-            <span className="switch-knob" />
-          </span>
-          Results posted
+          Results posted <span className="pill-n">{fmt(withResults)}</span>
         </button>
       </div>
 

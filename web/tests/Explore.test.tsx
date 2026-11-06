@@ -200,7 +200,11 @@ test("the map controls toolbar comes before the canvas", async () => {
   for (const name of ["Disease: all", "Phase: all", "Outcome: all", "Treatment: all", "Years: all"]) {
     expect(within(bar).getByRole("button", { name })).toBeInTheDocument();
   }
-  expect(within(bar).getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  const withResults = explorer.trials.filter((t) => t.has_results).length;
+  expect(within(bar).getByRole("button", { name: `Results posted ${withResults}` })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   expect(within(bar).getByText(`Showing ${explorer.trials.length} of ${explorer.trials.length} trials`)).toBeInTheDocument();
 });
 
@@ -224,12 +228,12 @@ test("Reset all is disabled until a filter changes, and resets every filter", as
   renderAt(<Explore />, "/explore");
   const reset = await screen.findByRole("button", { name: "Reset all" });
   expect(reset).toBeDisabled();
-  await userEvent.click(screen.getByRole("switch", { name: "Results posted" }));
+  await userEvent.click(screen.getByRole("button", { name: /^Results posted/ }));
   expect(reset).toBeEnabled();
   await userEvent.type(screen.getByLabelText("Find a trial"), "zzz");
   await userEvent.click(reset);
   expect(reset).toBeDisabled();
-  expect(screen.getByRole("switch", { name: "Results posted" })).toHaveAttribute("aria-checked", "false");
+  expect(screen.getByRole("button", { name: /^Results posted/ })).toHaveAttribute("aria-pressed", "false");
   expect(screen.getByLabelText("Find a trial")).toHaveValue("");
   const n = explorer.trials.length;
   expect(screen.getByText(`Showing ${n} of ${n} trials`)).toBeInTheDocument();
@@ -239,7 +243,7 @@ test("Reset all hands keyboard focus to the Find field instead of dropping it", 
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
-  const sw = await screen.findByRole("switch", { name: "Results posted" });
+  const sw = await screen.findByRole("button", { name: /^Results posted/ });
   await userEvent.click(sw);
   const reset = screen.getByRole("button", { name: "Reset all" });
   reset.focus();

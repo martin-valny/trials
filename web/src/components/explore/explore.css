@@ -116,9 +116,11 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .pill:hover { border-color: var(--ink); }
 .swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
 .swatch.ring { background: transparent; }
-/* A narrowing toggle ("Results posted"): off means "show all", so it is never struck through; on is filled. */
-.explore .pill.narrowing { margin-left: 8px; }
+/* A narrowing toggle ("Results posted"): off means "show all", so it is never struck through and sits
+   quiet like a dropdown at rest; on is solid ink. Its count is tabular. */
+.explore .pill.narrowing { margin-left: 8px; gap: 7px; }
 .explore .pill.narrowing[aria-pressed="false"] { color: var(--ink); border-color: var(--muted); text-decoration: none; }
+.explore .pill.narrowing[aria-pressed="false"]:hover { border-color: var(--ink); }
 .explore .pill.narrowing[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
 .explore .pill.narrowing[aria-pressed="true"] .pill-n { color: var(--plate); }
 
@@ -324,9 +326,12 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* Toolbar: one line of controls above the plate, read like a figure's legend line. Groups sit 18px
    apart, controls within a group 6px; every item shares one 28px line so the text baselines align. */
 .toolbar {
+  position: relative;
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
   padding: 10px 40px 12px; font-size: 12.5px; color: var(--muted);
 }
+/* A hairline under the controls, inside the gutters, so they read as the figure's legend line. */
+.toolbar::after { content: ""; position: absolute; left: 40px; right: 40px; bottom: 0; height: 1px; background: var(--rule); pointer-events: none; }
 .toolbar > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .toolbar .tb-filters { flex-wrap: wrap; row-gap: 8px; }
 .toolbar .tb-count { margin-left: auto; }
@@ -349,23 +354,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .segmented button { border: 0; padding: 3px 10px; line-height: 18px; }
 .explore .segmented button:hover:not([aria-pressed="true"]) { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
 
-.explore .toolbar .dropdown-button, .explore .tb-switch { line-height: 18px; }
+.explore .toolbar .dropdown-button, .explore .toolbar .pill { line-height: 18px; }
 
-/* Results posted: a drawn switch. Off is a hairline track with an ink knob at the left; on fills the
-   track with ink and knocks the knob out in plate colour at the right. Never red. */
-.explore .tb-switch {
-  display: inline-flex; align-items: center; gap: 8px; margin-left: 8px;
-  border-color: transparent; padding-left: 0; padding-right: 0; background: transparent;
-}
-.explore .tb-switch:hover { border-color: transparent; }
-.explore .tb-switch:hover .switch-track { border-color: var(--ink); }
-.switch-track { position: relative; flex: none; width: 22px; height: 12px; border: 1px solid var(--muted); border-radius: 999px; box-sizing: border-box; }
-.switch-knob { position: absolute; top: 2px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
-.tb-switch[aria-checked="true"] .switch-track { background: var(--ink); border-color: var(--ink); }
-.tb-switch[aria-checked="true"] .switch-knob { left: 12px; background: var(--plate); }
-@media (prefers-reduced-motion: no-preference) {
-  .switch-knob { transition: left 160ms cubic-bezier(0.16, 1, 0.3, 1); }
-}
+/* Filters read as a figure's legend line, not a filter bar: at rest ("all") a dropdown is a hairline
+   pill with its value muted; once it narrows the map it turns ink, its value set in 700. */
+.explore .dropdown-button[data-narrowed="false"] { border-color: var(--rule); }
+.explore .dropdown-button[data-narrowed="false"] .dropdown-value { color: var(--muted); }
+.explore .dropdown-button[data-narrowed="true"] { border-color: var(--ink); }
+.explore .dropdown-button[data-narrowed="true"] .dropdown-value { font-weight: 700; }
+.explore .dropdown-button:hover, .explore .dropdown-button[aria-expanded="true"] { border-color: var(--ink); }
 
 /* Reset all: a word, idle (muted, no underline) until there is something to reset. */
 .explore .text-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
@@ -408,7 +405,8 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 @media (max-width: 640px) {
   .toolbar { padding: 8px 16px 10px; gap: 10px 14px; }
   .toolbar .tb-find { width: 100%; }
-  .explore .tb-switch { margin-left: 0; } /* flush with the line start when it wraps */
+  .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
+  .toolbar::after { left: 16px; right: 16px; }
   .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
   .sheet-head {
     display: flex; align-items: baseline; justify-content: space-between;

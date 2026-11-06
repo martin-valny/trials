@@ -38,7 +38,17 @@ function revealAboveSheet(sheet: HTMLElement) {
  * It opens from the button's left edge, or from its right edge where it would run off the viewport. On a
  * phone it is a bottom sheet headed by ``title`` and a Done button.
  */
-export function Dropdown(props: { text: string; title?: string; className?: string; children: ReactNode }) {
+export function Dropdown(props: {
+  /** The filter's name ("Phase"). */
+  label: string;
+  /** What it shows now ("all", "2 of 6", "2014–2019"); the button reads "label: value". */
+  value: string;
+  /** True once it hides something: the button goes from quiet (hairline, muted value) to ink. */
+  narrowed: boolean;
+  title?: string;
+  className?: string;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -95,9 +105,12 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
         className="dropdown-button"
         aria-expanded={open}
         aria-controls={id}
+        data-narrowed={props.narrowed}
         onClick={() => setOpen((o) => !o)}
       >
-        <span>{props.text}</span>
+        <span>
+          {props.label}: <span className="dropdown-value">{props.value}</span>
+        </span>
         <svg className="chevron" width="9" height="6" viewBox="0 0 9 6" aria-hidden="true">
           <path d="M0.5 0.75 4.5 4.75 8.5 0.75" />
         </svg>
@@ -105,7 +118,7 @@ export function Dropdown(props: { text: string; title?: string; className?: stri
       {open ? (
         <div className="popover" id={id} ref={popover}>
           <div className="sheet-head">
-            <span className="sheet-title">{props.title ?? props.text}</span>
+            <span className="sheet-title">{props.title ?? props.label}</span>
             <button type="button" className="text-button" onClick={close}>
               Done
             </button>
@@ -138,7 +151,12 @@ export function MultiSelect(props: {
 }) {
   const { label, options, selected, onChange } = props;
   return (
-    <Dropdown className="multiselect" title={label} text={`${label}: ${filterSummary(selected.size, options.length)}`}>
+    <Dropdown
+      className="multiselect"
+      label={label}
+      value={filterSummary(selected.size, options.length)}
+      narrowed={options.some((o) => !selected.has(o.value))}
+    >
       <MultiSelectBody label={label} options={options} selected={selected} onChange={onChange} searchable={props.searchable} />
     </Dropdown>
   );
