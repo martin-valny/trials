@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadTrial } from "../data";
-import { fieldLabel, formatDate, formatValue } from "../lib/format";
+import { fieldLabel, formatAgeRange, formatDate, formatValue, sexLabel } from "../lib/format";
 import type { DateInfo, TrialFile } from "../types";
 import { ChangeTable } from "./ChangeTable";
 
@@ -69,15 +69,8 @@ export function TrialDetail() {
   ];
 
   const e = t.eligibility;
-  const ages =
-    e.min_age_years !== null && e.max_age_years !== null
-      ? `${e.min_age_years}–${e.max_age_years} years`
-      : e.min_age_years !== null
-        ? `${e.min_age_years}+ years`
-        : e.max_age_years !== null
-          ? `up to ${e.max_age_years} years`
-          : null;
-  const eligibility = [e.sex, ages].filter((x): x is string => x !== null).join(", ");
+  const ages = formatAgeRange(e.min_age_years, e.max_age_years) || null;
+  const eligibility = [e.sex === null ? null : sexLabel(e.sex), ages].filter((x): x is string => x !== null).join(", ");
 
   return (
     <article aria-labelledby="trial-title">

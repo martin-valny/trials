@@ -34,3 +34,12 @@ test("methods has map section with success definition", async () => {
   expect(screen.getByText(/1,000 shuffles/)).toBeInTheDocument();
   expect(scroll).toHaveBeenCalled();
 });
+
+test("scrolls again after meta has loaded", async () => {
+  stubFetch();
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods#map");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  expect(scroll.mock.calls.length).toBeGreaterThanOrEqual(2);
+});

@@ -110,7 +110,7 @@ test("trial detail shows registry summary and eligibility", async () => {
   expect(await screen.findByRole("heading", { name: "Summary" })).toBeInTheDocument();
   expect(screen.getByText("From the registry")).toBeInTheDocument();
   expect(screen.getByText("A plain registry summary.")).toBeInTheDocument();
-  expect(screen.getByText("Eligibility: ALL, 18–55 years")).toBeInTheDocument();
+  expect(screen.getByText("Eligibility: All sexes, 18–55 years")).toBeInTheDocument();
 });
 
 test("eligibility omits unknown parts", async () => {
@@ -122,7 +122,7 @@ test("eligibility omits unknown parts", async () => {
     },
   });
   show();
-  expect(await screen.findByText("Eligibility: 18+ years")).toBeInTheDocument();
+  expect(await screen.findByText("Eligibility: 18 years and over")).toBeInTheDocument();
 });
 
 test("results link shown only when has_results", async () => {

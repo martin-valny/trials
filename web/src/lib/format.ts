@@ -111,3 +111,26 @@ export function firstSentences(text: string, n = 2): string {
     .slice(0, n)
     .join(" ");
 }
+
+const ageParts = (y: number): [string, "month" | "year"] => {
+  if (y < 1) return [String(Math.max(1, Math.round(y * 12))), "month"];
+  return [String(Math.round(y * 10) / 10), "year"];
+};
+const unitText = (n: string, u: string) => `${n} ${u}${n === "1" ? "" : "s"}`;
+
+/** Registry age bounds in natural words: "18–55 years", "18 years and over", "6 months–17 years". */
+export function formatAgeRange(min: number | null, max: number | null): string {
+  if (min === null && max === null) return "";
+  if (max === null) {
+    const [n, u] = ageParts(min as number);
+    return `${unitText(n, u)} and over`;
+  }
+  const [mx, mu] = ageParts(max);
+  if (min === null) return `up to ${unitText(mx, mu)}`;
+  const [mn, nu] = ageParts(min);
+  if (mn === mx && nu === mu) return unitText(mn, mu);
+  return nu === mu ? `${mn}–${unitText(mx, mu)}` : `${unitText(mn, nu)}–${unitText(mx, mu)}`;
+}
+
+const SEX: Record<string, string> = { ALL: "All sexes", FEMALE: "Female only", MALE: "Male only" };
+export const sexLabel = (s: string): string => SEX[s] ?? s;

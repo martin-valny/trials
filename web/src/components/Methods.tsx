@@ -19,7 +19,7 @@ export function Methods() {
   const { hash } = useLocation();
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView?.();
-  }, [hash]);
+  }, [hash, meta]);
 
   return (
     <article>

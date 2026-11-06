@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
   fieldLabel,
+  formatAgeRange,
+  sexLabel,
   firstSentences,
   formatDelta,
   formatValue,
@@ -103,4 +105,24 @@ describe("explorer display text", () => {
     expect(firstSentences("Ask? Yes. No.")).toBe("Ask? Yes.");
     expect(firstSentences("  Spaced.   Out.  ")).toBe("Spaced. Out.");
   });
+});
+
+test.each([
+  [0.5, null, "6 months and over"],
+  [1 / 12, null, "1 month and over"],
+  [18, null, "18 years and over"],
+  [null, 17, "up to 17 years"],
+  [18, 18, "18 years"],
+  [0.5, 17, "6 months–17 years"],
+  [18, 55, "18–55 years"],
+  [1.5, null, "1.5 years and over"],
+  [null, null, ""],
+])("formatAgeRange(%s, %s)", (a, b, out) => {
+  expect(formatAgeRange(a, b)).toBe(out);
+});
+
+test("sexLabel", () => {
+  expect(sexLabel("ALL")).toBe("All sexes");
+  expect(sexLabel("FEMALE")).toBe("Female only");
+  expect(sexLabel("MALE")).toBe("Male only");
 });
