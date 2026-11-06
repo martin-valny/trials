@@ -142,8 +142,8 @@
       "kind": "input",
       "refersTo": "find-input",
       "description": "Pill-shaped search in the toolbar with a drawn hairline magnifier.",
-      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"Find a trial\">",
-      "css": ".ds-find{font:inherit;font-size:13px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px;width:min(22rem,100%)}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"NCT, drug or sponsor\">",
+      "css": ".ds-find{font:inherit;font-size:12.5px;line-height:18px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px 4px 28px;width:12.5rem}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
     },
     {
       "name": "Panel bar",

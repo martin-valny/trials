@@ -74,16 +74,6 @@ components:
     textColor: "{colors.plate}"
     rounded: "{rounded.pill}"
     padding: "4px 10px"
-  pill-filter-on:
-    backgroundColor: "{colors.plate}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
-  pill-filter-off:
-    backgroundColor: "{colors.plate}"
-    textColor: "{colors.muted}"
-    rounded: "{rounded.pill}"
-    padding: "4px 10px"
   find-input:
     backgroundColor: "{colors.plate}"
     textColor: "{colors.ink}"
@@ -136,7 +126,7 @@ Monochrome ink on white with blue-grey supporting values and a single red.
 
 ### Neutral
 - **Plate White** (#fff, `--plate`) / dark **Slide Ground** (#17191c): page and control ground.
-- **Ink** (#111, `--ink`) / dark (#eceae4): text, bars, rules above the legend, selected pills, focus rings, links, stopped trials, Phase 4.
+- **Ink** (#111, `--ink`) / dark (#eceae4): text, bars, the rule above panel d, selected pills, focus rings, links, stopped trials, Phase 4.
 - **Muted Slate** (#5b6268, `--muted`) / dark (#9b9d9f): secondary text, off pills, placeholder, pill borders at rest.
 - **Hairline** (#d6dadd, `--rule`) / dark (#34373c): off-pill borders, sticky panel d top border on phone.
 - **Pale** (#e4e8eb, `--pale`) / dark (#2b2e33): bar tracks, skeletons, unknown/early phase fill.
@@ -159,7 +149,7 @@ Monochrome ink on white with blue-grey supporting values and a single red.
 - **Panel letter** (800, 22px, 1): lowercase a-d, 10px right margin, sits left of the panel heading.
 - **Panel heading** (700, 13px, 1.3).
 - **Claim** (500, 14px, 1.45, ink, max 52ch): the one-sentence answer in panel b.
-- **Body / legend / bars** (400, 13px, 1.5): legend keys at 700 in ink; values muted.
+- **Body / panel d / bars** (400, 13px, 1.5): panel d's key at 700 in ink; values muted. The figure key is 12px.
 - **Note** (400, 12px, 1.45, muted, max 52ch); phase labels 12px (11px on phone).
 - **Pill** (400, 12.5px). **Canvas cluster label** (600, 11.5px, ink on a plate-coloured 2px halo).
 - Numerals are tabular wherever counts sit in columns (bars, pill counts, "Showing N of M").
@@ -171,7 +161,7 @@ Monochrome ink on white with blue-grey supporting values and a single red.
 
 A column filling the viewport: slim shared header, title, toolbar, plate, ink rule, panel d.
 
-- **Toolbar** (above the plate, 40px gutters, closed by a 1px hairline inside the gutters so it reads as the figure's legend line): Find, Colour (segmented), the filter dropdowns (Disease, Phase, Outcome, Treatment, Years), the Results posted narrowing pill, Reset all, and "Showing N of M trials" closing the row. Groups sit 18px apart, controls within a group 6px. At 901 to 1439px it is set on two deliberate lines (find, colour, count; then filters and Reset all).
+- **Toolbar** (a `role="group"` named "Map controls", above the plate, 40px gutters, closed by a 1px hairline inside the gutters so it reads as the figure's legend line): Find, Colour (segmented), the filter dropdowns (Disease, Phase, Outcome, Treatment, Years), the Results posted narrowing pill, Reset all, and "Showing N of M trials" closing the row. Groups sit 18px apart, controls within a group 6px. At 901 to 1439px it is set on two deliberate lines (find, colour, count; then filters and Reset all).
 - **Plate:** a 2fr/1fr grid (3fr/2fr at 901 to 1279px, so panel b's bars stay long enough to compare) with two rows and a 36px column gap. Panel a (canvas) spans both rows on the left; side by side it is sized to the viewport, `max(420px, min(62vh, 100dvh - 330px))`, not stretched to the right column, so its key and caption land above the fold. Under panel a's heading sits the **figure key**: one 12px line of swatches and words for the active colouring, closed by a "View as list" link; under the canvas, the "Dot size" caption. Panel b (success by disease: bars, average tick, lift sentence) is top right; panel c (trials by phase, columns, red = moved on) bottom right.
 - **Panel d:** below the plate a full-width 1px ink rule opens a two-column key/value block (6.5rem key column, 18px gap) holding only panel d (the selected trial line and summary).
 
@@ -212,7 +202,7 @@ Pill-shaped search in the toolbar, 12.5px (16px on a phone, so iOS does not zoom
 A pill button reading "Label: value" with a 9px hairline ink chevron (turns 180° when open, 160ms, motion-safe only). **At rest** (shows every value): hairline (`--rule`) border, value muted. **Narrowed:** ink border, ink text, value in 700. The popover is a flat plate inset: 1px hairline frame with an ink top edge, no shadow, 16 to 24rem wide, opening from the button's right edge where it would leave the viewport. Inside: Select all / Select none as underlined words, then a checklist of square 11px hairline boxes with an ink check, optional 9px swatch (in the active colour mode), label, and a tabular count flush right; Disease gets a filter field. Escape, a press outside, or Tab out closes it. **Phone (<= 640px):** a bottom sheet capped at 44dvh with a 1px ink top rule, a title and Done; opening it scrolls the page so the map sits just above the sheet.
 
 ### Years range
-A dropdown ("Years: all" or "Years: 2014–2019") holding From and To pill fields (tabular, four digits) over a hairline track; the chosen span is a 2px ink bar between two square-ended 10px plate handles with ink borders (14px wide, 28px tall on a phone). Moving one end past the other drags it along.
+A dropdown ("Years: all" or "Years: 2014–2019") holding From and To pill fields (tabular, four digits) over a hairline track; the chosen span is a 2px ink bar between two square-ended 10px plate handles with ink borders (14px wide, 28px tall on a phone). Moving one end past the other drags it along. Not shown when no trial has a start year.
 
 ### Narrowing pill (Results posted)
 Off is "show all", so it is never struck through: ink text, muted border. On: solid ink, plate text. Carries a tabular count of trials with results posted.
@@ -221,13 +211,13 @@ Off is "show all", so it is never struck through: ink text, muted border. On: so
 A word, not a pill: muted and idle while nothing is narrowed; ink with a muted underline once there is something to reset; resetting hands focus to Find.
 
 ### Figure key
-Under panel a's heading: one 12px line of 8px swatches and words (ink), wrapping as needed, naming the active colouring; nothing to press. Unknown outcome is a ring swatch. Disease mode lists conditions largest first. "View as list" (ink link) keeps to the line's end.
+Under panel a's heading: one 12px line of 8px swatches and words (ink), wrapping as needed, naming the active colouring; nothing to press. Unknown outcome is a ring swatch. Disease mode lists conditions largest first, and only those some trial lists first (the Disease dropdown shows swatches for the same set). "View as list" (ink link) keeps to the line's end.
 
 ### Hover card
 Mouse and pen only, never touch. Two lines (id and title, 2-line clamp; then drugs, treatment, phase, years) on a flat plate with a 1px ink border, 12px, max 18rem, no pointer events. Centred above the hovered dot with its bottom edge 10px above the dot's ring, flipped below only at the panel's top edge, kept 4px inside the panel horizontally; a 1px ink leader runs from the card to the ring, like the cluster labels' leaders. The spin pauses while a dot is hovered.
 
 ### Play / pause
-Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's top-right corner, not a filled pill: "Play" when still, "Pause" while turning. Absent under `prefers-reduced-motion: reduce`.
+Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's top-right corner, not a filled pill: "Play" when still, "Pause" while turning; its accessible name says what a press will do ("Play rotation" / "Pause rotation"), with no pressed state. Absent under `prefers-reduced-motion: reduce`.
 
 ### Theme switch
 In the shared header: one quiet text control, "Theme" (muted) then the choice, cycling System, Light, Dark; a 9px key circle is empty for Light, solid for Dark, half-filled for System.
