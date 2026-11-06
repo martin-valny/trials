@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { clusterAnchors, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
+import { clusterAnchors, columnLabels, nearestIndex, placeLabels, project, type Projected } from "../../lib/explorer";
 import type { ExplorerTrial } from "../../types";
 
 export interface PlateCanvasProps {
@@ -12,6 +12,8 @@ export interface PlateCanvasProps {
   hollow?: (t: ExplorerTrial) => boolean;
   /** Condition labels, in the area's order, to annotate at each condition's densest point (see clusterAnchors). */
   labels?: string[];
+  /** Set the cluster labels in a column at the right edge (phone widths), not beside each cluster. */
+  labelColumn?: boolean;
   selected: string | null;
   onSelect: (nct: string | null) => void;
   reducedMotion: boolean;
@@ -39,6 +41,7 @@ const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
 const LABEL_FONT = '600 11.5px "Hanken Grotesk", system-ui, sans-serif';
 const LABEL_OFFSET = 8; // px right of and above the anchor dot
+const COLUMN_TOP = 40; // px: the phone label column starts below the play control
 const RING_GAP = 4; // px between a dot and its selection or hover ring
 const RING_WIDTH = 1.5;
 
@@ -181,6 +184,7 @@ export function PlateCanvas(props: PlateCanvasProps) {
     const draw = () => {
       const { trials, points: pts, mask, colors, emph, rings, anchors, scale, extents, selected, ringColor, ink, plate } =
         live.current;
+      const labelColumn = live.current.labelColumn === true;
       ctx.clearRect(0, 0, w, h);
       const zoom = fitZoom(extents, w, h, ZOOM);
       projected = project(pts, angle, TILT, w, h, zoom);
@@ -232,21 +236,22 @@ export function PlateCanvas(props: PlateCanvasProps) {
         ctx.textBaseline = "middle";
         ctx.lineJoin = "round";
         const widths = anchors.map((a) => ctx.measureText(a.label).width);
-        const spots = placeLabels(
-          anchors.map((_, k) => ({
-            sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
-            sy: at[k].sy - LABEL_OFFSET,
-            width: widths[k],
-          })),
-          w,
-          h,
-        );
+        const items = anchors.map((_, k) => ({
+          sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
+          sy: at[k].sy - LABEL_OFFSET,
+          width: widths[k],
+        }));
+        // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
+        // from the clusters, below the play control, each with a leader down to its cluster.
+        const spots: { x: number; y: number; lx?: number }[] = labelColumn
+          ? columnLabels(items, w, COLUMN_TOP)
+          : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
         anchors.forEach((_, k) => {
           ctx.beginPath();
           ctx.moveTo(at[k].sx, at[k].sy);
-          ctx.lineTo(spots[k].x - widths[k] / 2 - 2, spots[k].y);
+          ctx.lineTo(spots[k].lx ?? spots[k].x - widths[k] / 2 - 2, spots[k].y);
           ctx.stroke();
         });
         ctx.lineWidth = 2;

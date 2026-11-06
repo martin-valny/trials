@@ -150,6 +150,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   // A touch screen has no hover, so the caption does not offer one.
   const coarse = useMediaQuery("(pointer: coarse)");
+  const phone = useMediaQuery("(max-width: 640px)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
   const [selected, setSelected] = useState<string | null>(null);
@@ -223,6 +224,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               emphasis={emphasis}
               hollow={mode === "outcome" ? isUnknownOutcome : undefined}
               labels={order}
+              labelColumn={phone}
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}

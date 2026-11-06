@@ -432,6 +432,32 @@ export function placeLabels(
   });
 }
 
+/**
+ * Phone layout for centred labels: a column stacked down from ``top`` in the corner away from the
+ * labelled clusters (the right edge when their dots sit left of centre, else the left edge), its inner
+ * edge flush so every leader ends on one vertical line (``lx``, 3px off the column) and never runs
+ * through another label. Labels keep the order of their dots' height, so the leaders do not cross.
+ */
+export function columnLabels(
+  items: { sx: number; sy: number; width: number }[],
+  w: number,
+  top: number,
+): { x: number; y: number; lx: number }[] {
+  if (items.length === 0) return [];
+  const widest = Math.max(...items.map((it) => it.width));
+  const meanX = items.reduce((a, it) => a + it.sx - it.width / 2, 0) / items.length;
+  const right = meanX < w / 2;
+  const inner = right ? w - 4 - widest : 4 + widest;
+  const order = items.map((_, i) => i).sort((a, b) => items[a].sy - items[b].sy);
+  const ys = new Array<number>(items.length);
+  order.forEach((i, k) => (ys[i] = top + k * LABEL_LINE));
+  return items.map((it, i) => ({
+    x: right ? inner + it.width / 2 : inner - it.width / 2,
+    y: ys[i],
+    lx: right ? inner - 3 : inner + 3,
+  }));
+}
+
 /** Start and end year with an en dash: "2014–2019", "2021–" (no end), "2021–2025 (est.)", "" when neither. */
 export function yearSpan(t: ExplorerTrial): string {
   if (t.start_year === null && t.end_year === null) return "";
