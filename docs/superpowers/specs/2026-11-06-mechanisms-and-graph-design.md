@@ -1,6 +1,6 @@
 # Explorer usability, drug mechanisms and the mechanism graph — design
 
-Status: awaiting Martin's approval (builder check done) · 2026-11-06. Builds on the Explorer (`2026-11-05-explorer-figure-plate-design.md`, branch `feat/explorer-figure-plate`, unpushed). Visual rules: `DESIGN.md`.
+Status: approved by Martin · 2026-11-06. Builds on the Explorer (`2026-11-05-explorer-figure-plate-design.md`, branch `feat/explorer-figure-plate`, unpushed). Visual rules: `DESIGN.md`.
 
 ## 1. Intent
 
@@ -158,6 +158,9 @@ Run by hand (Martin's Mac) or by a manual-dispatch workflow that opens a PR; nev
 - Gates (HANDOFF section 4) green before each phase is called done. Real-data check on the local preview for each phase, with screenshots.
 
 ## 9. Delivery
+
+- **Stack (unchanged):** React 19 + TypeScript (strict) for every new UI piece, including the graph canvas; no UI kit or component library that would bring its own look.
+- **Design bar (Martin, on approval):** this is a showcase; it must look premium and high-end, never "AI slop" (no generic dashboard cards, gradients, glows, emoji, default-looking controls). Every new UI piece (toolbar, dropdowns, popup, theme switch, success table, graph page) is designed inside `DESIGN.md`'s Figure Plate system, built with the Impeccable skill, and gets an Impeccable finish review plus real-data screenshots (light, dark, 375px) before its phase is called done. `DESIGN.md` is updated with each new pattern.
 
 - Work continues on `feat/explorer-figure-plate` (still unpushed; Martin pushes), one phase at a time, each committed and verified before the next.
 - Docs: README "coming next" updated as phases land (mechanism data and graph become real); Methods gains mechanism sources, licences, coverage and the weight choice; `DESIGN.md` gains the toolbar, popup, dropdown and graph patterns; HANDOFF updated at the end.
