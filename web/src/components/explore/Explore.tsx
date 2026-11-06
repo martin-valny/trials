@@ -295,8 +295,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           <p className="panel-note plate-caption">
             Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
             {coarse
-              ? "Pinch to zoom, drag to turn, tap to open."
-              : "Scroll to zoom, drag to turn, hover for details, click to open."}
+              ? "Pinch to zoom; drag to turn, or to pan when zoomed. Tap to open."
+              : "Scroll to zoom; drag to turn, or to pan when zoomed (Shift-drag turns). Hover for details, click to open."}
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}

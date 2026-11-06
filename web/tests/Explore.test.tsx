@@ -49,7 +49,7 @@ test("panel a carries a caption on how to read the map", async () => {
   const a = await screen.findByRole("region", { name: /Embedding of/ });
   expect(
     within(a).getByText(
-      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom, drag to turn, hover for details, click to open.",
+      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom; drag to turn, or to pan when zoomed (Shift-drag turns). Hover for details, click to open.",
     ),
   ).toBeInTheDocument();
 });
@@ -69,7 +69,7 @@ test("on a coarse pointer the caption says tap to open and never mentions hover"
   renderAt(<Explore />, "/explore");
   const a = await screen.findByRole("region", { name: /Embedding of/ });
   const caption = within(a).getByText(/^Dot size: enrollment\./);
-  expect(caption).toHaveTextContent("Pinch to zoom, drag to turn, tap to open.");
+  expect(caption).toHaveTextContent("Pinch to zoom; drag to turn, or to pan when zoomed. Tap to open.");
   expect(caption.textContent).not.toMatch(/hover/i);
 });
 
