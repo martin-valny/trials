@@ -13,6 +13,7 @@ import {
   viewPoints,
   zoomAt,
   placeLabels,
+  hollowFor,
   splitLabel,
   type LabelSpot,
   liftSentence,
@@ -839,11 +840,28 @@ describe("mechanism and modality: colour", () => {
   it("has five colour modes: Outcome, Phase, Disease, Mechanism, Modality", () => {
     expect(MODES.map(([, l]) => l)).toEqual(["Outcome", "Phase", "Disease", "Mechanism", "Modality"]);
   });
-  it("palettes carry a neutral other-category and multiple colour", () => {
-    expect(L.otherCategory).toBe("#9aa5b1");
-    expect(D.otherCategory).toBe("#6c7680");
-    expect(L.multiple).toBe("#5b6268");
-    expect(D.multiple).toBe("#b9bdc2");
+  it("shape, not shade: other is slate, more than one an ink ring, none the cloud's pale ground", () => {
+    expect(L.otherCategory).toBe("#8796a3");
+    expect(D.otherCategory).toBe("#6c7f93");
+    // "More than one" is drawn hollow (see hollowFor), in ink.
+    expect(L.multiple).toBe("#111111");
+    expect(D.multiple).toBe("#eceae4");
+    expect(L.noClass).toBe("#c9d1d8");
+    expect(D.noClass).toBe("#50575f");
+  });
+  it("hollowFor: rings for unknown outcomes, and for trials with more than one class in its mode", () => {
+    const o = hollowFor("outcome")!;
+    expect(o(trial({ outcome: "unknown" }))).toBe(true);
+    expect(o(trial({ outcome: "stopped" }))).toBe(false);
+    const m = hollowFor("mechanism")!;
+    expect(m(trial({ mechanisms: ["a", "b"] }))).toBe(true);
+    expect(m(trial({ mechanisms: ["a"] }))).toBe(false);
+    expect(m(trial({ mechanisms: [] }))).toBe(false);
+    const d = hollowFor("modality")!;
+    expect(d(trial({ modalities: ["antibody", "protein"] }))).toBe(true);
+    expect(d(trial({ modalities: ["antibody"] }))).toBe(false);
+    expect(hollowFor("phase")).toBeUndefined();
+    expect(hollowFor("disease")).toBeUndefined();
   });
   it("the six commonest classes take the editorial series in order; others the other-category grey", () => {
     expect(top.map((m) => mech([m], top))).toEqual(L.diseases);
@@ -853,7 +871,7 @@ describe("mechanism and modality: colour", () => {
   it("a trial with several classes is 'multiple'; one with none is unknown", () => {
     expect(mech(["anti-CD20", "NRF2 activator"], top)).toBe(L.multiple);
     expect(mech(["anti-CD20", "NRF2 activator"], top, D)).toBe(D.multiple);
-    expect(mech([], top)).toBe(L.unknown);
+    expect(mech([], top)).toBe(L.noClass);
   });
   it("mechanismSeries ranks classes by trial count over the whole file, ties alphabetically, at most six", () => {
     const ts = [
@@ -880,7 +898,7 @@ describe("mechanism and modality: colour", () => {
     expect(MODALITIES.slice(0, 6).map((m) => mod([m], D))).toEqual(D.diseases);
     expect(mod(["other"])).toBe(L.otherCategory);
     expect(mod(["antibody", "small molecule"])).toBe(L.multiple);
-    expect(mod([])).toBe(L.unknown);
+    expect(mod([])).toBe(L.noClass);
   });
   it("no mechanism or modality colour is the succeeded colour", () => {
     for (const p of [L, D]) for (const c of [p.otherCategory, p.multiple]) expect(c).not.toBe(p.succeeded);

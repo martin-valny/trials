@@ -100,7 +100,8 @@ function categoryKeys(trials: ExplorerTrial[], mode: "mechanism" | "modality", p
     .map((k) => ({ label: name(k), swatch: categoryColor([k], palette, series) }));
   if ([...painted].some((k) => k !== NONE && !series.includes(k)))
     keys.push({ label: mode === "mechanism" ? "Other mechanism" : "Other", swatch: palette.otherCategory });
-  if (multiple) keys.push({ label: `More than one ${mode}`, swatch: palette.multiple });
+  // Shape, not shade: more than one class is a hollow ink ring on the map, so a ring in the key.
+  if (multiple) keys.push({ label: `More than one ${mode}`, swatch: palette.multiple, ring: true });
   if (painted.has(NONE)) keys.push({ label: name(NONE), swatch: categoryColor([], palette, series), none: true });
   return keys;
 }

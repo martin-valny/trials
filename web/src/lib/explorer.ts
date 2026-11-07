@@ -36,10 +36,12 @@ export interface Palette {
    * No ink, no red: red is reserved for succeeded.
    */
   diseases: string[];
-  /** Mechanism and modality modes: a class outside the six that take the series. */
+  /** Mechanism and modality modes: a class outside the six that take the series (slate fill). */
   otherCategory: string;
-  /** Mechanism and modality modes: a trial with more than one class. */
+  /** Mechanism and modality modes: a trial with more than one class, drawn as a hollow ink ring (hollowFor). */
   multiple: string;
+  /** Mechanism and modality modes: no known class; the cloud's pale ground, as completed-unknown is. */
+  noClass: string;
 }
 
 export const LIGHT_PALETTE: Palette = {
@@ -59,8 +61,9 @@ export const LIGHT_PALETTE: Palette = {
   },
   // Editorial journal: one hue per condition, in the area's condition order.
   diseases: ["#3c5488", "#00a087", "#8e5ea2", "#4dbbd5", "#e0a030", "#7e6148"],
-  otherCategory: "#9aa5b1",
-  multiple: "#5b6268",
+  otherCategory: "#8796a3",
+  multiple: "#111111",
+  noClass: "#c9d1d8",
 };
 
 export const DARK_PALETTE: Palette = {
@@ -79,8 +82,9 @@ export const DARK_PALETTE: Palette = {
     NA: "#2b2e33",
   },
   diseases: ["#8da3d6", "#3cc7a8", "#cf8fd6", "#7fd3e6", "#f0c060", "#b8977a"],
-  otherCategory: "#6c7680",
-  multiple: "#b9bdc2",
+  otherCategory: "#6c7f93",
+  multiple: "#eceae4",
+  noClass: "#50575f",
 };
 
 export const OUTCOMES: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
@@ -138,11 +142,11 @@ export const mechanismSeries = (trials: ExplorerTrial[]): string[] =>
   mechanismsOf(tally(trials, (t) => t.mechanisms)).slice(0, 6);
 
 /**
- * Mechanism or modality colour: none -> unknown; more than one -> multiple; one in ``series`` -> its
+ * Mechanism or modality colour: none -> the pale ground (noClass); more than one -> multiple (an ink ring); one in ``series`` -> its
  * place in the series; any other -> the other-category grey. Never red.
  */
 export function categoryColor(values: string[], palette: Palette, series: string[]): string {
-  if (values.length === 0) return palette.unknown;
+  if (values.length === 0) return palette.noClass;
   if (values.length > 1) return palette.multiple;
   const i = series.indexOf(values[0]);
   return i < 0 ? palette.otherCategory : palette.diseases[i % palette.diseases.length];
@@ -409,6 +413,17 @@ export function emphasisFor(
   if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
   if (mode === "mechanism") return (t) => inSeries(t.mechanisms, mechanisms);
   if (mode === "modality") return (t) => inSeries(t.modalities, MODALITY_SERIES);
+  return undefined;
+}
+
+/**
+ * Which trials are drawn as a hollow 1px ring instead of a filled dot (Shape-Not-Shade): unknown outcomes
+ * in outcome mode; in mechanism and modality modes, trials with more than one class. None otherwise.
+ */
+export function hollowFor(mode: ColorMode): ((t: ExplorerTrial) => boolean) | undefined {
+  if (mode === "outcome") return (t) => t.outcome === "unknown";
+  if (mode === "mechanism") return (t) => t.mechanisms.length > 1;
+  if (mode === "modality") return (t) => t.modalities.length > 1;
   return undefined;
 }
 

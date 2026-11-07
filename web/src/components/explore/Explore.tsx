@@ -10,6 +10,7 @@ import {
   diseaseRanking,
   diseaseSeries,
   emphasisFor,
+  hollowFor,
   LIGHT_PALETTE,
   matches,
   mechanismSeries,
@@ -175,9 +176,6 @@ function ClusterKey({ labels }: { labels: string[] }) {
   );
 }
 
-/** Outcome colouring draws unknown outcomes as rings. */
-const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
-
 function Title({ area }: { area: string | null }) {
   return (
     <h1 className="plate-title">
@@ -288,6 +286,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     [mode, palette, series, mechanisms],
   );
   const emphasis = useMemo(() => emphasisFor(mode, ranked, mechanisms), [mode, ranked, mechanisms]);
+  const hollow = useMemo(() => hollowFor(mode), [mode]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
   const conditions = useMemo(() => {
@@ -349,7 +348,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               visible={visible}
               color={color}
               emphasis={emphasis}
-              hollow={mode === "outcome" ? isUnknownOutcome : undefined}
+              hollow={hollow}
               labels={labelMode === "diseases" ? order : undefined}
               anchors={labelMode === "clusters" ? clusterAnchors : labelMode === "off" ? NO_ANCHORS : undefined}
               numbered={phone}

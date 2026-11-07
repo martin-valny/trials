@@ -458,7 +458,8 @@ test("a class shown only on multi-class trials gets no swatch; the 'none' key sw
   const key = screen.getByRole("list", { name: "Colour key: Mechanism" });
   const none = within(key).getByText("No known mechanism").querySelector(".swatch")!;
   expect(none).toHaveClass("none");
-  expect(within(key).getByText("More than one mechanism")).toBeInTheDocument();
+  // Shape, not shade: "more than one" is a ring in the key, as on the map.
+  expect(within(key).getByText("More than one mechanism").querySelector(".swatch")).toHaveClass("ring");
 });
 
 test("clusters too small to label are not offered: Labels defaults to Diseases", async () => {
