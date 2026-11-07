@@ -608,7 +608,7 @@ describe("placeLabels", () => {
 
 describe("splitLabel", () => {
   it("sets a cluster's disease prefix apart from its mechanism or type part", () => {
-    expect(splitLabel("MS · anti-CD20 (ocrelizumab)")).toEqual(["MS · ", "anti-CD20 (ocrelizumab)"]);
+    expect(splitLabel("D1 · anti-CD20 (ocrelizumab)")).toEqual(["D1 · ", "anti-CD20 (ocrelizumab)"]);
     expect(splitLabel("Myasthenia gravis")).toEqual(["", "Myasthenia gravis"]);
   });
 });

@@ -154,7 +154,7 @@ function LabelSwitch({
 const NO_ANCHORS: { label: string; x: number; y: number; z: number }[] = [];
 
 /**
- * Phone key for the numerals on the map: "1 MS · anti-CD20 (ocrelizumab)", set like a journal figure's
+ * Phone key for the numerals on the map: "1 <disease> · anti-CD20 (ocrelizumab)", set like a journal figure's
  * key, the disease prefix quieter than the mechanism or type part.
  */
 function ClusterKey({ labels }: { labels: string[] }) {

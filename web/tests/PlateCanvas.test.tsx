@@ -557,9 +557,9 @@ test("named anchors (clusters) are labelled where given, in the file's coordinat
 
 test("a cluster's disease prefix is set apart from its mechanism or type part", () => {
   const t = trials[6];
-  renderCanvas([], trials, [{ label: "MS · anti-CD20 (ocrelizumab)", x: t.x, y: t.y, z: t.z }]);
+  renderCanvas([], trials, [{ label: "D1 · anti-CD20 (ocrelizumab)", x: t.x, y: t.y, z: t.z }]);
   step();
-  expect(texts).toEqual(["MS · ", "anti-CD20 (ocrelizumab)"]);
+  expect(texts).toEqual(["D1 · ", "anti-CD20 (ocrelizumab)"]);
 });
 
 test("numbered (phone): each anchor carries its numeral, not its name", () => {
@@ -570,8 +570,8 @@ test("numbered (phone): each anchor carries its numeral, not its name", () => {
       visible={() => true}
       color={() => "#111"}
       anchors={[
-        { label: "MS · anti-CD20 (ocrelizumab)", x: a.x, y: a.y, z: a.z },
-        { label: "MS · devices", x: b.x, y: b.y, z: b.z },
+        { label: "D1 · anti-CD20 (ocrelizumab)", x: a.x, y: a.y, z: a.z },
+        { label: "D1 · devices", x: b.x, y: b.y, z: b.z },
       ]}
       numbered
       selected={null}

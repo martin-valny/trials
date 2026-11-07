@@ -325,8 +325,8 @@ const withClusters = (): ExplorerFile => {
   return {
     ...explorer,
     clusters: [
-      { id: 0, label: "MS · anti-CD20 (ocrelizumab)", kind: "mechanism", n: 20, x: a.x, y: a.y, z: a.z },
-      { id: 1, label: "MS · devices", kind: "type", n: 16, x: b.x, y: b.y, z: b.z },
+      { id: 0, label: "D1 · anti-CD20 (ocrelizumab)", kind: "mechanism", n: 20, x: a.x, y: a.y, z: a.z },
+      { id: 1, label: "D1 · devices", kind: "type", n: 16, x: b.x, y: b.y, z: b.z },
     ],
   };
 };
@@ -349,9 +349,9 @@ test("on a phone the map carries numerals, keyed under the canvas like a journal
   renderAt(<Explore />, "/explore");
   const key = await screen.findByRole("list", { name: "Map labels" });
   const items = within(key).getAllByRole("listitem");
-  expect(items.map((li) => li.textContent)).toEqual(["1MS · anti-CD20 (ocrelizumab)", "2MS · devices"]);
+  expect(items.map((li) => li.textContent)).toEqual(["1D1 · anti-CD20 (ocrelizumab)", "2D1 · devices"]);
   // The disease prefix is set quieter than the mechanism or type part.
-  expect(within(items[0]).getByText("MS ·", { exact: false })).toHaveClass("cluster-key-prefix");
+  expect(within(items[0]).getByText("D1 ·", { exact: false })).toHaveClass("cluster-key-prefix");
 });
 
 test("side by side there is no numbered key: labels sit on the map", async () => {

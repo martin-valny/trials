@@ -929,7 +929,7 @@ export function placeLabels(items: LabelItem[], w: number, h: number, opts: Plac
   });
 }
 
-/** "MS · anti-CD20 (ocrelizumab)" -> ["MS · ", "anti-CD20 (ocrelizumab)"]: the disease prefix is set quieter. */
+/** "<disease> · anti-CD20 (ocrelizumab)" -> ["<disease> · ", "anti-CD20 (ocrelizumab)"]: the disease prefix is set quieter. */
 export function splitLabel(label: string): [string, string] {
   const i = label.indexOf(" · ");
   return i < 0 ? ["", label] : [label.slice(0, i + 3), label.slice(i + 3)];
