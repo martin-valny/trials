@@ -2,15 +2,15 @@ import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useSt
 import {
   clusterAnchors,
   clampView,
-  columnLabels,
-  columnSide,
   IDENTITY_VIEW,
   nearestIndex,
   panBy,
   placeLabels,
   project,
+  splitLabel,
   viewPoints,
   zoomAt,
+  type Box,
   type ClusterAnchor,
   type Projected,
   type View,
@@ -32,8 +32,11 @@ export interface PlateCanvasProps {
    * An empty list draws no labels at all.
    */
   anchors?: ClusterAnchor[];
-  /** Set the cluster labels in a column at the right edge (phone widths), not beside each cluster. */
-  labelColumn?: boolean;
+  /**
+   * Phone widths: a small numeral (1, 2, ...) at each anchor instead of its name; the names are keyed
+   * under the canvas (see Explore).
+   */
+  numbered?: boolean;
   selected: string | null;
   onSelect: (nct: string | null) => void;
   reducedMotion: boolean;
@@ -70,8 +73,8 @@ const DRAG = 0.008; // radians per dragged pixel
 const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
 const LABEL_FONT = '600 11.5px "Hanken Grotesk", system-ui, sans-serif';
-const LABEL_OFFSET = 8; // px right of and above the anchor dot
-const COLUMN_TOP = 40; // px: the phone label column starts below the play control
+const PREFIX_FONT = '400 11.5px "Hanken Grotesk", system-ui, sans-serif'; // the "MS · " disease prefix
+const NUMERAL_FONT = '800 11px "Hanken Grotesk", system-ui, sans-serif';
 const RING_GAP = 4; // px between a dot and its selection or hover ring
 const RING_WIDTH = 1.5;
 const KEY_ZOOM = 1.5; // per press of + or -
@@ -194,9 +197,8 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     () => (named ? fitAnchors(trials, named) : clusterAnchors(trials, points, labels ?? [])),
     [trials, points, labels, named],
   );
-  const side = useMemo(() => columnSide(anchors), [anchors]);
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
-  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink: "", plate: "" });
+  const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink: "", plate: "", muted: "" });
   const dirty = useRef(true);
   // Set by the draw loop's effect; the handle reaches the live view through it.
   const resetView = useRef<() => void>(() => undefined);
@@ -210,7 +212,8 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     const css = canvasRef.current ? getComputedStyle(canvasRef.current) : null;
     const ink = css?.color || "#111";
     const plate = css?.getPropertyValue("--plate").trim() || "#fff";
-    live.current = { ...props, points, mask, colors, emph, rings, anchors, side, scale, extents, ink, plate };
+    const muted = css?.getPropertyValue("--muted").trim() || "#5b6268";
+    live.current = { ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink, plate, muted };
     dirty.current = true;
   });
 
@@ -242,6 +245,8 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     let frame = 0;
     let onscreen = true;
     let alive = true;
+    /** Each label's last spot, so labels keep their side while the map turns (see placeLabels). */
+    const labelMemory = new Map<string, number>();
 
     const resize = () => {
       const box = canvas.getBoundingClientRect();
@@ -259,11 +264,20 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     observer?.observe(canvas);
 
     const inside = (p: { sx: number; sy: number }) => p.sx >= 0 && p.sx <= w && p.sy >= 0 && p.sy <= h;
+    /** The map controls (Labels, Play, Reset view) over the canvas, in canvas px: labels keep off them. */
+    const controlBand = (): Box[] => {
+      const band = canvas.parentElement?.querySelector(".plate-controls");
+      if (!band) return [];
+      const c = canvas.getBoundingClientRect();
+      const r = band.getBoundingClientRect();
+      if (r.width === 0) return [];
+      return [{ x0: r.left - c.left - 4, y0: r.top - c.top - 4, x1: r.right - c.left + 4, y1: r.bottom - c.top + 4 }];
+    };
 
     const draw = () => {
       const { trials, points: pts, mask, colors, emph, rings, anchors, scale, extents, selected, ringColor, ink, plate } =
         live.current;
-      const { labelColumn, side } = live.current;
+      const { numbered, muted } = live.current;
       ctx.clearRect(0, 0, w, h);
       const fit = restFit(extents, w, h, ZOOM);
       const zoom = w > 0 && h > 0 ? fit.scale / (Math.min(w, h) / 2) : 1;
@@ -309,48 +323,70 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         ctx.arc(p.sx, p.sy, r + 0.5, 0, Math.PI * 2);
         ctx.stroke();
       }
-      // Cluster labels: beside each condition's densest trial, projected with the cloud, in ink on a
-      // plate halo, with a 1px leader back to the dot.
+      // Cluster labels: projected with the cloud and set beside their anchors (see placeLabels), clear of
+      // the dots, each other and the control band, with a 1px ink leader; on a phone, numerals instead.
       // Zoomed in, a cluster whose anchor is off the canvas loses its label rather than pinning it to the edge.
       const allAt = place(project(anchors, angle, TILT, w, h, zoom));
       const keep = anchors.map((_, k) => k).filter((k) => view.k === 1 || inside(allAt[k]));
       if (keep.length > 0) {
         const at = keep.map((k) => allAt[k]);
-        const shownAnchors = keep.map((k) => anchors[k]);
-        ctx.font = LABEL_FONT;
-        ctx.textAlign = "center";
+        const dots = projected.filter((_, i) => mask[i] === 1 && inside(projected[i]));
+        const texts = keep.map((k) => (numbered ? [String(k + 1), ""] : splitLabel(anchors[k].label)));
+        const widthOf = ([prefix, rest]: string[]) => {
+          if (numbered) {
+            ctx.font = NUMERAL_FONT;
+            return ctx.measureText(prefix).width;
+          }
+          ctx.font = PREFIX_FONT;
+          const a = prefix ? ctx.measureText(prefix).width : 0;
+          ctx.font = LABEL_FONT;
+          return a + ctx.measureText(rest).width;
+        };
+        const widths = texts.map(widthOf);
+        const spots = placeLabels(
+          keep.map((k, j) => ({ key: numbered ? `#${k}` : anchors[k].label, ax: at[j].sx, ay: at[j].sy, width: widths[j] })),
+          w,
+          h,
+          { dots, obstacles: controlBand(), memory: labelMemory },
+        );
+        ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.lineJoin = "round";
-        const widths = shownAnchors.map((a) => ctx.measureText(a.label).width);
-        const items = shownAnchors.map((_, k) => ({
-          sx: at[k].sx + LABEL_OFFSET + widths[k] / 2,
-          sy: at[k].sy - LABEL_OFFSET,
-          width: widths[k],
-        }));
-        // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
-        // from the clusters, below the play control, each with a leader down to its cluster.
-        // A label with no free slot is dropped (null) rather than drawn over another.
-        const spots: ({ x: number; y: number; lx?: number } | null)[] = labelColumn
-          ? columnLabels(items, w, COLUMN_TOP, side)
-          : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
-        shownAnchors.forEach((_, k) => {
-          const spot = spots[k];
-          if (spot === null) return;
+        spots.forEach((spot, j) => {
+          // A numeral sitting right by its dot needs no leader.
+          if (spot === null || Math.hypot(spot.lx - at[j].sx, spot.ly - at[j].sy) < (numbered ? 10 : 3)) return;
           ctx.beginPath();
-          ctx.moveTo(at[k].sx, at[k].sy);
-          ctx.lineTo(spot.lx ?? spot.x - widths[k] / 2 - 2, spot.y);
+          ctx.moveTo(at[j].sx, at[j].sy);
+          ctx.lineTo(spot.lx, spot.ly);
           ctx.stroke();
         });
-        ctx.lineWidth = 2;
         ctx.strokeStyle = plate;
-        ctx.fillStyle = ink;
-        shownAnchors.forEach((a, k) => {
-          const spot = spots[k];
+        spots.forEach((spot, j) => {
           if (spot === null) return;
-          ctx.strokeText(a.label, spot.x, spot.y);
-          ctx.fillText(a.label, spot.x, spot.y);
+          const [prefix, rest] = texts[j];
+          if (numbered) {
+            ctx.font = NUMERAL_FONT;
+            ctx.lineWidth = 3;
+            ctx.fillStyle = ink;
+            ctx.strokeText(prefix, spot.left, spot.y);
+            ctx.fillText(prefix, spot.left, spot.y);
+            return;
+          }
+          ctx.lineWidth = 2;
+          let x = spot.left;
+          if (prefix) {
+            ctx.font = PREFIX_FONT;
+            ctx.fillStyle = muted;
+            ctx.strokeText(prefix, x, spot.y);
+            ctx.fillText(prefix, x, spot.y);
+            x += ctx.measureText(prefix).width;
+          }
+          ctx.font = LABEL_FONT;
+          ctx.fillStyle = ink;
+          ctx.strokeText(rest, x, spot.y);
+          ctx.fillText(rest, x, spot.y);
         });
       }
       const ring = ringColor ?? ink;

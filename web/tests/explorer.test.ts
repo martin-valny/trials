@@ -5,8 +5,6 @@ import {
   allFilters,
   clusterAnchors,
   colorFor,
-  columnLabels,
-  columnSide,
   diseaseRanking,
   diseaseSeries,
   emphasisFor,
@@ -14,8 +12,9 @@ import {
   panBy,
   viewPoints,
   zoomAt,
-  labelPosition,
   placeLabels,
+  splitLabel,
+  type LabelSpot,
   liftSentence,
   formatP,
   filterSummary,
@@ -523,6 +522,19 @@ describe("clusterAnchors", () => {
     expect(clusterAnchors(all, pts(all), ["A", "B", "S", "M"]).map((a) => a.label)).toEqual(["A"]);
   });
 
+  it("anchors a condition at its own densest region, not where every condition overlaps", () => {
+    const trials = [
+      // A: 12 trials in the shared centre, buried among 60 of another condition ...
+      ...Array.from({ length: 12 }, () => at("A", 0, 0)),
+      ...Array.from({ length: 60 }, () => at("Z", 0, 0)),
+      // ... and 8 on their own.
+      ...Array.from({ length: 8 }, () => at("A", 1, 1)),
+    ];
+    const [got] = clusterAnchors(trials, pts(trials), ["A"]);
+    expect(got.x).toBeCloseTo(1);
+    expect(got.y).toBeCloseTo(1);
+  });
+
   it("keeps at most six labels, in config order", () => {
     const labels = Array.from({ length: 8 }, (_, i) => `L${i}`);
     const trials = labels.flatMap((l, i) => Array.from({ length: 5 }, () => at(l, i)));
@@ -530,49 +542,76 @@ describe("clusterAnchors", () => {
   });
 });
 
-describe("labelPosition", () => {
-  it("centres the label on its anchor, inside the canvas", () => {
-    expect(labelPosition(100, 80, 40, 400, 300)).toEqual({ x: 100, y: 80 });
+describe("placeLabels", () => {
+  const W = 600;
+  const H = 400;
+  const box = (s: LabelSpot, width: number) => ({ x0: s.left, x1: s.left + width, y0: s.y - 7, y1: s.y + 7 });
+  const overlaps = (a: { x0: number; x1: number; y0: number; y1: number }, b: typeof a) =>
+    a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+  it("sets a lone label just east of its anchor, inside the canvas, with a short leader", () => {
+    const [s] = placeLabels([{ key: "a", ax: 200, ay: 200, width: 80 }], W, H);
+    expect(s).not.toBeNull();
+    expect(s!.callout).toBe(false);
+    expect(s!.left).toBeGreaterThan(200);
+    expect(Math.abs(s!.y - 200)).toBeLessThan(14);
   });
-  it("clamps a label that would run off an edge", () => {
-    expect(labelPosition(5, 80, 40, 400, 300).x).toBe(24); // 20 half-width + 4 margin
-    expect(labelPosition(398, 80, 40, 400, 300).x).toBe(376);
-    expect(labelPosition(100, -10, 40, 400, 300).y).toBe(10);
-    expect(labelPosition(100, 310, 40, 400, 300).y).toBe(290);
+
+  it("keeps off dots: a dense patch east of the anchor sends the label elsewhere", () => {
+    const dots = Array.from({ length: 200 }, (_, i) => ({ sx: 205 + (i % 20) * 5, sy: 185 + Math.floor(i / 20) * 3 }));
+    const [s] = placeLabels([{ key: "a", ax: 200, ay: 200, width: 80 }], W, H, { dots });
+    const covered = dots.filter((d) => d.sx >= s!.left && d.sx <= s!.left + 80 && Math.abs(d.sy - s!.y) <= 7);
+    expect(covered.length).toBe(0);
+  });
+
+  it("treats the control band as an obstacle", () => {
+    const obstacles = [{ x0: 150, x1: 600, y0: 0, y1: 40 }];
+    const [s] = placeLabels([{ key: "a", ax: 200, ay: 30, width: 80 }], W, H, { obstacles });
+    expect(overlaps(box(s!, 80), obstacles[0])).toBe(false);
+  });
+
+  it("never overlaps two labels, and caps leaders at 48px", () => {
+    const items = Array.from({ length: 6 }, (_, i) => ({ key: `l${i}`, ax: 300 + i, ay: 200 + i, width: 90 }));
+    const got = placeLabels(items, W, H);
+    // A label may be dropped (null) when there is no room; every one placed obeys the rules.
+    const placed = got.flatMap((s, i) => (s === null ? [] : [{ s, w: items[i].width, i }]));
+    expect(placed.length).toBeGreaterThanOrEqual(4);
+    for (let i = 0; i < placed.length; i++) {
+      const { s } = placed[i];
+      const it0 = items[placed[i].i];
+      if (!s.callout) expect(Math.hypot(s.lx - it0.ax, s.ly - it0.ay)).toBeLessThanOrEqual(48 + 1e-6);
+      expect(s.left).toBeGreaterThanOrEqual(0);
+      expect(s.left + placed[i].w).toBeLessThanOrEqual(W);
+      for (let j = i + 1; j < placed.length; j++) expect(overlaps(box(s, placed[i].w), box(placed[j].s, placed[j].w))).toBe(false);
+    }
+  });
+
+  it("sends a label that cannot fit near its anchor to a margin callout outside the cloud", () => {
+    // The cloud fills x 100..500 densely; nothing near the anchor is free.
+    const dots: { sx: number; sy: number }[] = [];
+    for (let x = 100; x <= 500; x += 4) for (let y = 100; y <= 300; y += 4) dots.push({ sx: x, sy: y });
+    const [s] = placeLabels([{ key: "a", ax: 450, ay: 200, width: 60 }], W, H, { dots });
+    expect(s!.callout).toBe(true);
+    expect(s!.left).toBeGreaterThan(500); // beyond the cloud's right edge, the side nearer the anchor
+  });
+
+  it("drops a label with no room anywhere rather than overlap", () => {
+    const items = Array.from({ length: 40 }, (_, i) => ({ key: `l${i}`, ax: 30, ay: 20, width: 50 }));
+    const got = placeLabels(items, 100, 40);
+    expect(got.some((g) => g === null)).toBe(true);
   });
 });
 
-describe("placeLabels", () => {
-  it("leaves labels that do not collide where labelPosition puts them", () => {
-    const got = placeLabels([{ sx: 100, sy: 50, width: 40 }, { sx: 300, sy: 50, width: 40 }], 400, 300);
-    expect(got).toEqual([{ x: 100, y: 50 }, { x: 300, y: 50 }]);
+describe("splitLabel", () => {
+  it("sets a cluster's disease prefix apart from its mechanism or type part", () => {
+    expect(splitLabel("MS · anti-CD20 (ocrelizumab)")).toEqual(["MS · ", "anti-CD20 (ocrelizumab)"]);
+    expect(splitLabel("Myasthenia gravis")).toEqual(["", "Myasthenia gravis"]);
   });
-  it("nudges a colliding label down by whole lines", () => {
-    const got = placeLabels(
-      [
-        { sx: 200, sy: 100, width: 80 },
-        { sx: 210, sy: 104, width: 120 },
-        { sx: 195, sy: 98, width: 60 },
-      ],
-      400,
-      300,
-    );
-    expect(got[0]).toEqual({ x: 200, y: 100 });
-    expect(got[1]).toEqual({ x: 210, y: 118 });
-    expect(got[2]).toEqual({ x: 195, y: 140 }); // 112 and 126 touch the first two
-    for (let i = 0; i < got.length; i++)
-      for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i]!.y - got[j]!.y)).toBeGreaterThanOrEqual(14);
-  });
-  it("drops a label with no free slot instead of overlapping another", () => {
-    // A 40px-tall canvas has room for about two lines: the rest cannot be placed clear of the others.
-    const items = Array.from({ length: 12 }, () => ({ sx: 200, sy: 20, width: 80 }));
-    const got = placeLabels(items, 400, 40);
-    expect(got[0]).not.toBeNull();
-    expect(got.some((g) => g === null)).toBe(true);
-    const placed = got.filter((g): g is { x: number; y: number } => g !== null);
-    for (let i = 0; i < placed.length; i++)
-      for (let j = i + 1; j < placed.length; j++)
-        expect(Math.abs(placed[i].x - placed[j].x) >= 86 || Math.abs(placed[i].y - placed[j].y) >= 14).toBe(true);
+});
+
+describe("popupPosition edge", () => {
+  it("keeps a wide card 4px inside the panel", () => {
+    expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
   });
 });
 
@@ -733,33 +772,6 @@ describe("popupPosition", () => {
     expect(popupPosition(990, 300, 200, 60, 1000, 600).left).toBe(1000 - 200 - 4);
     // Wider than the panel: pinned to the left margin.
     expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
-  });
-});
-
-describe("columnLabels", () => {
-  const items = [
-    { sx: 120, sy: 200, width: 40 },
-    { sx: 150, sy: 202, width: 60 },
-    { sx: 105, sy: 50, width: 30 },
-  ];
-  it("stacks labels down from the top, in the order of their dots' height", () => {
-    expect(columnLabels(items, 375, 40, "right").map((p) => p.y)).toEqual([40 + 14, 40 + 28, 40]);
-  });
-  it("sets the column on the side given, its inner edge flush, leaders ending on one line", () => {
-    const at = columnLabels(items, 375, 40, "right");
-    at.forEach((p, i) => expect(p.x - items[i].width / 2).toBe(311));
-    expect(new Set(at.map((p) => p.lx))).toEqual(new Set([308]));
-    const left = columnLabels(items, 375, 40, "left");
-    left.forEach((p, i) => expect(p.x + items[i].width / 2).toBe(64));
-    expect(new Set(left.map((p) => p.lx))).toEqual(new Set([67]));
-  });
-});
-
-describe("columnSide", () => {
-  it("puts the column away from the clusters, judged once from their unrotated positions", () => {
-    expect(columnSide([{ x: -0.4 }, { x: 0.1 }])).toBe("right");
-    expect(columnSide([{ x: 0.4 }, { x: 0.1 }])).toBe("left");
-    expect(columnSide([])).toBe("right");
   });
 });
 

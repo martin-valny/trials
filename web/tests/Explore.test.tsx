@@ -319,3 +319,55 @@ test("the Labels switch stays under reduced motion, where there is no Play", asy
   expect(within(labels).getByRole("button", { name: "Diseases" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });
+
+const withClusters = (): ExplorerFile => {
+  const [a, b] = explorer.trials;
+  return {
+    ...explorer,
+    clusters: [
+      { id: 0, label: "MS · anti-CD20 (ocrelizumab)", kind: "mechanism", n: 20, x: a.x, y: a.y, z: a.z },
+      { id: 1, label: "MS · devices", kind: "type", n: 16, x: b.x, y: b.y, z: b.z },
+    ],
+  };
+};
+
+const phoneMedia = () =>
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("max-width: 640px"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+
+test("on a phone the map carries numerals, keyed under the canvas like a journal figure", async () => {
+  withCanvas();
+  stubFetch({ "explorer.json": withClusters() });
+  phoneMedia();
+  renderAt(<Explore />, "/explore");
+  const key = await screen.findByRole("list", { name: "Map labels" });
+  const items = within(key).getAllByRole("listitem");
+  expect(items.map((li) => li.textContent)).toEqual(["1MS · anti-CD20 (ocrelizumab)", "2MS · devices"]);
+  // The disease prefix is set quieter than the mechanism or type part.
+  expect(within(items[0]).getByText("MS ·", { exact: false })).toHaveClass("cluster-key-prefix");
+});
+
+test("side by side there is no numbered key: labels sit on the map", async () => {
+  withCanvas();
+  stubFetch({ "explorer.json": withClusters() });
+  renderAt(<Explore />, "/explore");
+  await screen.findByRole("img", { name: /3D map of/ });
+  expect(screen.queryByRole("list", { name: "Map labels" })).not.toBeInTheDocument();
+});
+
+test("labels off: no numbered key on a phone", async () => {
+  withCanvas();
+  stubFetch({ "explorer.json": withClusters() });
+  phoneMedia();
+  renderAt(<Explore />, "/explore");
+  await screen.findByRole("list", { name: "Map labels" });
+  await userEvent.click(screen.getByRole("button", { name: "Off" }));
+  expect(screen.queryByRole("list", { name: "Map labels" })).not.toBeInTheDocument();
+});

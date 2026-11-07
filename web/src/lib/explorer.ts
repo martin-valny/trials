@@ -619,8 +619,10 @@ export interface ClusterOptions {
 }
 
 /**
- * One anchor per condition in the configured order, at its densest point: among the trials whose FIRST
- * condition label is that condition, the one with the most same-condition trials within ``radius``.
+ * One anchor per condition in the configured order, at its own densest region: among the trials whose
+ * FIRST condition label is that condition, the one with the most same-condition trials within ``radius``,
+ * weighted by their share of all trials there (n² / all), so a condition is not anchored in the shared
+ * centre where every condition overlaps.
  * A condition gets no anchor when it has fewer than ``min`` trials, holds more than ``maxShare`` of all
  * trials, or has fewer than ``minDensity`` of its trials within ``radius`` of that point. At most
  * ``max`` anchors. ``points`` are the trials' fitted positions, index-aligned. Run once, not per frame.
@@ -641,20 +643,26 @@ export function clusterAnchors(
   });
   const r2 = radius * radius;
   const out: ClusterAnchor[] = [];
+  const near = (p: { x: number; y: number; z: number }, q: typeof p) =>
+    (p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 <= r2;
   for (const label of conditionOrder) {
     if (out.length >= max) break;
     const g = groups.get(label);
     if (!g || g.length < min || g.length > maxShare * trials.length) continue;
     let best = -1;
     let bestN = 0;
+    let bestScore = 0;
     for (const i of g) {
       const p = points[i];
       let n = 0;
-      for (const j of g) {
-        const q = points[j];
-        if ((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2 <= r2) n++;
-      }
-      if (n > bestN) {
+      let all = 0;
+      for (const j of g) if (near(p, points[j])) n++;
+      for (const q of points) if (near(p, q)) all++;
+      // Same-condition neighbours weighted by their share of all neighbours: the condition's own
+      // region, not the shared centre where every condition overlaps.
+      const score = (n * n) / Math.max(1, all);
+      if (score > bestScore) {
+        bestScore = score;
         bestN = n;
         best = i;
       }
@@ -665,77 +673,199 @@ export function clusterAnchors(
   return out;
 }
 
-/**
- * Where to draw a centred label of ``width`` px anchored at (sx, sy) on a w × h canvas: on the anchor,
- * pulled in so the whole label (plus a 4px margin, and 10px vertically for the text's height) stays inside.
- */
-export function labelPosition(sx: number, sy: number, width: number, w: number, h: number): { x: number; y: number } {
-  const clamp = (v: number, lo: number, hi: number) => (hi < lo ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)));
-  return { x: clamp(sx, width / 2 + 4, w - width / 2 - 4), y: clamp(sy, 10, h - 10) };
+/** Line height (px) of a canvas label; its box is this tall, centred on ``y``. */
+export const LABEL_LINE = 14;
+/** Longest leader (px) from an anchor to a label beside it; a label that cannot fit becomes a callout. */
+export const LEADER_MAX = 48;
+const LABEL_PAD = 3; // px kept clear around each label box
+const LEADER_STEPS = [6, 18, 32, LEADER_MAX];
+const MAX_COVERED = 3; // dots a label box may cover before the spot counts as no fit
+// Directions tried around each anchor, in order of preference: east first, as a figure label reads.
+const DIRECTIONS: [number, number][] = [
+  [1, 0], [1, -1], [1, 1], [0, -1], [0, 1], [-1, -1], [-1, 1], [-1, 0],
+];
+
+export interface Box {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
-/** Line height (px) labels are kept apart by. */
-const LABEL_LINE = 14;
+export interface LabelItem {
+  /** Stable name (the label text), so a label keeps its side from frame to frame while the map turns. */
+  key: string;
+  ax: number;
+  ay: number;
+  width: number;
+}
+
+export interface LabelSpot {
+  /** Left edge of the text and its vertical centre. */
+  left: number;
+  y: number;
+  /** Where the leader from the anchor meets the label box. */
+  lx: number;
+  ly: number;
+  /** True when set in the margin outside the cloud, with a longer leader. */
+  callout: boolean;
+}
+
+export interface PlaceOptions {
+  /** Visible dots, on screen: a label is set where it covers the fewest. */
+  dots?: { sx: number; sy: number }[];
+  /** Boxes no label may touch (the control band). */
+  obstacles?: Box[];
+  /** Each label's last choice, by key (an index into the candidates, or -1 for a callout); updated in place. */
+  memory?: Map<string, number>;
+}
+
+const hitBox = (a: Box, b: Box, pad = 0) =>
+  a.x0 < b.x1 + pad && b.x0 < a.x1 + pad && a.y0 < b.y1 + pad && b.y0 < a.y1 + pad;
+
+/** True when segment p-q crosses (or touches) the box. Liang-Barsky clip. */
+function segmentHitsBox(px: number, py: number, qx: number, qy: number, b: Box): boolean {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = qx - px;
+  const dy = qy - py;
+  const edges: [number, number][] = [
+    [-dx, px - b.x0],
+    [dx, b.x1 - px],
+    [-dy, py - b.y0],
+    [dy, b.y1 - py],
+  ];
+  for (const [pp, qq] of edges) {
+    if (pp === 0) {
+      if (qq < 0) return false;
+      continue;
+    }
+    const r = qq / pp;
+    if (pp < 0) t0 = Math.max(t0, r);
+    else t1 = Math.min(t1, r);
+    if (t0 > t1) return false;
+  }
+  return true;
+}
+
+/** True when segments a-b and c-d cross properly. */
+function segmentsCross(a: number[], b: number[], c: number[], d: number[]): boolean {
+  const o = (p: number[], q: number[], r: number[]) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+}
+
+/** Counts of dots per 10px cell, to price a label box by the dots it would cover. */
+function dotGrid(dots: { sx: number; sy: number }[], w: number, h: number) {
+  const C = 10;
+  const cols = Math.max(1, Math.ceil(w / C));
+  const rows = Math.max(1, Math.ceil(h / C));
+  const n = new Uint16Array(cols * rows);
+  for (const d of dots) {
+    const c = Math.floor(d.sx / C);
+    const r = Math.floor(d.sy / C);
+    if (c >= 0 && c < cols && r >= 0 && r < rows) n[r * cols + c]++;
+  }
+  return (b: Box): number => {
+    let sum = 0;
+    const c0 = Math.max(0, Math.floor(b.x0 / C));
+    const c1 = Math.min(cols - 1, Math.floor(b.x1 / C));
+    const r0 = Math.max(0, Math.floor(b.y0 / C));
+    const r1 = Math.min(rows - 1, Math.floor(b.y1 / C));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) sum += n[r * cols + c];
+    return sum;
+  };
+}
+
+/** The box a label of ``width`` takes when pushed ``d`` px from (ax, ay) along direction (ux, uy). */
+function candidateBox(ax: number, ay: number, width: number, ux: number, uy: number, d: number): Box {
+  const k = ux !== 0 && uy !== 0 ? Math.SQRT1_2 : 1;
+  const px = ax + ux * d * k;
+  const py = ay + uy * d * k;
+  const x0 = ux > 0 ? px : ux < 0 ? px - width : px - width / 2;
+  const half = LABEL_LINE / 2;
+  const y0 = uy > 0 ? py : uy < 0 ? py - LABEL_LINE : py - half;
+  return { x0, y0, x1: x0 + width, y1: y0 + LABEL_LINE };
+}
+
+const leaderEnd = (ax: number, ay: number, b: Box) => ({
+  lx: Math.min(b.x1, Math.max(b.x0, ax)),
+  ly: Math.min(b.y1, Math.max(b.y0, ay)),
+});
 
 /**
- * Place centred labels in order: each goes where labelPosition puts it, unless that box would touch one
- * already placed; then it is nudged down a line at a time to the first free slot (up to 8 lines). With
- * none free it is dropped (null) rather than drawn over another. A greedy pass, cheap enough per frame
- * for a handful of labels.
+ * Place labels in order, each beside its anchor: 8 directions at up to four distances (leaders at most
+ * 48px), scored by the dots the box would cover, the distance, and crossing other leaders; a box may never
+ * cover more than a few dots, touch another label, an obstacle or the canvas edge, and a leader may never
+ * run through another label.
+ * A label with no such spot goes to a margin callout beside the cloud's box, on the side nearer its anchor;
+ * with no room there either it is dropped (null), never drawn over another. ``memory`` keeps each label's
+ * last choice preferred, so labels do not flicker between sides while the map turns.
  */
-export function placeLabels(
-  items: { sx: number; sy: number; width: number }[],
-  w: number,
-  h: number,
-): ({ x: number; y: number } | null)[] {
-  const placed: { x: number; y: number; width: number }[] = [];
-  const hits = (x: number, y: number, width: number) =>
-    placed.some((p) => Math.abs(p.x - x) < (p.width + width) / 2 + 6 && Math.abs(p.y - y) < LABEL_LINE);
-  return items.map(({ sx, sy, width }) => {
-    for (let k = 0; k <= 8; k++) {
-      const cand = labelPosition(sx, sy + k * LABEL_LINE, width, w, h);
-      if (!hits(cand.x, cand.y, width)) {
-        placed.push({ ...cand, width });
-        return cand;
+export function placeLabels(items: LabelItem[], w: number, h: number, opts: PlaceOptions = {}): (LabelSpot | null)[] {
+  const { dots = [], obstacles = [], memory } = opts;
+  const cover = dotGrid(dots, w, h);
+  const boxes: Box[] = [];
+  const leaders: [number[], number[]][] = [];
+  const inCanvas = (b: Box) => b.x0 >= 2 && b.y0 >= 2 && b.x1 <= w - 2 && b.y1 <= h - 2;
+  const free = (b: Box, ax: number, ay: number, lx: number, ly: number) =>
+    inCanvas(b) &&
+    !obstacles.some((o) => hitBox(b, o)) &&
+    !boxes.some((o) => hitBox(b, o, LABEL_PAD)) &&
+    !boxes.some((o) => segmentHitsBox(ax, ay, lx, ly, o)) &&
+    !leaders.some(([p, q]) => segmentHitsBox(p[0], p[1], q[0], q[1], b));
+  // The cloud's box, for callouts: the dots' extent, or the anchors' when there are no dots.
+  const xs = dots.length > 0 ? dots.map((d) => d.sx) : items.map((i) => i.ax);
+  const hull = xs.length > 0 ? { x0: Math.min(...xs), x1: Math.max(...xs) } : { x0: w / 2, x1: w / 2 };
+
+  return items.map(({ key, ax, ay, width }) => {
+    let best: { b: Box; lx: number; ly: number; score: number; idx: number } | null = null;
+    let idx = 0;
+    for (const d of LEADER_STEPS) {
+      for (const [ux, uy] of DIRECTIONS) {
+        const b = candidateBox(ax, ay, width, ux, uy, d);
+        const { lx, ly } = leaderEnd(ax, ay, b);
+        const covered = cover(b);
+        // A label over the cloud's dots is unreadable: more than a few, and the spot is not a fit.
+        if (covered <= MAX_COVERED && free(b, ax, ay, lx, ly)) {
+          const crossings = leaders.filter(([p, q]) => segmentsCross(p, q, [ax, ay], [lx, ly])).length;
+          const score =
+            4 * covered + 0.6 * d + 0.4 * DIRECTIONS.findIndex(([x, y]) => x === ux && y === uy) + 30 * crossings -
+            (memory?.get(key) === idx ? 8 : 0);
+          if (best === null || score < best.score) best = { b, lx, ly, score, idx };
+        }
+        idx++;
+      }
+    }
+    if (best !== null) {
+      memory?.set(key, best.idx);
+      boxes.push(best.b);
+      leaders.push([[ax, ay], [best.lx, best.ly]]);
+      return { left: best.b.x0, y: (best.b.y0 + best.b.y1) / 2, lx: best.lx, ly: best.ly, callout: false };
+    }
+    // Margin callout: beside the cloud's box, nearer side first, scanning out from the anchor's height.
+    const right = { x0: hull.x1 + 10, x1: hull.x1 + 10 + width };
+    const left = { x0: hull.x0 - 10 - width, x1: hull.x0 - 10 };
+    const sides = ax - hull.x0 > hull.x1 - ax ? [right, left] : [left, right];
+    for (let k = 0; k < Math.ceil(h / LABEL_LINE) * 2; k++) {
+      const dy = (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * LABEL_LINE;
+      for (const side of sides) {
+        const b = { x0: side.x0, x1: side.x1, y0: ay + dy - LABEL_LINE / 2, y1: ay + dy + LABEL_LINE / 2 };
+        const { lx, ly } = leaderEnd(ax, ay, b);
+        if (!free(b, ax, ay, lx, ly)) continue;
+        memory?.set(key, -1);
+        boxes.push(b);
+        leaders.push([[ax, ay], [lx, ly]]);
+        return { left: b.x0, y: ay + dy, lx, ly, callout: true };
       }
     }
     return null;
   });
 }
 
-/**
- * Which edge the phone label column takes: away from the labelled clusters, judged once from their
- * unrotated (fitted) positions so the column never jumps sides while the map turns. Right by default.
- */
-export function columnSide(anchors: { x: number }[]): "left" | "right" {
-  if (anchors.length === 0) return "right";
-  const meanX = anchors.reduce((a, p) => a + p.x, 0) / anchors.length;
-  return meanX > 0 ? "left" : "right";
-}
-
-/**
- * Phone layout for centred labels: a column stacked down from ``top`` on ``side`` (see columnSide), its
- * inner edge flush so every leader ends on one vertical line (``lx``, 3px off the column) and never runs
- * through another label. Labels keep the order of their dots' height, so the leaders do not cross.
- */
-export function columnLabels(
-  items: { sx: number; sy: number; width: number }[],
-  w: number,
-  top: number,
-  side: "left" | "right",
-): { x: number; y: number; lx: number }[] {
-  if (items.length === 0) return [];
-  const widest = Math.max(...items.map((it) => it.width));
-  const right = side === "right";
-  const inner = right ? w - 4 - widest : 4 + widest;
-  const order = items.map((_, i) => i).sort((a, b) => items[a].sy - items[b].sy);
-  const ys = new Array<number>(items.length);
-  order.forEach((i, k) => (ys[i] = top + k * LABEL_LINE));
-  return items.map((it, i) => ({
-    x: right ? inner + it.width / 2 : inner - it.width / 2,
-    y: ys[i],
-    lx: right ? inner - 3 : inner + 3,
-  }));
+/** "MS · anti-CD20 (ocrelizumab)" -> ["MS · ", "anti-CD20 (ocrelizumab)"]: the disease prefix is set quieter. */
+export function splitLabel(label: string): [string, string] {
+  const i = label.indexOf(" · ");
+  return i < 0 ? ["", label] : [label.slice(0, i + 3), label.slice(i + 3)];
 }
 
 /** Start and end year with an en dash: "2014–2019", "2021–" (no end), "2021–2025 (est.)", "" when neither. */

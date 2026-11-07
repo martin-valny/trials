@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { loadExplorer, loadMeta } from "../../data";
 import {
   allFilters,
+  clusterAnchors as diseaseAnchors,
   clusterLabels,
   colorFor,
   DARK_PALETTE,
@@ -12,6 +13,7 @@ import {
   LIGHT_PALETTE,
   matches,
   mechanismSeries,
+  splitLabel,
   yearBounds,
   type ColorMode,
   type Filters,
@@ -23,7 +25,7 @@ import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
 import { HoverCard } from "./HoverCard";
-import { PlateCanvas, type PlateCanvasHandle, type PlateHover } from "./PlateCanvas";
+import { fitToUnit, PlateCanvas, type PlateCanvasHandle, type PlateHover } from "./PlateCanvas";
 import { SelectedBar, SelectedTrial } from "./SelectedTrial";
 import "./explore.css";
 
@@ -150,6 +152,29 @@ function LabelSwitch({
 /** Labels off: an empty anchor list, so the canvas draws no names. */
 const NO_ANCHORS: { label: string; x: number; y: number; z: number }[] = [];
 
+/**
+ * Phone key for the numerals on the map: "1 MS · anti-CD20 (ocrelizumab)", set like a journal figure's
+ * key, the disease prefix quieter than the mechanism or type part.
+ */
+function ClusterKey({ labels }: { labels: string[] }) {
+  return (
+    <ol className="cluster-key" aria-label="Map labels">
+      {labels.map((label, i) => {
+        const [prefix, rest] = splitLabel(label);
+        return (
+          <li key={label}>
+            <b className="cluster-key-n">{i + 1}</b>
+            <span>
+              {prefix ? <span className="cluster-key-prefix">{prefix}</span> : null}
+              {rest}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** Outcome colouring draws unknown outcomes as rings. */
 const isUnknownOutcome = (t: ExplorerTrial): boolean => t.outcome === "unknown";
 
@@ -250,6 +275,13 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const mechanisms = useMemo(() => mechanismSeries(file.trials), [file]);
   // The largest named clusters only (8 side by side, 6 on a phone), so the labels never crowd the cloud.
   const clusterAnchors = useMemo(() => clusterLabels(file.clusters, phone ? 6 : 8), [file, phone]);
+  // The names the map carries now, in the canvas's order: what the phone key numbers.
+  const diseaseNames = useMemo(
+    () => (phone ? diseaseAnchors(file.trials, fitToUnit(file.trials), order).map((a) => a.label) : []),
+    [file, order, phone],
+  );
+  const mapNames =
+    labelMode === "clusters" ? clusterAnchors.map((a) => a.label) : labelMode === "diseases" ? diseaseNames : [];
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
   const color = useCallback(
     (t: ExplorerTrial) => colorFor(t, mode, palette, series, mechanisms),
@@ -320,7 +352,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               hollow={mode === "outcome" ? isUnknownOutcome : undefined}
               labels={labelMode === "diseases" ? order : undefined}
               anchors={labelMode === "clusters" ? clusterAnchors : labelMode === "off" ? NO_ANCHORS : undefined}
-              labelColumn={phone}
+              numbered={phone}
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}
@@ -365,6 +397,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               </div>
             ) : null}
           </div>
+          {phone && mapNames.length > 0 ? <ClusterKey labels={mapNames} /> : null}
           <p className="panel-note plate-caption">
             Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
             {coarse

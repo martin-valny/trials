@@ -55,6 +55,10 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
     (() => ctx) as unknown as HTMLCanvasElement["getContext"],
   );
+  // jsdom lays nothing out: give the canvas a real size, so labels have room to be placed.
+  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockImplementation(
+    () => ({ x: 0, y: 0, left: 0, top: 0, width: 600, height: 400, right: 600, bottom: 400, toJSON: () => ({}) }) as DOMRect,
+  );
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => frames.push(cb));
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
 });
@@ -549,6 +553,35 @@ test("named anchors (clusters) are labelled where given, in the file's coordinat
   renderCanvas([trials[0].condition_labels[0]], trials, [{ label: "Anti-CD20 antibodies", x: t.x, y: t.y, z: t.z }]);
   step();
   expect(texts).toEqual(["Anti-CD20 antibodies"]);
+});
+
+test("a cluster's disease prefix is set apart from its mechanism or type part", () => {
+  const t = trials[6];
+  renderCanvas([], trials, [{ label: "MS · anti-CD20 (ocrelizumab)", x: t.x, y: t.y, z: t.z }]);
+  step();
+  expect(texts).toEqual(["MS · ", "anti-CD20 (ocrelizumab)"]);
+});
+
+test("numbered (phone): each anchor carries its numeral, not its name", () => {
+  const [a, b] = [trials[2], trials[6]];
+  render(
+    <PlateCanvas
+      trials={trials}
+      visible={() => true}
+      color={() => "#111"}
+      anchors={[
+        { label: "MS · anti-CD20 (ocrelizumab)", x: a.x, y: a.y, z: a.z },
+        { label: "MS · devices", x: b.x, y: b.y, z: b.z },
+      ]}
+      numbered
+      selected={null}
+      onSelect={() => undefined}
+      reducedMotion={true}
+      spinning={false}
+    />,
+  );
+  step();
+  expect([...texts].sort()).toEqual(["1", "2"]);
 });
 
 test("an empty anchor list draws no labels, even with condition labels given", () => {
