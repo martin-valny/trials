@@ -1,0 +1,910 @@
+drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets
+"0, fingolimod",unmapped,,,,,,
+10 milligram fampridine-sr,unmapped,,,,,,
+101 part a,unmapped,,,,,,
+101 part b,unmapped,,,,,,
+11c-bms-986196,unmapped,,,,,,
+11c-mc1,unmapped,,,,,,
+11c-pbr28,unmapped,,,,,,
+11c-ps13,unmapped,,,,,,
+13-pcv booster,unmapped,,,,,,
+13-valent pneumococcal conjugate vaccine,unmapped,,,,,,
+18f-dpa-714 and 18f-fdg,unmapped,,,,,,
+18f-op-801,unmapped,,,,,,
+19 nor vitamin d,unmapped,,,,,,
+23-ppv,unmapped,,,,,,
+23-valent pneumococcal polysaccharide vaccine,unmapped,,,,,,
+2b3-201,unmapped,,,,,,
+"3,4-diaminopyridine",unmapped,,,,,,
+3f4ap,unmapped,,,,,,
+89 zr-df-crefmirlimab,unmapped,,,,,,
+a,unmapped,,,,,,
+a4i antagonist,unmapped,,,,,,
+aba-101,unmapped,,,,,,
+abatacept,mapped,CHEMBL1201823,protein,anti-CD80;anti-CD86,T-lymphocyte activation antigen CD80 inhibitor;T-lymphocyte activation antigen CD86 inhibitor,INHIBITOR,CD80;CD86
+abobotulinumtoxin a,unmapped,,,,,,
+abp 692,unmapped,,,,,,
+abt-555,mapped,CHEMBL4297743,antibody,anti-RGMa,Repulsive guidance molecule A inhibitor,INHIBITOR,RGMA
+abt-874/human monoclonal antibody against il-12,unmapped,,,,,,
+abx-1431,mapped,CHEMBL3945728,small molecule,Monoglyceride lipase inhibitor,Monoglyceride lipase inhibitor,INHIBITOR,MGLL
+acetazolamide,mapped,CHEMBL20,small molecule,Carbonic anhydrase 1 inhibitor;Carbonic anhydrase 12 inhibitor;Carbonic anhydrase 2 inhibitor;Carbonic anhydrase 4 inhibitor,Carbonic anhydrase I inhibitor;Carbonic anhydrase II inhibitor;Carbonic anhydrase IV inhibitor;Carbonic anhydrase XII inhibitor,INHIBITOR,CA1;CA12;CA2;CA4
+acetylsalicylic acid,mapped,CHEMBL25,small molecule,COX inhibitor,Cyclooxygenase inhibitor,INHIBITOR,PTGS1;PTGS2
+aciclovir,mapped,CHEMBL184,small molecule,DNA polymerase catalytic subunit inhibitor,Human herpesvirus 1 DNA polymerase inhibitor,INHIBITOR,
+act-128800 dose 1,unmapped,,,,,,
+act-128800 dose 2,unmapped,,,,,,
+act-128800 dose 3,unmapped,,,,,,
+acth,mapped,CHEMBL1201610,other,ACTH receptor modulator,Melanocortin receptor 2 agonist,AGONIST,MC2R
+acthar,mapped,CHEMBL1201610,other,ACTH receptor modulator,Melanocortin receptor 2 agonist,AGONIST,MC2R
+activated charcoal,unmapped,CHEMBL2106049,small molecule,,,,
+actos,mapped,CHEMBL595,small molecule,PPARγ modulator,Peroxisome proliferator-activated receptor gamma agonist,AGONIST,PPARG
+acyclovir,mapped,CHEMBL184,small molecule,DNA polymerase catalytic subunit inhibitor,Human herpesvirus 1 DNA polymerase inhibitor,INHIBITOR,
+ad26.cov2.s,unmapped,,,,,,
+addition of rituximab if recurrence,unmapped,,,,,,
+adezunap,unmapped,,,,,,
+adipose tissue-derived mesenchymal stromal cells,unmapped,,,,,,
+adrenocorticotropic hormone,mapped,CHEMBL1201610,other,ACTH receptor modulator,Melanocortin receptor 2 agonist,AGONIST,MC2R
+adrenocorticotropic hormone gel,unmapped,,,,,,
+ads-5102,unmapped,,,,,,
+ain457,mapped,CHEMBL1743068,antibody,anti-IL-17A,Interleukin 17A inhibitor,INHIBITOR,IL17A
+albuterol,mapped,CHEMBL714,small molecule,β2-adrenergic receptor modulator,Beta-2 adrenergic receptor agonist,AGONIST,ADRB2
+alemtuzumab,mapped,CHEMBL1201587,antibody,anti-CD52,CAMPATH-1 antigen inhibitor,INHIBITOR,CD52
+alemtuzumab gz402673,unmapped,,,,,,
+alemtuzumab immunotherapy,unmapped,,,,,,
+alfuzosin,mapped,CHEMBL709,small molecule,α1-adrenergic receptor modulator,Adrenergic receptor alpha-1 agonist,AGONIST,ADRA1A;ADRA1B;ADRA1D
+alks 8700,mapped,CHEMBL3989944,small molecule,KEAP1 inhibitor,Kelch-like ECH-associated protein 1 inhibitor,INHIBITOR,KEAP1
+allogeneic fecal microbiota,unmapped,,,,,,
+allogeneic human umbilical cord tissue-derived mesenchymal stem cells,unmapped,,,,,,
+allogeneic umbilical cord mesenchymal stem cells,unmapped,,,,,,
+allogenic placenta derived mesenchymal stem cells,unmapped,,,,,,
+alpha lipoic acid,unmapped,CHEMBL33864,small molecule,,,,
+alpha-lipoic acid,unmapped,CHEMBL33864,small molecule,,,,
+alpha1-antitrypsin,unmapped,,,,,,
+alxn1830,mapped,CHEMBL4298117,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 antagonist,ANTAGONIST,FCGRT
+alxn2050,unmapped,CHEMBL4650325,small molecule,,,,
+amantadine,mapped,CHEMBL660,small molecule,Matrix protein 2 inhibitor;NMDA receptor antagonist,Glutamate [NMDA] receptor antagonist;Matrix protein 2 inhibitor,ANTAGONIST;INHIBITOR,GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B;M
+american ginseng extract ht-1001,unmapped,,,,,,
+amifampridine,mapped,CHEMBL354077,small molecule,Kv channel inhibitor,Voltage-gated potassium channel blocker,BLOCKER,KCNA1;KCNA10;KCNA2;KCNA3;KCNA4;KCNA5;KCNA6;KCNA7;KCNB1;KCNB2;KCNC1;KCNC2;KCNC3;KCNC4;KCND1;KCND2;KCND3;KCNF1;KCNG1;KCNG2;KCNG3;KCNG4;KCNH1;KCNH2;KCNH3;KCNH4;KCNH5;KCNH6;KCNH7;KCNH8;KCNQ1;KCNQ2;KCNQ3;KCNQ4;KCNQ5;KCNS1;KCNS2;KCNS3;KCNV1;KCNV2
+amifampridine with modified release,unmapped,,,,,,
+amiloride,mapped,CHEMBL945,small molecule,"Amiloride-sensitive sodium channel, ENaC inhibitor","Amiloride-sensitive sodium channel, ENaC blocker",BLOCKER,SCNN1A;SCNN1B;SCNN1G
+amniotic fluid or placental cd117 stem cells,unmapped,,,,,,
+anakinra,mapped,CHEMBL1201570,protein,anti-IL-1 receptor,Interleukin-1 receptor antagonist,ANTAGONIST,IL1R1
+androgel 10 grams of gel containing of testosterone,unmapped,,,,,,
+androgel topical gel,unmapped,,,,,,
+andrographolides,unmapped,,,,,,
+anito-cel,unmapped,,,,,,
+ank-700,unmapped,,,,,,
+anti-baffr cart,unmapped,,,,,,
+anti-mullerian hormone level,unmapped,,,,,,
+anti-thymocyte globulin,unmapped,,,,,,
+anticholinergic medication,unmapped,,,,,,
+antihistamine,mapped,CHEMBL17157,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+apitox - pure honeybee toxin,unmapped,,,,,,
+apraclonidine oph soln,unmapped,,,,,,
+arbaclofen,mapped,CHEMBL301742,small molecule,GABA-B receptor modulator,GABA-B receptor agonist,AGONIST,GABBR1;GABBR2
+arbaclofen er,unmapped,,,,,,
+argx-113,mapped,CHEMBL4297551,protein,anti-FcRn,IgG receptor FcRn large subunit p51 antagonist,ANTAGONIST,FCGRT
+aritinercept,unmapped,,,,,,
+arm 1 - geh120714,unmapped,,,,,,
+armodafinil,mapped,CHEMBL1201192,small molecule,dopamine transporter inhibitor,Dopamine transporter inhibitor,INHIBITOR,SLC6A3
+art5803,unmapped,,,,,,
+art5803-cohort d,unmapped,,,,,,
+aspirin,mapped,CHEMBL25,small molecule,COX inhibitor,Cyclooxygenase inhibitor,INHIBITOR,PTGS1;PTGS2
+ata188,unmapped,CHEMBL5314622,cell therapy,,,,
+atacicept,mapped,CHEMBL1742986,protein,anti-APRIL;anti-BAFF,Tumor necrosis factor ligand superfamily member 13 inhibitor;Tumor necrosis factor ligand superfamily member 13B inhibitor,INHIBITOR,TNFSF13;TNFSF13B
+atg,unmapped,,,,,,
+atomoxetine,mapped,CHEMBL641,small molecule,noradrenaline transporter inhibitor,Norepinephrine transporter inhibitor,INHIBITOR,SLC6A2
+atorvastatin,mapped,CHEMBL1487,small molecule,HMG-CoA reductase inhibitor,HMG-CoA reductase inhibitor,INHIBITOR,HMGCR
+atx-ms-1467,unmapped,,,,,,
+autologous adipose derived mesenchymal cells,unmapped,,,,,,
+autologous bone marrow-derived mononuclear stem cells,unmapped,,,,,,
+autologous cd19-bcma dual-target car t-cell therapy,unmapped,,,,,,
+autologous cd4+t cells stimulated and expanded ex vivo by a mog peptide modified by the introduction of a thioreductase motif into the flanking residues of the t cell epitope,unmapped,,,,,,
+autologous hb-admscs,unmapped,,,,,,
+autologous hematopoietic stem cell,unmapped,,,,,,
+autologous hematopoietic stem cell transplantation,unmapped,,,,,,
+autologous mesenchymal stem cell transplantation,unmapped,,,,,,
+autologous mesenchymal stem cells,unmapped,,,,,,
+autologous stem cells,unmapped,,,,,,
+autologous vitd3 tolerogenic monocyte-derived dendritic cells loaded with a pool of myelin peptides,unmapped,,,,,,
+avonex and topamax,unmapped,,,,,,
+avonex/zocor,unmapped,,,,,,
+avonex®,unmapped,,,,,,
+avp-923,unmapped,,,,,,
+avp-923-20,unmapped,,,,,,
+avp-923-30,unmapped,,,,,,
+avp-923-45,unmapped,,,,,,
+azathioprine,mapped,CHEMBL1542,small molecule,Amidophosphoribosyltransferase inhibitor;DNA inhibitor,Amidophosphoribosyltransferase inhibitor;DNA inhibitor,INHIBITOR,PPAT
+azd0120 - regimen 1,unmapped,,,,,,
+azd0120 - regimen 2,unmapped,,,,,,
+azercabtagene zapreleucel,unmapped,CHEMBL5095473,gene therapy,,,,
+azithromycin,mapped,CHEMBL529,small molecule,Bacterial 70S ribosome inhibitor,Bacterial 70S ribosome inhibitor,INHIBITOR,rplA;rplB;rplC;rplD;rplE;rplF;rplJ;rplK;rplL;rplM;rplN;rplO;rplP;rplQ;rplR;rplS;rplT;rplU;rplV;rplW;rplX;rplY;rpmA;rpmB;rpmC;rpmD;rpmE;rpmF;rpmG;rpmH;rpmI;rpmJ;rpsA;rpsB;rpsC;rpsD;rpsE;rpsF;rpsG;rpsH;rpsI;rpsJ;rpsK;rpsL;rpsM;rpsN;rpsO;rpsP;rpsQ;rpsR;rpsS;rpsT;rpsU;ykgM;ykgO
+b,unmapped,,,,,,
+b001,unmapped,,,,,,
+b007,unmapped,,,,,,
+bacille calmette-guerin vaccine,unmapped,,,,,,
+bacille of calmette-guerin,unmapped,,,,,,
+baf312,mapped,CHEMBL2336071,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor Edg-1 agonist,AGONIST,S1PR1
+baff-r cart,unmapped,,,,,,
+bafiertam,mapped,CHEMBL589586,small molecule,KEAP1 inhibitor,Kelch-like ECH-associated protein 1 inhibitor,INHIBITOR,KEAP1
+baminercept,mapped,CHEMBL1742988,protein,anti-Heterotrimeric lymphotoxin LTa1b2;anti-Tumor necrosis factor ligand superfamily member 14,Heterotrimeric lymphotoxin LTa1b2 inhibitor;Tumor necrosis factor ligand superfamily member 14 inhibitor,INHIBITOR,LTA;LTB;TNFSF14
+baricitinib,mapped,CHEMBL2105759,small molecule,Tyrosine-protein kinase JAK1 inhibitor;Tyrosine-protein kinase JAK2 inhibitor,Tyrosine-protein kinase JAK1 inhibitor;Tyrosine-protein kinase JAK2 inhibitor,INHIBITOR,JAK1;JAK2
+baseline treatment,unmapped,,,,,,
+bat4406f,unmapped,,,,,,
+batoclimab,mapped,CHEMBL4650514,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 inhibitor,INHIBITOR,FCGRT
+batoclimab 680 milligrams weekly,unmapped,,,,,,
+batoclimab bi-weekly,unmapped,,,,,,
+batoclimab weekly,unmapped,,,,,,
+bazedoxifene,mapped,CHEMBL46740,small molecule,estrogen receptor modulator,Estrogen receptor modulator,MODULATOR,ESR1;ESR2
+bcd-033,unmapped,,,,,,
+bcd-054,unmapped,,,,,,
+bcd-063,unmapped,,,,,,
+bcd-132,unmapped,,,,,,
+bcd-281,unmapped,,,,,,
+beam regimen,unmapped,,,,,,
+belimumab,mapped,CHEMBL1789843,antibody,anti-BAFF,Tumor necrosis factor ligand superfamily member 13B inhibitor,INHIBITOR,TNFSF13B
+bendamustine,mapped,CHEMBL487253,small molecule,DNA inhibitor,DNA inhibitor,INHIBITOR,
+beta-interferon,unmapped,,,,,,
+betaferon/betaseron,unmapped,,,,,,
+bevacizumab,mapped,CHEMBL1201583,antibody,anti-VEGF-A,Vascular endothelial growth factor A inhibitor,INHIBITOR,VEGFA
+bg00002,unmapped,,,,,,
+bg00002-e,unmapped,,,,,,
+bg9418,unmapped,,,,,,
+bgg492,mapped,CHEMBL3545042,small molecule,Glutamate receptor ionotropic AMPA antagonist;Glutamate receptor ionotropic kainate antagonist,Glutamate receptor ionotropic AMPA antagonist;Glutamate receptor ionotropic kainate antagonist,ANTAGONIST,GRIA1;GRIA2;GRIA3;GRIA4;GRIK1;GRIK2;GRIK3;GRIK4;GRIK5
+bht-3009,unmapped,,,,,,
+bht-3009-01,unmapped,,,,,,
+biib041,unmapped,,,,,,
+biib061,unmapped,CHEMBL3833331,other,,Unknown,,
+biib091,unmapped,CHEMBL5083772,small molecule,,,,
+bioactivated gra for adult patients,unmapped,,,,,,
+bioactivated gra for pediatric patients,unmapped,,,,,,
+bisacodyl,unmapped,CHEMBL942,small molecule,,Unknown,,
+blinatumomab,mapped,CHEMBL1742992,antibody,anti-CD19;anti-CD3,B-lymphocyte antigen CD19 cross-linking agent;T cell surface glycoprotein CD3 cross-linking agent,CROSS-LINKING AGENT,CD19;CD3D;CD3E;CD3G
+blood sample,unmapped,,,,,,
+blood sample and cerebrospinal fluid collection.,unmapped,,,,,,
+blood samples,unmapped,,,,,,
+blood sampling,unmapped,,,,,,
+blood test,unmapped,,,,,,
+bms-986368,unmapped,,,,,,
+bms-986374,unmapped,,,,,,
+bnt162,unmapped,,,,,,
+bnt162b2,mapped,CHEMBL4650429,other,Spike glycoprotein vaccine antigen,Spike glycoprotein vaccine antigen,VACCINE ANTIGEN,S
+"bnt162b2, bivalent",unmapped,,,,,,
+bone marrow autologous mesenchymal stem cells transplantation,unmapped,,,,,,
+bortezomib,mapped,CHEMBL325041,small molecule,26S proteasome inhibitor,26S proteasome inhibitor,INHIBITOR,ADRM1;PSMA1;PSMA2;PSMA3;PSMA4;PSMA5;PSMA6;PSMA7;PSMA8;PSMB1;PSMB10;PSMB11;PSMB2;PSMB3;PSMB4;PSMB5;PSMB6;PSMB7;PSMB8;PSMB9;PSMC1;PSMC2;PSMC3;PSMC4;PSMC5;PSMC6;PSMD1;PSMD11;PSMD12;PSMD13;PSMD14;PSMD2;PSMD3;PSMD4;PSMD6;PSMD7;PSMD8;SEM1
+boswellic acids,unmapped,,,,,,
+botulinum toxin type a,mapped,CHEMBL4297862,protein,anti-SNAP-25,Synaptosomal nerve-associated protein 25 (SNAP-25) hydrolytic enzyme,HYDROLYTIC ENZYME,SNAP25
+botulinum toxin type a infiltrations,unmapped,,,,,,
+brimonidine tartrate,mapped,CHEMBL844,small molecule,α2-adrenergic receptor modulator,Adrenergic receptor alpha-2 agonist,AGONIST,ADRA2A;ADRA2B;ADRA2C
+bryostatin 1,unmapped,CHEMBL449158,small molecule,,,,
+bu zhong yi qi tang,unmapped,,,,,,
+bx-1,unmapped,,,,,,
+c,unmapped,,,,,,
+c-11 er176 radiotracer,unmapped,,,,,,
+c-car168,unmapped,,,,,,
+c1-esterase inhibitor,unmapped,,,,,,
+c105,unmapped,,,,,,
+c11 pittsburgh compound b,unmapped,,,,,,
+caba-201,unmapped,,,,,,
+cabozantinib,mapped,CHEMBL2105717,small molecule,Hepatocyte growth factor receptor inhibitor;Vascular endothelial growth factor receptor 2 inhibitor,Hepatocyte growth factor receptor inhibitor;Vascular endothelial growth factor receptor 2 inhibitor,INHIBITOR,KDR;MET
+calculus bovis sativus,unmapped,,,,,,
+cannabidiol,mapped,CHEMBL190461,small molecule,CB1 receptor inhibitor,Cannabinoid CB1 receptor negative allosteric modulator,NEGATIVE ALLOSTERIC MODULATOR,CNR1
+cannabidiol oil,unmapped,,,,,,
+"cannabis, medical",unmapped,,,,,,
+car-t cells,unmapped,,,,,,
+carbidopa,mapped,CHEMBL1201236,small molecule,Aromatic-L-amino-acid decarboxylase inhibitor,DOPA decarboxylase inhibitor,INHIBITOR,DDC
+carmustine,mapped,CHEMBL513,small molecule,"DNA inhibitor;Glutathione reductase, mitochondrial inhibitor;RNA inhibitor",DNA inhibitor;Glutathione reductase inhibitor;RNA inhibitor,INHIBITOR,GSR
+"carmustine, etoposide, cytarabine, and melphalan",unmapped,,,,,,
+cbd,unmapped,,,,,,
+cc-97540,unmapped,CHEMBL6068475,gene therapy,,,,
+cci-779,mapped,CHEMBL1201182,small molecule,FKBP12 inhibitor,FK506-binding protein 1A inhibitor,INHIBITOR,FKBP1A
+cd19 car-t cells,unmapped,,,,,,
+cd19-bcma targeted car-t dose 1,unmapped,,,,,,
+cd19-bcma targeted car-t dose 2,unmapped,,,,,,
+cd19-car-nk cells,unmapped,,,,,,
+cd19/bcma-targeted car-t cells,unmapped,,,,,,
+cd20/bcma-directed car-t cells,unmapped,,,,,,
+cd20/bcma-directed car-t cells autologous 2nd generation,unmapped,,,,,,
+cdp323,mapped,CHEMBL4297363,small molecule,α4-integrin inhibitor,Integrin alpha-4 inhibitor,INHIBITOR,ITGA4
+ce211ns21,unmapped,,,,,,
+celecoxib,mapped,CHEMBL118,small molecule,COX-2 inhibitor,Cyclooxygenase-2 inhibitor,INHIBITOR,PTGS2
+cellular therapy with ebv specific autologous ctl,unmapped,,,,,,
+cemdisiran,mapped,CHEMBL4297722,oligonucleotide,Complement C5 mRNA silencer,Complement C5 mRNA RNAi inhibitor,RNAI INHIBITOR,
+cerebro-spinal fluid,unmapped,,,,,,
+cesamettm,unmapped,,,,,,
+ceterizine,unmapped,,,,,,
+cetirizine,mapped,CHEMBL1000,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+cgp 77116,unmapped,,,,,,
+charcoal,unmapped,CHEMBL2106049,small molecule,,,,
+chemotherapy: cyclophosphamide,unmapped,,,,,,
+chemotherapy: fludarabine,unmapped,,,,,,
+cholecalciferol,mapped,CHEMBL1042,small molecule,vitamin D receptor modulator,Vitamin D receptor agonist,AGONIST,VDR
+cholestyramine,mapped,CHEMBL1201625,other,Bile acids agent,Bile acids sequestering agent,SEQUESTERING AGENT,
+cilostazol,mapped,CHEMBL799,small molecule,"cGMP-inhibited 3',5'-cyclic phosphodiesterase 3A inhibitor",Phosphodiesterase 3A inhibitor,INHIBITOR,PDE3A
+citalopram,mapped,CHEMBL549,small molecule,serotonin transporter inhibitor,Serotonin transporter inhibitor,INHIBITOR,SLC6A4
+cizutamig,unmapped,CHEMBL6068226,antibody,,,,
+ck-2017357,mapped,CHEMBL3039529,small molecule,Fast skeletal troponin complex activator,Fast skeletal troponin complex activator,ACTIVATOR,TNNC2;TNNI2;TNNT3
+cladribine,mapped,CHEMBL1619,small molecule,DNA inhibitor,DNA inhibitor,INHIBITOR,
+cladribine high dose,unmapped,,,,,,
+cladribine low dose,unmapped,,,,,,
+claseprubart,unmapped,,,,,,
+clemastine,mapped,CHEMBL1626,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+clemastine fumarate,mapped,CHEMBL1626,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+clinde,unmapped,,,,,,
+cls12311 high,unmapped,,,,,,
+cls12311 low,unmapped,,,,,,
+cls12311 medium,unmapped,,,,,,
+cnm-au8,unmapped,,,,,,
+cnp-106,unmapped,,,,,,
+cnto 1275,mapped,CHEMBL1201835,antibody,anti-IL-12;anti-IL-23,Interleukin-12 inhibitor;Interleukin-23 inhibitor,INHIBITOR,IL12A;IL12B;IL23A
+colecalciferol,mapped,CHEMBL1042,small molecule,vitamin D receptor modulator,Vitamin D receptor agonist,AGONIST,VDR
+complement protein c5 inhibitor,unmapped,,,,,,
+continue is,unmapped,,,,,,
+copaxone®,unmapped,,,,,,
+copolymer 1,unmapped,,,,,,
+corticosteroid,unmapped,,,,,,
+corticosteroids,unmapped,,,,,,
+corticosteroids & tancart19/20,unmapped,,,,,,
+corticotropin,mapped,CHEMBL1201610,other,ACTH receptor modulator,Melanocortin receptor 2 agonist,AGONIST,MC2R
+cranberry,unmapped,,,,,,
+crisugabalin,unmapped,CHEMBL5314958,small molecule,,,,
+cs-0777,unmapped,,,,,,
+csf sampling,unmapped,,,,,,
+ct-p53,unmapped,,,,,,
+ct103a cells,unmapped,,,,,,
+cta313 ucar t cell,unmapped,,,,,,
+ctx112,unmapped,,,,,,
+cultured allogeneic adult umbilical cord or placental derived mesenchymal stem cells,unmapped,,,,,,
+curcumin,unmapped,CHEMBL140,small molecule,,,,
+cv-mg01,unmapped,,,,,,
+cyb704,unmapped,,,,,,
+cyclophosphamide,mapped,CHEMBL88,small molecule,DNA inhibitor,DNA inhibitor,INHIBITOR,
+cyclophosphamide and atg,unmapped,,,,,,
+cyclophosphamide and fludarabine,unmapped,,,,,,
+cyclophosphamide/glatiramer,unmapped,,,,,,
+cytarabine,mapped,CHEMBL803,small molecule,DNA inhibitor;DNA polymerase (alpha/delta/epsilon) inhibitor;RNA inhibitor,DNA inhibitor;DNA polymerase (alpha/delta/epsilon) inhibitor;RNA inhibitor,INHIBITOR,POLA1;POLA2;POLD1;POLD2;POLD3;POLD4;POLE;POLE2;POLE3;PRIM1;PRIM2
+d,unmapped,,,,,,
+dac-hyp,unmapped,,,,,,
+daclizumab,mapped,CHEMBL1201605,antibody,anti-IL-2 receptor,Interleukin-2 receptor inhibitor,INHIBITOR,IL2RA;IL2RB;IL2RG
+dalfampridine,mapped,CHEMBL284348,small molecule,Kv channel inhibitor,Voltage-gated potassium channel blocker,BLOCKER,KCNA1;KCNA10;KCNA2;KCNA3;KCNA4;KCNA5;KCNA6;KCNA7;KCNB1;KCNB2;KCNC1;KCNC2;KCNC3;KCNC4;KCND1;KCND2;KCND3;KCNF1;KCNG1;KCNG2;KCNG3;KCNG4;KCNH1;KCNH2;KCNH3;KCNH4;KCNH5;KCNH6;KCNH7;KCNH8;KCNQ1;KCNQ2;KCNQ3;KCNQ4;KCNQ5;KCNS1;KCNS2;KCNS3;KCNV1;KCNV2
+dalfampridine pill,unmapped,,,,,,
+dantrolene,mapped,CHEMBL1201288,small molecule,Ryanodine receptor 1 antagonist;Ryanodine receptor 3 antagonist,Ryanodine receptor 1 antagonist;Ryanodine receptor 3 antagonist,ANTAGONIST,RYR1;RYR3
+daratumumab,mapped,CHEMBL1743007,antibody,anti-CD38,Lymphocyte differentiation antigen CD38 inhibitor,INHIBITOR,CD38
+darifenacin,mapped,CHEMBL1346,small molecule,muscarinic receptor antagonist,Muscarinic acetylcholine receptor M2 antagonist;Muscarinic acetylcholine receptor M3 antagonist,ANTAGONIST,CHRM2;CHRM3
+dasatinib and quercetin,unmapped,,,,,,
+decartes-08,unmapped,,,,,,
+descartes-08,unmapped,,,,,,
+desloratadine given orally,unmapped,,,,,,
+dexamethasone given orally,unmapped,,,,,,
+dexchlorpheniramine,mapped,CHEMBL1201353,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+dexrazoxane plus mitoxantrone,unmapped,,,,,,
+dextromethorphan,mapped,CHEMBL52440,small molecule,NMDA receptor antagonist;Sigma non-opioid intracellular receptor 1 modulator,Glutamate [NMDA] receptor subunit epsilon 1 antagonist;Sigma opioid receptor agonist,AGONIST;ANTAGONIST,GRIN2A;SIGMAR1
+dextromethorphan hydrobromide and quinidine,unmapped,,,,,,
+diclofenac topical gel,unmapped,,,,,,
+dimethyl fumarate,mapped,CHEMBL2107333,small molecule,KEAP1 inhibitor,Kelch-like ECH-associated protein 1 inhibitor,INHIBITOR,KEAP1
+dimethyl fumarate enteric-coated,unmapped,,,,,,
+diphenydramine,unmapped,,,,,,
+diroximel fumarate,mapped,CHEMBL3989944,small molecule,KEAP1 inhibitor,Kelch-like ECH-associated protein 1 inhibitor,INHIBITOR,KEAP1
+dirucotide,unmapped,CHEMBL2105639,protein,,,,
+discontinuation of disease modifying therapy,unmapped,,,,,,
+disease-modifying therapies,unmapped,,,,,,
+divozilimab,unmapped,CHEMBL5314981,antibody,,,,
+dmt,unmapped,,,,,,
+dmts + taurine,unmapped,,,,,,
+domperidone,mapped,CHEMBL219916,small molecule,D2 receptor antagonist,Dopamine D2 receptor antagonist,ANTAGONIST,DRD2
+donepezil,mapped,CHEMBL502,small molecule,AChE inhibitor,Acetylcholinesterase inhibitor,INHIBITOR,ACHE
+donepezil hci,unmapped,,,,,,
+dose level 1 group,unmapped,,,,,,
+dose level 2 group,unmapped,,,,,,
+dose level 3 group,unmapped,,,,,,
+dose level 4 group,unmapped,,,,,,
+dosing interruption of natalizumab,unmapped,,,,,,
+dpa-714 pet/mri,unmapped,,,,,,
+drf,unmapped,,,,,,
+dronabinol,mapped,CHEMBL465,small molecule,CB1 receptor modulator,Cannabinoid CB1 receptor agonist,AGONIST,CNR1
+drug - shr1459,unmapped,,,,,,
+duloxetine,mapped,CHEMBL1175,small molecule,noradrenaline transporter inhibitor;serotonin transporter inhibitor,Norepinephrine transporter inhibitor;Serotonin transporter inhibitor,INHIBITOR,SLC6A2;SLC6A4
+duoc-01,unmapped,,,,,,
+ea5,unmapped,,,,,,
+early highly effective therapies group,unmapped,,,,,,
+eculizumab,mapped,CHEMBL1201828,antibody,anti-C5,Complement C5 inhibitor,INHIBITOR,C5
+eculizumab administration,unmapped,,,,,,
+efgartigimod,mapped,CHEMBL4297551,protein,anti-FcRn,IgG receptor FcRn large subunit p51 antagonist,ANTAGONIST,FCGRT
+efgartigimod + telitacicept group,unmapped,,,,,,
+efgartigimod administration,unmapped,,,,,,
+efgartigimod or efgartigimod ph20,unmapped,,,,,,
+efgartigimod ph20,unmapped,,,,,,
+efgartigimod ph20 in stage b,unmapped,,,,,,
+egb 761®,unmapped,,,,,,
+ehp-101 bid,unmapped,,,,,,
+ehp-101 od,unmapped,,,,,,
+ek-12,unmapped,,,,,,
+elezanumab,mapped,CHEMBL4297743,antibody,anti-RGMa,Repulsive guidance molecule A inhibitor,INHIBITOR,RGMA
+elnd002,unmapped,,,,,,
+empasiprubart,unmapped,CHEMBL5314673,antibody,,,,
+epo,unmapped,,,,,,
+erythropoietin,unmapped,,,,,,
+erythropoietin alfa,mapped,CHEMBL1201565,protein,EPO receptor modulator,Erythropoietin receptor agonist,AGONIST,EPOR
+escalation therapies group,unmapped,,,,,,
+escitalopram,mapped,CHEMBL1508,small molecule,serotonin transporter inhibitor,Serotonin transporter inhibitor,INHIBITOR,SLC6A4
+escitalopram oxalate antidepressant,unmapped,,,,,,
+esomeprazole,mapped,CHEMBL1201320,small molecule,proton pump inhibitor,Potassium-transporting ATPase inhibitor,INHIBITOR,ATP4A;ATP4B
+essential fatty acids,unmapped,,,,,,
+estradiol,mapped,CHEMBL135,small molecule,estrogen receptor modulator,Estrogen receptor alpha agonist,AGONIST,ESR1
+estriol,mapped,CHEMBL193482,small molecule,estrogen receptor modulator,Estrogen receptor modulator,MODULATOR,ESR1;ESR2
+estroprogestins,unmapped,,,,,,
+etifoxine,mapped,CHEMBL2106227,small molecule,GABA-A receptor antagonist,GABA-A receptor; anion channel antagonist,ANTAGONIST,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
+etims,unmapped,,,,,,
+etoposide,mapped,CHEMBL44657,small molecule,topoisomerase II inhibitor,DNA topoisomerase II inhibitor,INHIBITOR,TOP2A;TOP2B
+evm18001,unmapped,,,,,,
+evobrutinib,mapped,CHEMBL4072833,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+experimental glatiramer,unmapped,,,,,,
+extended release fampridine,unmapped,,,,,,
+extended-release quetiapine fumarate,unmapped,,,,,,
+extracellular vesicles derived from human-induced neural stem cells for intrathecal,unmapped,,,,,,
+f-18 3f4ap,unmapped,,,,,,
+f-18 fedaa1106,unmapped,,,,,,
+famciclovir,mapped,CHEMBL880,small molecule,DNA polymerase catalytic subunit inhibitor,Human herpesvirus 1 DNA polymerase inhibitor,INHIBITOR,
+fampridine,mapped,CHEMBL284348,small molecule,Kv channel inhibitor,Voltage-gated potassium channel blocker,BLOCKER,KCNA1;KCNA10;KCNA2;KCNA3;KCNA4;KCNA5;KCNA6;KCNA7;KCNB1;KCNB2;KCNC1;KCNC2;KCNC3;KCNC4;KCND1;KCND2;KCND3;KCNF1;KCNG1;KCNG2;KCNG3;KCNG4;KCNH1;KCNH2;KCNH3;KCNH4;KCNH5;KCNH6;KCNH7;KCNH8;KCNQ1;KCNQ2;KCNQ3;KCNQ4;KCNQ5;KCNS1;KCNS2;KCNS3;KCNV1;KCNV2
+fampridine sr,unmapped,,,,,,
+fampridine-sr,unmapped,,,,,,
+fampridine-sr b.i.d.,unmapped,,,,,,
+fdg,unmapped,,,,,,
+fecal microbial transplant,unmapped,,,,,,
+fenebrutinib,mapped,CHEMBL4065122,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+feppa,unmapped,,,,,,
+ferumoxytol,unmapped,CHEMBL1201867,other,,Unknown,,
+fexofenadine,mapped,CHEMBL914,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+fibrinogen concentrate,unmapped,,,,,,
+filgrastim,mapped,CHEMBL1201567,protein,G-CSF receptor modulator,Granulocyte colony stimulating factor receptor agonist,AGONIST,CSF3R
+fingolimob,unmapped,,,,,,
+fingolimod,mapped,CHEMBL314854,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor agonist;Sphingosine 1-phosphate receptor binding agent,AGONIST;BINDING AGENT,S1PR1;S1PR2;S1PR3;S1PR4;S1PR5
+firategrast,mapped,CHEMBL2104967,small molecule,α4-integrin antagonist,Integrin alpha-4/beta-1 antagonist;Integrin alpha-4/beta-7 antagonist,ANTAGONIST,ITGA4;ITGB1;ITGB7
+firategrast gastro-retentive solution,unmapped,,,,,,
+firategrast immediate release,unmapped,,,,,,
+firategrast modified release,unmapped,,,,,,
+fish oil concentrate,unmapped,,,,,,
+florbetapir pet imaging,unmapped,,,,,,
+fludarabine,unmapped,CHEMBL1568,small molecule,,,,
+fludarabine for,unmapped,,,,,,
+fluorodeprenyl-d2,unmapped,,,,,,
+fluoropyrimidine,unmapped,,,,,,
+fluoxetine,mapped,CHEMBL41,small molecule,serotonin transporter inhibitor,Serotonin transporter inhibitor,INHIBITOR,SLC6A4
+fmp30 donor stool,unmapped,,,,,,
+folatescan,unmapped,CHEMBL3707391,small molecule,,,,
+foralumab,mapped,CHEMBL1743020,antibody,anti-CD3,T cell surface glycoprotein CD3 inhibitor,INHIBITOR,CD3D;CD3E;CD3G
+foralumab tzls-401 100 μg,unmapped,,,,,,
+formulation a,unmapped,,,,,,
+formulation b,unmapped,,,,,,
+formulation c,unmapped,,,,,,
+formulation d,unmapped,,,,,,
+frexalimab,unmapped,CHEMBL5095122,antibody,,,,
+g-csf,unmapped,,,,,,
+ga,unmapped,,,,,,
+ga depot,unmapped,,,,,,
+ga depot once monthly,unmapped,,,,,,
+gabapentin,mapped,CHEMBL940,small molecule,calcium channel modulator,Voltage-gated calcium channel modulator,MODULATOR,CACNA1A;CACNA1B;CACNA1C;CACNA1D;CACNA1E;CACNA1F;CACNA1G;CACNA1H;CACNA1I;CACNA1S;CACNA2D1;CACNA2D2;CACNA2D3;CACNA2D4;CACNB1;CACNB2;CACNB3;CACNB4;CACNG1;CACNG2;CACNG3;CACNG4;CACNG5;CACNG6;CACNG7;CACNG8
+gadobenate dimeglumine,unmapped,CHEMBL1200571,small molecule,,Diagnostic agent,,
+gadobutrol,unmapped,CHEMBL2218860,small molecule,,Diagnostic agent,,
+gadoteridol,unmapped,CHEMBL1200593,small molecule,,Diagnostic agent,,
+gamunex-c,unmapped,,,,,,
+gb-0998,unmapped,,,,,,
+gc012f,unmapped,,,,,,
+gc012f car-t cell,unmapped,,,,,,
+gemfibrozil,mapped,CHEMBL457,small molecule,PPARα modulator,Peroxisome proliferator-activated receptor alpha agonist,AGONIST,PPARA
+gentamicin,mapped,CHEMBL6067485,small molecule,Bacterial 70S ribosome inhibitor,Bacterial 70S ribosome inhibitor,INHIBITOR,rplA;rplB;rplC;rplD;rplE;rplF;rplJ;rplK;rplL;rplM;rplN;rplO;rplP;rplQ;rplR;rplS;rplT;rplU;rplV;rplW;rplX;rplY;rpmA;rpmB;rpmC;rpmD;rpmE;rpmF;rpmG;rpmH;rpmI;rpmJ;rpsA;rpsB;rpsC;rpsD;rpsE;rpsF;rpsG;rpsH;rpsI;rpsJ;rpsK;rpsL;rpsM;rpsN;rpsO;rpsP;rpsQ;rpsR;rpsS;rpsT;rpsU;ykgM;ykgO
+gileyna,unmapped,,,,,,
+ginkgo biloba,unmapped,CHEMBL2108466,other,,,,
+glatiramer,unmapped,,,,,,
+glibenclamide,mapped,CHEMBL472,small molecule,"Sulfonylurea receptor 1, Kir6.2 inhibitor","Sulfonylurea receptor 1, Kir6.2 blocker",BLOCKER,ABCC8;KCNJ11
+glucocorticoids,unmapped,,,,,,
+glucose,unmapped,CHEMBL1222250,small molecule,,,,
+gnbac1,mapped,CHEMBL4594547,antibody,anti-syncytin-1,Syncytin-1 inhibitor,INHIBITOR,ERVW-1
+gnbac1 monoclonal antibody,unmapped,,,,,,
+gold nanocrystals,unmapped,,,,,,
+granulocyte-colony stimulating factor and prednisone,unmapped,,,,,,
+granulocyte-macrophage colony-stimulating factor,unmapped,,,,,,
+gsk1223249,mapped,CHEMBL2108679,antibody,anti-Nogo-A,Reticulon-4 inhibitor,INHIBITOR,RTN4
+gsk2018682,unmapped,CHEMBL4297542,small molecule,,,,
+gsk2018682 cd2 ; gsk2018682 cd3 non-micronised ; gsk2018682 cd3 micronised ; gsk2018682 cd3 non-micronised in fed state,unmapped,,,,,,
+gsk239512,mapped,CHEMBL3092650,small molecule,H3 receptor antagonist,Histamine H3 receptor antagonist,ANTAGONIST,HRH3
+gsk3888130b,unmapped,,,,,,
+gt802,unmapped,,,,,,
+guanabenz,mapped,CHEMBL420,small molecule,α2-adrenergic receptor modulator,Adrenergic receptor alpha-2 agonist,AGONIST,ADRA2A;ADRA2B;ADRA2C
+gz402668,unmapped,CHEMBL6068609,antibody,,,,
+h.p. acthar gel,mapped,CHEMBL1201610,other,ACTH receptor modulator,Melanocortin receptor 2 agonist,AGONIST,MC2R
+h.p. acthar® gel,unmapped,,,,,,
+hb-admscs,unmapped,,,,,,
+hbi0101 cart,unmapped,,,,,,
+hbm9161,mapped,CHEMBL4650514,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 inhibitor,INHIBITOR,FCGRT
+helminth ova,unmapped,,,,,,
+hematopoetic stem cell,unmapped,,,,,,
+hematopoietic stem cell transplantation,unmapped,,,,,,
+high-dose corticosteroid pulse therapy,unmapped,,,,,,
+high-dose methylprednisolone,unmapped,,,,,,
+hizentra ®,unmapped,,,,,,
+hn2301,unmapped,,,,,,
+hn2302,unmapped,,,,,,
+hookworm larvae,unmapped,,,,,,
+human fetal-derived neural stem cells,unmapped,,,,,,
+human interferon beta 1a,unmapped,,,,,,
+human neural stem cells,unmapped,,,,,,
+human normal immunoglobulin g,unmapped,,,,,,
+human umbilical cord mesenchymal stem cell derived exosomes,unmapped,,,,,,
+human umbilical cord mesenchymal stem cells,unmapped,,,,,,
+hydroxychloroquine,mapped,CHEMBL1535,small molecule,Ferriprotoporphyrin IX inhibitor;Toll-like receptor 7 antagonist;Toll-like receptor 9 antagonist,Ferriprotoporphyrin IX inhibitor;Toll-like receptor 7 antagonist;Toll-like receptor 9 antagonist,ANTAGONIST;INHIBITOR,TLR7;TLR9
+hydroxychloroquine pill,unmapped,,,,,,
+hydroxyurea,mapped,CHEMBL467,small molecule,Ribonucleoside-diphosphate reductase RR1 inhibitor,Ribonucleoside-diphosphate reductase RR1 inhibitor,INHIBITOR,RRM1;RRM2;RRM2B
+hyperimmune caprine serum against hiv lysate,unmapped,,,,,,
+hyqvia,unmapped,,,,,,
+ibudilast,mapped,CHEMBL19449,small molecule,"PDE4 inhibitor;cAMP and cAMP-inhibited cGMP 3',5'-cyclic phosphodiesterase 10A inhibitor;cGMP-inhibited 3',5'-cyclic phosphodiesterase 3A inhibitor;cGMP-specific 3',5'-cyclic phosphodiesterase inhibitor",Phosphodiesterase 10A inhibitor;Phosphodiesterase 3A inhibitor;Phosphodiesterase 4 inhibitor;Phosphodiesterase 5A inhibitor,INHIBITOR,PDE10A;PDE3A;PDE4A;PDE4B;PDE4C;PDE4D;PDE5A
+ibuprofen,mapped,CHEMBL521,small molecule,COX inhibitor,Cyclooxygenase inhibitor,INHIBITOR,PTGS1;PTGS2
+idp-023,unmapped,,,,,,
+ifenprodil,unmapped,CHEMBL305187,small molecule,,,,
+ifn beta 1a tiw,unmapped,,,,,,
+ifn beta-1a,unmapped,,,,,,
+igiv-c,unmapped,,,,,,
+igpro10,unmapped,,,,,,
+igpro20,unmapped,,,,,,
+il-2,unmapped,,,,,,
+il2,unmapped,,,,,,
+imatinib mesylate,mapped,CHEMBL941,small molecule,Bcr/Abl fusion protein inhibitor;Mast/stem cell growth factor receptor Kit inhibitor;Platelet-derived growth factor receptor beta inhibitor;Tyrosine-protein kinase ABL1 inhibitor,Bcr/Abl fusion protein inhibitor;Platelet-derived growth factor receptor beta inhibitor;Stem cell growth factor receptor inhibitor;Tyrosine-protein kinase ABL inhibitor,INHIBITOR,ABL1;BCR;KIT;PDGFRB
+imc-002,unmapped,,,,,,
+imcy-0141,unmapped,,,,,,
+imeroprubart,unmapped,CHEMBL6068254,antibody,,,,
+immediate azathioprine,unmapped,,,,,,
+immediate rituximab,unmapped,,,,,,
+immediate treatment with corticosteroids,unmapped,,,,,,
+immune globulin,unmapped,,,,,,
+"immune globulin , caprylate/chromatography purified",unmapped,,,,,,
+immune globulin g,unmapped,,,,,,
+immune globulin solution for administration,unmapped,,,,,,
+immuneglobulin,unmapped,,,,,,
+"immunmoglobulin , methylprednisolone",unmapped,,,,,,
+immunoglobulin,unmapped,,,,,,
+immunoglobulin g,unmapped,,,,,,
+immunoglobulin perfusion,unmapped,,,,,,
+ims001,unmapped,,,,,,
+imu-838,mapped,CHEMBL197194,small molecule,DHODH inhibitor,Dihydroorotate dehydrogenase inhibitor,INHIBITOR,DHODH
+imvt-1402,unmapped,,,,,,
+indapamide,mapped,CHEMBL406,small molecule,Solute carrier family 12 member 3 inhibitor,Thiazide-sensitive sodium-chloride cotransporter inhibitor,INHIBITOR,SLC12A3
+indapamide pill,unmapped,,,,,,
+inebilizumab,mapped,CHEMBL2109334,antibody,anti-CD19,B-lymphocyte antigen CD19 binding agent,BINDING AGENT,CD19
+inebilizumab + rapid steroid tapering group,unmapped,,,,,,
+influenza vaccine,unmapped,,,,,,
+infusions,unmapped,,,,,,
+inosine,unmapped,CHEMBL1556,small molecule,,,,
+insulin,mapped,CHEMBL1201631,protein,insulin receptor modulator,Insulin receptor agonist,AGONIST,INSR
+int131,mapped,CHEMBL1236924,small molecule,PPARγ modulator,Peroxisome proliferator-activated receptor gamma modulator,MODULATOR,PPARG
+interferon beta,unmapped,CHEMBL2108510,protein,,,,
+interferon beta 1,unmapped,,,,,,
+interferon beta 1a,unmapped,,,,,,
+interferon beta 1a once weekly,unmapped,,,,,,
+"interferon beta 1a, doxycycline",unmapped,,,,,,
+interferon beta 1b,unmapped,,,,,,
+interferon beta-1a,mapped,CHEMBL1201562,protein,IFN-α/β receptor modulator,Interferon alpha/beta receptor agonist,AGONIST,IFNAR1;IFNAR2
+interferon beta-1a alone,unmapped,,,,,,
+interferon beta-1a hsa+ biosimilar,unmapped,,,,,,
+interferon beta-1a hsa-free biosimilar,unmapped,,,,,,
+interferon beta-1b,mapped,CHEMBL1201563,protein,IFN-α/β receptor modulator,Interferon alpha/beta receptor agonist,AGONIST,IFNAR1;IFNAR2
+interferon beta-1b and tacrolimus,unmapped,,,,,,
+"interferon beta-1b, frp about 6 weeks after randomization",unmapped,,,,,,
+"interferon beta-1b, frp within 15 days after randomization",unmapped,,,,,,
+interferon beta-1b/atorvastatin group,unmapped,,,,,,
+interferon or glatiramer,unmapped,,,,,,
+interferon-beta,unmapped,CHEMBL2108510,protein,,,,
+interferon-beta 1a,unmapped,,,,,,
+interferon-beta and human leukocyte interferon-α,unmapped,,,,,,
+interferon-beta-1a,unmapped,,,,,,
+interferon-beta-1a fbs-free/hsa-free,unmapped,,,,,,
+interferon-beta-1a plus methylprednisolone,unmapped,,,,,,
+interferon-beta1,unmapped,,,,,,
+interferon-ss-1b,unmapped,,,,,,
+interferon-β,unmapped,,,,,,
+interleukin-2,mapped,CHEMBL1201438,protein,IL-2 receptor modulator,Interleukin-2 receptor agonist,AGONIST,IL2RA;IL2RB;IL2RG
+intrathecal administration of autologous msc-np,unmapped,,,,,,
+intrathecal methotrexate,unmapped,,,,,,
+intrathecal msc-np,unmapped,,,,,,
+ipilimumab,mapped,CHEMBL1789844,antibody,anti-CTLA-4,Cytotoxic T-lymphocyte protein 4 inhibitor,INHIBITOR,CTLA4
+iptacopan,mapped,CHEMBL4594448,small molecule,Complement factor B inhibitor,Complement factor B inhibitor,INHIBITOR,CFB
+isoxsuprine,mapped,CHEMBL1197051,small molecule,α1-adrenergic receptor antagonist;β2-adrenergic receptor modulator,Adrenergic receptor alpha-1 antagonist;Beta-2 adrenergic receptor agonist,AGONIST;ANTAGONIST,ADRA1A;ADRA1B;ADRA1D;ADRB2
+ivig,unmapped,,,,,,
+ivl3004,unmapped,,,,,,
+ivl4002,unmapped,,,,,,
+jm-4,unmapped,,,,,,
+jyp0061,unmapped,,,,,,
+kemstro,mapped,CHEMBL701,small molecule,GABA-B receptor modulator,GABA-B receptor agonist,AGONIST,GABBR1;GABBR2
+ketamine,mapped,CHEMBL742,small molecule,NMDA receptor inhibitor,Glutamate [NMDA] receptor negative allosteric modulator,NEGATIVE ALLOSTERIC MODULATOR,GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B
+ketoprofen,mapped,CHEMBL571,small molecule,COX inhibitor,Cyclooxygenase inhibitor,INHIBITOR,PTGS1;PTGS2
+keyhole limpet hemocyanin,unmapped,CHEMBL5314988,other,,,,
+keyhole limpet hemocyanin neo-antigen,unmapped,,,,,,
+kine-101,unmapped,,,,,,
+kite-363,unmapped,,,,,,
+klh,unmapped,,,,,,
+ksvcbd,unmapped,,,,,,
+kyv-101,unmapped,,,,,,
+kyv-101 - 0.33 ×10^8 cells,unmapped,,,,,,
+kyv-101 - 1 ×10^8 cells,unmapped,,,,,,
+kyv-101 anti-cd19 car-t cell therapy,unmapped,,,,,,
+l-carnitine,unmapped,,,,,,
+l-histidine,unmapped,CHEMBL17962,small molecule,,,,
+lactobacillus rhamnosus gg,unmapped,,,,,,
+lamotrigine,mapped,CHEMBL741,small molecule,sodium channel inhibitor,Sodium channel alpha subunit blocker,BLOCKER,SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
+laquinimod,unmapped,CHEMBL66092,small molecule,,,,
+laquinimod 0.6,unmapped,,,,,,
+laquinimod 1.2,unmapped,,,,,,
+lcar-aio t cells,unmapped,,,,,,
+leucovorin,unmapped,CHEMBL1679,small molecule,,,,
+levetiracetam,mapped,CHEMBL1286,small molecule,Synaptic vesicle glycoprotein 2A modulator;Voltage-dependent N-type calcium channel subunit alpha-1B inhibitor,Synaptic vesicle glycoprotein 2A modulator;Voltage-gated N-type calcium channel alpha-1B subunit blocker,BLOCKER;MODULATOR,CACNA1B;SV2A
+linoleic acid/oleic acid,unmapped,,,,,,
+liothyronine,mapped,CHEMBL1544,small molecule,Thyroid hormone receptor modulator,Thyroid hormone receptor agonist,AGONIST,THRA;THRB
+lipoic acid,unmapped,,,,,,
+lipoic acid and omega-3 fatty acids,unmapped,,,,,,
+liquid formulation of human immunoglobulin,unmapped,,,,,,
+liraglutide pen injector,unmapped,,,,,,
+lisdexamfetamine,mapped,CHEMBL1201222,small molecule,Synaptic vesicular amine transporter inhibitor;dopamine transporter agent;noradrenaline transporter agent,Dopamine transporter releasing agent;Norepinephrine transporter releasing agent;Synaptic vesicular amine transporter inhibitor,INHIBITOR;RELEASING AGENT,SLC18A2;SLC6A2;SLC6A3
+lithium carbonate,mapped,CHEMBL1200826,small molecule,Glycogen synthase kinase-3 inhibitor;Inositol monophosphatase 1 inhibitor,Glycogen synthase kinase-3 inhibitor;Inositol-1(or 4)-monophosphatase 1 inhibitor,INHIBITOR,GSK3A;GSK3B;IMPA1
+live hookworm larvae,unmapped,,,,,,
+locally approved contrast medium for contrast enhanced magnetic resonance imaging,unmapped,,,,,,
+lodosyn,mapped,CHEMBL1201236,small molecule,Aromatic-L-amino-acid decarboxylase inhibitor,DOPA decarboxylase inhibitor,INHIBITOR,DDC
+loratadine,mapped,CHEMBL998,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+low dose arm receiving neutral oil and /g of vitamin d every second day,unmapped,,,,,,
+low dose cannabis,unmapped,,,,,,
+low immunogenic interferon-beta-1a,unmapped,,,,,,
+low-dose naltrexone,unmapped,,,,,,
+lp-168,unmapped,,,,,,
+lpx-ti641,unmapped,,,,,,
+lu ag06466,unmapped,,,,,,
+lumbar puncture,unmapped,,,,,,
+lvivo-tavec400 product,unmapped,,,,,,
+ly2127399,mapped,CHEMBL1743075,antibody,anti-BAFF,Tumor necrosis factor ligand superfamily member 13B inhibitor,INHIBITOR,TNFSF13B
+ly3541860,unmapped,,,,,,
+lymphodepleting conditioning,unmapped,,,,,,
+m281,mapped,CHEMBL4594310,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 antagonist,ANTAGONIST,FCGRT
+mabcampath-1h,unmapped,,,,,,
+masitinib,mapped,CHEMBL1908391,small molecule,Fibroblast growth factor receptor 3 inhibitor;Mast/stem cell growth factor receptor Kit inhibitor;Platelet-derived growth factor receptor inhibitor,Fibroblast growth factor receptor 3 inhibitor;Platelet-derived growth factor receptor inhibitor;Stem cell growth factor receptor inhibitor,INHIBITOR,FGFR3;KIT;PDGFRA;PDGFRB
+mavenclad®,unmapped,,,,,,
+mb-cart2019.1,unmapped,,,,,,
+mbp8298,unmapped,CHEMBL2105639,protein,,,,
+md1003,unmapped,,,,,,
+medi-551,mapped,CHEMBL2109334,antibody,anti-CD19,B-lymphocyte antigen CD19 binding agent,BINDING AGENT,CD19
+medical marijuana,unmapped,,,,,,
+megadose methylprednisolone,unmapped,,,,,,
+melatonin,mapped,CHEMBL45,small molecule,melatonin receptor modulator,Melatonin receptor agonist,AGONIST,MTNR1A;MTNR1B
+melphalan,mapped,CHEMBL852,small molecule,DNA inhibitor,DNA inhibitor,INHIBITOR,
+memantine,mapped,CHEMBL807,small molecule,NMDA receptor inhibitor,Glutamate [NMDA] receptor negative allosteric modulator,NEGATIVE ALLOSTERIC MODULATOR,GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B
+meningococcal polysaccharide diphtheria conjugate vaccine,unmapped,,,,,,
+mesenchymal stem cells,unmapped,,,,,,
+mesna,unmapped,CHEMBL1098319,small molecule,,Unknown,,
+metformin,mapped,CHEMBL1431,small molecule,"Glycerol-3-phosphate dehydrogenase, mitochondrial inhibitor;Mitochondrial complex I (NADH dehydrogenase) inhibitor",Mitochondrial complex I (NADH dehydrogenase) inhibitor;Mitochondrial glycerol-3-phosphate dehydrogenase inhibitor,INHIBITOR,COXFA4;COXFA4L2;GPD2;MT-ND1;MT-ND2;MT-ND3;MT-ND4;MT-ND4L;MT-ND5;MT-ND6;NDUFA1;NDUFA10;NDUFA11;NDUFA12;NDUFA13;NDUFA2;NDUFA3;NDUFA5;NDUFA6;NDUFA7;NDUFA8;NDUFA9;NDUFAB1;NDUFAF1;NDUFAF2;NDUFAF3;NDUFAF4;NDUFB1;NDUFB10;NDUFB11;NDUFB2;NDUFB3;NDUFB4;NDUFB5;NDUFB6;NDUFB7;NDUFB8;NDUFB9;NDUFC1;NDUFC2;NDUFS1;NDUFS2;NDUFS3;NDUFS4;NDUFS5;NDUFS6;NDUFS7;NDUFS8;NDUFV1;NDUFV2;NDUFV3
+"metformin , up to 4 a day",unmapped,,,,,,
+metformin and clemastine in combination,unmapped,,,,,,
+methelphenidate,unmapped,,,,,,
+methotrexate,mapped,CHEMBL34259,small molecule,DHFR inhibitor,Dihydrofolate reductase inhibitor,INHIBITOR,DHFR
+methyloprednisolone,unmapped,,,,,,
+methylphenidate,mapped,CHEMBL796,small molecule,dopamine transporter inhibitor;noradrenaline transporter inhibitor,Dopamine transporter inhibitor;Norepinephrine transporter inhibitor,INHIBITOR,SLC6A2;SLC6A3
+methylprednisolone,mapped,CHEMBL650,small molecule,glucocorticoid receptor modulator,Glucocorticoid receptor agonist,AGONIST,NR3C1
+methylprednisolone hemisuccinate,mapped,CHEMBL1201265,small molecule,glucocorticoid receptor modulator,Glucocorticoid receptor agonist,AGONIST,NR3C1
+methylprednisolone po,unmapped,,,,,,
+methylreboxetine,unmapped,,,,,,
+microgynon®,unmapped,,,,,,
+midazolam,mapped,CHEMBL655,small molecule,GABA-A receptor modulator,GABA-A receptor; anion channel positive allosteric modulator,POSITIVE ALLOSTERIC MODULATOR,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
+mil62,unmapped,,,,,,
+mild dose cannabis,unmapped,,,,,,
+minocycline,mapped,CHEMBL1434,small molecule,Bacterial 70S ribosome inhibitor,Bacterial 70S ribosome inhibitor,INHIBITOR,rplA;rplB;rplC;rplD;rplE;rplF;rplJ;rplK;rplL;rplM;rplN;rplO;rplP;rplQ;rplR;rplS;rplT;rplU;rplV;rplW;rplX;rplY;rpmA;rpmB;rpmC;rpmD;rpmE;rpmF;rpmG;rpmH;rpmI;rpmJ;rpsA;rpsB;rpsC;rpsD;rpsE;rpsF;rpsG;rpsH;rpsI;rpsJ;rpsK;rpsL;rpsM;rpsN;rpsO;rpsP;rpsQ;rpsR;rpsS;rpsT;rpsU;ykgM;ykgO
+mirabegron,mapped,CHEMBL2095212,small molecule,β3-adrenergic receptor modulator,Beta-3 adrenergic receptor agonist,AGONIST,ADRB3
+mis416,unmapped,,,,,,
+mitoxantrone,mapped,CHEMBL58,small molecule,DNA inhibitor;topoisomerase II inhibitor,DNA inhibitor;DNA topoisomerase II alpha inhibitor,INHIBITOR,TOP2A
+mitoxantrone liposome,unmapped,,,,,,
+mk0812,mapped,CHEMBL3305901,small molecule,CCR2 antagonist,C-C chemokine receptor type 2 antagonist,ANTAGONIST,CCR2
+mk6240,unmapped,,,,,,
+mln1202,mapped,CHEMBL3707228,antibody,anti-CCR2,C-C chemokine receptor type 2 inhibitor,INHIBITOR,CCR2
+modafinil,mapped,CHEMBL1373,small molecule,dopamine transporter inhibitor,Dopamine transporter inhibitor,INHIBITOR,SLC6A3
+modafinil generis,unmapped,,,,,,
+moderna mrna-1273,unmapped,,,,,,
+"moderna mrna-1273, bivalent",unmapped,,,,,,
+monoclonal antibody m-t412,unmapped,,,,,,
+monomethyl fumarate,mapped,CHEMBL589586,small molecule,KEAP1 inhibitor,Kelch-like ECH-associated protein 1 inhibitor,INHIBITOR,KEAP1
+monovalent cov2 pres dtm-as03,unmapped,,,,,,
+montelukast,mapped,CHEMBL787,small molecule,Cysteinyl leukotriene receptor 1 antagonist,Cysteinyl leukotriene receptor 1 antagonist,ANTAGONIST,CYSLTR1
+mor103,mapped,CHEMBL2109433,antibody,anti-GM-CSF,Granulocyte-macrophage colony-stimulating factor inhibitor,INHIBITOR,CSF2
+mri contrast-enhancing agents,unmapped,,,,,,
+mri contrast-enhancing preparations,unmapped,,,,,,
+mrna covid-19 vaccine,unmapped,,,,,,
+mrna-1195,unmapped,,,,,,
+mrna-1273,mapped,CHEMBL4650491,oligonucleotide,Spike glycoprotein vaccine antigen,Spike glycoprotein vaccine antigen,VACCINE ANTIGEN,S
+msc-derived exosomes,unmapped,,,,,,
+mt-1303,mapped,CHEMBL3707375,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor modulator,MODULATOR,S1PR1;S1PR2;S1PR3;S1PR4;S1PR5
+mt-1303-forma,unmapped,,,,,,
+mt-1303-formb,unmapped,,,,,,
+mt-1303-high,unmapped,,,,,,
+mt-1303-low,unmapped,,,,,,
+mt-1303-middle,unmapped,,,,,,
+mtm-h-001,unmapped,,,,,,
+mtr-601,unmapped,,,,,,
+musk-caart,unmapped,,,,,,
+mycophenolate mofetil,mapped,CHEMBL1456,small molecule,IMPDH inhibitor,Inosine-5'-monophosphate dehydrogenase (IMPDH) inhibitor,INHIBITOR,IMPDH1;IMPDH2
+mycophenolic acid,mapped,CHEMBL866,small molecule,IMPDH inhibitor,Inosine-5'-monophosphate dehydrogenase (IMPDH) inhibitor,INHIBITOR,IMPDH1;IMPDH2
+myeloablative regimen,unmapped,,,,,,
+nabilone,mapped,CHEMBL2218896,small molecule,CB1 receptor modulator,Cannabinoid CB1 receptor agonist,AGONIST,CNR1
+nabiximols,unmapped,CHEMBL3833333,small molecule,,,,
+nanocurcumin,unmapped,,,,,,
+naproxen,mapped,CHEMBL154,small molecule,COX inhibitor,Cyclooxygenase inhibitor,INHIBITOR,PTGS1;PTGS2
+nasal methylprednisolone,unmapped,,,,,,
+natalizumab,mapped,CHEMBL1201607,antibody,anti-α4-integrin,Integrin alpha-4/beta-1 inhibitor;Integrin alpha-4/beta-7 inhibitor,INHIBITOR,ITGA4;ITGB1;ITGB7
+natalizumab treatment,unmapped,,,,,,
+nbi-5788,unmapped,CHEMBL2108869,protein,,,,
+nebido® testosterone undecanoate / solution for,unmapped,,,,,,
+neramexane mesylate,mapped,CHEMBL2110954,small molecule,NMDA receptor antagonist;α9/α10 nicotinic receptor antagonist,Glutamate [NMDA] receptor antagonist;Neuronal acetylcholine receptor; alpha9/alpha10 antagonist,ANTAGONIST,CHRNA10;CHRNA9;GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B
+nerispirdine,mapped,CHEMBL2107762,small molecule,Kv channel inhibitor;sodium channel inhibitor,Sodium channel alpha subunit blocker;Voltage-gated potassium channel blocker,BLOCKER,KCNA1;KCNA10;KCNA2;KCNA3;KCNA4;KCNA5;KCNA6;KCNA7;KCNB1;KCNB2;KCNC1;KCNC2;KCNC3;KCNC4;KCND1;KCND2;KCND3;KCNF1;KCNG1;KCNG2;KCNG3;KCNG4;KCNH1;KCNH2;KCNH3;KCNH4;KCNH5;KCNH6;KCNH7;KCNH8;KCNQ1;KCNQ2;KCNQ3;KCNQ4;KCNQ5;KCNS1;KCNS2;KCNS3;KCNV1;KCNV2;SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
+neurovax,unmapped,,,,,,
+new formulation of rebif - human interferon beta-1a,unmapped,,,,,,
+newgam,unmapped,CHEMBL1201599,other,,"Replacement therapy, immunomodulatory effects",,
+ng01 - autologous bone marrow derived human stromal cells,unmapped,,,,,,
+nipocalimab,mapped,CHEMBL4594310,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 antagonist,ANTAGONIST,FCGRT
+nipocalimab -liv,unmapped,,,,,,
+nivolumab,mapped,CHEMBL2108738,antibody,anti-PD-1,Programmed cell death protein 1 inhibitor,INHIBITOR,PDCD1
+nk042,unmapped,,,,,,
+nmd670,unmapped,,,,,,
+nomegestrol,mapped,CHEMBL1476022,small molecule,progesterone receptor modulator,Progesterone receptor agonist,AGONIST,PGR
+norethindrone,mapped,CHEMBL1162,small molecule,progesterone receptor modulator,Progesterone receptor agonist,AGONIST,PGR
+npb-01,unmapped,CHEMBL1201599,other,,"Replacement therapy, immunomodulatory effects",,
+nt-ko-003,unmapped,,,,,,
+nu100,unmapped,,,,,,
+nurown,unmapped,CHEMBL5095482,cell therapy,,,,
+nvg-2089,unmapped,,,,,,
+obecabtagene autoleucel,mapped,CHEMBL5095440,gene therapy,CD19 modulator,B-lymphocyte antigen CD19 binding agent,BINDING AGENT,CD19
+obexelimab,mapped,CHEMBL4298134,antibody,anti-CD19;anti-FcγRIIb,B-lymphocyte antigen CD19 inhibitor;Low affinity immunoglobulin gamma Fc region receptor II-b inhibitor,INHIBITOR,CD19;FCGR2B
+obinutuzumab β,unmapped,,,,,,
+ocr,unmapped,,,,,,
+ocrelizumab,mapped,CHEMBL2108041,antibody,anti-CD20,B-lymphocyte antigen CD20 binding agent,BINDING AGENT,MS4A1
+ocrelizumab at home,unmapped,,,,,,
+ocrelizumab co-formulated with rhuph20,unmapped,,,,,,
+ocrelizumab dose 1,unmapped,,,,,,
+ocrelizumab dose 2 and dose 3,unmapped,,,,,,
+ocrelizumab test formulation,unmapped,,,,,,
+of autologous bone marrow derived mesenchymal stem cells,unmapped,,,,,,
+of mesenchymal stem cells,unmapped,,,,,,
+ofatumumab,mapped,CHEMBL1201836,antibody,anti-CD20,B-lymphocyte antigen CD20 binding agent,BINDING AGENT,MS4A1
+ofatumumab 100,unmapped,,,,,,
+ofatumumab 300,unmapped,,,,,,
+ofatumumab 700,unmapped,,,,,,
+ofatumumab combined with daratumumab,unmapped,,,,,,
+ofatumumab new dose,unmapped,,,,,,
+ofatunumab,unmapped,,,,,,
+olesoxime,unmapped,CHEMBL3545254,small molecule,,,,
+omeprazole,mapped,CHEMBL1503,small molecule,proton pump inhibitor,Potassium-transporting ATPase inhibitor,INHIBITOR,ATP4A;ATP4B
+onabotulinumtoxina,mapped,CHEMBL1201574,other,SNAP-25 inhibitor,Synaptosomal nerve-associated protein 25 (SNAP-25) inhibitor,INHIBITOR,SNAP25
+ono-4641,unmapped,,,,,,
+opicinumab,mapped,CHEMBL3544922,antibody,anti-LINGO-1,Leucine-rich repeat and immunoglobulin-like domain-containing nogo receptor-interacting protein 1 inhibitor,INHIBITOR,LINGO1
+orca-q,unmapped,,,,,,
+orelabrutinib,mapped,CHEMBL4650321,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+other h1 antagonist,unmapped,,,,,,
+oxcarbazepine,mapped,CHEMBL1068,small molecule,sodium channel inhibitor,Sodium channel alpha subunit blocker,BLOCKER,SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
+oxine-labeled leukocytes pet/mri,unmapped,,,,,,
+oxygen,unmapped,CHEMBL1234886,small molecule,,Essential for cellular homeostasis,,
+ozanimod,mapped,CHEMBL3707247,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor 5 modulator;Sphingosine 1-phosphate receptor Edg-1 modulator,MODULATOR,S1PR1;S1PR5
+p-cd19cd20-allo1 cells,unmapped,,,,,,
+palifermin,mapped,CHEMBL1201821,protein,Fibroblast growth factor receptor 2 modulator,Fibroblast growth factor receptor 2 agonist,AGONIST,FGFR2
+pantoprazole,mapped,CHEMBL1502,small molecule,proton pump inhibitor,Potassium-transporting ATPase inhibitor,INHIBITOR,ATP4A;ATP4B
+panzyga,unmapped,,,,,,
+paracetamol,mapped,CHEMBL112,small molecule,COX inhibitor;Fatty-acid amide hydrolase 1 inhibitor;Transient receptor potential cation channel subfamily V member 1 activator,Anandamide amidohydrolase inhibitor;Cyclooxygenase inhibitor;Vanilloid receptor opener,INHIBITOR;OPENER,FAAH;PTGS1;PTGS2;TRPV1
+part a: gsk2618960,unmapped,,,,,,
+part b: dose of gsk2618960 decided from part a,unmapped,,,,,,
+part c: dose of gsk2618960 decided from part a and b,unmapped,,,,,,
+pb018,unmapped,,,,,,
+pbr06,unmapped,,,,,,
+pbr28,unmapped,,,,,,
+peg-liposomal prednisolone,unmapped,,,,,,
+peginterferon beta-1a,mapped,CHEMBL2108677,protein,IFN-α/β receptor modulator,Interferon alpha/beta receptor agonist,AGONIST,IFNAR1;IFNAR2
+pegylated interferon beta-1a,unmapped,,,,,,
+perfusion of treatment rituximab,unmapped,,,,,,
+personalized extended interval dosing of natalizumab,unmapped,,,,,,
+pet with 11c-flumazenil,unmapped,,,,,,
+pf-06342674,unmapped,,,,,,
+phase 2; high dose myobloc,unmapped,,,,,,
+phase 2; low dose myobloc,unmapped,,,,,,
+phase 3; myobloc,unmapped,,,,,,
+phenytoin,mapped,CHEMBL16,small molecule,sodium channel inhibitor,Sodium channel alpha subunit blocker,BLOCKER,SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
+pib,unmapped,,,,,,
+pioglitazone,mapped,CHEMBL595,small molecule,PPARγ modulator,Peroxisome proliferator-activated receptor gamma agonist,AGONIST,PPARG
+pipe-307,unmapped,,,,,,
+pipe-307 dose a,unmapped,,,,,,
+pipe-307 dose b,unmapped,,,,,,
+pipe-791,unmapped,,,,,,
+pirfenidone,unmapped,CHEMBL1256391,small molecule,,Unknown,,
+pirtobrutinib,mapped,CHEMBL4650485,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+platform therapies,unmapped,,,,,,
+platinum compound,unmapped,,,,,,
+platinum doublet,unmapped,,,,,,
+pleneva tm bgc20-0134,unmapped,,,,,,
+plovamer,unmapped,CHEMBL2107864,small molecule,,,,
+plovamer 0.5 milligram,unmapped,,,,,,
+pneumococcal polysaccharide vaccine,unmapped,,,,,,
+polyphenon e,unmapped,CHEMBL1201723,other,,Unknown,,
+ponesimod,mapped,CHEMBL1096146,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor Edg-1 agonist,AGONIST,S1PR1
+povetacicept,unmapped,CHEMBL5095306,protein,,,,
+pozelimab,mapped,CHEMBL4298086,antibody,anti-C5,Complement C5 inhibitor,INHIBITOR,C5
+pozelimab + cemdisiran,unmapped,,,,,,
+pravastatin,mapped,CHEMBL1144,small molecule,HMG-CoA reductase inhibitor,HMG-CoA reductase inhibitor,INHIBITOR,HMGCR
+prednisolone,mapped,CHEMBL131,small molecule,glucocorticoid receptor modulator,Glucocorticoid receptor agonist,AGONIST,NR3C1
+prednisone,mapped,CHEMBL635,small molecule,glucocorticoid receptor modulator,Glucocorticoid receptor agonist,AGONIST,NR3C1
+prednisone/prednisolone,unmapped,,,,,,
+privosegtor,unmapped,CHEMBL6068029,small molecule,,,,
+pro-1562,unmapped,,,,,,
+provigil,mapped,CHEMBL1373,small molecule,dopamine transporter inhibitor,Dopamine transporter inhibitor,INHIBITOR,SLC6A3
+psilocybin therapy,unmapped,,,,,,
+ptl201,unmapped,,,,,,
+pure ecgc,unmapped,,,,,,
+pyridostigmine,mapped,CHEMBL1115,small molecule,AChE inhibitor,Acetylcholinesterase inhibitor,INHIBITOR,ACHE
+qt-019c,unmapped,,,,,,
+quadrivalent influenza vaccine,unmapped,,,,,,
+raltegravir,mapped,CHEMBL254316,small molecule,Human immunodeficiency virus type 1 integrase inhibitor,Human immunodeficiency virus type 1 integrase inhibitor,INHIBITOR,pol
+ranitidine,mapped,CHEMBL1790041,small molecule,H2 receptor antagonist,Histamine H2 receptor antagonist,ANTAGONIST,HRH2
+rapcabtagene autoleucel,unmapped,CHEMBL5095147,gene therapy,,,,
+ratg,unmapped,,,,,,
+ravulizumab,mapped,CHEMBL3989986,antibody,anti-C5,Complement C5 inhibitor,INHIBITOR,C5
+rc18,unmapped,,,,,,
+rd06-04 cell,unmapped,,,,,,
+rd06-05 cart cell,unmapped,,,,,,
+re104 for,unmapped,,,,,,
+rebif® new formulation,unmapped,,,,,,
+rebif® new formulation using rebismarttm,unmapped,,,,,,
+recombinant zoster vaccine,unmapped,,,,,,
+remibrutinib,unmapped,CHEMBL4483575,small molecule,,,,
+remibrutinib treatment,unmapped,,,,,,
+rg2077,unmapped,,,,,,
+rhb-104,unmapped,,,,,,
+rhigf-1,unmapped,,,,,,
+rhigm22,unmapped,,,,,,
+rhuph20,mapped,CHEMBL1201718,other,Hyaluronic acid agent,Hyaluronic acid hydrolytic enzyme,HYDROLYTIC ENZYME,
+rifampicin,mapped,CHEMBL374478,small molecule,Bacterial DNA-directed RNA polymerase inhibitor,Bacterial DNA-directed RNA polymerase inhibitor,INHIBITOR,rpoA;rpoB;rpoC;rpoZ
+rifampin,mapped,CHEMBL374478,small molecule,Bacterial DNA-directed RNA polymerase inhibitor,Bacterial DNA-directed RNA polymerase inhibitor,INHIBITOR,rpoA;rpoB;rpoC;rpoZ
+riliprubart,unmapped,CHEMBL5315038,antibody,,,,
+riluzole,mapped,CHEMBL744,small molecule,sodium channel inhibitor,Sodium channel alpha subunit blocker,BLOCKER,SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
+ripertamab,unmapped,CHEMBL4594604,antibody,,,,
+ripk1 inhibitor,unmapped,,,,,,
+ritalin,mapped,CHEMBL796,small molecule,dopamine transporter inhibitor;noradrenaline transporter inhibitor,Dopamine transporter inhibitor;Norepinephrine transporter inhibitor,INHIBITOR,SLC6A2;SLC6A3
+rituximab,mapped,CHEMBL1201576,antibody,anti-CD20,B-lymphocyte antigen CD20 binding agent,BINDING AGENT,MS4A1
+rituximab it,unmapped,,,,,,
+rivastigmine transdermal patch,unmapped,,,,,,
+rns60,unmapped,,,,,,
+ro7121932,unmapped,,,,,,
+ro7268489,unmapped,,,,,,
+ro7845860,unmapped,,,,,,
+rocbrutinib,unmapped,CHEMBL5314539,small molecule,,,,
+rolipram,mapped,CHEMBL63,small molecule,PDE4 inhibitor,Phosphodiesterase 4 inhibitor,INHIBITOR,PDE4A;PDE4B;PDE4C;PDE4D
+rozanolixizumab,mapped,CHEMBL4297820,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 inhibitor,INHIBITOR,FCGRT
+rpc-1063,mapped,CHEMBL3707247,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor 5 modulator;Sphingosine 1-phosphate receptor Edg-1 modulator,MODULATOR,S1PR1;S1PR5
+rpc1063,mapped,CHEMBL3707247,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor 5 modulator;Sphingosine 1-phosphate receptor Edg-1 modulator,MODULATOR,S1PR1;S1PR5
+rph-035,unmapped,,,,,,
+rtl1000,unmapped,,,,,,
+ruxolitinib,mapped,CHEMBL1789941,small molecule,Non-receptor tyrosine-protein kinase TYK2 inhibitor;Tyrosine-protein kinase JAK1 inhibitor;Tyrosine-protein kinase JAK2 inhibitor;Tyrosine-protein kinase JAK3 inhibitor,Tyrosine-protein kinase JAK1 inhibitor;Tyrosine-protein kinase JAK2 inhibitor;Tyrosine-protein kinase JAK3 inhibitor;Tyrosine-protein kinase TYK2 inhibitor,INHIBITOR,JAK1;JAK2;JAK3;TYK2
+rvp-001,unmapped,,,,,,
+rvt-1401,mapped,CHEMBL4650514,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 inhibitor,INHIBITOR,FCGRT
+s-warfarin,unmapped,,,,,,
+s103 cells,unmapped,,,,,,
+salbutamol,mapped,CHEMBL714,small molecule,β2-adrenergic receptor modulator,Beta-2 adrenergic receptor agonist,AGONIST,ADRB2
+sar441344,unmapped,CHEMBL5095122,antibody,,,,
+sar443820,unmapped,CHEMBL5314474,small molecule,,,,
+satralizumab,mapped,CHEMBL3833307,antibody,anti-IL-6R,IL6Ralpha/GP130 antagonist,ANTAGONIST,IL6R;IL6ST
+sb683699,unmapped,,,,,,
+scm-010,unmapped,,,,,,
+sdm-8,unmapped,,,,,,
+seasonal influenza vaccine,unmapped,,,,,,
+seasonal quadrivalent influenza vaccine,unmapped,,,,,,
+secukinumab,mapped,CHEMBL1743068,antibody,anti-IL-17A,Interleukin 17A inhibitor,INHIBITOR,IL17A
+sequential treatment with rituximab and cladribine,unmapped,,,,,,
+serum containing avonex,unmapped,,,,,,
+serum free avonex,unmapped,,,,,,
+short-course ocrelizumab,unmapped,,,,,,
+shr-2173,unmapped,,,,,,
+silodosin,mapped,CHEMBL24778,small molecule,α1-adrenergic receptor antagonist,Alpha-1a adrenergic receptor antagonist,ANTAGONIST,ADRA1A
+simvastatin,mapped,CHEMBL1064,small molecule,HMG-CoA reductase inhibitor,HMG-CoA reductase inhibitor,INHIBITOR,HMGCR
+siponimod,mapped,CHEMBL2336071,small molecule,S1P receptor modulator,Sphingosine 1-phosphate receptor Edg-1 agonist,AGONIST,S1PR1
+sirolimus,mapped,CHEMBL413,small molecule,FKBP12 inhibitor,FK506-binding protein 1A inhibitor,INHIBITOR,FKBP1A
+sivelestat hydrate,unmapped,,,,,,
+smoked cannabis,unmapped,,,,,,
+solifenacin succinate,mapped,CHEMBL1734,small molecule,muscarinic receptor antagonist,Muscarinic acetylcholine receptor M2 antagonist;Muscarinic acetylcholine receptor M3 antagonist,ANTAGONIST,CHRM2;CHRM3
+solriamfetol,unmapped,CHEMBL4297620,small molecule,,Unknown,,
+sr-fampridine,unmapped,,,,,,
+standard first-line disease-modifying therapy,unmapped,,,,,,
+standard lymphodepletion regimen,unmapped,,,,,,
+standardized cannabis extract,unmapped,,,,,,
+stem cell transplantation,unmapped,,,,,,
+study drug,unmapped,,,,,,
+sublingual tizanidine,unmapped,,,,,,
+sugammadex,mapped,CHEMBL2111107,other,Rocuronium agent;Vecuronium agent,Rocuronium sequestering agent;Vecuronium sequestering agent,SEQUESTERING AGENT,
+sun-627,unmapped,,,,,,
+sunphenon egcg,unmapped,,,,,,
+sustained-release,unmapped,,,,,,
+suvorexant,mapped,CHEMBL1083659,small molecule,Orexin receptor antagonist,Orexin receptor antagonist,ANTAGONIST,HCRTR1;HCRTR2
+sys6020,unmapped,,,,,,
+t cell vaccination,unmapped,,,,,,
+t-cell vaccination,unmapped,,,,,,
+tacrolimus,mapped,CHEMBL269732,small molecule,FKBP12 inhibitor,FK506-binding protein 1A inhibitor,INHIBITOR,FKBP1A
+tak-079,mapped,CHEMBL4297833,antibody,anti-CD38,Lymphocyte differentiation antigen CD38 binding agent,BINDING AGENT,CD38
+tak-411,unmapped,,,,,,
+tak-771,unmapped,,,,,,
+tak-881,unmapped,,,,,,
+talquetamab,mapped,CHEMBL4594503,antibody,anti-CD3;anti-G-protein coupled receptor family C group 5 member D,G-protein coupled receptor family C group 5 member D binding agent;T cell surface glycoprotein CD3 binding agent,BINDING AGENT,CD3D;CD3E;CD3G;GPRC5D
+tamsulosin,mapped,CHEMBL836,small molecule,α1-adrenergic receptor antagonist,Adrenergic receptor alpha-1 antagonist,ANTAGONIST,ADRA1A;ADRA1B;ADRA1D
+tauroursodeoxycholic acid,unmapped,CHEMBL272427,small molecule,,Unknown,,
+tcelna,unmapped,CHEMBL2219427,cell therapy,,,,
+telitacicept,unmapped,CHEMBL5095293,protein,,,,
+temelimab,mapped,CHEMBL4594547,antibody,anti-syncytin-1,Syncytin-1 inhibitor,INHIBITOR,ERVW-1
+tenofovir alafenamide fumarate,mapped,CHEMBL2107825,small molecule,Human immunodeficiency virus type 1 reverse transcriptase inhibitor,Human immunodeficiency virus type 1 reverse transcriptase inhibitor,INHIBITOR,pol
+terfenadine,mapped,CHEMBL17157,small molecule,H1 receptor antagonist,Histamine H1 receptor antagonist,ANTAGONIST,HRH1
+teriflunomide,mapped,CHEMBL973,small molecule,DHODH inhibitor,Dihydroorotate dehydrogenase inhibitor,INHIBITOR,DHODH
+teriflunomide hmr1726,unmapped,,,,,,
+testosterone undecanoate,mapped,CHEMBL2107067,small molecule,androgen receptor modulator,Androgen Receptor agonist,AGONIST,AR
+tetanus diphtheria toxoid vaccine,unmapped,,,,,,
+tetanus diphtheria toxoids vaccine,unmapped,,,,,,
+tetanus toxoid containing vaccine,unmapped,,,,,,
+tetanus toxoid vaccine,unmapped,,,,,,
+"tetanus, diphtheria, and acellular pertussis vaccine",unmapped,,,,,,
+thc,unmapped,,,,,,
+tissue selective estrogen complex,unmapped,,,,,,
+tizanidine,mapped,CHEMBL1079,small molecule,α2-adrenergic receptor modulator,Adrenergic receptor alpha-2 agonist,AGONIST,ADRA2A;ADRA2B;ADRA2C
+tmp001,unmapped,,,,,,
+tocilizumab,mapped,CHEMBL1237022,antibody,anti-IL-6R,Interleukin-6 receptor alpha subunit inhibitor,INHIBITOR,IL6R
+tocilizumab injectable product,unmapped,,,,,,
+tofacitinib,mapped,CHEMBL221959,small molecule,JAK inhibitor,Janus Kinase (JAK) inhibitor,INHIBITOR,JAK1;JAK2;JAK3;TYK2
+tolebrutinib,mapped,CHEMBL4650323,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+tolebrutininb,unmapped,,,,,,
+tolerogenic dendritic cells,unmapped,,,,,,
+tolerogenic dendritic cells loaded with myelin peptides,unmapped,,,,,,
+tolerogenic fibroblasts,unmapped,,,,,,
+tolperisone,unmapped,CHEMBL1076211,small molecule,,,,
+topical preparation h arm,unmapped,,,,,,
+tovaxin,unmapped,,,,,,
+tovaxin autologous t cell vaccine,unmapped,,,,,,
+treatment withdrawal,unmapped,,,,,,
+trichuris suis ova,unmapped,,,,,,
+triomartm,unmapped,,,,,,
+trivalent seasonal influenza vaccine,unmapped,,,,,,
+truvada,unmapped,,,,,,
+trx319,unmapped,,,,,,
+tt vaccine,unmapped,,,,,,
+two-dose m0-m6 vaccination schedule,unmapped,,,,,,
+tylenol pill,unmapped,,,,,,
+tysabri and avonex,unmapped,,,,,,
+tysabri ®,unmapped,,,,,,
+ublituximab,mapped,CHEMBL2108354,antibody,anti-CD20,B-lymphocyte antigen CD20 binding agent,BINDING AGENT,MS4A1
+ucar t-cell,unmapped,,,,,,
+ucar t-cell group,unmapped,,,,,,
+ucb7665,mapped,CHEMBL4297820,antibody,anti-FcRn,IgG receptor FcRn large subunit p51 inhibitor,INHIBITOR,FCGRT
+umbilical cord mesenchymal stem cells,unmapped,,,,,,
+uncoupled rbcs,unmapped,,,,,,
+universal allogeneic anti-cd19/bcma car t-cells,unmapped,,,,,,
+universal bcma car-t,unmapped,,,,,,
+universal bcma car-t; universal cd19 car-t,unmapped,,,,,,
+universal cd19 car-t,unmapped,,,,,,
+universal cd19 car-γδt cell,unmapped,,,,,,
+universal star-t cell,unmapped,,,,,,
+urine samples,unmapped,,,,,,
+uro vaxom,unmapped,,,,,,
+vaginal estriol,unmapped,,,,,,
+vancomycin,mapped,CHEMBL262777,small molecule,Peptidoglycan inhibitor,Peptidoglycan inhibitor,INHIBITOR,
+vatelizumab,mapped,CHEMBL1743086,antibody,anti-α2-integrin,Integrin alpha-2 antagonist,ANTAGONIST,ITGA2
+vay736,mapped,CHEMBL4594357,antibody,anti-BAFF-R,Tumor necrosis factor receptor superfamily member 13C binding agent,BINDING AGENT,TNFRSF13C
+venlafaxine,mapped,CHEMBL637,small molecule,noradrenaline transporter inhibitor;serotonin transporter inhibitor,Norepinephrine transporter inhibitor;Serotonin transporter inhibitor;Unknown,INHIBITOR,SLC6A2;SLC6A4
+verum arm receiving gilenya®,unmapped,,,,,,
+verum arm receiving vitamin d oil,unmapped,,,,,,
+vigantol oil plus interferon beta-1a,unmapped,,,,,,
+vitamin d,mapped,CHEMBL1536,small molecule,vitamin D receptor modulator,Vitamin D receptor agonist,AGONIST,VDR
+vitamin e/selenium,unmapped,,,,,,
+vsn16r,unmapped,CHEMBL6068565,small molecule,,,,
+vt7208,unmapped,,,,,,
+vx15/2503,mapped,CHEMBL4297884,antibody,anti-SEMA4D,Semaphorin-4D inhibitor,INHIBITOR,SEMA4D
+withhold is,unmapped,,,,,,
+xbd173,mapped,CHEMBL513922,small molecule,TSPO modulator,Translocator protein agonist,AGONIST,TSPO
+xcel-mc-alpha,unmapped,,,,,,
+xembify,unmapped,,,,,,
+xyosted 75 milligram in auto-injector,unmapped,,,,,,
+yishen daluo yin granuls,unmapped,,,,,,
+zanubrutinib,mapped,CHEMBL3936761,small molecule,BTK inhibitor,Tyrosine-protein kinase BTK inhibitor,INHIBITOR,BTK
+zenapax,mapped,CHEMBL1201605,antibody,anti-IL-2 receptor,Interleukin-2 receptor inhibitor,INHIBITOR,IL2RA;IL2RB;IL2RG
+zilucoplan,mapped,CHEMBL4298207,protein,anti-C5,Complement C5 inhibitor,INHIBITOR,C5
+zilucoplan®,unmapped,,,,,,
+zoledronic acid,mapped,CHEMBL924,small molecule,Farnesyl pyrophosphate synthase inhibitor,Farnesyl diphosphate synthase inhibitor,INHIBITOR,FDPS
+β-interferon,unmapped,,,,,,
