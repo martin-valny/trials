@@ -31,6 +31,9 @@ from trialradar.store import COORDS_SCHEMA
 from trialradar.tables import Tables
 
 FEATURES = ["disease", "treatment_type", "molecule", "mechanism", "population"]
+# The neighbourhood statistic asks whether trials that study similar things succeed together, so it
+# leaves out the mechanism block (which mechanisms work is panel b's By mechanism view).
+STAT_FEATURES = [f for f in FEATURES if f != "mechanism"]
 _MIN_TRIALS = 4
 _DECIMALS = 4
 
@@ -144,13 +147,11 @@ def build_explorer(
         "dims": 3,
         "seed": ex.seed,
         "features": list(FEATURES),
+        "stat_features": list(STAT_FEATURES),
         "k": ex.k,
         "min_group": ex.min_group,
-        # HDBSCAN parameters for the named clusters, so Methods can state them
-        "clusters": {
-            "min_cluster_size": ex.clusters.min_cluster_size,
-            "min_samples": ex.clusters.min_samples,
-        },
+        # HDBSCAN parameters and naming thresholds for the named clusters, so Methods can state them
+        "clusters": ex.clusters.model_dump(),
     }
     if len(ids) < _MIN_TRIALS:
         n_pool, n_succ = sum(pool), sum(s for s, p in zip(succeeded, pool, strict=True) if p)
@@ -166,9 +167,11 @@ def build_explorer(
         return doc, pl.DataFrame(schema=COORDS_SCHEMA)
 
     # build_features orders rows by sorted id, which is ``ids``.
-    features = build_features(ids, full, drugs, types, feature_weights(cfg), mechs)
+    weights = feature_weights(cfg)
+    features = build_features(ids, full, drugs, types, weights, mechs)
+    stat_features = build_features(ids, full, drugs, types, {**weights, "mechanism": 0.0}, mechs)
     result = neighbourhood_lift(
-        features.matrix,
+        stat_features.matrix,
         ids,
         succeeded,
         pool,

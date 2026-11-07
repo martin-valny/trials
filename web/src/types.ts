@@ -145,6 +145,17 @@ export interface ExplorerCluster {
   z: number;
 }
 
+/** pipeline ClusterConfig, exported as explorer.json method.clusters. */
+export interface ExplorerClusterMethod {
+  min_cluster_size: number;
+  min_samples: number;
+  disease_share: number;
+  mechanism_share: number;
+  mechanism_min_overall: number;
+  type_share: number;
+  drug_share: number;
+}
+
 export interface ExplorerFile {
   clusters: ExplorerCluster[]; // empty when no clusters were found
   generated_for: string;
@@ -155,8 +166,10 @@ export interface ExplorerFile {
     k: number;
     min_group: number;
     seed: number;
-    /** HDBSCAN parameters for the named clusters (see Methods). */
-    clusters: { min_cluster_size: number; min_samples: number };
+    /** Feature blocks the neighbourhood statistic uses (the layout's, without mechanism). */
+    stat_features: string[];
+    /** HDBSCAN parameters and naming thresholds for the named clusters (see Methods). */
+    clusters: ExplorerClusterMethod;
   };
   stats: ExplorerStats;
   trials: ExplorerTrial[];

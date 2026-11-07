@@ -19,7 +19,16 @@ from trialradar.tables import Tables
 
 DAY = date(2026, 3, 1)
 TOP_KEYS = {"generated_for", "method", "stats", "clusters", "trials"}
-METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k", "min_group", "clusters"}
+METHOD_KEYS = {
+    "algorithm",
+    "dims",
+    "seed",
+    "features",
+    "stat_features",
+    "k",
+    "min_group",
+    "clusters",
+}
 STATS_KEYS = {
     "verdict",
     "lift",
@@ -81,11 +90,10 @@ def test_build_explorer_contract(cfg: AreaConfig) -> None:
         "features": ["disease", "treatment_type", "molecule", "mechanism", "population"],
         "k": cfg.explorer.k,
         "min_group": 10,
-        "clusters": {
-            "min_cluster_size": cfg.explorer.clusters.min_cluster_size,
-            "min_samples": cfg.explorer.clusters.min_samples,
-        },
+        "stat_features": ["disease", "treatment_type", "molecule", "population"],
+        "clusters": cfg.explorer.clusters.model_dump(),
     }
+    assert doc["method"]["clusters"]["mechanism_min_overall"] == 0.25
     assert set(doc["method"]) == METHOD_KEYS
     stats = doc["stats"]
     assert set(stats) == STATS_KEYS
@@ -369,3 +377,57 @@ def test_clusters_reach_the_document(cfg: AreaConfig) -> None:
         assert (k["x"], k["y"], k["z"]) in {(t["x"], t["y"], t["z"]) for t in members}
     assert all(t["cluster"] is None or t["cluster"] in ids for t in doc["trials"])
     json.dumps(doc, allow_nan=False)
+
+
+def test_statistic_leaves_out_the_mechanism_block_the_layout_keeps_it(
+    cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Martin's call: the neighbourhood statistic asks whether trials that study similar things
+    (disease, treatment type, molecule, population) succeed together, so it runs on features with
+    the mechanism weight forced to 0; the layout keeps the mechanism block."""
+    import trialradar.explorer.build as b
+
+    built: list[tuple[float, object]] = []
+    real_features = b.build_features
+
+    def spy_features(*args, **kwargs):  # type: ignore[no-untyped-def]
+        f = real_features(*args, **kwargs)
+        weights = args[4] if len(args) > 4 else kwargs["weights"]
+        built.append((weights["mechanism"], f))
+        return f
+
+    seen: dict[str, object] = {}
+    real_lift, real_embed = b.neighbourhood_lift, b.embed
+
+    def spy_lift(matrix, *a, **k):  # type: ignore[no-untyped-def]
+        seen["lift"] = matrix
+        return real_lift(matrix, *a, **k)
+
+    def spy_embed(features, *a, **k):  # type: ignore[no-untyped-def]
+        seen["embed"] = features
+        return real_embed(features, *a, **k)
+
+    monkeypatch.setattr(b, "build_features", spy_features)
+    monkeypatch.setattr(b, "neighbourhood_lift", spy_lift)
+    monkeypatch.setattr(b, "embed", spy_embed)
+    tables, extras, _ = _inputs(cfg)
+    build_explorer(tables, extras, cfg, {}, {}, DAY)
+    by_weight = dict(built)
+    assert set(by_weight) == {0.0, cfg.explorer.weights["mechanism"]}
+    assert cfg.explorer.weights["mechanism"] > 0
+    assert seen["lift"] is by_weight[0.0].matrix  # type: ignore[attr-defined]
+    assert seen["embed"] is by_weight[cfg.explorer.weights["mechanism"]]
+
+
+def test_statistic_is_unchanged_when_only_mechanism_data_changes(cfg: AreaConfig) -> None:
+    from pathlib import Path
+
+    mech = Path(__file__).resolve().parents[1] / "fixtures" / "mechanisms"
+    with_mech = cfg.model_copy(update={"mechanisms_dir": mech})
+    without = cfg.model_copy(update={"mechanisms_dir": mech / "absent"})
+    tables, extras, _ = _inputs(cfg)
+    doc_a, _ = build_explorer(tables, extras, with_mech, {}, {}, DAY, warnings=[])
+    doc_b, _ = build_explorer(tables, extras, without, {}, {}, DAY, warnings=[])
+    assert any(t["mechanisms"] for t in doc_a["trials"])
+    assert not any(t["mechanisms"] for t in doc_b["trials"])
+    assert doc_a["stats"] == doc_b["stats"]
