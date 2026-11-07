@@ -429,6 +429,8 @@ test("panel d names the trial's mechanism and modality", async () => {
   const d = screen.getByRole("region", { name: "Selected trial" });
   expect(within(d).getByText(/NRF2 activator/)).toBeInTheDocument();
   expect(within(d).getByText(/Small molecule/)).toBeInTheDocument();
+  // ... and its targets (spec 6.5).
+  expect(within(d).getByText("Targets: NFE2L2", { exact: false })).toBeInTheDocument();
 });
 
 test("the Labels switch sits in panel a's corner; with no clusters it offers Diseases (default) and Off", async () => {

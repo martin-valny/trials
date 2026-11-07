@@ -14,6 +14,7 @@ import {
   zoomAt,
   placeLabels,
   normalizeFile,
+  targetsText,
   hollowFor,
   splitLabel,
   type LabelSpot,
@@ -776,6 +777,14 @@ describe("popupPosition", () => {
     expect(popupPosition(990, 300, 200, 60, 1000, 600).left).toBe(1000 - 200 - 4);
     // Wider than the panel: pinned to the left margin.
     expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
+  });
+});
+
+describe("targetsText", () => {
+  it("names the first three targets, then '+n'; null when none", () => {
+    expect(targetsText(trial({ targets: ["MS4A1"] }))).toBe("Targets: MS4A1");
+    expect(targetsText(trial({ targets: ["A", "B", "C", "D", "E"] }))).toBe("Targets: A, B, C +2");
+    expect(targetsText(trial({ targets: [] }))).toBeNull();
   });
 });
 

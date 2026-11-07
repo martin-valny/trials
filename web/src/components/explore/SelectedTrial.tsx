@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadTrial } from "../../data";
-import { mechanismText, modalityText } from "../../lib/explorer";
+import { mechanismText, modalityText, targetsText } from "../../lib/explorer";
 import { firstSentences, outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
 
@@ -14,13 +14,14 @@ function drugList(drugs: string[]): string | null {
 }
 
 /**
- * The facts line's parts after the NCT number: drugs, mechanism, modality, phase, outcome, enrollment,
+ * The facts line's parts after the NCT number: drugs, mechanism, targets, modality, phase, outcome, enrollment,
  * sponsor (missing ones left out).
  */
 function factsOf(trial: ExplorerTrial): [string, string][] {
   const all: [string, string | null][] = [
     ["drugs", drugList(trial.drugs)],
     ["mechanism", mechanismText(trial)],
+    ["targets", targetsText(trial)],
     ["modality", modalityText(trial)],
     ["phase", phaseLabel(trial.phase)],
     ["outcome", outcomeLabel(trial.outcome)],

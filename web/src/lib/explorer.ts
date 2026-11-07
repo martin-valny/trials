@@ -171,6 +171,10 @@ export const categorySeries = (mode: "mechanism" | "modality", mechanisms: strin
 export const mechanismText = (t: ExplorerTrial): string | null =>
   t.mechanisms.length === 0 ? null : firstOf(t.mechanisms, 1);
 
+/** Panel d's targets part: "Targets: A, B, C +2"; null when none. */
+export const targetsText = (t: ExplorerTrial): string | null =>
+  t.targets.length === 0 ? null : `Targets: ${firstOf(t.targets, 3)}`;
+
 /** Panel d's modality part, as mechanismText. */
 export const modalityText = (t: ExplorerTrial): string | null =>
   t.modalities.length === 0 ? null : firstOf(t.modalities.map(modalityLabel), 1);
