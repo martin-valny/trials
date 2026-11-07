@@ -10,7 +10,7 @@ Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
 | File | What it is | Who writes it |
 |---|---|---|
 | `drugs.csv` | One row per drug: `drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets`. Multi-valued cells are `;`-joined. `status` is `mapped`, `unmapped`, `not_a_drug` or `manual`. | `pipeline/scripts/map_mechanisms.py` (regenerated; do not hand-edit) |
-| `overrides.csv` | Same columns. A row here replaces that drug's `drugs.csv` row entirely. Use it to fix a mapping, add a drug ChEMBL does not know (`manual`), or mark a non-drug (`not_a_drug`). | By hand. **`overrides.csv` is hand-written and always wins.** The script never touches it. |
+| `overrides.csv` | Same columns plus an optional `source` column (why the row exists; ignored by the pipeline). A row here replaces that drug's `drugs.csv` row entirely. Use it to fix a mapping, add a drug ChEMBL does not know (`manual`), or mark a non-drug (`not_a_drug`). | By hand. **`overrides.csv` is hand-written and always wins.** The script never touches it. |
 | `target_labels.csv` | `key,label`: short labels for targets. The key is a ChEMBL target id, a gene symbol, or gene symbols `;`-joined in sorted order (e.g. `S1PR1;S1PR2;S1PR3;S1PR4;S1PR5`). Unlabelled targets fall back to the ChEMBL target name, with a trailing " family" dropped. | By hand |
 
 ## How a drug is mapped
@@ -31,6 +31,15 @@ Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
    `molecule_type`.
 4. A molecule found but without a usable mechanism stays `unmapped` (it keeps its ChEMBL id
    and modality).
+
+## Current state
+
+First real run: 2026-11-06 snapshot, ChEMBL_37. 909 distinct drug names; ChEMBL maps 247,
+`overrides.csv` adds 199 `manual` rows (name variants, brands, codes, combinations split
+into named components, CAR-T with the target in its name) and 50 `not_a_drug` rows
+(sampling, imaging tracers/contrast, treatment-strategy labels). 63.8% of drug-bearing
+trials have all their drugs resolved (target 80%). Open questions and suggested
+corrections: `docs/superpowers/research/2026-11-06-mechanism-review-sheet.md`.
 
 ## Re-running
 

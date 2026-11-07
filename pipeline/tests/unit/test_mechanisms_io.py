@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -186,3 +187,28 @@ def test_duplicate_drug_rows_raise(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="duplicate"):
         read_mappings(tmp_path)
+
+
+def test_semicolons_in_description_text_become_commas(tmp_path: Path) -> None:
+    riv = DrugMapping(
+        drug="rivastigmine",
+        status="mapped",
+        chembl_id="CHEMBL636",
+        modality="small molecule",
+        mechanism_class=("cholinesterase inhibitor",),
+        mechanism=("Cholinesterases; ACHE & BCHE inhibitor",),
+        action_type=("ODD;ACTION",),
+        targets=("ACHE", "BCHE"),
+    )
+    write_drugs(tmp_path / "drugs.csv", [riv])
+    got = read_mappings(tmp_path)["rivastigmine"]
+    assert got.mechanism == ("Cholinesterases, ACHE & BCHE inhibitor",)
+    assert got.action_type == ("ODD,ACTION",)
+    assert got.targets == ("ACHE", "BCHE")
+
+
+@pytest.mark.parametrize("field", ["mechanism_class", "targets"])
+def test_semicolon_inside_a_class_or_target_raises(tmp_path: Path, field: str) -> None:
+    bad = replace(FTY, **{field: ("GABA-A receptor; anion channel antagonist",)})
+    with pytest.raises(ValueError, match=field):
+        write_drugs(tmp_path / "drugs.csv", [bad])
