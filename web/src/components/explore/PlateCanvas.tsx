@@ -65,7 +65,7 @@ export interface PlateHover {
 
 const SPIN = 0.0022; // radians per frame, as in the approved plate
 const TILT = 0.32;
-const ZOOM = 0.9; // of the half-size of the panel, after fitting the cloud's in-plane spread to the unit circle
+const ZOOM = 0.94; // share of the panel the still view's trimmed box fills (see restFit)
 const DRAG = 0.008; // radians per dragged pixel
 const CLICK_SLOP = 4; // px of pointer travel still counted as a click
 const EMPHASIS_MIN_R = 3; // px
@@ -115,29 +115,36 @@ export function fitAnchors(trials: ExplorerTrial[], anchors: ClusterAnchor[]): C
   return fitWith(trials, anchors).map((p, i) => ({ label: anchors[i].label, ...p }));
 }
 
-export interface PlateExtents {
-  /** 98th-percentile distance from the spin axis: the widest the cloud gets on screen as it turns. */
-  horizontal: number;
-  /** 98th-percentile screen height above or below centre once the view is tilted. */
-  vertical: number;
-}
-
-export function plateExtents(points: { x: number; y: number; z: number }[], tilt: number): PlateExtents {
-  const ct = Math.abs(Math.cos(tilt));
-  const st = Math.abs(Math.sin(tilt));
-  return {
-    horizontal: Math.max(1e-6, percentile(points.map((p) => Math.hypot(p.x, p.z)), 0.98)),
-    vertical: Math.max(1e-6, percentile(points.map((p) => Math.abs(p.y) * ct + Math.hypot(p.x, p.z) * st), 0.98)),
-  };
+/** The still view's projected box, in units of project()'s scale about the panel centre. */
+export interface RestBox {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
 }
 
 /**
- * Zoom for project() that fits the cloud's width to the panel width and its height to the panel height,
- * taking the tighter of the two so the scale stays the same on every axis.
+ * The cloud's box as the still view shows it (no turn, the plate's tilt, with perspective), trimmed to
+ * the 1st-99th percentile on each axis so a few outliers do not shrink the figure. Run once per file.
  */
-export function fitZoom(e: PlateExtents, w: number, h: number, zoom: number): number {
-  if (w <= 0 || h <= 0) return zoom;
-  return (zoom * Math.min(w / 2 / e.horizontal, h / 2 / e.vertical)) / (Math.min(w, h) / 2);
+export function restBox(points: { x: number; y: number; z: number }[], tilt: number): RestBox {
+  // project() at scale 1 about (1, 1): sx - 1 and sy - 1 are the unit offsets.
+  const at = project(points, 0, tilt, 2, 2, 1);
+  const xs = at.map((p) => p.sx - 1);
+  const ys = at.map((p) => p.sy - 1);
+  return { x0: percentile(xs, 0.01), x1: percentile(xs, 0.99), y0: percentile(ys, 0.01), y1: percentile(ys, 0.99) };
+}
+
+/**
+ * Scale (px per unit) and screen shift that fit ``box`` into a w x h panel at ``zoom`` of its size,
+ * taking the tighter axis so the scale is the same on both, and centring the box (not the centroid).
+ * The turn keeps this scale and shift, so outliers may clip while it plays.
+ */
+export function restFit(box: RestBox, w: number, h: number, zoom: number): { scale: number; dx: number; dy: number } {
+  const bw = Math.max(1e-6, box.x1 - box.x0);
+  const bh = Math.max(1e-6, box.y1 - box.y0);
+  const scale = zoom * Math.min(w / bw, h / bh);
+  return { scale, dx: -scale * ((box.x0 + box.x1) / 2), dy: -scale * ((box.y0 + box.y1) / 2) };
 }
 
 /** The p-quantile (lower nearest rank) of values; 0 for an empty list. */
@@ -145,6 +152,10 @@ function percentile(values: number[], p: number): number {
   const v = [...values].sort((a, b) => a - b);
   return v[Math.min(v.length - 1, Math.floor(p * (v.length - 1)))] ?? 0;
 }
+
+/** Projected points moved by (dx, dy) on screen. */
+const shift = (ps: Projected[], dx: number, dy: number): Projected[] =>
+  dx === 0 && dy === 0 ? ps : ps.map((p) => ({ ...p, sx: p.sx + dx, sy: p.sy + dy }));
 
 export interface DotScale {
   /** 98th-percentile enrollment over all trials; larger trials are drawn at this size. */
@@ -169,7 +180,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
   const { trials, visible, color, emphasis, hollow, labels, anchors: named } = props;
   const points = useMemo(() => fitToUnit(trials), [trials]);
   const scale = useMemo(() => dotScale(trials), [trials]);
-  const extents = useMemo(() => plateExtents(points, TILT), [points]);
+  const extents = useMemo(() => restBox(points, TILT), [points]);
   // Visibility, colour, emphasis and shape are resolved once per change of trials, filters or colouring;
   // the draw loop and hit testing only read these arrays.
   const mask = useMemo(() => Uint8Array.from(trials, (t) => (visible(t) ? 1 : 0)), [trials, visible]);
@@ -254,8 +265,11 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         live.current;
       const { labelColumn, side } = live.current;
       ctx.clearRect(0, 0, w, h);
-      const zoom = fitZoom(extents, w, h, ZOOM);
-      projected = viewPoints(project(pts, angle, TILT, w, h, zoom), view);
+      const fit = restFit(extents, w, h, ZOOM);
+      const zoom = w > 0 && h > 0 ? fit.scale / (Math.min(w, h) / 2) : 1;
+      // The fit's shift centres the still view's box; it is part of the projection, under zoom and pan.
+      const place = (ps: Projected[]) => viewPoints(shift(ps, fit.dx, fit.dy), view);
+      projected = place(project(pts, angle, TILT, w, h, zoom));
       // Painter's order: farthest (smallest depth) first.
       const order = projected.map((_, i) => i).sort((a, b) => projected[a].depth - projected[b].depth);
       const marked: number[] = [];
@@ -298,7 +312,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
       // Cluster labels: beside each condition's densest trial, projected with the cloud, in ink on a
       // plate halo, with a 1px leader back to the dot.
       // Zoomed in, a cluster whose anchor is off the canvas loses its label rather than pinning it to the edge.
-      const allAt = viewPoints(project(anchors, angle, TILT, w, h, zoom), view);
+      const allAt = place(project(anchors, angle, TILT, w, h, zoom));
       const keep = anchors.map((_, k) => k).filter((k) => view.k === 1 || inside(allAt[k]));
       if (keep.length > 0) {
         const at = keep.map((k) => allAt[k]);

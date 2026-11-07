@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type React from "react";
-import { dotRadius, dotScale, fitAnchors, fitToUnit, fitZoom, plateExtents, PlateCanvas, type PlateCanvasHandle } from "../src/components/explore/PlateCanvas";
+import { dotRadius, dotScale, fitAnchors, fitToUnit, PlateCanvas, restBox, restFit, type PlateCanvasHandle } from "../src/components/explore/PlateCanvas";
 import { nearestIndex, type Projected } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
@@ -222,21 +222,27 @@ test("fitToUnit uses the in-plane radius and stays isotropic", () => {
   expect(Math.abs(fitted[0].z)).toBeCloseTo(2, 1);
 });
 
-test("fitZoom fills a wide panel with one isotropic scale", () => {
-  // A cloud twice as wide (about the spin axis) as it is tall.
-  const ext = { horizontal: 1, vertical: 0.5 };
-  // Wide panel: width-limited (440 / 1) beats height-limited (280 / 0.5); scale = 440 * 0.9 px per unit.
-  const z = fitZoom(ext, 880, 560, 0.9);
-  expect(z * (Math.min(880, 560) / 2)).toBeCloseTo(440 * 0.9);
-  // Square panel: still width-limited by the wider horizontal spread.
-  expect(fitZoom(ext, 400, 400, 0.9) * 200).toBeCloseTo(200 * 0.9);
+test("restBox measures the still view's projected box between the 1st and 99th percentiles", () => {
+  // 100 points on a flat line along x from 0 to 9.9 (y = z = 0): at rest (no turn, no tilt) u = x * f, f = 1.
+  const pts = Array.from({ length: 100 }, (_, i) => ({ x: i / 10, y: 0, z: 0 }));
+  const box = restBox(pts, 0);
+  expect(box.x0).toBeCloseTo(0, 1);
+  expect(box.x1).toBeCloseTo(9.8, 1);
+  expect(box.y0).toBeCloseTo(0);
+  expect(box.y1).toBeCloseTo(0);
 });
 
-test("plateExtents measures spin-axis and tilted vertical spread at the 98th percentile", () => {
-  const pts = Array.from({ length: 100 }, (_, i) => ({ x: i % 2 ? 1 : -1, y: 0, z: 0 }));
-  const e = plateExtents(pts, 0);
-  expect(e.horizontal).toBeCloseTo(1);
-  expect(e.vertical).toBeCloseTo(0);
+test("restFit fills the panel with the trimmed box at one isotropic scale, centred on the box", () => {
+  // A box twice as wide as tall, off centre: x 1..3, y -0.5..0.5.
+  const box = { x0: 1, x1: 3, y0: -0.5, y1: 0.5 };
+  // Wide panel 880 x 560: width-limited (880 / 2 = 440 px per unit) beats height (560 / 1); then x 0.94.
+  const f = restFit(box, 880, 560, 0.94);
+  expect(f.scale).toBeCloseTo(440 * 0.94);
+  // The box centre (2, 0) lands on the panel centre: dx = -scale * 2.
+  expect(f.dx).toBeCloseTo(-440 * 0.94 * 2);
+  expect(f.dy).toBeCloseTo(0);
+  // Tall panel: height no longer binds less than width; still the tighter of the two.
+  expect(restFit(box, 200, 600, 0.94).scale).toBeCloseTo(100 * 0.94);
 });
 
 const renderStill = () =>
