@@ -135,6 +135,11 @@ def _read(path: Path) -> dict[str, DrugMapping]:
             raise ValueError(f"{path.name}: {exc}") from exc
 
 
+def read_drugs(path: Path) -> dict[str, DrugMapping]:
+    """One mapping CSV (``drugs.csv`` or ``overrides.csv``) keyed by casefolded drug name."""
+    return _read(path)
+
+
 def read_mappings(dir: Path) -> dict[str, DrugMapping]:
     """``drugs.csv`` with ``overrides.csv`` (optional) replacing whole rows, keyed by the
     lower-cased (casefolded) drug name.

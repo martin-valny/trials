@@ -6,9 +6,11 @@ Usage:
       [--record DIR] [--only name,name] [--labels <out>/target_labels.csv]
 
 Writes ``<out>/drugs.csv`` sorted by drug (never touches ``overrides.csv``) and prints a
-coverage report. ``--record DIR`` also saves every fetched ChEMBL response, trimmed to the
-fields the mapping uses, as test fixtures. ``--only`` maps just those names (also names
-absent from the snapshot, with a trial count of 0).
+coverage report: drug counts, then drug-bearing trials whose every drug is resolved
+(mapped, manual or not_a_drug) with ``overrides.csv`` applied, the published method.
+``--record DIR`` also saves every fetched ChEMBL response, trimmed to the fields the mapping
+uses, as test fixtures. ``--only`` re-maps just those names (also names absent from the
+snapshot) and merges them into the existing ``drugs.csv``: other rows are kept.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from trialradar.explorer.drugs import clean_drug_name
 from trialradar.explorer.extras import extract_extras
 from trialradar.mechanisms.chembl import ChemblClient, ChemblError
 from trialradar.mechanisms.classify import map_drug
-from trialradar.mechanisms.io import DrugMapping, read_target_labels, write_drugs
+from trialradar.mechanisms.io import DrugMapping, read_drugs, read_target_labels, write_drugs
 from trialradar.relevance import filter_relevant
 from trialradar.snapshot import list_snapshots, read_snapshot
 from trialradar.textnorm import load_aliases
@@ -101,35 +103,69 @@ def _snapshot_path(path: Path) -> Path:
     return path
 
 
-def drug_counts(snapshot: Path, config: Path) -> Counter[str]:
-    """Distinct cleaned experimental drug names with the number of trials using each."""
+def trial_drugs(snapshot: Path, config: Path) -> dict[str, frozenset[str]]:
+    """Each relevant trial's distinct cleaned experimental drug names (trials with none left out)."""
     cfg = load_config(config)
     aliases = load_aliases(cfg.aliases_dir / "intervention.csv")
     relevant = filter_relevant(read_snapshot(snapshot), cfg)
-    counts: Counter[str] = Counter()
-    for extras in extract_extras(relevant, cfg)[0].values():
+    out: dict[str, frozenset[str]] = {}
+    for nct, extras in extract_extras(relevant, cfg)[0].items():
         names = {
             clean_drug_name(n, aliases, cfg.explorer.exclude_terms)
             for n in extras.experimental_drugs
         }
-        counts.update(n for n in names if n)
-    return counts
+        if names := {n for n in names if n}:
+            out[nct] = frozenset(names)
+    return out
 
 
-def report(rows: Sequence[DrugMapping], counts: Counter[str], errors: dict[str, str]) -> None:
+def drug_counts(trials: dict[str, frozenset[str]]) -> Counter[str]:
+    """Distinct drug names with the number of trials using each."""
+    return Counter(n for names in trials.values() for n in names)
+
+
+_RESOLVED = ("mapped", "manual", "not_a_drug")
+
+
+def report(
+    rows: Sequence[DrugMapping],
+    trials: dict[str, frozenset[str]],
+    errors: dict[str, str],
+    overrides: dict[str, DrugMapping],
+) -> None:
+    """Drug counts from ``drugs.csv``, then trial coverage with ``overrides.csv`` applied."""
+    counts = drug_counts(trials)
     mapped = [r for r in rows if r.status == "mapped"]
     unmapped = [r for r in rows if r.status != "mapped"]
-    covered = sum(counts[r.drug] for r in mapped)
-    total = sum(counts[r.drug] for r in rows)
-    pct = 100 * covered / total if total else 0.0
     print(f"mapped {len(mapped)} / {len(rows)} drugs; unmapped {len(unmapped)}")
-    print(f"trial-weighted coverage {covered} / {total} drug-trial pairs ({pct:.1f}%)")
-    top = sorted(unmapped, key=lambda r: (-counts[r.drug], r.drug))[:TOP_UNMAPPED]
+    merged = {**{r.drug: r for r in rows}, **overrides}
+    resolved = sum(
+        all(n in merged and merged[n].status in _RESOLVED for n in names)
+        for names in trials.values()
+    )
+    pct = 100 * resolved / len(trials) if trials else 0.0
+    print(
+        f"{resolved} / {len(trials)} drug-bearing trials have every drug resolved ({pct:.1f}%)"
+        + (" with overrides" if overrides else "")
+    )
+    open_rows = [r for r in merged.values() if r.status == "unmapped"]
+    top = sorted(open_rows, key=lambda r: (-counts[r.drug], r.drug))[:TOP_UNMAPPED]
     if top:
         print(f"top {len(top)} unmapped:")
         for r in top:
             why = f"  [{errors[r.drug]}]" if r.drug in errors else ""
             print(f"{counts[r.drug]:6d}  {r.drug}{why}")
+
+
+def _overrides(out: Path) -> dict[str, DrugMapping]:
+    path = out / "overrides.csv"
+    if not path.is_file():
+        return {}
+    try:
+        return read_drugs(path)
+    except ValueError as exc:
+        print(f"warning: overrides.csv not applied to coverage: {exc}")
+        return {}
 
 
 def run(
@@ -141,8 +177,10 @@ def run(
     only: Sequence[str] | None,
     labels_path: Path | None = None,
 ) -> list[DrugMapping]:
-    counts = drug_counts(_snapshot_path(snapshot), config)
-    names = sorted({n.casefold().strip() for n in only} if only is not None else set(counts))
+    trials = trial_drugs(_snapshot_path(snapshot), config)
+    names = sorted(
+        {n.casefold().strip() for n in only} if only is not None else set(drug_counts(trials))
+    )
     labels = read_target_labels(labels_path or out / "target_labels.csv")
     rows: list[DrugMapping] = []
     errors: dict[str, str] = {}
@@ -153,9 +191,14 @@ def run(
             errors[name] = str(exc)
             rows.append(DrugMapping(name, "unmapped", None, None, (), (), (), ()))
     out.mkdir(parents=True, exist_ok=True)
+    if only is not None and (out / "drugs.csv").is_file():
+        # --only re-maps a few names: merge them into the existing file, keeping every other row.
+        merged = read_drugs(out / "drugs.csv")
+        merged.update({r.drug: r for r in rows})
+        rows = list(merged.values())
     write_drugs(out / "drugs.csv", rows)
-    report(rows, counts, errors)
-    return rows
+    report(rows, trials, errors, _overrides(out))
+    return sorted(rows, key=lambda r: r.drug)
 
 
 def main() -> None:

@@ -49,12 +49,18 @@ uv run python scripts/map_mechanisms.py ../raw/            # newest snapshot in 
 uv run python scripts/map_mechanisms.py <snapshot.jsonl.gz> --only fingolimod,ocrelizumab
 ```
 
+`--only` re-maps just the names given (also names not in the snapshot) and merges them into
+the existing `drugs.csv`: those rows are replaced or added, every other row is kept, and the
+file is written sorted.
+
 Options: `--out` (default `config/mechanisms`), `--cache` (default `pipeline/.cache/chembl`,
 git-ignored; responses are cached by URL, so a re-run is fast and polite; delete it to pick
 up a new ChEMBL release), `--labels`, `--config`, and `--record DIR`, which saves every
 response trimmed to the fields used (this is how `pipeline/tests/fixtures/chembl/` was made).
-The script prints mapped/unmapped counts, trial-weighted coverage and the 40 most frequent
-unmapped drugs; add those to `overrides.csv` or `target_labels.csv` as needed.
+The script prints mapped/unmapped drug counts, then coverage by trial with `overrides.csv`
+applied: drug-bearing trials whose every drug is `mapped`, `manual` or `not_a_drug` (the
+method behind the published 63.8%), and the 40 most frequent unmapped drugs; add those to
+`overrides.csv` or `target_labels.csv` as needed.
 
 On a Mac behind TLS inspection, Python may reject the proxy certificate; export the system
 roots and point `SSL_CERT_FILE` at them:

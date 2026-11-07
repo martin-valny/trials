@@ -17,7 +17,7 @@ from conftest import REPO_ROOT, make_study
 
 from trialradar.mechanisms.chembl import ChemblClient, ChemblError, cache_key
 from trialradar.mechanisms.classify import map_drug
-from trialradar.mechanisms.io import DrugMapping, read_mappings, read_target_labels
+from trialradar.mechanisms.io import DrugMapping, read_mappings, read_target_labels, write_drugs
 
 FIXTURES = REPO_ROOT / "pipeline" / "tests" / "fixtures" / "chembl"
 LABELS = read_target_labels(REPO_ROOT / "config" / "mechanisms" / "target_labels.csv")
@@ -323,7 +323,8 @@ def test_script_writes_drugs_csv_and_reports_coverage(
     assert got[UNKNOWN_NAME].status == "unmapped"
     report = capsys.readouterr().out
     assert "mapped 2 / 3 drugs" in report
-    assert "trial-weighted coverage 3 / 4" in report
+    # Coverage is by trial, the method behind the published figure: every drug resolved.
+    assert "3 / 4 drug-bearing trials have every drug resolved (75.0%)" in report
     assert f"1  {UNKNOWN_NAME}" in report
     assert sorted(p.name for p in record.iterdir()) == sorted(
         p.name
@@ -351,6 +352,69 @@ def test_script_only_filter_includes_names_absent_from_the_snapshot(tmp_path: Pa
         labels_path=REPO_ROOT / "config" / "mechanisms" / "target_labels.csv",
     )
     assert list(read_mappings(out)) == ["efgartigimod", "fingolimod"]
+
+
+def _snap(tmp_path: Path, *studies: dict[str, Any]) -> Path:
+    snap = tmp_path / "2026-11-01.jsonl.gz"
+    with gzip.open(snap, "wt", encoding="utf-8") as f:
+        for st in studies:
+            f.write(json.dumps(st) + "\n")
+    return snap
+
+
+def test_script_only_merges_into_the_existing_drugs_csv(tmp_path: Path) -> None:
+    """An existing 3-row file plus --only on one of its names gives 3 rows, that one re-mapped."""
+    mm = _load_script()
+    snap = _snap(tmp_path, _drug_study("NCT00000001", "Fingolimod"))
+    out = tmp_path / "mech"
+    out.mkdir()
+    blank = ((), (), (), ())
+    write_drugs(
+        out / "drugs.csv",
+        [
+            DrugMapping("alpha", "unmapped", None, None, *blank),
+            DrugMapping("beta", "unmapped", None, "antibody", *blank),
+            DrugMapping("fingolimod", "unmapped", None, None, *blank),
+        ],
+    )
+    mm.run(
+        snapshot=snap,
+        config=REPO_ROOT / "config" / "area.yaml",
+        out=out,
+        client=_client(),
+        only=["Fingolimod"],
+        labels_path=REPO_ROOT / "config" / "mechanisms" / "target_labels.csv",
+    )
+    got = read_mappings(out)
+    assert list(got) == ["alpha", "beta", "fingolimod"]
+    assert got["fingolimod"].mechanism_class == ("S1P receptor modulator",)
+    assert got["beta"].modality == "antibody"
+
+
+def test_script_coverage_applies_overrides(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    mm = _load_script()
+    snap = _snap(
+        tmp_path,
+        _drug_study("NCT00000001", "Fingolimod"),
+        _drug_study("NCT00000002", UNKNOWN_NAME),
+    )
+    out = tmp_path / "mech"
+    out.mkdir()
+    header = "drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets\n"
+    (out / "overrides.csv").write_text(
+        f"{header}{UNKNOWN_NAME},not_a_drug,,,,,,\n", encoding="utf-8"
+    )
+    mm.run(
+        snapshot=snap,
+        config=REPO_ROOT / "config" / "area.yaml",
+        out=out,
+        client=_client(),
+        only=None,
+        labels_path=REPO_ROOT / "config" / "mechanisms" / "target_labels.csv",
+    )
+    assert "2 / 2 drug-bearing trials have every drug resolved (100.0%)" in capsys.readouterr().out
 
 
 def _mol(cid: str, parent: str, name: str, *syns: str) -> dict[str, Any]:
