@@ -13,6 +13,7 @@ from trialradar.mechanisms.io import (
     DrugMapping,
     read_mappings,
     read_target_labels,
+    split_cell,
     write_drugs,
 )
 
@@ -212,3 +213,45 @@ def test_semicolon_inside_a_class_or_target_raises(tmp_path: Path, field: str) -
     bad = replace(FTY, **{field: ("GABA-A receptor; anion channel antagonist",)})
     with pytest.raises(ValueError, match=field):
         write_drugs(tmp_path / "drugs.csv", [bad])
+
+
+def _modality_override(tmp_path: Path, modality: str) -> None:
+    write_drugs(tmp_path / "drugs.csv", [FTY])
+    _write_overrides(
+        tmp_path / "overrides.csv",
+        [
+            {
+                "drug": "combo",
+                "status": "manual",
+                "chembl_id": "",
+                "modality": modality,
+                "mechanism_class": "",
+                "mechanism": "",
+                "action_type": "",
+                "targets": "",
+            }
+        ],
+    )
+
+
+def test_a_drug_may_have_several_modalities_from_the_closed_set(tmp_path: Path) -> None:
+    _modality_override(tmp_path, "protein;small molecule")
+    assert read_mappings(tmp_path)["combo"].modality == "protein;small molecule"
+    assert split_cell("protein;small molecule") == ("protein", "small molecule")
+
+
+def test_a_modality_outside_the_closed_set_raises(tmp_path: Path) -> None:
+    _modality_override(tmp_path, "protein;nanobody")
+    with pytest.raises(ValueError, match="nanobody"):
+        read_mappings(tmp_path)
+
+
+def test_read_target_labels_wraps_csv_errors(tmp_path: Path) -> None:
+    p = tmp_path / "target_labels.csv"
+    old = csv.field_size_limit(4)  # a cell over the limit makes the csv reader raise csv.Error
+    try:
+        p.write_text("key,label\nABCDEFGHIJ,x\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="target_labels.csv"):
+            read_target_labels(p)
+    finally:
+        csv.field_size_limit(old)

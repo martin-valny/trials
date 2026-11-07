@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from trialradar.config import AreaConfig
 from trialradar.explorer.outcomes import TrialDrugs
-from trialradar.mechanisms.io import DrugMapping, read_mappings
+from trialradar.mechanisms.io import DrugMapping, read_mappings, split_cell
 
 
 @dataclass(frozen=True)
@@ -20,7 +20,9 @@ class TrialMechanisms:
 def trial_mechanisms(
     drugs: TrialDrugs, mappings: Mapping[str, DrugMapping]
 ) -> dict[str, TrialMechanisms]:
-    """The sorted union over each trial's drugs; ``unmapped`` and ``not_a_drug`` add nothing."""
+    """The sorted union over each trial's drugs; ``unmapped`` and ``not_a_drug`` add nothing.
+
+    Modalities are single values: a drug's ``;``-joined modality cell is split."""
     out: dict[str, TrialMechanisms] = {}
     for nct, names in drugs.items():
         mech: set[str] = set()
@@ -32,8 +34,8 @@ def trial_mechanisms(
                 continue
             mech.update(m.mechanism_class)
             targets.update(m.targets)
-            if m.modality:
-                modalities.add(m.modality)
+            # A drug may list several modalities, ";"-joined: the trial gets each one.
+            modalities.update(split_cell(m.modality))
         out[nct] = TrialMechanisms(
             tuple(sorted(mech)), tuple(sorted(targets)), tuple(sorted(modalities))
         )

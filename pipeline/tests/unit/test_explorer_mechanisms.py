@@ -90,3 +90,15 @@ def test_min_group_must_be_positive() -> None:
     with pytest.raises(ValidationError):
         ExplorerConfig(min_group=0)
     assert ExplorerConfig().min_group == 10
+
+
+def test_joined_modalities_are_split_per_trial(tmp_path: Path) -> None:
+    """A drug with "protein;small molecule" gives the trial two modalities, never a joined value."""
+    (tmp_path / "drugs.csv").write_text(
+        "drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets\n"
+        "combo,manual,,protein;small molecule,,,,\n"
+        "mab,manual,,antibody,anti-X,,,X\n",
+        encoding="utf-8",
+    )
+    out = trial_mechanisms({"N1": frozenset({"combo", "mab"})}, read_mappings(tmp_path))
+    assert out["N1"].modalities == ("antibody", "protein", "small molecule")

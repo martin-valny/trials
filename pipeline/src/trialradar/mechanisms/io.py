@@ -22,6 +22,18 @@ DRUG_COLUMNS = [
     "targets",
 ]
 SEP = ";"
+# The closed set of modality values; a drug with several modalities lists them ``;``-joined.
+MODALITIES: frozenset[str] = frozenset(
+    {
+        "small molecule",
+        "antibody",
+        "protein",
+        "oligonucleotide",
+        "cell therapy",
+        "gene therapy",
+        "other",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -40,8 +52,12 @@ def _join(values: tuple[str, ...]) -> str:
     return SEP.join(values)
 
 
-def _split(cell: str | None) -> tuple[str, ...]:
+def split_cell(cell: str | None) -> tuple[str, ...]:
+    """A ``;``-joined cell as its stripped, non-empty parts."""
     return tuple(p for v in (cell or "").split(SEP) if (p := v.strip()))
+
+
+_split = split_cell
 
 
 _TEXT = ("mechanism", "action_type")  # display text: ';' becomes ','
@@ -84,11 +100,15 @@ def _parse(path: Path, line: int, raw: dict[str | None, Any]) -> DrugMapping:
     status = (raw.get("status") or "").strip()
     if status not in STATUSES:
         raise ValueError(f"{path.name} line {line}: bad status {status!r}")
+    modalities = _split(raw.get("modality"))
+    bad = [m for m in modalities if m not in MODALITIES]
+    if bad:
+        raise ValueError(f"{path.name} line {line}: unknown modality {bad[0]!r}")
     return DrugMapping(
         drug=drug,
         status=status,  # type: ignore[arg-type]  # checked against STATUSES above
         chembl_id=(raw.get("chembl_id") or "").strip() or None,
-        modality=(raw.get("modality") or "").strip() or None,
+        modality=SEP.join(modalities) or None,
         mechanism_class=_split(raw.get("mechanism_class")),
         mechanism=_split(raw.get("mechanism")),
         action_type=_split(raw.get("action_type")),
@@ -132,11 +152,14 @@ def read_mappings(dir: Path) -> dict[str, DrugMapping]:
 def read_target_labels(path: Path) -> dict[str, str]:
     """``key,label`` rows; the key is a ChEMBL target id, a gene symbol or ``;``-joined genes."""
     with path.open(newline="", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        if not {"key", "label"} <= set(reader.fieldnames or []):
-            raise ValueError(f"{path.name}: needs columns key,label")
-        return {
-            k: v
-            for raw in reader
-            if (k := (raw.get("key") or "").strip()) and (v := (raw.get("label") or "").strip())
-        }
+        try:
+            reader = csv.DictReader(f)
+            if not {"key", "label"} <= set(reader.fieldnames or []):
+                raise ValueError(f"{path.name}: needs columns key,label")
+            return {
+                k: v
+                for raw in reader
+                if (k := (raw.get("key") or "").strip()) and (v := (raw.get("label") or "").strip())
+            }
+        except csv.Error as exc:
+            raise ValueError(f"{path.name}: {exc}") from exc
