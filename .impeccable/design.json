@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T18:00:00Z",
+  "generatedAt": "2026-11-07T20:00:00Z",
   "title": "Design System: Trial Radar",
   "extensions": {
     "colorMeta": {
@@ -138,6 +138,36 @@
         "role": "secondary",
         "displayName": "Dark disease: Autoimmune encephalitis",
         "canonical": "#b8977a"
+      },
+      "category-other": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: other class (slate fill)",
+        "canonical": "#8796a3"
+      },
+      "dark-category-other": {
+        "role": "secondary",
+        "displayName": "Dark mechanism/modality: other class",
+        "canonical": "#6c7f93"
+      },
+      "category-multiple": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: more than one (hollow 1px ink ring)",
+        "canonical": "#111111"
+      },
+      "dark-category-multiple": {
+        "role": "secondary",
+        "displayName": "Dark more than one (hollow ring)",
+        "canonical": "#eceae4"
+      },
+      "category-none": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: none known (the cloud's pale ground)",
+        "canonical": "#c9d1d8"
+      },
+      "dark-category-none": {
+        "role": "secondary",
+        "displayName": "Dark none known",
+        "canonical": "#50575f"
       }
     },
     "typographyMeta": {
@@ -171,7 +201,15 @@
       },
       "canvas-label": {
         "displayName": "Canvas label",
-        "purpose": "Cluster labels on the plate."
+        "purpose": "Cluster labels on the plate: 600 11.5px ink on a 2px plate halo; a 'MS · ' disease prefix in 400 muted."
+      },
+      "canvas-numeral": {
+        "displayName": "Canvas numeral",
+        "purpose": "Phone (<=640px): 800 11px ink numerals 1-6 on a 3px plate halo at cluster anchors, keyed under the canvas."
+      },
+      "header-note": {
+        "displayName": "Header note",
+        "purpose": "Freshness: 12px muted; when stale 'Data may be stale.' in ink 700 then 'registry as of 6 Nov 2026'."
       }
     },
     "shadows": [],
@@ -213,8 +251,8 @@
       "name": "Segmented pill (Colour)",
       "kind": "chip",
       "refersTo": "pill-segmented-on",
-      "description": "Single-select; solid ink when pressed.",
-      "html": "<button class=\"ds-pill\" aria-pressed=\"true\">Outcome</button> <button class=\"ds-pill\" aria-pressed=\"false\">Phase</button>",
+      "description": "Single-select; solid ink when pressed. Colour: Outcome | Phase | Disease | Mechanism | Modality (five parts; spans the line on a phone). Panel b's Group by (By disease | By modality | By mechanism) uses the same pill.",
+      "html": "<button class=\"ds-pill\" aria-pressed=\"true\">Outcome</button> <button class=\"ds-pill\" aria-pressed=\"false\">Phase</button> <button class=\"ds-pill\" aria-pressed=\"false\">Mechanism</button>",
       "css": ".ds-pill{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-pill:hover{border-color:var(--ink,#111)}.ds-pill[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-pill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
     },
     {
@@ -229,17 +267,17 @@
       "name": "Panel bar",
       "kind": "custom",
       "refersTo": "",
-      "description": "Panel b bar with average tick.",
-      "html": "<div class=\"ds-bar\"><span>Disease</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:60%\"></i><i class=\"ds-avg\" style=\"left:45%\"></i></div></div>",
-      "css": ".ds-bar{display:grid;grid-template-columns:8rem 1fr;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-track{position:relative;height:12px;background:var(--pale,#e4e8eb)}.ds-fill{position:absolute;inset:0 auto 0 0;background:var(--ink,#111)}.ds-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink,#111);box-shadow:0 0 0 1px var(--plate,#fff)}"
+      "description": "Panel b bar with average tick. Rows share one column set (subgrid) so tracks align. A group under min_group (10 finished) is an outline bar (plate fill, 1px ink border) with its share and counts, and 11px muted 'too few to tell' under the count. Modality rows use the shown casing; ';'-joined modalities are split at data load.",
+      "html": "<div class=\"ds-bar\"><span>Antibody</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:24%\"></i><i class=\"ds-avg\" style=\"left:13%\"></i></div></div><div class=\"ds-bar ds-few\"><span>Other</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:17%\"></i><i class=\"ds-avg\" style=\"left:13%\"></i></div></div>",
+      "css": ".ds-bar{display:grid;grid-template-columns:8rem 1fr;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-track{position:relative;height:12px;background:var(--pale,#e4e8eb)}.ds-fill{position:absolute;inset:0 auto 0 0;background:var(--ink,#111)}.ds-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink,#111);box-shadow:0 0 0 1px var(--plate,#fff)} .ds-few .ds-fill{background:var(--plate,#fff);border:1px solid var(--ink,#111)}"
     },
     {
       "name": "Dropdown (filter)",
       "kind": "chip",
       "refersTo": "dropdown-rest",
-      "description": "Toolbar filter: hairline border and muted value at rest; ink border and 700 value once it narrows. Opens a flat plate inset with an ink top edge; a 44dvh bottom sheet with a 1px ink top rule on phones, scrolling the map into view above it.",
-      "html": "<button class=\"ds-dd\" data-narrowed=\"false\">Phase: <span class=\"ds-v\">all</span></button> <button class=\"ds-dd\" data-narrowed=\"true\">Disease: <span class=\"ds-v\">2 of 6</span></button>",
-      "css": ".ds-dd{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--rule,#d6dadd);border-radius:999px;padding:4px 10px;cursor:pointer;font-variant-numeric:tabular-nums}.ds-dd .ds-v{color:var(--muted,#5b6268)}.ds-dd[data-narrowed=true]{border-color:var(--ink,#111)}.ds-dd[data-narrowed=true] .ds-v{color:var(--ink,#111);font-weight:700}.ds-dd:hover{border-color:var(--ink,#111)}.ds-dd:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+      "description": "Toolbar filter (Disease, Phase, Outcome, Treatment, Mechanism, Modality, Years). At rest it shows only its name ('Mechanism' plus chevron) on a hairline border; the value stays in the accessible name ('Mechanism: all'). Once it narrows: ink border and ': value' with the value in 700. Opens a flat plate inset with an ink top edge; a 44dvh bottom sheet with a 1px ink top rule on phones, scrolling the map into view above it. Disease and Mechanism get a filter field: a hairline pill with one 2px ink outline at 2px offset on :focus-visible only.",
+      "html": "<button class=\"ds-dd\" data-narrowed=\"false\">Phase</button> <button class=\"ds-dd\" data-narrowed=\"true\">Disease: <span class=\"ds-v\">2 of 6</span></button>",
+      "css": ".ds-dd{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--rule,#d6dadd);border-radius:999px;padding:4px 10px;cursor:pointer;font-variant-numeric:tabular-nums}.ds-dd[data-narrowed=true]{border-color:var(--ink,#111)}.ds-dd[data-narrowed=true] .ds-v{color:var(--ink,#111);font-weight:700}.ds-dd:hover{border-color:var(--ink,#111)}.ds-dd:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
     },
     {
       "name": "Years range",
@@ -253,7 +291,7 @@
       "name": "Narrowing pill",
       "kind": "chip",
       "refersTo": "pill-narrowing-on",
-      "description": "Results posted: off is show-all (ink text, muted border, never struck through); on is solid ink. Tabular count.",
+      "description": "Results posted: off is show-all (ink text, muted border, never struck through); on is solid ink. Tabular count. Side by side it sits on the toolbar's first line, just before the count.",
       "html": "<button class=\"ds-np\" aria-pressed=\"false\">Results posted <span class=\"ds-n\">602</span></button> <button class=\"ds-np\" aria-pressed=\"true\">Results posted <span class=\"ds-n\">602</span></button>",
       "css": ".ds-np{display:inline-flex;gap:7px;font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-np .ds-n{color:var(--muted,#5b6268);font-variant-numeric:tabular-nums}.ds-np[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-np[aria-pressed=true] .ds-n{color:var(--plate,#fff)}"
     },
@@ -269,7 +307,7 @@
       "name": "Theme switch",
       "kind": "custom",
       "refersTo": "",
-      "description": "Header text control cycling System, Light, Dark; 9px key circle empty/solid/half.",
+      "description": "Header text control cycling System, Light, Dark; 9px key circle empty/solid/half. At 1279px and below the word 'Theme' is dropped (glyph and choice stay) so the header keeps to one line.",
       "html": "<button class=\"ds-th\"><span class=\"ds-k\"></span><span class=\"ds-tk\">Theme</span> Light</button>",
       "css": ".ds-th{display:inline-flex;align-items:center;gap:.45rem;font:inherit;background:none;border:0;color:var(--ink,#111);cursor:pointer}.ds-k{width:9px;height:9px;border:1px solid currentColor;border-radius:50%}.ds-tk{color:var(--muted,#5b6268)}"
     },
@@ -288,6 +326,30 @@
       "description": "Shown only while the map is zoomed, beside Play, in the same quiet style: text plus a drawn 10px four-corner frame glyph (1.5px ink stroke). Never red.",
       "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M1 3.5V1h2.5M6.5 1H9v2.5M9 6.5V9H6.5M3.5 9H1V6.5\"/></svg>Reset view</button>",
       "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
+    },
+    {
+      "name": "Freshness note",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "One quiet 12px header note, never a tinted pill. Stale: 'Data may be stale.' in ink 700, then 'registry as of 6 Nov 2026' muted; full timestamps in the title. No amber, no red.",
+      "html": "<span class=\"ds-fresh\"><b>Data may be stale.</b> registry as of 6 Nov 2026</span>",
+      "css": ".ds-fresh{font-size:12px;line-height:1.45;color:var(--muted,#5b6268)}.ds-fresh b{color:var(--ink,#111);font-weight:700}"
+    },
+    {
+      "name": "Cluster label",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Canvas label beside its anchor: 8 positions tried at up to 48px leaders, kept off dots, other labels, leaders and the control band; a label with no fit becomes a margin callout outside the cloud. Disease prefix 400 muted, mechanism or type part 600 ink, 2px plate halo, 1px ink leader.",
+      "html": "<span class=\"ds-cl\"><span class=\"ds-cl-p\">MS · </span>anti-CD20 (ocrelizumab)</span>",
+      "css": ".ds-cl{font-size:11.5px;font-weight:600;color:var(--ink,#111)}.ds-cl-p{font-weight:400;color:var(--muted,#5b6268)}"
+    },
+    {
+      "name": "Cluster key (phone)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "At 640px and below the map carries numerals 1-6 at cluster anchors (11px/800, plate halo) and this numbered 12px key sits under the canvas, journal figure-key style.",
+      "html": "<ol class=\"ds-ck\"><li><b>1</b><span><span class=\"ds-cl-p\">MS · </span>anti-CD20 (ocrelizumab)</span></li></ol>",
+      "css": ".ds-ck{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px;font-size:12px;line-height:1.4;color:var(--ink,#111)}.ds-ck li{display:flex;gap:6px}.ds-ck b{font-weight:800;font-variant-numeric:tabular-nums}.ds-cl-p{color:var(--muted,#5b6268)}"
     }
   ],
   "narrative": {
@@ -297,7 +359,7 @@
       "White plate, near-black ink, hairline rules; flat",
       "Red means succeeded and nothing else",
       "Bold lowercase panel letters a-d",
-      "Pills for all controls, in one toolbar above the plate",
+      "Pills for all controls, in a two-line toolbar above the plate",
       "Canvas starts still; Play turns it slowly"
     ],
     "rules": [
@@ -308,19 +370,24 @@
       },
       {
         "name": "The Shape-Not-Shade Rule",
-        "body": "Unknown outcome is a hollow 1px ring, distinguished by shape.",
+        "body": "Greys are told apart by shape, not shade: unknown outcome is a hollow 1px ring; in Mechanism and Modality modes 'more than one' is a hollow 1px ink ring, 'other' a slate fill and 'none known' the cloud's pale ground. Keys show ring swatches for rings.",
         "section": "colors"
       },
       {
         "name": "The Lowercase Letter Rule",
         "body": "Panels are labelled with bold lowercase letters only.",
         "section": "typography"
+      },
+      {
+        "name": "The Emphasis Pass",
+        "body": "Marks that carry the reading are redrawn on top, opaque, radius at least 3px, with a 1px plate knockout: succeeded (Outcome), every condition but the largest (Disease), and hued series classes (Mechanism, Modality). Phase has none.",
+        "section": "shapes"
       }
     ],
     "dos": [
       "Do letter panels with bold lowercase a, b, c, d at 22px/800.",
       "Do separate regions with 1px rules: ink above panel d, hairline under the toolbar and elsewhere.",
-      "Do keep controls as pills: solid ink when chosen or narrowing; hairline and muted value at rest; ink border and 700 value when a dropdown narrows.",
+      "Do keep controls as pills: solid ink when chosen or narrowing; a dropdown at rest shows only its name on a hairline; ink border and ': value' in 700 once it narrows.",
       "Do size dots by capped square-root enrollment and encode unknown by ring shape.",
       "Do honour both schemes via tokens."
     ],
