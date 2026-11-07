@@ -43,7 +43,7 @@ import {
   modalityText,
 } from "../src/lib/explorer";
 import type { Filters } from "../src/lib/explorer";
-import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
+import type { ExplorerCluster, ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
@@ -577,7 +577,24 @@ describe("placeLabels", () => {
 });
 
 describe("clusterLabels", () => {
-  const many = Array.from({ length: 30 }, (_, i) => ({ id: i, label: `C${i}`, n: 2 * i + 1, x: i, y: 0, z: 0 }));
+  const many: ExplorerCluster[] = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    label: `C${i}`,
+    kind: "type",
+    n: 2 * i + 1,
+    x: i,
+    y: 0,
+    z: 0,
+  }));
+  const c = (id: number, label: string, kind: ExplorerCluster["kind"], n: number): ExplorerCluster => ({
+    id,
+    label,
+    kind,
+    n,
+    x: id,
+    y: 0,
+    z: 0,
+  });
   it("keeps the largest clusters, at most max, and none below 15 trials", () => {
     const desk = clusterLabels(many, 8);
     expect(desk).toHaveLength(8);
@@ -587,6 +604,39 @@ describe("clusterLabels", () => {
     const small = many.slice(0, 10); // n = 1..19: only 15, 17, 19 qualify
     expect(clusterLabels(small, 8).map((a) => a.label)).toEqual(["C9", "C8", "C7"]);
     expect(clusterLabels([], 8)).toEqual([]);
+  });
+  it("shows a duplicate label once, at its largest instance", () => {
+    const dup = [c(0, "A · drugs", "type", 20), c(1, "A · drugs", "type", 90), c(2, "B · devices", "type", 40)];
+    expect(clusterLabels(dup, 8)).toEqual([
+      { label: "A · drugs", x: 1, y: 0, z: 0 },
+      { label: "B · devices", x: 2, y: 0, z: 0 },
+    ]);
+  });
+  it("puts mechanism clusters first, then type, then mixed, each largest first", () => {
+    const cs = [
+      c(0, "A · mixed", "mixed", 300),
+      c(1, "A · drugs", "type", 200),
+      c(2, "A · class X (x)", "mechanism", 16),
+      c(3, "A · behavioural", "type", 50),
+      c(4, "A · class Y", "mechanism", 40),
+      c(5, "A · class Z", "mechanism", 10), // below 15: never shown
+    ];
+    expect(clusterLabels(cs, 8).map((a) => a.label)).toEqual([
+      "A · class Y",
+      "A · class X (x)",
+      "A · drugs",
+      "A · behavioural",
+      "A · mixed",
+    ]);
+  });
+  it("still caps after ordering and de-duplicating", () => {
+    const cs = [
+      ...Array.from({ length: 5 }, (_, i) => c(i, `M${i}`, "mechanism", 20 + i)),
+      ...Array.from({ length: 5 }, (_, i) => c(10 + i, "T", "type", 100 + i)),
+      ...Array.from({ length: 5 }, (_, i) => c(20 + i, `T${i}`, "type", 50 + i)),
+    ];
+    expect(clusterLabels(cs, 8).map((a) => a.label)).toEqual(["M4", "M3", "M2", "M1", "M0", "T", "T4", "T3"]);
+    expect(clusterLabels(cs, 6).map((a) => a.label)).toEqual(["M4", "M3", "M2", "M1", "M0", "T"]);
   });
 });
 

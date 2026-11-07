@@ -132,9 +132,13 @@ export interface ExplorerStats {
 }
 
 /** A named HDBSCAN cluster on the map; x/y/z is a member trial (the one nearest the median). */
+/** Which naming branch named a cluster's middle part: a mechanism class, an intervention type, or neither. */
+export type ClusterKind = "mechanism" | "type" | "mixed";
+
 export interface ExplorerCluster {
   id: number;
   label: string;
+  kind: ClusterKind;
   n: number;
   x: number;
   y: number;

@@ -434,7 +434,7 @@ test("the Labels switch sits in panel a's corner; with no clusters it offers Dis
 
 test("with named clusters the Labels switch defaults to Clusters", async () => {
   const t = explorer.trials[6];
-  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Anti-CD20 antibodies", n: 20, x: t.x, y: t.y, z: t.z }] } });
+  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Anti-CD20 antibodies", kind: "mechanism", n: 20, x: t.x, y: t.y, z: t.z }] } });
   await ready();
   const labels = screen.getByRole("group", { name: "Labels" });
   expect(within(labels).getAllByRole("button").map((b) => b.textContent)).toEqual(["Clusters", "Diseases", "Off"]);
@@ -463,7 +463,7 @@ test("a class shown only on multi-class trials gets no swatch; the 'none' key sw
 
 test("clusters too small to label are not offered: Labels defaults to Diseases", async () => {
   const t = explorer.trials[6];
-  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Tiny", n: 14, x: t.x, y: t.y, z: t.z }] } });
+  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Tiny", kind: "type", n: 14, x: t.x, y: t.y, z: t.z }] } });
   await ready();
   const labels = screen.getByRole("group", { name: "Labels" });
   expect(within(labels).queryByRole("button", { name: "Clusters" })).not.toBeInTheDocument();

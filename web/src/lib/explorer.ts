@@ -180,14 +180,19 @@ export function paintedClasses(trials: ExplorerTrial[], mode: "mechanism" | "mod
 /** Fewest trials a named cluster needs for a label on the map. */
 export const CLUSTER_LABEL_MIN_N = 15;
 
+const KIND_RANK: Record<ExplorerCluster["kind"], number> = { mechanism: 0, type: 1, mixed: 2 };
+
 /**
- * The named clusters labelled on the map: those with at least ``minN`` trials, largest first, at most
- * ``max`` (8 side by side, 6 on a phone), so the labels never crowd the cloud.
+ * The named clusters labelled on the map: those with at least ``minN`` trials, each label once (its
+ * largest instance), mechanism-named clusters first, then type-named, then mixed, each largest first,
+ * at most ``max`` (8 side by side, 6 on a phone), so the labels never crowd the cloud.
  */
 export function clusterLabels(clusters: ExplorerCluster[], max: number, minN = CLUSTER_LABEL_MIN_N): ClusterAnchor[] {
-  return clusters
-    .filter((c) => c.n >= minN)
-    .sort((a, b) => b.n - a.n || a.id - b.id)
+  const bySize = clusters.filter((c) => c.n >= minN).sort((a, b) => b.n - a.n || a.id - b.id);
+  const seen = new Set<string>();
+  const unique = bySize.filter((c) => !seen.has(c.label) && (seen.add(c.label), true));
+  return unique
+    .sort((a, b) => (KIND_RANK[a.kind] ?? 2) - (KIND_RANK[b.kind] ?? 2) || b.n - a.n || a.id - b.id)
     .slice(0, max)
     .map(({ label, x, y, z }) => ({ label, x, y, z }));
 }
