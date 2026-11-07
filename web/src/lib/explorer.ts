@@ -180,21 +180,33 @@ export function paintedClasses(trials: ExplorerTrial[], mode: "mechanism" | "mod
 /** Fewest trials a named cluster needs for a label on the map. */
 export const CLUSTER_LABEL_MIN_N = 15;
 
-const KIND_RANK: Record<ExplorerCluster["kind"], number> = { mechanism: 0, type: 1, mixed: 2 };
+/** Share of the label slots reserved for mechanism-named clusters: 5 of 8 side by side, 4 of 6 on a phone. */
+const MECHANISM_SLOT_SHARE = 0.6;
 
 /**
- * The named clusters labelled on the map: those with at least ``minN`` trials, each label once (its
- * largest instance), mechanism-named clusters first, then type-named, then mixed, each largest first,
- * at most ``max`` (8 side by side, 6 on a phone), so the labels never crowd the cloud.
+ * The named clusters labelled on the map, at most ``max`` (8 side by side, 6 on a phone) so the labels
+ * never crowd the cloud. Only clusters with at least ``minN`` trials, each label once (its largest
+ * instance). Slots are reserved by kind: mechanism-named clusters get ``ceil(0.6 × max)``, type-named
+ * the rest, each kind largest first; a kind with fewer clusters than its share gives the spare slots to
+ * the other, and mixed clusters fill whatever remains. Mechanism labels come first, then type, then mixed.
  */
 export function clusterLabels(clusters: ExplorerCluster[], max: number, minN = CLUSTER_LABEL_MIN_N): ClusterAnchor[] {
   const bySize = clusters.filter((c) => c.n >= minN).sort((a, b) => b.n - a.n || a.id - b.id);
   const seen = new Set<string>();
   const unique = bySize.filter((c) => !seen.has(c.label) && (seen.add(c.label), true));
-  return unique
-    .sort((a, b) => (KIND_RANK[a.kind] ?? 2) - (KIND_RANK[b.kind] ?? 2) || b.n - a.n || a.id - b.id)
-    .slice(0, max)
-    .map(({ label, x, y, z }) => ({ label, x, y, z }));
+  const mech = unique.filter((c) => c.kind === "mechanism");
+  const type = unique.filter((c) => c.kind === "type");
+  const mixed = unique.filter((c) => c.kind !== "mechanism" && c.kind !== "type");
+  const mechSlots = Math.ceil(max * MECHANISM_SLOT_SHARE);
+  const nMech = Math.min(mech.length, max - Math.min(type.length, max - mechSlots)); // plus spare type slots
+  const nType = Math.min(type.length, max - nMech); // plus spare mechanism slots
+  const nMixed = Math.max(0, max - nMech - nType);
+  return [...mech.slice(0, nMech), ...type.slice(0, nType), ...mixed.slice(0, nMixed)].map(({ label, x, y, z }) => ({
+    label,
+    x,
+    y,
+    z,
+  }));
 }
 
 // --- end mechanism and modality ---------------------------------------------------------------------

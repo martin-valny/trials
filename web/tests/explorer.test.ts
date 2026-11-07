@@ -636,7 +636,24 @@ describe("clusterLabels", () => {
       ...Array.from({ length: 5 }, (_, i) => c(20 + i, `T${i}`, "type", 50 + i)),
     ];
     expect(clusterLabels(cs, 8).map((a) => a.label)).toEqual(["M4", "M3", "M2", "M1", "M0", "T", "T4", "T3"]);
-    expect(clusterLabels(cs, 6).map((a) => a.label)).toEqual(["M4", "M3", "M2", "M1", "M0", "T"]);
+    expect(clusterLabels(cs, 6).map((a) => a.label)).toEqual(["M4", "M3", "M2", "M1", "T", "T4"]);
+  });
+  const kinds = (as: { label: string }[]) => as.map((a) => a.label[0]).join("");
+  const set = (m: number, t: number, x: number): ExplorerCluster[] => [
+    ...Array.from({ length: m }, (_, i) => c(i, `M${i}`, "mechanism", 20 + i)),
+    ...Array.from({ length: t }, (_, i) => c(100 + i, `T${i}`, "type", 200 + i)),
+    ...Array.from({ length: x }, (_, i) => c(200 + i, `X${i}`, "mixed", 300 + i)),
+  ];
+  it("reserves 5 mechanism + 3 type slots on desktop and 4 + 2 on a phone", () => {
+    const cs = set(10, 10, 10);
+    expect(clusterLabels(cs, 8).map((a) => a.label)).toEqual(["M9", "M8", "M7", "M6", "M5", "T9", "T8", "T7"]);
+    expect(clusterLabels(cs, 6).map((a) => a.label)).toEqual(["M9", "M8", "M7", "M6", "T9", "T8"]);
+  });
+  it("gives a kind's spare slots to the other kind, then to mixed", () => {
+    expect(kinds(clusterLabels(set(2, 10, 10), 8))).toBe("MMTTTTTT");
+    expect(kinds(clusterLabels(set(10, 1, 10), 8))).toBe("MMMMMMMT");
+    expect(kinds(clusterLabels(set(1, 1, 10), 6))).toBe("MTXXXX");
+    expect(kinds(clusterLabels(set(0, 1, 0), 1))).toBe("T");
   });
 });
 
