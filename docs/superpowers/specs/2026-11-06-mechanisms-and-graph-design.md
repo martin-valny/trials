@@ -178,6 +178,8 @@ Run by hand (Martin's Mac) or by a manual-dispatch workflow that opens a PR; nev
 10. A short `mechanism_class` derived from target family + action type, reviewed by hand for top drugs (6.1).
 11. Graph success colour uses the R18 pool; node size uses all drug-bearing trials (7.2).
 12. Highlight follows drug → target → pathway → parent only; shared-gene links are context; top-level pathways never count as convergence (7.2).
+13. (Phase 2 outcome, 2026-11-07) The first mapping shipped at 63.8% coverage of drug-bearing trials, below the 80% target in 6.6: the no-guessing rule beat the target. The remaining decisions (about 170 trials) are in `docs/superpowers/research/2026-11-06-mechanism-review-sheet.md`.
+14. (Phase 2 outcome) "Too few to tell" (item 7) is drawn as the outline bar with its counts plus small "too few to tell" words, in every panel b grouping, rather than a sentence in place of the bar. Layout weight 1.0; HDBSCAN `min_cluster_size` 25, `min_samples` 10 (section 11).
 
 ## 11. Left to the builder
 HDBSCAN parameters; the starting mechanism weight (decided with `cluster_report.py`); Jaccard floor and top-k; pathway pruning cap; force-layout algorithm and parameters; exact palettes within `DESIGN.md`; popup and dropdown styling; whether the manual mapping workflow is added in phase 2 or later.
