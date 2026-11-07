@@ -332,10 +332,19 @@ test("success panel switches between disease, modality and mechanism", async () 
   expect(within(group).getByRole("button", { name: "By mechanism" })).toHaveAttribute("aria-pressed", "true");
   expect(within(b).getByText("Trials with several mechanisms count in each.")).toBeInTheDocument();
   expect(within(b).getByText("anti-CD20")).toBeInTheDocument();
-  expect(within(b).getByText(/too few to tell \(1 finished; needs ≥10\)/)).toBeInTheDocument();
+  // A group under min_group is the contract's outline bar with its counts, aligned with the others,
+  // plus small "too few to tell" words by the count; never a sentence in place of the bar.
+  const row = within(b).getByText("anti-CD20").closest("li")!;
+  expect(row).toHaveClass("few");
+  expect(row.querySelector(".bar-track")).not.toBeNull();
+  expect(row.querySelector(".bar-k")!.textContent).toMatch(/^\d+\/1/);
+  expect(within(row).getByText("too few to tell")).toBeInTheDocument();
+  expect(within(b).getByText(/Outlined: fewer than 10 finished trials\./)).toBeInTheDocument();
   expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By modality" }));
-  expect(within(b).getByText("Trials with several mechanisms count in each.")).toBeInTheDocument();
+  // The note follows the grouping; modality rows use the shown casing.
+  expect(within(b).getByText("Trials with several modalities count in each.")).toBeInTheDocument();
+  expect(within(b).getByText("Antibody")).toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By disease" }));
   expect(within(b).queryByText("Trials with several mechanisms count in each.")).not.toBeInTheDocument();
 });

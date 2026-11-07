@@ -119,6 +119,17 @@ const MODALITY_SERIES = MODALITIES.slice(0, 6);
 export const modalityLabel = (m: string): string =>
   m === NONE ? "No known modality" : m.charAt(0).toUpperCase() + m.slice(1);
 
+/**
+ * The file as the page uses it: a drug can list several modalities joined by ";" ("protein;small
+ * molecule"), so each trial's modalities are split into one value each, in order, without repeats.
+ */
+export function normalizeFile(f: ExplorerFile): ExplorerFile {
+  const split = (values: string[]) => [
+    ...new Set(values.flatMap((v) => v.split(";").map((x) => x.trim())).filter((x) => x !== "")),
+  ];
+  return { ...f, trials: f.trials.map((t) => ({ ...t, modalities: split(t.modalities) })) };
+}
+
 /** A mechanism class as shown; NONE -> "No known mechanism". */
 export const mechanismLabel = (m: string): string => (m === NONE ? "No known mechanism" : m);
 

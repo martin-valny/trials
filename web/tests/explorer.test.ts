@@ -13,6 +13,7 @@ import {
   viewPoints,
   zoomAt,
   placeLabels,
+  normalizeFile,
   hollowFor,
   splitLabel,
   type LabelSpot,
@@ -773,6 +774,24 @@ describe("popupPosition", () => {
     expect(popupPosition(990, 300, 200, 60, 1000, 600).left).toBe(1000 - 200 - 4);
     // Wider than the panel: pinned to the left margin.
     expect(popupPosition(100, 300, 400, 60, 320, 600).left).toBe(4);
+  });
+});
+
+describe("normalizeFile", () => {
+  it("splits ';'-joined modality values into one modality each, keeping order and dropping repeats", () => {
+    const f = {
+      clusters: [],
+      trials: [
+        trial({ modalities: ["protein;small molecule"] }),
+        trial({ modalities: ["antibody", "antibody; protein"] }),
+        trial({ modalities: [] }),
+      ],
+    } as unknown as ExplorerFile;
+    expect(normalizeFile(f).trials.map((t) => t.modalities)).toEqual([
+      ["protein", "small molecule"],
+      ["antibody", "protein"],
+      [],
+    ]);
   });
 });
 

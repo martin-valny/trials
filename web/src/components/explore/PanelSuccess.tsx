@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { liftSentence, successGroups } from "../../lib/explorer";
+import { liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
 import type { SuccessBy } from "../../lib/explorer";
 import type { ExplorerStats, ExplorerTrial } from "../../types";
 
@@ -68,46 +68,41 @@ export function PanelSuccess({
       ) : (
         <ul className="bars">
           {rows.map((row) => {
+            // Under min_group the share is still drawn, as the contract's outline bar, with its counts.
             const few = row.finished < minGroup;
-            // Disease view keeps today's outlined bar; modality and mechanism say it in words.
-            const tooFew = few && row.finished > 0 && by !== "disease";
-            // Disease view computes the share from the counts, not row.rate (null below min_group), so rows
-            // under min_group still draw an outlined bar, as before.
-            const rate = by === "disease" ? (row.finished > 0 ? row.succeeded / row.finished : null) : row.rate;
+            const rate = row.finished > 0 ? row.succeeded / row.finished : null;
+            const name = by === "modality" ? modalityLabel(row.group) : row.group;
             return (
               <li className={few ? "bar few" : "bar"} key={row.group}>
-                <span className="bar-label">{row.group}</span>
-                {tooFew ? (
-                  <span className="bar-few-note">
-                    too few to tell ({fmt(row.finished)} finished; needs ≥{minGroup})
+                <span className="bar-label">{name}</span>
+                <span className="bar-track" aria-hidden="true">
+                  {rate !== null && rate > 0 ? <span className="bar-fill" style={{ width: pct(rate) }} /> : null}
+                  {avg !== null ? <span className="bar-avg" style={{ left: pct(avg) }} /> : null}
+                </span>
+                <span className="bar-n">
+                  {rate !== null ? pct(rate) : "—"}
+                  <span className="visually-hidden">
+                    {rate !== null
+                      ? ` (${fmt(row.succeeded)} of ${fmt(row.finished)} finished trials)`
+                      : " (no finished trials yet)"}
                   </span>
-                ) : (
-                  <>
-                    <span className="bar-track" aria-hidden="true">
-                      {rate !== null && rate > 0 ? <span className="bar-fill" style={{ width: pct(rate) }} /> : null}
-                      {avg !== null ? <span className="bar-avg" style={{ left: pct(avg) }} /> : null}
-                    </span>
-                    <span className="bar-n">
-                      {rate !== null ? pct(rate) : "—"}
-                      <span className="visually-hidden">
-                        {rate !== null
-                          ? ` (${fmt(row.succeeded)} of ${fmt(row.finished)} finished trials)`
-                          : " (no finished trials yet)"}
-                      </span>
-                    </span>
-                    <span className="bar-k" aria-hidden="true">
-                      {fmt(row.succeeded)}/{fmt(row.finished)}
-                    </span>
-                  </>
-                )}
+                </span>
+                <span className="bar-k">
+                  <span aria-hidden="true">
+                    {fmt(row.succeeded)}/{fmt(row.finished)}
+                  </span>
+                  {few && row.finished > 0 ? <span className="bar-few">too few to tell</span> : null}
+                </span>
               </li>
             );
           })}
         </ul>
       )}
-      {by !== "disease" ? <p className="panel-note">Trials with several mechanisms count in each.</p> : null}
+      {by !== "disease" ? (
+        <p className="panel-note">Trials with several {by === "modality" ? "modalities" : "mechanisms"} count in each.</p>
+      ) : null}
       {avg !== null ? <p className="panel-note">Tick: average across all finished trials that could succeed ({pct(avg)}).</p> : null}
-      {by === "disease" && rows.some((r) => r.finished < minGroup) ? (
+      {rows.some((r) => r.finished < minGroup) ? (
         <p className="panel-note">Outlined: fewer than {minGroup} finished trials.</p>
       ) : null}
       <p className="panel-claim">{liftSentence(stats)}</p>
