@@ -52,3 +52,27 @@ test("scrolls again after meta has loaded", async () => {
   await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
   expect(scroll.mock.calls.length).toBeGreaterThanOrEqual(2);
 });
+
+test("methods states the mechanism source, licence, coverage, weight, counting rule and clusters", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods#map");
+  const text = () => document.body.textContent ?? "";
+  // Cluster parameters come from explorer.json's method block.
+  expect(await screen.findByText(/min_cluster_size 25/)).toBeInTheDocument();
+  expect(text()).toMatch(/min_samples 10/);
+  expect(screen.getByRole("link", { name: "ChEMBL" })).toHaveAttribute("href", "https://www.ebi.ac.uk/chembl/");
+  expect(screen.getByRole("link", { name: "CC BY-SA 3.0" })).toBeInTheDocument();
+  expect(text()).toMatch(/838 of 1,314 drug-bearing trials \(63\.8%\)/);
+  expect(text()).toMatch(/182 mechanism classes/);
+  expect(text()).toMatch(/weight 1\.0/);
+  expect(screen.getByRole("link", { name: /weight research note/ })).toHaveAttribute(
+    "href",
+    expect.stringContaining("docs/superpowers/research/2026-11-06-mechanism-weight.md"),
+  );
+  expect(text()).toMatch(/counts in each group it touches/);
+  expect(text()).toMatch(/HDBSCAN/);
+  expect(text()).toMatch(/at least 25% of all its members/);
+  expect(text()).toMatch(/What is not mapped/);
+  // Five feature groups now, mechanism among them.
+  expect(text()).toMatch(/Five groups of features/);
+});
