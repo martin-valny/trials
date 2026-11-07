@@ -217,7 +217,7 @@ test("the hover card is a tooltip with the trial's id, title and facts", () => {
   render(<HoverCard trial={t} x={10} y={10} r={6} />);
   const card = screen.getByRole("tooltip");
   expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
-  expect(card).toHaveTextContent("dimethyl fumarate · Behavioral, Device · Phase 4 · 2015–2016");
+  expect(card).toHaveTextContent("dimethyl fumarate · NRF2 activator · Small molecule · Behavioral, Device · Phase 4 · 2015–2016");
 });
 
 const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
@@ -284,4 +284,22 @@ test("Reset all hands keyboard focus to the Find field instead of dropping it", 
   await userEvent.keyboard("{Enter}");
   expect(reset).toBeDisabled();
   expect(screen.getByLabelText("Find a trial")).toHaveFocus();
+});
+
+test("the Labels switch stays under reduced motion, where there is no Play", async () => {
+  withCanvas();
+  stubFetch();
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("prefers-reduced-motion: reduce"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+  renderAt(<Explore />, "/explore");
+  const labels = await screen.findByRole("group", { name: "Labels" });
+  expect(within(labels).getByRole("button", { name: "Diseases" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });

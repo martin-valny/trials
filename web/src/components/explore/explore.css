@@ -106,6 +106,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .pill-n { font-variant-numeric: tabular-nums; color: var(--muted); }
 .swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
 .swatch.ring { background: transparent; }
+.swatch.none { border-color: var(--rule); } /* the pale unknown ground needs a hairline to read on the plate */
 /* A narrowing toggle ("Results posted"): off means "show all", so it sits quiet like a dropdown at
    rest; on is solid ink. Its count is tabular. */
 .explore .pill.narrowing { margin-left: 8px; gap: 7px; }
@@ -181,6 +182,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .plate-controls {
   position: absolute; top: -2px; right: -8px; z-index: 1; /* text, not padding, meets the panel edge */
   display: flex; align-items: center; gap: 2px;
+  background: var(--plate); border-radius: 999px; /* knocks out dots behind the words, as the labels' halo does */
 }
 .explore .plate-control {
   display: inline-flex; align-items: center; gap: 7px;
@@ -189,6 +191,21 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .explore .plate-control:hover { border-color: var(--rule); }
 .spin-glyph { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5px; stroke-linejoin: miter; stroke-linecap: butt; }
+/* Labels: Clusters · Diseases · Off. Quiet words in Play's text style; the chosen one is ink, underlined
+   in ink, the others muted until hovered. Never a filled pill, never red. */
+.explore .label-switch {
+  display: inline-flex; align-items: baseline; padding: 5px 8px;
+  font-size: 12.5px; font-weight: 500; line-height: 1.2; color: var(--muted); white-space: nowrap;
+}
+.label-switch-k { margin-right: 7px; }
+.label-switch-sep { margin: 0 5px; }
+.explore .label-switch button {
+  padding: 0; border: 0; border-radius: 0; background: transparent;
+  font: inherit; color: var(--muted);
+  text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.explore .label-switch button:hover { color: var(--ink); text-decoration-color: var(--muted); }
+.explore .label-switch button[aria-pressed="true"] { background: transparent; color: var(--ink); text-decoration-color: var(--ink); }
 
 /* Hover card: two lines on the trial under the pointer, a flat plate with a 1px ink rule; never takes the pointer. */
 .hover-card {
@@ -389,7 +406,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .toolbar .tb-find { grid-area: find; }
   .toolbar .tb-colour { grid-area: colour; }
   .toolbar .tb-filters { grid-area: filters; }
-  .toolbar .tb-reset { grid-area: reset; justify-self: end; }
+  .toolbar .tb-reset { grid-area: reset; justify-self: end; align-self: start; min-height: 28px; } /* level with the first filter line when they wrap */
   .toolbar .tb-count { grid-area: count; justify-self: end; margin-left: 0; }
 }
 @media (max-width: 900px) {
@@ -401,6 +418,10 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
   .toolbar::after { left: 16px; right: 16px; }
   .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
+  /* Five colour modes: the split pill spans the line, its parts sharing the width. */
+  .toolbar .tb-colour { width: 100%; }
+  .toolbar .segmented { flex: 1 1 auto; min-width: 0; }
+  .explore .toolbar .segmented button { flex: 1 1 auto; padding: 3px 4px; }
   .sheet-head {
     display: flex; align-items: baseline; justify-content: space-between;
     padding-bottom: 8px; border-bottom: 1px solid var(--rule);

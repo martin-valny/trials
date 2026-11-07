@@ -136,6 +136,8 @@ export interface MultiSelectOption {
   n: number;
   swatch?: string;
   ring?: boolean;
+  /** The unknown ground's swatch: a hairline border so it reads on the plate. */
+  none?: boolean;
 }
 
 /**
@@ -224,7 +226,7 @@ function MultiSelectBody(props: {
             </span>
             {o.swatch ? (
               <span
-                className={o.ring ? "swatch ring" : "swatch"}
+                className={o.ring ? "swatch ring" : o.none ? "swatch none" : "swatch"}
                 style={o.ring ? { borderColor: o.swatch } : { background: o.swatch }}
                 aria-hidden="true"
               />

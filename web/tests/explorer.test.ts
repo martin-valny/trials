@@ -32,6 +32,15 @@ import {
   popupPosition,
   yearSpan,
   successGroups,
+  filterCounts,
+  MODALITIES,
+  MODES,
+  NONE,
+  mechanismSeries,
+  clusterLabels,
+  paintedClasses,
+  mechanismText,
+  modalityText,
 } from "../src/lib/explorer";
 import type { Filters } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerStats, ExplorerTrial } from "../src/types";
@@ -80,6 +89,8 @@ describe("allFilters / matches", () => {
     phases: new Set(["PHASE2"]),
     outcomes: new Set(["succeeded" as const]),
     treatmentTypes: new Set(["DRUG"]),
+    mechanisms: new Set(["anti-CD20", NONE]),
+    modalities: new Set(["antibody", NONE]),
     query: "",
     resultsOnly: false,
     years: B,
@@ -550,9 +561,53 @@ describe("placeLabels", () => {
     expect(got[1]).toEqual({ x: 210, y: 118 });
     expect(got[2]).toEqual({ x: 195, y: 140 }); // 112 and 126 touch the first two
     for (let i = 0; i < got.length; i++)
-      for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i].y - got[j].y)).toBeGreaterThanOrEqual(14);
+      for (let j = i + 1; j < got.length; j++) expect(Math.abs(got[i]!.y - got[j]!.y)).toBeGreaterThanOrEqual(14);
+  });
+  it("drops a label with no free slot instead of overlapping another", () => {
+    // A 40px-tall canvas has room for about two lines: the rest cannot be placed clear of the others.
+    const items = Array.from({ length: 12 }, () => ({ sx: 200, sy: 20, width: 80 }));
+    const got = placeLabels(items, 400, 40);
+    expect(got[0]).not.toBeNull();
+    expect(got.some((g) => g === null)).toBe(true);
+    const placed = got.filter((g): g is { x: number; y: number } => g !== null);
+    for (let i = 0; i < placed.length; i++)
+      for (let j = i + 1; j < placed.length; j++)
+        expect(Math.abs(placed[i].x - placed[j].x) >= 86 || Math.abs(placed[i].y - placed[j].y) >= 14).toBe(true);
   });
 });
+
+describe("clusterLabels", () => {
+  const many = Array.from({ length: 30 }, (_, i) => ({ id: i, label: `C${i}`, n: 2 * i + 1, x: i, y: 0, z: 0 }));
+  it("keeps the largest clusters, at most max, and none below 15 trials", () => {
+    const desk = clusterLabels(many, 8);
+    expect(desk).toHaveLength(8);
+    expect(desk.map((a) => a.label)).toEqual(["C29", "C28", "C27", "C26", "C25", "C24", "C23", "C22"]);
+    expect(desk[0]).toEqual({ label: "C29", x: 29, y: 0, z: 0 });
+    expect(clusterLabels(many, 6)).toHaveLength(6);
+    const small = many.slice(0, 10); // n = 1..19: only 15, 17, 19 qualify
+    expect(clusterLabels(small, 8).map((a) => a.label)).toEqual(["C9", "C8", "C7"]);
+    expect(clusterLabels([], 8)).toEqual([]);
+  });
+});
+
+describe("paintedClasses", () => {
+  it("is the classes some trial has as its only class, plus NONE when a trial has none", () => {
+    const ts = [
+      trial({ mechanisms: ["a"], modalities: ["antibody", "protein"] }),
+      trial({ mechanisms: ["a", "b"], modalities: ["protein"] }),
+      trial({ mechanisms: [], modalities: [] }),
+    ];
+    expect([...paintedClasses(ts, "mechanism")].sort()).toEqual([NONE, "a"].sort());
+    expect([...paintedClasses(ts, "modality")].sort()).toEqual([NONE, "protein"].sort());
+    expect([...paintedClasses([trial({ mechanisms: ["a"] })], "mechanism")]).toEqual(["a"]);
+  });
+  it("panel d texts use the shown casing for modality", () => {
+    const t = trial({ mechanisms: ["anti-CD20", "x"], modalities: ["small molecule"] });
+    expect(mechanismText(t)).toBe("anti-CD20 +1");
+    expect(modalityText(t)).toBe("Small molecule");
+  });
+});
+
 
 describe("yearSpan", () => {
   it("joins start and end with an en dash, marking estimated ends", () => {
@@ -692,5 +747,135 @@ describe("successGroups", () => {
     expect(got.map(({ group, finished, succeeded }) => ({ label: group, finished, succeeded }))).toEqual(
       f.stats.by_condition,
     );
+  });
+});
+
+describe("mechanism and modality: colour", () => {
+  const L = LIGHT_PALETTE;
+  const D = DARK_PALETTE;
+  const mech = (mechanisms: string[], top: string[], p = L) =>
+    colorFor(trial({ mechanisms }), "mechanism", p, [], top);
+  const top = ["anti-CD20", "S1P modulator", "NRF2 activator", "FcRn blocker", "C5 inhibitor", "anti-CD19"];
+
+  it("has five colour modes: Outcome, Phase, Disease, Mechanism, Modality", () => {
+    expect(MODES.map(([, l]) => l)).toEqual(["Outcome", "Phase", "Disease", "Mechanism", "Modality"]);
+  });
+  it("palettes carry a neutral other-category and multiple colour", () => {
+    expect(L.otherCategory).toBe("#9aa5b1");
+    expect(D.otherCategory).toBe("#6c7680");
+    expect(L.multiple).toBe("#5b6268");
+    expect(D.multiple).toBe("#b9bdc2");
+  });
+  it("the six commonest classes take the editorial series in order; others the other-category grey", () => {
+    expect(top.map((m) => mech([m], top))).toEqual(L.diseases);
+    expect(top.map((m) => mech([m], top, D))).toEqual(D.diseases);
+    expect(mech(["anti-IL6R"], top)).toBe(L.otherCategory);
+  });
+  it("a trial with several classes is 'multiple'; one with none is unknown", () => {
+    expect(mech(["anti-CD20", "NRF2 activator"], top)).toBe(L.multiple);
+    expect(mech(["anti-CD20", "NRF2 activator"], top, D)).toBe(D.multiple);
+    expect(mech([], top)).toBe(L.unknown);
+  });
+  it("mechanismSeries ranks classes by trial count over the whole file, ties alphabetically, at most six", () => {
+    const ts = [
+      ...Array.from({ length: 3 }, () => trial({ mechanisms: ["b"] })),
+      ...Array.from({ length: 3 }, () => trial({ mechanisms: ["a"] })),
+      trial({ mechanisms: ["c", "b"] }),
+      ...["d", "e", "f", "g", "h"].map((m) => trial({ mechanisms: [m] })),
+      trial({ mechanisms: [] }),
+    ];
+    expect(mechanismSeries(ts)).toEqual(["b", "a", "c", "d", "e", "f"]);
+  });
+  it("modality: the fixed order takes the series, 'other' and unknown modalities the other-category grey", () => {
+    expect(MODALITIES).toEqual([
+      "small molecule",
+      "antibody",
+      "protein",
+      "oligonucleotide",
+      "cell therapy",
+      "gene therapy",
+      "other",
+    ]);
+    const mod = (modalities: string[], p = L) => colorFor(trial({ modalities }), "modality", p, []);
+    expect(MODALITIES.slice(0, 6).map((m) => mod([m]))).toEqual(L.diseases);
+    expect(MODALITIES.slice(0, 6).map((m) => mod([m], D))).toEqual(D.diseases);
+    expect(mod(["other"])).toBe(L.otherCategory);
+    expect(mod(["antibody", "small molecule"])).toBe(L.multiple);
+    expect(mod([])).toBe(L.unknown);
+  });
+  it("no mechanism or modality colour is the succeeded colour", () => {
+    for (const p of [L, D]) for (const c of [p.otherCategory, p.multiple]) expect(c).not.toBe(p.succeeded);
+  });
+  it("emphasis lifts only series-coloured dots: not other, multiple or none", () => {
+    const m = emphasisFor("mechanism", [], ["x", "y"])!;
+    expect(m(trial({ mechanisms: ["x"] }))).toBe(true);
+    expect(m(trial({ mechanisms: ["z"] }))).toBe(false);
+    expect(m(trial({ mechanisms: ["x", "y"] }))).toBe(false);
+    expect(m(trial({ mechanisms: [] }))).toBe(false);
+    const d = emphasisFor("modality", [])!;
+    expect(d(trial({ modalities: ["antibody"] }))).toBe(true);
+    expect(d(trial({ modalities: ["other"] }))).toBe(false);
+    expect(d(trial({ modalities: ["antibody", "protein"] }))).toBe(false);
+    expect(d(trial({ modalities: [] }))).toBe(false);
+  });
+});
+
+describe("mechanism and modality: filters", () => {
+  const base = (): Filters => allFilters({ ...file(), trials: [trial({ mechanisms: ["a"], modalities: ["antibody"] })] });
+
+  it("allFilters switches on every class and modality in the file, plus 'none'", () => {
+    const f = allFilters(file());
+    expect([...f.mechanisms].sort()).toEqual([NONE, "NRF2 activator", "anti-CD20"].sort());
+    expect([...f.modalities].sort()).toEqual([NONE, "antibody", "small molecule"].sort());
+  });
+  it("a trial with no class passes iff 'none' is on; otherwise iff any of its classes is on", () => {
+    const f = base();
+    const none = trial({ mechanisms: [] });
+    expect(matches(none, f, B)).toBe(true);
+    expect(matches(none, { ...f, mechanisms: new Set(["a"]) }, B)).toBe(false);
+    expect(matches(none, { ...f, mechanisms: new Set([NONE]) }, B)).toBe(true);
+    const two = trial({ mechanisms: ["a", "b"], modalities: ["antibody"] });
+    expect(matches(two, { ...f, mechanisms: new Set(["b"]) }, B)).toBe(true);
+    expect(matches(two, { ...f, mechanisms: new Set([NONE]) }, B)).toBe(false);
+    expect(matches(two, { ...f, mechanisms: new Set() }, B)).toBe(false);
+  });
+  it("the same rule for modalities", () => {
+    const f = base();
+    expect(matches(trial({ modalities: [] }), { ...f, modalities: new Set(["antibody"]) }, B)).toBe(false);
+    expect(matches(trial({ modalities: [] }), { ...f, modalities: new Set([NONE]) }, B)).toBe(true);
+    expect(matches(trial({ modalities: ["antibody"] }), { ...f, modalities: new Set([NONE]) }, B)).toBe(false);
+    expect(matches(trial({ modalities: ["antibody", "protein"] }), { ...f, modalities: new Set(["protein"]) }, B)).toBe(true);
+  });
+  it("filterCounts counts every class a trial touches, and trials with none under 'none'", () => {
+    const c = filterCounts([
+      trial({ mechanisms: ["a", "b"], modalities: ["antibody"] }),
+      trial({ mechanisms: ["a"], modalities: ["antibody", "protein"] }),
+      trial({ mechanisms: [], modalities: [] }),
+    ]);
+    expect(Object.fromEntries(c.mechanisms)).toEqual({ a: 2, b: 1, [NONE]: 1 });
+    expect(Object.fromEntries(c.modalities)).toEqual({ antibody: 2, protein: 1, [NONE]: 1 });
+  });
+  it("sameFilters compares the mechanism and modality sets", () => {
+    const a = allFilters(file());
+    expect(sameFilters(a, { ...a, mechanisms: new Set([NONE]) })).toBe(false);
+    expect(sameFilters(a, { ...a, modalities: new Set([NONE]) })).toBe(false);
+    expect(sameFilters(a, setNone(a, "mechanisms"))).toBe(false);
+  });
+});
+
+describe("mechanism and modality: hover card", () => {
+  it("line 2 names the first class (+n) and the modality after the drugs", () => {
+    const t = trial({
+      drugs: ["a"],
+      mechanisms: ["anti-CD20", "BTK inhibitor"],
+      modalities: ["antibody"],
+      treatment_types: ["DRUG"],
+      phase: "PHASE3",
+      start_year: 2014,
+      end_year: 2019,
+    });
+    expect(popupLines(t)[1]).toBe("a · anti-CD20 +1 · Antibody · Drug · Phase 3 · 2014–2019");
+    const two = trial({ drugs: [], mechanisms: [], modalities: ["antibody", "small molecule"], phase: null, start_year: null, end_year: null });
+    expect(popupLines(two)[1]).toBe("Antibody +1 · Drug · Not applicable");
   });
 });

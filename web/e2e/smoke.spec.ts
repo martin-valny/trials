@@ -229,3 +229,70 @@ test("theme switch persists across reload", async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe("dark");
   await expect(page.getByRole("button", { name: /theme: dark/i })).toHaveText(/Dark/);
 });
+
+/** Non-transparent canvas pixels: marks, labels and leaders (the plate is cleared to transparent). */
+const paintedPixels = (page: Page) =>
+  canvasOf(page).evaluate((el) => {
+    const c = el as HTMLCanvasElement;
+    const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] !== 0) n++;
+    return n;
+  });
+
+/** The painted-pixel count once two reads in a row, a frame or more apart, agree. */
+async function stablePixels(page: Page): Promise<number> {
+  let last = -1;
+  let now = await paintedPixels(page);
+  await expect
+    .poll(async () => {
+      last = now;
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      now = await paintedPixels(page);
+      return now === last;
+    }, { message: "the canvas has settled" })
+    .toBe(true);
+  return now;
+}
+
+test("Mechanism: Select none empties the map; one class alone shows just its trials", async ({ page }) => {
+  const file = (await (await page.request.get("/data/explorer.json")).json()) as {
+    trials: { mechanisms: string[] }[];
+  };
+  const antiCd20 = file.trials.filter((t) => t.mechanisms.includes("anti-CD20")).length;
+  expect(antiCd20).toBeGreaterThan(0);
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  await page.getByRole("button", { name: "Mechanism: all" }).click();
+  const sheet = page.locator(".popover");
+  await sheet.getByRole("button", { name: "Select none" }).click();
+  await expect(page.getByText("No trials match these filters.")).toBeVisible();
+  await sheet.getByRole("group", { name: "Mechanism" }).locator("label.check").filter({ hasText: "anti-CD20" }).click();
+  await expect(page.getByText(new RegExp(`^Showing ${antiCd20} of ${file.trials.length} trials$`))).toBeVisible();
+  await expect(page.getByText("No trials match these filters.")).toHaveCount(0);
+});
+
+test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // The fixture has no named clusters: name one here, on a trial of the anti-CD20 group.
+  await page.route("**/data/explorer.json", async (route) => {
+    const res = await route.fetch();
+    const f = await res.json();
+    const t = f.trials.find((x: { mechanisms: string[] }) => x.mechanisms.includes("anti-CD20"));
+    f.clusters = [{ id: 0, label: "Anti-CD20 antibodies in relapsing MS", n: 20, x: t.x, y: t.y, z: t.z }];
+    await route.fulfill({ response: res, json: f });
+  });
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  const labels = page.getByRole("group", { name: "Labels" });
+  await expect(labels.getByRole("button", { name: "Clusters" })).toHaveAttribute("aria-pressed", "true");
+  // Labels are redrawn once the web font has loaded: measure once the count has stopped changing.
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  const withLabels = await stablePixels(page);
+  await labels.getByRole("button", { name: "Off" }).click();
+  await expect(labels.getByRole("button", { name: "Off" })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => paintedPixels(page), { message: "the label and its leader are gone" }).toBeLessThan(withLabels - 100);
+  const without = await paintedPixels(page);
+  await labels.getByRole("button", { name: "Clusters" }).click();
+  await expect.poll(() => paintedPixels(page), { message: "the label is back" }).toBeGreaterThan(without + 100);
+});

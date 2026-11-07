@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type React from "react";
-import { dotRadius, dotScale, fitToUnit, fitZoom, plateExtents, PlateCanvas, type PlateCanvasHandle } from "../src/components/explore/PlateCanvas";
+import { dotRadius, dotScale, fitAnchors, fitToUnit, fitZoom, plateExtents, PlateCanvas, type PlateCanvasHandle } from "../src/components/explore/PlateCanvas";
 import { nearestIndex, type Projected } from "../src/lib/explorer";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 import { readFixture } from "./helpers";
@@ -64,7 +64,11 @@ afterEach(() => vi.restoreAllMocks());
 const isStopped = (t: ExplorerTrial) => t.outcome === "stopped";
 const isUnknown = (t: ExplorerTrial) => t.outcome === "unknown";
 
-const renderCanvas = (labels?: string[], data: ExplorerTrial[] = trials) => {
+const renderCanvas = (
+  labels?: string[],
+  data: ExplorerTrial[] = trials,
+  anchors?: { label: string; x: number; y: number; z: number }[],
+) => {
   const visible = vi.fn(() => true);
   const color = vi.fn((t: ExplorerTrial) => (isStopped(t) ? "#e00" : "#111"));
   const emphasis = vi.fn(isStopped);
@@ -78,6 +82,7 @@ const renderCanvas = (labels?: string[], data: ExplorerTrial[] = trials) => {
       emphasis={emphasis}
       hollow={hollow}
       labels={labels}
+      anchors={anchors}
       selected={null}
       onSelect={onSelect}
       reducedMotion={false}
@@ -531,4 +536,24 @@ test("a wheel right after a mouse drag finds the dot under the pointer again", (
   act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -100, clientX: at.clientX, clientY: at.clientY, cancelable: true })));
   step();
   expect(onHover).toHaveBeenLastCalledWith(expect.objectContaining({ nct: first }));
+});
+
+test("named anchors (clusters) are labelled where given, in the file's coordinates, instead of condition labels", () => {
+  const t = trials[6];
+  renderCanvas([trials[0].condition_labels[0]], trials, [{ label: "Anti-CD20 antibodies", x: t.x, y: t.y, z: t.z }]);
+  step();
+  expect(texts).toEqual(["Anti-CD20 antibodies"]);
+});
+
+test("an empty anchor list draws no labels, even with condition labels given", () => {
+  const planted = trials.map((t, i) => (i < 6 ? { ...t, condition_labels: ["Planted"], x: 0.5, y: 0.5, z: 0 } : t));
+  renderCanvas(["Planted"], planted, []);
+  step();
+  expect(texts).toEqual([]);
+});
+
+test("fitAnchors puts an anchor on the fitted position of the trial it sits on", () => {
+  const fitted = fitToUnit(trials);
+  const t = trials[3];
+  expect(fitAnchors(trials, [{ label: "c", x: t.x, y: t.y, z: t.z }])).toEqual([{ label: "c", ...fitted[3] }]);
 });

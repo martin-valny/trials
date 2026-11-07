@@ -11,6 +11,7 @@ import {
   project,
   viewPoints,
   zoomAt,
+  type ClusterAnchor,
   type Projected,
   type View,
 } from "../../lib/explorer";
@@ -26,6 +27,11 @@ export interface PlateCanvasProps {
   hollow?: (t: ExplorerTrial) => boolean;
   /** Condition labels, in the area's order, to annotate at each condition's densest point (see clusterAnchors). */
   labels?: string[];
+  /**
+   * Named anchors in the file's own coordinates (the named clusters), labelled instead of ``labels``.
+   * An empty list draws no labels at all.
+   */
+  anchors?: ClusterAnchor[];
   /** Set the cluster labels in a column at the right edge (phone widths), not beside each cluster. */
   labelColumn?: boolean;
   selected: string | null;
@@ -88,12 +94,25 @@ function canDraw(): boolean {
  * the few trials beyond the percentile may clip at the panel edge.
  */
 export function fitToUnit(trials: ExplorerTrial[]): { x: number; y: number; z: number }[] {
+  return fitWith(trials, trials);
+}
+
+/** ``pts`` moved by the same centring and scale fitToUnit gives ``trials``. */
+function fitWith<P extends { x: number; y: number; z: number }>(
+  trials: ExplorerTrial[],
+  pts: P[],
+): { x: number; y: number; z: number }[] {
   const n = trials.length || 1;
   const cx = trials.reduce((a, t) => a + t.x, 0) / n;
   const cy = trials.reduce((a, t) => a + t.y, 0) / n;
   const cz = trials.reduce((a, t) => a + t.z, 0) / n;
   const r = Math.max(1e-9, percentile(trials.map((t) => Math.hypot(t.x - cx, t.y - cy)), 0.98));
-  return trials.map((t) => ({ x: (t.x - cx) / r, y: (t.y - cy) / r, z: (t.z - cz) / r }));
+  return pts.map((t) => ({ x: (t.x - cx) / r, y: (t.y - cy) / r, z: (t.z - cz) / r }));
+}
+
+/** Named anchors given in the file's coordinates, moved onto the fitted cloud (see fitToUnit). */
+export function fitAnchors(trials: ExplorerTrial[], anchors: ClusterAnchor[]): ClusterAnchor[] {
+  return fitWith(trials, anchors).map((p, i) => ({ label: anchors[i].label, ...p }));
 }
 
 export interface PlateExtents {
@@ -147,7 +166,7 @@ export const dotRadius = (enrollment: number | null, f: number, s: DotScale): nu
 export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
   const [drawable] = useState(canDraw);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { trials, visible, color, emphasis, hollow, labels } = props;
+  const { trials, visible, color, emphasis, hollow, labels, anchors: named } = props;
   const points = useMemo(() => fitToUnit(trials), [trials]);
   const scale = useMemo(() => dotScale(trials), [trials]);
   const extents = useMemo(() => plateExtents(points, TILT), [points]);
@@ -161,8 +180,8 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
   );
   const rings = useMemo(() => Uint8Array.from(trials, (t) => (hollow?.(t) ? 1 : 0)), [trials, hollow]);
   const anchors = useMemo(
-    () => clusterAnchors(trials, points, labels ?? []),
-    [trials, points, labels],
+    () => (named ? fitAnchors(trials, named) : clusterAnchors(trials, points, labels ?? [])),
+    [trials, points, labels, named],
   );
   const side = useMemo(() => columnSide(anchors), [anchors]);
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
@@ -294,23 +313,28 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         }));
         // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
         // from the clusters, below the play control, each with a leader down to its cluster.
-        const spots: { x: number; y: number; lx?: number }[] = labelColumn
+        // A label with no free slot is dropped (null) rather than drawn over another.
+        const spots: ({ x: number; y: number; lx?: number } | null)[] = labelColumn
           ? columnLabels(items, w, COLUMN_TOP, side)
           : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
         shownAnchors.forEach((_, k) => {
+          const spot = spots[k];
+          if (spot === null) return;
           ctx.beginPath();
           ctx.moveTo(at[k].sx, at[k].sy);
-          ctx.lineTo(spots[k].lx ?? spots[k].x - widths[k] / 2 - 2, spots[k].y);
+          ctx.lineTo(spot.lx ?? spot.x - widths[k] / 2 - 2, spot.y);
           ctx.stroke();
         });
         ctx.lineWidth = 2;
         ctx.strokeStyle = plate;
         ctx.fillStyle = ink;
         shownAnchors.forEach((a, k) => {
-          ctx.strokeText(a.label, spots[k].x, spots[k].y);
-          ctx.fillText(a.label, spots[k].x, spots[k].y);
+          const spot = spots[k];
+          if (spot === null) return;
+          ctx.strokeText(a.label, spot.x, spot.y);
+          ctx.fillText(a.label, spot.x, spot.y);
         });
       }
       const ring = ringColor ?? ink;
