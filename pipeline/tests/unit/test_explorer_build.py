@@ -19,7 +19,7 @@ from trialradar.tables import Tables
 
 DAY = date(2026, 3, 1)
 TOP_KEYS = {"generated_for", "method", "stats", "clusters", "trials"}
-METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k", "min_group"}
+METHOD_KEYS = {"algorithm", "dims", "seed", "features", "k", "min_group", "clusters"}
 STATS_KEYS = {
     "verdict",
     "lift",
@@ -81,6 +81,10 @@ def test_build_explorer_contract(cfg: AreaConfig) -> None:
         "features": ["disease", "treatment_type", "molecule", "mechanism", "population"],
         "k": cfg.explorer.k,
         "min_group": 10,
+        "clusters": {
+            "min_cluster_size": cfg.explorer.clusters.min_cluster_size,
+            "min_samples": cfg.explorer.clusters.min_samples,
+        },
     }
     assert set(doc["method"]) == METHOD_KEYS
     stats = doc["stats"]

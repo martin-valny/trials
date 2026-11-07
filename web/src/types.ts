@@ -131,10 +131,10 @@ export interface ExplorerStats {
   verdict: "insufficient" | "chance" | "clustered";
 }
 
-/** A named HDBSCAN cluster on the map; x/y/z is a member trial (the one nearest the median). */
 /** Which naming branch named a cluster's middle part: a mechanism class, an intervention type, or neither. */
 export type ClusterKind = "mechanism" | "type" | "mixed";
 
+/** A named HDBSCAN cluster on the map; x/y/z is a member trial (the one nearest the median). */
 export interface ExplorerCluster {
   id: number;
   label: string;
@@ -155,6 +155,8 @@ export interface ExplorerFile {
     k: number;
     min_group: number;
     seed: number;
+    /** HDBSCAN parameters for the named clusters (see Methods). */
+    clusters: { min_cluster_size: number; min_samples: number };
   };
   stats: ExplorerStats;
   trials: ExplorerTrial[];

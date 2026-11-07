@@ -165,6 +165,8 @@ def main() -> None:
     ap.add_argument("--config", type=Path, default=_REPO / "config" / "area.yaml")
     args = ap.parse_args()
 
+    if args.source.suffix == ".json" and len(args.weight_mechanism) > 1:
+        ap.error("--weight-mechanism takes one value for a site explorer.json (it has no features)")
     cfg = load_config(args.config)
     if args.source.suffix == ".json":
         blocks = _from_explorer_json(args.source, args.k, cfg.explorer.seed)

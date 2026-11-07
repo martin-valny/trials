@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
 
 _SPEC = importlib.util.spec_from_file_location(
     "cluster_report", Path(__file__).resolve().parents[2] / "scripts" / "cluster_report.py"
@@ -54,3 +55,15 @@ def test_explorer_json_source(tmp_path: Path, capsys: Any) -> None:
     out = cr._from_explorer_json(p, 2, 42)
     assert "published layout" in out[0]
     assert "MS" in out[0]
+
+
+def test_explorer_json_source_rejects_several_weights(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    p = tmp_path / "explorer.json"
+    p.write_text(json.dumps({"trials": []}))
+    monkeypatch.setattr("sys.argv", ["cluster_report.py", str(p), "--weight-mechanism", "0.5", "1"])
+    with pytest.raises(SystemExit) as exc:
+        cr.main()
+    assert exc.value.code == 2
+    assert "weight" in capsys.readouterr().err

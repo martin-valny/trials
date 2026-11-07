@@ -146,6 +146,11 @@ def build_explorer(
         "features": list(FEATURES),
         "k": ex.k,
         "min_group": ex.min_group,
+        # HDBSCAN parameters for the named clusters, so Methods can state them
+        "clusters": {
+            "min_cluster_size": ex.clusters.min_cluster_size,
+            "min_samples": ex.clusters.min_samples,
+        },
     }
     if len(ids) < _MIN_TRIALS:
         n_pool, n_succ = sum(pool), sum(s for s, p in zip(succeeded, pool, strict=True) if p)
