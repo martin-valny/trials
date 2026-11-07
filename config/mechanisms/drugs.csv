@@ -332,7 +332,7 @@ essential fatty acids,unmapped,,,,,,
 estradiol,mapped,CHEMBL135,small molecule,estrogen receptor modulator,Estrogen receptor alpha agonist,AGONIST,ESR1
 estriol,mapped,CHEMBL193482,small molecule,estrogen receptor modulator,Estrogen receptor modulator,MODULATOR,ESR1;ESR2
 estroprogestins,unmapped,,,,,,
-etifoxine,mapped,CHEMBL2106227,small molecule,GABA-A receptor antagonist,GABA-A receptor; anion channel antagonist,ANTAGONIST,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
+etifoxine,mapped,CHEMBL2106227,small molecule,GABA-A receptor antagonist,"GABA-A receptor, anion channel antagonist",ANTAGONIST,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
 etims,unmapped,,,,,,
 etoposide,mapped,CHEMBL44657,small molecule,topoisomerase II inhibitor,DNA topoisomerase II inhibitor,INHIBITOR,TOP2A;TOP2B
 evm18001,unmapped,,,,,,
@@ -587,7 +587,7 @@ methylprednisolone hemisuccinate,mapped,CHEMBL1201265,small molecule,glucocortic
 methylprednisolone po,unmapped,,,,,,
 methylreboxetine,unmapped,,,,,,
 microgynon®,unmapped,,,,,,
-midazolam,mapped,CHEMBL655,small molecule,GABA-A receptor modulator,GABA-A receptor; anion channel positive allosteric modulator,POSITIVE ALLOSTERIC MODULATOR,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
+midazolam,mapped,CHEMBL655,small molecule,GABA-A receptor modulator,"GABA-A receptor, anion channel positive allosteric modulator",POSITIVE ALLOSTERIC MODULATOR,GABRA1;GABRA2;GABRA3;GABRA4;GABRA5;GABRA6;GABRB1;GABRB2;GABRB3;GABRD;GABRE;GABRG1;GABRG2;GABRG3;GABRP;GABRQ
 mil62,unmapped,,,,,,
 mild dose cannabis,unmapped,,,,,,
 minocycline,mapped,CHEMBL1434,small molecule,Bacterial 70S ribosome inhibitor,Bacterial 70S ribosome inhibitor,INHIBITOR,rplA;rplB;rplC;rplD;rplE;rplF;rplJ;rplK;rplL;rplM;rplN;rplO;rplP;rplQ;rplR;rplS;rplT;rplU;rplV;rplW;rplX;rplY;rpmA;rpmB;rpmC;rpmD;rpmE;rpmF;rpmG;rpmH;rpmI;rpmJ;rpsA;rpsB;rpsC;rpsD;rpsE;rpsF;rpsG;rpsH;rpsI;rpsJ;rpsK;rpsL;rpsM;rpsN;rpsO;rpsP;rpsQ;rpsR;rpsS;rpsT;rpsU;ykgM;ykgO
@@ -634,7 +634,7 @@ natalizumab,mapped,CHEMBL1201607,antibody,anti-α4-integrin,Integrin alpha-4/bet
 natalizumab treatment,unmapped,,,,,,
 nbi-5788,unmapped,CHEMBL2108869,protein,,,,
 nebido® testosterone undecanoate / solution for,unmapped,,,,,,
-neramexane mesylate,mapped,CHEMBL2110954,small molecule,NMDA receptor antagonist;α9/α10 nicotinic receptor antagonist,Glutamate [NMDA] receptor antagonist;Neuronal acetylcholine receptor; alpha9/alpha10 antagonist,ANTAGONIST,CHRNA10;CHRNA9;GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B
+neramexane mesylate,mapped,CHEMBL2110954,small molecule,NMDA receptor antagonist;α9/α10 nicotinic receptor antagonist,"Glutamate [NMDA] receptor antagonist;Neuronal acetylcholine receptor, alpha9/alpha10 antagonist",ANTAGONIST,CHRNA10;CHRNA9;GRIN1;GRIN2A;GRIN2B;GRIN2C;GRIN2D;GRIN3A;GRIN3B
 nerispirdine,mapped,CHEMBL2107762,small molecule,Kv channel inhibitor;sodium channel inhibitor,Sodium channel alpha subunit blocker;Voltage-gated potassium channel blocker,BLOCKER,KCNA1;KCNA10;KCNA2;KCNA3;KCNA4;KCNA5;KCNA6;KCNA7;KCNB1;KCNB2;KCNC1;KCNC2;KCNC3;KCNC4;KCND1;KCND2;KCND3;KCNF1;KCNG1;KCNG2;KCNG3;KCNG4;KCNH1;KCNH2;KCNH3;KCNH4;KCNH5;KCNH6;KCNH7;KCNH8;KCNQ1;KCNQ2;KCNQ3;KCNQ4;KCNQ5;KCNS1;KCNS2;KCNS3;KCNV1;KCNV2;SCN10A;SCN11A;SCN1A;SCN2A;SCN3A;SCN4A;SCN5A;SCN7A;SCN8A;SCN9A
 neurovax,unmapped,,,,,,
 new formulation of rebif - human interferon beta-1a,unmapped,,,,,,
