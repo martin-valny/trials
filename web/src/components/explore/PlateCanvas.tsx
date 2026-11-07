@@ -200,6 +200,8 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
   // The draw loop reads the latest props through this ref so it never restarts on a re-render.
   const live = useRef({ ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink: "", plate: "", muted: "" });
   const dirty = useRef(true);
+  // The control band can change with a render (Reset view comes and goes): measure it again then.
+  const bandStale = useRef(true);
   // Set by the draw loop's effect; the handle reaches the live view through it.
   const resetView = useRef<() => void>(() => undefined);
   useImperativeHandle(
@@ -215,6 +217,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     const muted = css?.getPropertyValue("--muted").trim() || "#5b6268";
     live.current = { ...props, points, mask, colors, emph, rings, anchors, scale, extents, ink, plate, muted };
     dirty.current = true;
+    bandStale.current = true;
   });
 
   // A layout effect, so the map takes wheel, key and pointer input from the moment it is on screen: a
@@ -247,6 +250,20 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     let alive = true;
     /** Each label's last spot, so labels keep their side while the map turns (see placeLabels). */
     const labelMemory = new Map<string, number>();
+    /** Text widths by font and text: labels are measured once, not every frame. */
+    const widthCache = new Map<string, number>();
+    const measure = (font: string, text: string): number => {
+      const key = `${font}|${text}`;
+      let v = widthCache.get(key);
+      if (v === undefined) {
+        ctx.font = font;
+        v = ctx.measureText(text).width;
+        widthCache.set(key, v);
+      }
+      return v;
+    };
+    /** The control band's box, measured on resize and after a render, not every frame. */
+    let band: Box[] = [];
 
     const resize = () => {
       const box = canvas.getBoundingClientRect();
@@ -257,6 +274,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       view = clampView(view, w, h);
+      bandStale.current = true;
       dirty.current = true;
     };
     resize();
@@ -266,12 +284,16 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     const inside = (p: { sx: number; sy: number }) => p.sx >= 0 && p.sx <= w && p.sy >= 0 && p.sy <= h;
     /** The map controls (Labels, Play, Reset view) over the canvas, in canvas px: labels keep off them. */
     const controlBand = (): Box[] => {
-      const band = canvas.parentElement?.querySelector(".plate-controls");
-      if (!band) return [];
+      if (!bandStale.current) return band;
+      bandStale.current = false;
+      const el = canvas.parentElement?.querySelector(".plate-controls");
       const c = canvas.getBoundingClientRect();
-      const r = band.getBoundingClientRect();
-      if (r.width === 0) return [];
-      return [{ x0: r.left - c.left - 4, y0: r.top - c.top - 4, x1: r.right - c.left + 4, y1: r.bottom - c.top + 4 }];
+      const r = el?.getBoundingClientRect();
+      band =
+        !r || r.width === 0
+          ? []
+          : [{ x0: r.left - c.left - 4, y0: r.top - c.top - 4, x1: r.right - c.left + 4, y1: r.bottom - c.top + 4 }];
+      return band;
     };
 
     const draw = () => {
@@ -332,16 +354,10 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         const at = keep.map((k) => allAt[k]);
         const dots = projected.filter((_, i) => mask[i] === 1 && inside(projected[i]));
         const texts = keep.map((k) => (numbered ? [String(k + 1), ""] : splitLabel(anchors[k].label)));
-        const widthOf = ([prefix, rest]: string[]) => {
-          if (numbered) {
-            ctx.font = NUMERAL_FONT;
-            return ctx.measureText(prefix).width;
-          }
-          ctx.font = PREFIX_FONT;
-          const a = prefix ? ctx.measureText(prefix).width : 0;
-          ctx.font = LABEL_FONT;
-          return a + ctx.measureText(rest).width;
-        };
+        const widthOf = ([prefix, rest]: string[]) =>
+          numbered
+            ? measure(NUMERAL_FONT, prefix)
+            : (prefix ? measure(PREFIX_FONT, prefix) : 0) + measure(LABEL_FONT, rest);
         const widths = texts.map(widthOf);
         const spots = placeLabels(
           keep.map((k, j) => ({ key: numbered ? `#${k}` : anchors[k].label, ax: at[j].sx, ay: at[j].sy, width: widths[j] })),
@@ -381,7 +397,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
             ctx.fillStyle = muted;
             ctx.strokeText(prefix, x, spot.y);
             ctx.fillText(prefix, x, spot.y);
-            x += ctx.measureText(prefix).width;
+            x += measure(PREFIX_FONT, prefix);
           }
           ctx.font = LABEL_FONT;
           ctx.fillStyle = ink;
@@ -447,7 +463,9 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
 
     // Labels are measured in the web font: draw once more when it has loaded.
     document.fonts?.ready.then(() => {
-      if (alive) dirty.current = true;
+      if (!alive) return;
+      widthCache.clear(); // widths measured in the fallback font are stale
+      dirty.current = true;
     });
 
     /** Index of the visible trial under the pointer, or -1. */

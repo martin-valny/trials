@@ -600,6 +600,16 @@ describe("placeLabels", () => {
     expect(outside).toBe(true);
   });
 
+  it("trims the cloud's box to the 1st-99th percentile, so a few outliers do not push callouts off the canvas", () => {
+    const dots: { sx: number; sy: number }[] = [];
+    for (let x = 100; x <= 500; x += 4) for (let y = 100; y <= 300; y += 4) dots.push({ sx: x, sy: y });
+    // Four outliers at the very corners would make the untrimmed box the whole canvas.
+    dots.push({ sx: 1, sy: 1 }, { sx: 599, sy: 1 }, { sx: 1, sy: 399 }, { sx: 599, sy: 399 });
+    const [s] = placeLabels([{ key: "a", ax: 300, ay: 200, width: 60 }], W, H, { dots });
+    expect(s).not.toBeNull();
+    expect(s!.callout).toBe(true);
+  });
+
   it("drops a label with no room anywhere rather than overlap", () => {
     const items = Array.from({ length: 40 }, (_, i) => ({ key: `l${i}`, ax: 30, ay: 20, width: 50 }));
     const got = placeLabels(items, 100, 40);

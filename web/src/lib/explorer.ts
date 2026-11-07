@@ -865,16 +865,15 @@ export function placeLabels(items: LabelItem[], w: number, h: number, opts: Plac
     !boxes.some((o) => segmentHitsBox(ax, ay, lx, ly, o)) &&
     !leaders.some(([p, q]) => segmentHitsBox(p[0], p[1], q[0], q[1], b));
   // The cloud's box, for callouts: the dots' extent, or the anchors' when there are no dots.
+  // The cloud's box for callouts, trimmed to the 1st-99th percentile on each axis (as the still
+  // view's fit is), so a few outliers do not push callouts off the canvas.
   const src = dots.length > 0 ? dots : items.map((i) => ({ sx: i.ax, sy: i.ay }));
   let hull = { x0: w / 2, x1: w / 2, y0: h / 2, y1: h / 2 };
   if (src.length > 0) {
-    hull = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
-    for (const d of src) {
-      hull.x0 = Math.min(hull.x0, d.sx);
-      hull.x1 = Math.max(hull.x1, d.sx);
-      hull.y0 = Math.min(hull.y0, d.sy);
-      hull.y1 = Math.max(hull.y1, d.sy);
-    }
+    const xs = src.map((d) => d.sx).sort((a, b) => a - b);
+    const ys = src.map((d) => d.sy).sort((a, b) => a - b);
+    const at = (v: number[], p: number) => v[Math.min(v.length - 1, Math.floor(p * (v.length - 1)))];
+    hull = { x0: at(xs, 0.01), x1: at(xs, 0.99), y0: at(ys, 0.01), y1: at(ys, 0.99) };
   }
   /** Dots near the segment from (ax, ay) to (lx, ly), sampled every 5px through the grid. */
   const alongLeader = (ax: number, ay: number, lx: number, ly: number): number => {
