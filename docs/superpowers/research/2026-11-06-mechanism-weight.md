@@ -13,6 +13,18 @@ cd pipeline && uv run python scripts/cluster_report.py <raw dir> --weight-mechan
 
 KMeans here is only a diagnostic; the map itself names HDBSCAN clusters.
 
+## The neighbourhood statistic before and after the mechanism block (2026-11-07)
+
+Real 2026-11-06 snapshot, `trialradar rebuild` into scratch dirs (pool 478, 62 succeeded, 10,000 shuffles, k = 10):
+
+| statistic computed on | lift | shuffled range | p | verdict |
+|---|---|---|---|---|
+| layout features at mechanism weight 0 (as before phase 2) | 1.32 | 0.62–1.41 | 0.061 | chance |
+| layout features at mechanism weight 1.0 | 0.71 | 0.63–1.39 | 0.94 | chance |
+| **shipped:** layout at 1.0, statistic without the mechanism block (`stat_features`) | **1.32** | **0.62–1.41** | **0.061** | chance |
+
+With the mechanism block, same-mechanism trials become each other's neighbours, and the drug-sharing exclusion does not remove them (different drugs, same class), so the statistic starts measuring whether a mechanism class works rather than whether similar trials succeed together. Martin's call: the statistic keeps its own feature set (disease, treatment type, molecule, population); mechanisms are answered by panel b's By mechanism view.
+
 ## Tables
 
 ```
