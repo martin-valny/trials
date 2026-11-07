@@ -279,7 +279,7 @@ test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
     const res = await route.fetch();
     const f = await res.json();
     const t = f.trials.find((x: { mechanisms: string[] }) => x.mechanisms.includes("anti-CD20"));
-    f.clusters = [{ id: 0, label: "Anti-CD20 antibodies in relapsing MS", n: 20, x: t.x, y: t.y, z: t.z }];
+    f.clusters = [{ id: 0, label: "Anti-CD20 antibodies (D1)", n: 20, x: t.x, y: t.y, z: t.z }];
     await route.fulfill({ response: res, json: f });
   });
   await page.goto("/#/explore");
@@ -289,7 +289,7 @@ test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
   if (page.viewportSize()!.width <= 640) {
     // On a phone the map carries numerals, named in a key under the canvas: Off takes the key away.
     const key = page.getByRole("list", { name: "Map labels" });
-    await expect(key).toContainText("Anti-CD20 antibodies in relapsing MS");
+    await expect(key).toContainText("Anti-CD20 antibodies (D1)");
     await labels.getByRole("button", { name: "Off" }).click();
     await expect(key).toHaveCount(0);
     await labels.getByRole("button", { name: "Clusters" }).click();
