@@ -789,6 +789,19 @@ describe("targetsText", () => {
 });
 
 describe("normalizeFile", () => {
+  it("defaults the phase 2 fields an older file lacks", () => {
+    const old = {
+      trials: [{ nct_id: "NCT1", condition_labels: [], drugs: [] }],
+    } as unknown as ExplorerFile;
+    const f = normalizeFile(old);
+    expect(f.clusters).toEqual([]);
+    const [t] = f.trials;
+    expect(t.mechanisms).toEqual([]);
+    expect(t.targets).toEqual([]);
+    expect(t.modalities).toEqual([]);
+    expect(t.succeeded_in).toEqual([]);
+    expect(t.in_pool).toBe(false);
+  });
   it("splits ';'-joined modality values into one modality each, keeping order and dropping repeats", () => {
     const f = {
       clusters: [],

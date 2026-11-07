@@ -120,14 +120,27 @@ export const modalityLabel = (m: string): string =>
   m === NONE ? "No known modality" : m.charAt(0).toUpperCase() + m.slice(1);
 
 /**
- * The file as the page uses it: a drug can list several modalities joined by ";" ("protein;small
- * molecule"), so each trial's modalities are split into one value each, in order, without repeats.
+ * The file as the page uses it: each trial's modalities as one value each (split on ";", in order,
+ * without repeats), and the phase 2 fields an older file lacks defaulted (empty lists, not in the pool).
  */
 export function normalizeFile(f: ExplorerFile): ExplorerFile {
-  const split = (values: string[]) => [
-    ...new Set(values.flatMap((v) => v.split(";").map((x) => x.trim())).filter((x) => x !== "")),
+  // The pipeline already splits modalities; this stays as a guard for hand-made or older files.
+  const split = (values: string[] | undefined) => [
+    ...new Set((values ?? []).flatMap((v) => v.split(";").map((x) => x.trim())).filter((x) => x !== "")),
   ];
-  return { ...f, trials: f.trials.map((t) => ({ ...t, modalities: split(t.modalities) })) };
+  return {
+    ...f,
+    // A file from before phase 2 has none of these: default them so the page still works.
+    clusters: f.clusters ?? [],
+    trials: f.trials.map((t) => ({
+      ...t,
+      mechanisms: t.mechanisms ?? [],
+      targets: t.targets ?? [],
+      modalities: split(t.modalities),
+      succeeded_in: t.succeeded_in ?? [],
+      in_pool: t.in_pool ?? false,
+    })),
+  };
 }
 
 /** A mechanism class as shown; NONE -> "No known mechanism". */
