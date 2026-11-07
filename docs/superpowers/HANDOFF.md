@@ -16,15 +16,27 @@ Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of s
 - **Mechanism coverage:** every drug resolved for **838 of 1,314 drug-bearing trials (63.8%)**, 182 classes (target was 80%; not reached honestly). **For Martin:** `docs/superpowers/research/2026-11-06-mechanism-review-sheet.md` lists about 170 trials of decisions (glatiramer, IVIG/SCIG, stem cells/aHSCT, drugs without a ChEMBL mechanism, vaccines; deciding them all gives roughly 75%). Edits go in `config/mechanisms/overrides.csv`.
 - **Process notes:** the `impeccable` *skill* is still blocked by org policy, but the `impeccable:impeccable-finish-reviewer` *agent* works and produced the finish review. Long runs (ChEMBL mapping, rebuilds, agent waves) need the Mac awake: run them under `caffeinate -dims` (an API drop killed two agents mid-wave on 2026-11-06).
 - **Open side task (Martin, 2026-11-07): close the mechanism-mapping gaps.** Brief and progress log: `docs/superpowers/research/2026-11-07-mapping-gaps-task.md` (self-contained; research which sources map the ~170 decision trials and the §2 suspicious classes, and whether ChEMBL needs a second source). Branch `research/mapping-gaps`. Proposals only; nothing goes into `config/mechanisms/overrides.csv` until Martin approves.
-- **In flight at hand-off — the mapping-gaps research agent:** started 2026-11-07 on branch `research/mapping-gaps` in worktree `.superpowers/wt/mapping-gaps` (created from `feat/explorer-figure-plate`). It writes only research files: `docs/superpowers/research/2026-11-07-mapping-gaps-report.md` and `2026-11-07-proposed-overrides.csv`, and appends to the brief's Progress log. **If you are a fresh agent:** run `git -C .superpowers/wt/mapping-gaps log --oneline -5` and read the brief's Progress log. If the report and CSV are complete, review them, then merge `research/mapping-gaps` into `feat/explorer-figure-plate` (docs only; no code). If they are incomplete, resume from the log's last entry. Either way, **do not** apply proposals to `config/mechanisms/overrides.csv` until Martin has approved them row by row. After approval: add the rows, rerun `map_mechanisms.py` coverage, rebuild the real-data preview, and update the coverage figure in Methods, README and this file.
+- **Mapping-gaps research — DONE 2026-11-07 (merged into this branch; awaiting Martin's approval).**
+  - Report: `docs/superpowers/research/2026-11-07-mapping-gaps-report.md`. Proposals: `docs/superpowers/research/2026-11-07-proposed-overrides.csv` (211 rows: 94 high, 103 medium, 14 low confidence; same columns as `overrides.csv` plus `confidence`).
+  - Effect on coverage, same method as review-sheet §0: 63.8% now → 75.0% if all high rows are accepted → 84.6% with high + medium → 86.1% with everything.
+  - Most medium rows are policy calls rather than evidence: vaccines, MSC, aHSCT, ATG, conditioning regimens. Accepting them as `not_a_drug` gives the same coverage.
+  - Recommended source strategy: keep ChEMBL plus hand overrides, and add **GtoPdb bulk CSVs** (ODbL + CC BY-SA 4.0; its REST API now needs a key) as an automatic fallback in `map_mechanisms.py`. Use GSRS and NCI Thesaurus only as review-time suggestion sources, because short codes collide (`b001`, "ga", "atg"). Open Targets, Wikidata, openFDA and MeSH add little at target level. DrugBank is ruled out by its licence.
+  - A cleaner class vocabulary (one class per target family; AGONIST as "agonist") is proposed in report §4. It needs a code change (a class map); the CSV keeps today's class names so it can be applied as is.
+  - Caveat: ChEMBL returned HTTP 500 during the research, so ChEMBL ids in the proposals were not re-checked live.
+  - **Next for this task (after Martin approves rows):**
+    1. Copy the approved rows (drop the `confidence` column) into `config/mechanisms/overrides.csv`.
+    2. Re-run coverage with `map_mechanisms.py`.
+    3. Rebuild the real-data preview.
+    4. Update the coverage figure in Methods, README and this file.
+    5. Optionally, write a small plan for the GtoPdb fallback and the class-vocabulary map.
 - **Open decisions for Martin:**
-  - the mapping proposals, once the research lands;
+  - which proposal rows to accept (high only, high + medium, or medium as `not_a_drug`);
   - the 3 arm-type questions in review-sheet §1 (natalizumab dosing interruption, "baseline treatment", the steroid taper with inebilizumab);
   - whether the R21 late-phase block should stay per disease (current: per disease; it adds 2 rituximab successes in MG).
 - **Recreating the real-data preview (scratch paths from this session are gone):** follow the "Local preview" bullet under Session 4 below (download `snapshots-2026-11`, then `trialradar rebuild ... --force`, then `npm run build`, then copy the site into `web/dist/data`, then `npx vite preview --port 4173`). `map_mechanisms.py` on this Mac needs `SSL_CERT_FILE` pointing at the system roots (`config/mechanisms/README.md`). Never commit real data.
 - **Next steps, in order:**
   1. Martin pushes `feat/explorer-figure-plate` and opens the PR (the branch has never run on Linux CI; expect the first CI run to be the real test).
-  2. Finish the mapping-gaps task (above), then apply Martin's approved overrides.
+  2. Martin reviews `2026-11-07-proposed-overrides.csv`; apply the approved rows (steps above).
   3. Write the phase 3 plan (mechanism graph: mechanism → target → pathway; spec §6.1 items 3–4 and 7, and §7) with `writing-plans`, then execute it the same way (builder + reviewer per task, parallel waves in worktrees).
   4. The scorecard plan (`docs/superpowers/plans/2026-11-06-mechanism-scorecard.md`). Its Task 1 (R21) is already done; re-check the phase 2 names it consumes before Task 2.
 
