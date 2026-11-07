@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { loadExplorer, loadMeta } from "../../data";
 import {
   allFilters,
+  clusterLabels,
   colorFor,
   DARK_PALETTE,
   diseaseRanking,
@@ -213,8 +214,11 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const phone = useMediaQuery("(max-width: 640px)");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const [mode, setMode] = useState<ColorMode>("outcome");
-  // Named clusters label the map when the file has them; otherwise each disease does.
-  const [labelMode, setLabelMode] = useState<LabelMode>(file.clusters.length > 0 ? "clusters" : "diseases");
+  // Named clusters label the map when the file has some big enough to label; otherwise each disease does.
+  const hasClusters = useMemo(() => clusterLabels(file.clusters, 1).length > 0, [file]);
+  const [labelMode, setLabelMode] = useState<LabelMode>(() =>
+    clusterLabels(file.clusters, 1).length > 0 ? "clusters" : "diseases",
+  );
   const [selected, setSelected] = useState<string | null>(null);
   // The map starts still; the turn is opt-in, and never offered under reduced motion.
   const [spinning, setSpinning] = useState(false);
@@ -238,16 +242,14 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   // The six commonest mechanism classes over the whole file take the colour series.
   const mechanisms = useMemo(() => mechanismSeries(file.trials), [file]);
-  const clusterAnchors = useMemo(
-    () => [...file.clusters].sort((a, b) => b.n - a.n).map(({ label, x, y, z }) => ({ label, x, y, z })),
-    [file],
-  );
+  // The largest named clusters only (8 side by side, 6 on a phone), so the labels never crowd the cloud.
+  const clusterAnchors = useMemo(() => clusterLabels(file.clusters, phone ? 6 : 8), [file, phone]);
   const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
   const color = useCallback(
     (t: ExplorerTrial) => colorFor(t, mode, palette, series, mechanisms),
     [mode, palette, series, mechanisms],
   );
-  const emphasis = useMemo(() => emphasisFor(mode, ranked), [mode, ranked]);
+  const emphasis = useMemo(() => emphasisFor(mode, ranked, mechanisms), [mode, ranked, mechanisms]);
   const shown = useMemo(() => file.trials.filter(visible), [file, visible]);
   const total = file.trials.length;
   const conditions = useMemo(() => {
@@ -332,7 +334,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
                     }}
                   />
                 )}
-                <LabelSwitch value={labelMode} onChange={setLabelMode} clusters={file.clusters.length > 0} />
+                <LabelSwitch value={labelMode} onChange={setLabelMode} clusters={hasClusters} />
                 {!reducedMotion && <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />}
               </div>
             )}

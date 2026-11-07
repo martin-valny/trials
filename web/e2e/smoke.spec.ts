@@ -240,6 +240,21 @@ const paintedPixels = (page: Page) =>
     return n;
   });
 
+/** The painted-pixel count once two reads in a row, a frame or more apart, agree. */
+async function stablePixels(page: Page): Promise<number> {
+  let last = -1;
+  let now = await paintedPixels(page);
+  await expect
+    .poll(async () => {
+      last = now;
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      now = await paintedPixels(page);
+      return now === last;
+    }, { message: "the canvas has settled" })
+    .toBe(true);
+  return now;
+}
+
 test("Mechanism: Select none empties the map; one class alone shows just its trials", async ({ page }) => {
   const file = (await (await page.request.get("/data/explorer.json")).json()) as {
     trials: { mechanisms: string[] }[];
@@ -264,17 +279,16 @@ test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
     const res = await route.fetch();
     const f = await res.json();
     const t = f.trials.find((x: { mechanisms: string[] }) => x.mechanisms.includes("anti-CD20"));
-    f.clusters = [{ id: 0, label: "Anti-CD20 antibodies in relapsing MS", n: 8, x: t.x, y: t.y, z: t.z }];
+    f.clusters = [{ id: 0, label: "Anti-CD20 antibodies in relapsing MS", n: 20, x: t.x, y: t.y, z: t.z }];
     await route.fulfill({ response: res, json: f });
   });
   await page.goto("/#/explore");
   await waitForDraw(page);
   const labels = page.getByRole("group", { name: "Labels" });
   await expect(labels.getByRole("button", { name: "Clusters" })).toHaveAttribute("aria-pressed", "true");
-  // Labels are redrawn once the web font has loaded; measure after that.
+  // Labels are redrawn once the web font has loaded: measure once the count has stopped changing.
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
-  await page.waitForTimeout(100);
-  const withLabels = await paintedPixels(page);
+  const withLabels = await stablePixels(page);
   await labels.getByRole("button", { name: "Off" }).click();
   await expect(labels.getByRole("button", { name: "Off" })).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => paintedPixels(page), { message: "the label and its leader are gone" }).toBeLessThan(withLabels - 100);

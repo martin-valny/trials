@@ -394,7 +394,7 @@ test("panel d names the trial's mechanism and modality", async () => {
   await userEvent.type(box, "NCT02343159{Enter}");
   const d = screen.getByRole("region", { name: "Selected trial" });
   expect(within(d).getByText(/NRF2 activator/)).toBeInTheDocument();
-  expect(within(d).getByText(/small molecule/)).toBeInTheDocument();
+  expect(within(d).getByText(/Small molecule/)).toBeInTheDocument();
 });
 
 test("the Labels switch sits in panel a's corner; with no clusters it offers Diseases (default) and Off", async () => {
@@ -414,9 +414,38 @@ test("the Labels switch sits in panel a's corner; with no clusters it offers Dis
 
 test("with named clusters the Labels switch defaults to Clusters", async () => {
   const t = explorer.trials[6];
-  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Anti-CD20 antibodies", n: 8, x: t.x, y: t.y, z: t.z }] } });
+  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Anti-CD20 antibodies", n: 20, x: t.x, y: t.y, z: t.z }] } });
   await ready();
   const labels = screen.getByRole("group", { name: "Labels" });
   expect(within(labels).getAllByRole("button").map((b) => b.textContent)).toEqual(["Clusters", "Diseases", "Off"]);
   expect(within(labels).getByRole("button", { name: "Clusters" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a class shown only on multi-class trials gets no swatch; the 'none' key swatch has a hairline border", async () => {
+  // One trial carries a second class: "BTK inhibitor" appears only on a multi-class trial, so it is
+  // never painted its own colour and gets no swatch.
+  const trials = explorer.trials.map((t, i) => (i === 6 ? { ...t, mechanisms: ["anti-CD20", "BTK inhibitor"] } : t));
+  stubFetch({ "explorer.json": { ...explorer, trials } });
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Mechanism" }));
+  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  const rows = [...document.querySelectorAll<HTMLElement>(".popover .check")];
+  const swatchOf = (label: string) =>
+    rows.find((r) => r.querySelector(".check-label")!.textContent === label)!.querySelector(".swatch");
+  expect(swatchOf("anti-CD20")).not.toBeNull();
+  expect(swatchOf("BTK inhibitor")).toBeNull();
+  expect(swatchOf("No known mechanism")).not.toBeNull();
+  const key = screen.getByRole("list", { name: "Colour key: Mechanism" });
+  const none = within(key).getByText("No known mechanism").querySelector(".swatch")!;
+  expect(none).toHaveClass("none");
+  expect(within(key).getByText("More than one mechanism")).toBeInTheDocument();
+});
+
+test("clusters too small to label are not offered: Labels defaults to Diseases", async () => {
+  const t = explorer.trials[6];
+  stubFetch({ "explorer.json": { ...explorer, clusters: [{ id: 0, label: "Tiny", n: 14, x: t.x, y: t.y, z: t.z }] } });
+  await ready();
+  const labels = screen.getByRole("group", { name: "Labels" });
+  expect(within(labels).queryByRole("button", { name: "Clusters" })).not.toBeInTheDocument();
+  expect(within(labels).getByRole("button", { name: "Diseases" })).toHaveAttribute("aria-pressed", "true");
 });

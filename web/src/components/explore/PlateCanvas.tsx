@@ -313,23 +313,28 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         }));
         // On a phone the clusters sit too close for labels beside them: stack them in the top corner away
         // from the clusters, below the play control, each with a leader down to its cluster.
-        const spots: { x: number; y: number; lx?: number }[] = labelColumn
+        // A label with no free slot is dropped (null) rather than drawn over another.
+        const spots: ({ x: number; y: number; lx?: number } | null)[] = labelColumn
           ? columnLabels(items, w, COLUMN_TOP, side)
           : placeLabels(items, w, h);
         ctx.strokeStyle = ink;
         ctx.lineWidth = 1;
         shownAnchors.forEach((_, k) => {
+          const spot = spots[k];
+          if (spot === null) return;
           ctx.beginPath();
           ctx.moveTo(at[k].sx, at[k].sy);
-          ctx.lineTo(spots[k].lx ?? spots[k].x - widths[k] / 2 - 2, spots[k].y);
+          ctx.lineTo(spot.lx ?? spot.x - widths[k] / 2 - 2, spot.y);
           ctx.stroke();
         });
         ctx.lineWidth = 2;
         ctx.strokeStyle = plate;
         ctx.fillStyle = ink;
         shownAnchors.forEach((a, k) => {
-          ctx.strokeText(a.label, spots[k].x, spots[k].y);
-          ctx.fillText(a.label, spots[k].x, spots[k].y);
+          const spot = spots[k];
+          if (spot === null) return;
+          ctx.strokeText(a.label, spot.x, spot.y);
+          ctx.fillText(a.label, spot.x, spot.y);
         });
       }
       const ring = ringColor ?? ink;

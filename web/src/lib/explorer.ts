@@ -1,4 +1,4 @@
-import type { ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
+import type { ExplorerCluster, ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
 import { phaseLabel, treatmentLabel } from "./format";
 
 export type ColorMode = "outcome" | "phase" | "disease" | "mechanism" | "modality";
@@ -158,7 +158,39 @@ export const mechanismText = (t: ExplorerTrial): string | null =>
 
 /** Panel d's modality part, as mechanismText. */
 export const modalityText = (t: ExplorerTrial): string | null =>
-  t.modalities.length === 0 ? null : firstOf(t.modalities, 1);
+  t.modalities.length === 0 ? null : firstOf(t.modalities.map(modalityLabel), 1);
+
+/** True when a trial with these classes is painted a series colour: exactly one, and it is in ``series``. */
+const inSeries = (values: string[], series: string[]): boolean => values.length === 1 && series.includes(values[0]);
+
+/**
+ * The classes some trial is painted as: those a trial has as its only class, plus NONE when some trial
+ * has none. The key and the dropdown swatches show only these.
+ */
+export function paintedClasses(trials: ExplorerTrial[], mode: "mechanism" | "modality"): Set<string> {
+  const out = new Set<string>();
+  for (const t of trials) {
+    const v = mode === "mechanism" ? t.mechanisms : t.modalities;
+    if (v.length === 0) out.add(NONE);
+    else if (v.length === 1) out.add(v[0]);
+  }
+  return out;
+}
+
+/** Fewest trials a named cluster needs for a label on the map. */
+export const CLUSTER_LABEL_MIN_N = 15;
+
+/**
+ * The named clusters labelled on the map: those with at least ``minN`` trials, largest first, at most
+ * ``max`` (8 side by side, 6 on a phone), so the labels never crowd the cloud.
+ */
+export function clusterLabels(clusters: ExplorerCluster[], max: number, minN = CLUSTER_LABEL_MIN_N): ClusterAnchor[] {
+  return clusters
+    .filter((c) => c.n >= minN)
+    .sort((a, b) => b.n - a.n || a.id - b.id)
+    .slice(0, max)
+    .map(({ label, x, y, z }) => ({ label, x, y, z }));
+}
 
 // --- end mechanism and modality ---------------------------------------------------------------------
 
@@ -341,13 +373,18 @@ export const outcomeColor = (o: Outcome, palette: Palette): string =>
 /**
  * Which visible trials the canvas redraws on top (opaque, at least 3px, knockout ring): succeeded trials
  * in outcome mode; in disease mode every trial whose first condition is not the dominant one, so small
- * conditions are not buried under the large one; none in phase mode.
+ * conditions are not buried under the large one; in mechanism and modality modes the trials painted a
+ * series colour (one class, among ``mechanisms`` or the modality series); none in phase mode.
  */
-export function emphasisFor(mode: ColorMode, ranked: string[]): ((t: ExplorerTrial) => boolean) | undefined {
+export function emphasisFor(
+  mode: ColorMode,
+  ranked: string[],
+  mechanisms: string[] = [],
+): ((t: ExplorerTrial) => boolean) | undefined {
   if (mode === "outcome") return (t) => t.outcome === "succeeded";
   if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
-  if (mode === "mechanism") return (t) => t.mechanisms.length > 0;
-  if (mode === "modality") return (t) => t.modalities.length > 0;
+  if (mode === "mechanism") return (t) => inSeries(t.mechanisms, mechanisms);
+  if (mode === "modality") return (t) => inSeries(t.modalities, MODALITY_SERIES);
   return undefined;
 }
 
@@ -575,29 +612,27 @@ const LABEL_LINE = 14;
 
 /**
  * Place centred labels in order: each goes where labelPosition puts it, unless that box would touch one
- * already placed; then it is nudged down a line at a time to the first free slot (up to 8 lines; with
- * none free it keeps its own position). A greedy pass, cheap enough per frame for a handful of labels.
+ * already placed; then it is nudged down a line at a time to the first free slot (up to 8 lines). With
+ * none free it is dropped (null) rather than drawn over another. A greedy pass, cheap enough per frame
+ * for a handful of labels.
  */
 export function placeLabels(
   items: { sx: number; sy: number; width: number }[],
   w: number,
   h: number,
-): { x: number; y: number }[] {
+): ({ x: number; y: number } | null)[] {
   const placed: { x: number; y: number; width: number }[] = [];
   const hits = (x: number, y: number, width: number) =>
     placed.some((p) => Math.abs(p.x - x) < (p.width + width) / 2 + 6 && Math.abs(p.y - y) < LABEL_LINE);
   return items.map(({ sx, sy, width }) => {
-    const home = labelPosition(sx, sy, width, w, h);
-    let at = home;
     for (let k = 0; k <= 8; k++) {
       const cand = labelPosition(sx, sy + k * LABEL_LINE, width, w, h);
       if (!hits(cand.x, cand.y, width)) {
-        at = cand;
-        break;
+        placed.push({ ...cand, width });
+        return cand;
       }
     }
-    placed.push({ ...at, width });
-    return at;
+    return null;
   });
 }
 
@@ -652,7 +687,7 @@ export function popupLines(t: ExplorerTrial): [string, string] {
   const parts = [
     firstOf(t.drugs, 2),
     firstOf(t.mechanisms, 1),
-    firstOf(t.modalities, 1),
+    firstOf(t.modalities.map(modalityLabel), 1),
     firstOf(t.treatment_types.slice(0, 2).map(treatmentLabel), 2),
     phaseLabel(t.phase),
     yearSpan(t),

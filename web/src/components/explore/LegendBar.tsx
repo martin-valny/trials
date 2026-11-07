@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import {
+  categoryColor,
   categorySeries,
   diseaseColor,
   firstLabels,
@@ -10,6 +11,7 @@ import {
   NONE,
   OUTCOMES,
   outcomeColor,
+  paintedClasses,
   phasesOf,
   type ColorMode,
   type Palette,
@@ -31,6 +33,8 @@ interface Key {
   label: string;
   swatch: string;
   ring?: boolean;
+  /** The unknown ground: a hairline (--rule) border so the pale swatch reads on the plate. */
+  none?: boolean;
 }
 
 /**
@@ -67,7 +71,7 @@ export function ColourKey(p: ColourKeyProps) {
         {keys.map((k) => (
           <li key={k.label}>
             <span
-              className={k.ring ? "swatch ring" : "swatch"}
+              className={k.ring ? "swatch ring" : k.none ? "swatch none" : "swatch"}
               style={k.ring ? { borderColor: k.swatch } : { background: k.swatch }}
               aria-hidden="true"
             />
@@ -87,25 +91,17 @@ export function ColourKey(p: ColourKeyProps) {
  * order, then other, more than one, and none.
  */
 function categoryKeys(trials: ExplorerTrial[], mode: "mechanism" | "modality", palette: Palette, top: string[]): Key[] {
-  const values = (t: ExplorerTrial) => (mode === "mechanism" ? t.mechanisms : t.modalities);
   const series = categorySeries(mode, top);
-  const single = new Set<string>();
-  let multiple = false;
-  let none = false;
-  for (const t of trials) {
-    const v = values(t);
-    if (v.length === 0) none = true;
-    else if (v.length > 1) multiple = true;
-    else single.add(v[0]);
-  }
+  const painted = paintedClasses(trials, mode);
+  const multiple = trials.some((t) => (mode === "mechanism" ? t.mechanisms : t.modalities).length > 1);
   const name = mode === "mechanism" ? mechanismLabel : modalityLabel;
   const keys: Key[] = series
-    .filter((k) => single.has(k))
-    .map((k) => ({ label: name(k), swatch: palette.diseases[series.indexOf(k) % palette.diseases.length] }));
-  if ([...single].some((k) => !series.includes(k)))
+    .filter((k) => painted.has(k))
+    .map((k) => ({ label: name(k), swatch: categoryColor([k], palette, series) }));
+  if ([...painted].some((k) => k !== NONE && !series.includes(k)))
     keys.push({ label: mode === "mechanism" ? "Other mechanism" : "Other", swatch: palette.otherCategory });
   if (multiple) keys.push({ label: `More than one ${mode}`, swatch: palette.multiple });
-  if (none) keys.push({ label: name(NONE), swatch: palette.unknown });
+  if (painted.has(NONE)) keys.push({ label: name(NONE), swatch: categoryColor([], palette, series), none: true });
   return keys;
 }
 

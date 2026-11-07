@@ -217,7 +217,7 @@ test("the hover card is a tooltip with the trial's id, title and facts", () => {
   render(<HoverCard trial={t} x={10} y={10} r={6} />);
   const card = screen.getByRole("tooltip");
   expect(card).toHaveTextContent(`${t.nct_id} · ${t.title}`);
-  expect(card).toHaveTextContent("dimethyl fumarate · NRF2 activator · small molecule · Behavioral, Device · Phase 4 · 2015–2016");
+  expect(card).toHaveTextContent("dimethyl fumarate · NRF2 activator · Small molecule · Behavioral, Device · Phase 4 · 2015–2016");
 });
 
 const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;

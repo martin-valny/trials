@@ -14,6 +14,7 @@ import {
   NONE,
   OUTCOMES,
   outcomeColor,
+  paintedClasses,
   phasesOf,
   sameFilters,
   type ColorMode,
@@ -78,6 +79,12 @@ export function Toolbar(p: ToolbarProps) {
 
   const first = useMemo(() => firstLabels(trials), [trials]);
 
+  // A class gets a swatch only when some trial is painted its colour (the figure key's rule).
+  const painted = useMemo(
+    () => ({ mechanism: paintedClasses(trials, "mechanism"), modality: paintedClasses(trials, "modality") }),
+    [trials],
+  );
+
   const options = useMemo(() => {
     // Disease colour goes by a trial's first label: a condition no trial lists first is never painted.
     const disease: MultiSelectOption[] = p.conditions.map((c) => ({
@@ -109,7 +116,10 @@ export function Toolbar(p: ToolbarProps) {
         label: name(k),
         n: c.get(k) ?? 0,
         swatch:
-          mode === m ? categoryColor(k === NONE ? [] : [k], palette, categorySeries(m, p.mechanismSeries)) : undefined,
+          mode === m && painted[m].has(k)
+            ? categoryColor(k === NONE ? [] : [k], palette, categorySeries(m, p.mechanismSeries))
+            : undefined,
+        none: k === NONE,
       }));
     // Every set holds NONE (see filtersFor), so its row is always offered, last.
     const withNone = (c: Map<string, number>) => (c.has(NONE) ? c : new Map([...c, [NONE, 0]]));
@@ -118,7 +128,7 @@ export function Toolbar(p: ToolbarProps) {
     const mechanism = category("mechanism", mechanismsOf(mechanisms), mechanisms, mechanismLabel);
     const modality = category("modality", modalitiesOf(modalities), modalities, modalityLabel);
     return { disease, phase, outcome, treatment, mechanism, modality };
-  }, [counts, mode, palette, p.conditions, p.series, p.mechanismSeries, first]);
+  }, [counts, mode, palette, p.conditions, p.series, p.mechanismSeries, first, painted]);
 
   return (
     <div className="toolbar" role="group" aria-label="Map controls">

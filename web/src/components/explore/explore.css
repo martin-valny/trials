@@ -104,6 +104,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .pill-n { font-variant-numeric: tabular-nums; color: var(--muted); }
 .swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
 .swatch.ring { background: transparent; }
+.swatch.none { border-color: var(--rule); } /* the pale unknown ground needs a hairline to read on the plate */
 /* A narrowing toggle ("Results posted"): off means "show all", so it sits quiet like a dropdown at
    rest; on is solid ink. Its count is tabular. */
 .explore .pill.narrowing { margin-left: 8px; gap: 7px; }
