@@ -45,13 +45,23 @@ def _split(cell: str | None) -> tuple[str, ...]:
     return tuple(p for v in (cell or "").split(SEP) if (p := v.strip()))
 
 
+_TEXT = ("mechanism", "action_type")  # display text: ';' becomes ','
+_KEYS = ("mechanism_class", "targets")  # identifiers: ';' is an error
+
+
 def _row(m: DrugMapping) -> dict[str, str]:
+    """One CSV row. Multi-valued cells are ``;``-joined, so no single value may hold ``;``."""
+    for k in _KEYS:
+        bad = [v for v in getattr(m, k) if SEP in v]
+        if bad:
+            raise ValueError(f"{m.drug}: {k} value {bad[0]!r} contains {SEP!r}")
     return {
         "drug": m.drug,
         "status": m.status,
         "chembl_id": m.chembl_id or "",
         "modality": m.modality or "",
-        **{k: _join(getattr(m, k)) for k in _MULTI},
+        **{k: _join(getattr(m, k)) for k in _KEYS},
+        **{k: _join(tuple(v.replace(SEP, ",") for v in getattr(m, k))) for k in _TEXT},
     }
 
 
