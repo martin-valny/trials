@@ -192,10 +192,17 @@ const MECHANISM_SLOT_SHARE = 0.6;
  */
 export function clusterLabels(clusters: ExplorerCluster[], max: number, minN = CLUSTER_LABEL_MIN_N): ClusterAnchor[] {
   const bySize = clusters.filter((c) => c.n >= minN).sort((a, b) => b.n - a.n || a.id - b.id);
+  // Each label once: its largest instance.
   const seen = new Set<string>();
-  const unique = bySize.filter((c) => !seen.has(c.label) && (seen.add(c.label), true));
+  const unique: ExplorerCluster[] = [];
+  for (const c of bySize) {
+    if (seen.has(c.label)) continue;
+    seen.add(c.label);
+    unique.push(c);
+  }
   const mech = unique.filter((c) => c.kind === "mechanism");
   const type = unique.filter((c) => c.kind === "type");
+  // A cluster with no kind (a file from before kinds were exported) counts as mixed.
   const mixed = unique.filter((c) => c.kind !== "mechanism" && c.kind !== "type");
   const mechSlots = Math.ceil(max * MECHANISM_SLOT_SHARE);
   const nMech = Math.min(mech.length, max - Math.min(type.length, max - mechSlots)); // plus spare type slots
