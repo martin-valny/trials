@@ -86,11 +86,19 @@ def _disease_part(
 def _middle_part(
     members: Sequence[Mapping[str, Any]], cfg: ClusterConfig
 ) -> tuple[str, Kind, str | None]:
-    """The middle text, which branch named it, and the mechanism class when that branch did."""
+    """The middle text, which branch named it, and the mechanism class when that branch did.
+
+    The top mechanism class names the cluster only when it reaches ``mechanism_share`` of the
+    drug-bearing members and its trials are at least ``mechanism_min_overall`` of all members,
+    so a lone drug trial cannot name a cluster of non-drug trials."""
     with_drugs = [m for m in members if m.get("drugs")]
     if with_drugs:
         ranked = _ranked(_count_sets(m.get("mechanisms") or () for m in with_drugs))
-        if ranked and ranked[0][1] / len(with_drugs) >= cfg.mechanism_share:
+        if (
+            ranked
+            and ranked[0][1] / len(with_drugs) >= cfg.mechanism_share
+            and ranked[0][1] / len(members) >= cfg.mechanism_min_overall
+        ):
             return ranked[0][0], "mechanism", ranked[0][0]
     if members:
         ranked = _ranked(_count_sets(m.get("treatment_types") or () for m in members))

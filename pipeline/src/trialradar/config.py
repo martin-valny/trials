@@ -99,6 +99,8 @@ class ClusterConfig(_Strict):
     min_samples: int = Field(default=10, ge=1)
     disease_share: float = Field(default=0.6, ge=0, le=1)
     mechanism_share: float = Field(default=0.4, ge=0, le=1)
+    # a naming mechanism class must also cover at least this share of all members
+    mechanism_min_overall: float = Field(default=0.25, ge=0, le=1)
     type_share: float = Field(default=0.5, ge=0, le=1)
     drug_share: float = Field(default=0.15, ge=0, le=1)
 

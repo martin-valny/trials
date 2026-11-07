@@ -239,6 +239,26 @@ def test_mechanism_drug_share_is_measured_over_all_members() -> None:
     assert name_cluster(members, SHORTS, CFG) == "MS · class A"
 
 
+def test_mechanism_needs_a_minimum_share_of_all_members() -> None:
+    """Regression: one drug trial of class X among 70 OTHER trials is 1/1 of the drug-bearing
+    members but far below mechanism_min_overall of all members, so the type rule names it."""
+    members = [_trial(MS, drugs=["x1"], mechanisms=["class X"], types=["DRUG"])] + [
+        _trial(MS, types=["OTHER"]) for _ in range(70)
+    ]
+    assert name_and_kind(members, SHORTS, CFG) == ("MS · other interventions", "type")
+
+
+def test_mechanism_min_overall_is_inclusive() -> None:
+    members = [
+        _trial(MS, drugs=["x1"], mechanisms=["class X"], types=["DRUG"]) for _ in range(2)
+    ] + [_trial(MS, types=["OTHER"]) for _ in range(6)]
+    # class X: 2/2 drug-bearing and 2/8 = 0.25 of all members: still a mechanism name
+    assert name_and_kind(members, SHORTS, CFG) == ("MS · class X (x1)", "mechanism")
+    strict = CFG.model_copy(update={"mechanism_min_overall": 0.3})
+    # type-named now; x1 is 2/8 >= drug_share, so the type rule still brackets it
+    assert name_and_kind(members, SHORTS, strict) == ("MS · other interventions (x1)", "type")
+
+
 def test_kind_follows_the_branch_that_named_the_middle() -> None:
     mech = [_trial(MS, drugs=["d"], mechanisms=["class A"], types=["DRUG"]) for _ in range(3)]
     assert name_and_kind(mech, SHORTS, CFG) == ("MS · class A (d)", "mechanism")
@@ -270,11 +290,18 @@ def test_cluster_config_defaults() -> None:
         0.5,
         0.15,
     )
+    assert c.mechanism_min_overall == 0.25
 
 
 @pytest.mark.parametrize(
     "patch",
-    [{"min_cluster_size": 1}, {"min_samples": 0}, {"disease_share": 1.5}, {"drug_share": -0.1}],
+    [
+        {"min_cluster_size": 1},
+        {"min_samples": 0},
+        {"disease_share": 1.5},
+        {"drug_share": -0.1},
+        {"mechanism_min_overall": 1.1},
+    ],
 )
 def test_cluster_config_rejects_bad_values(patch: dict[str, Any]) -> None:
     from pydantic import ValidationError

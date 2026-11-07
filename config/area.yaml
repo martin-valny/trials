@@ -46,6 +46,7 @@ explorer:
     min_samples: 10
     disease_share: 0.6
     mechanism_share: 0.4
+    mechanism_min_overall: 0.25
     type_share: 0.5
     drug_share: 0.15
   weights:
