@@ -589,12 +589,14 @@ describe("placeLabels", () => {
   });
 
   it("sends a label that cannot fit near its anchor to a margin callout outside the cloud", () => {
-    // The cloud fills x 100..500 densely; nothing near the anchor is free.
+    // The cloud fills x 100..500, y 100..300 densely; nothing within 48px of its centre is free.
     const dots: { sx: number; sy: number }[] = [];
     for (let x = 100; x <= 500; x += 4) for (let y = 100; y <= 300; y += 4) dots.push({ sx: x, sy: y });
-    const [s] = placeLabels([{ key: "a", ax: 450, ay: 200, width: 60 }], W, H, { dots });
+    const [s] = placeLabels([{ key: "a", ax: 300, ay: 200, width: 60 }], W, H, { dots });
     expect(s!.callout).toBe(true);
-    expect(s!.left).toBeGreaterThan(500); // beyond the cloud's right edge, the side nearer the anchor
+    // Set outside the cloud's box, on whichever side its leader crosses the fewest dots.
+    const outside = s!.left > 500 || s!.left + 60 < 100 || s!.y + 7 < 100 || s!.y - 7 > 300;
+    expect(outside).toBe(true);
   });
 
   it("drops a label with no room anywhere rather than overlap", () => {

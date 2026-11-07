@@ -705,6 +705,7 @@ export const LABEL_LINE = 14;
 export const LEADER_MAX = 48;
 const LABEL_PAD = 3; // px kept clear around each label box
 const LEADER_STEPS = [6, 18, 32, LEADER_MAX];
+const DOT_REACH = 3; // px: a typical dot radius, so a label clears dot edges, not just centres
 const MAX_COVERED = 3; // dots a label box may cover before the spot counts as no fit
 // Directions tried around each anchor, in order of preference: east first, as a figure label reads.
 const DIRECTIONS: [number, number][] = [
@@ -780,24 +781,29 @@ function segmentsCross(a: number[], b: number[], c: number[], d: number[]): bool
   return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
 }
 
-/** Counts of dots per 10px cell, to price a label box by the dots it would cover. */
+/** Dots bucketed in 10px cells, to count exactly the dots whose centres fall in a label box. */
 function dotGrid(dots: { sx: number; sy: number }[], w: number, h: number) {
   const C = 10;
   const cols = Math.max(1, Math.ceil(w / C));
   const rows = Math.max(1, Math.ceil(h / C));
-  const n = new Uint16Array(cols * rows);
-  for (const d of dots) {
+  const cells: number[][] = Array.from({ length: cols * rows }, () => []);
+  dots.forEach((d, i) => {
     const c = Math.floor(d.sx / C);
     const r = Math.floor(d.sy / C);
-    if (c >= 0 && c < cols && r >= 0 && r < rows) n[r * cols + c]++;
-  }
+    if (c >= 0 && c < cols && r >= 0 && r < rows) cells[r * cols + c].push(i);
+  });
   return (b: Box): number => {
     let sum = 0;
     const c0 = Math.max(0, Math.floor(b.x0 / C));
     const c1 = Math.min(cols - 1, Math.floor(b.x1 / C));
     const r0 = Math.max(0, Math.floor(b.y0 / C));
     const r1 = Math.min(rows - 1, Math.floor(b.y1 / C));
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) sum += n[r * cols + c];
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++)
+        for (const i of cells[r * cols + c]) {
+          const d = dots[i];
+          if (d.sx >= b.x0 && d.sx <= b.x1 && d.sy >= b.y0 && d.sy <= b.y1) sum++;
+        }
     return sum;
   };
 }
@@ -820,10 +826,12 @@ const leaderEnd = (ax: number, ay: number, b: Box) => ({
 
 /**
  * Place labels in order, each beside its anchor: 8 directions at up to four distances (leaders at most
- * 48px), scored by the dots the box would cover, the distance, and crossing other leaders; a box may never
+ * 48px), scored by the dots the box would cover, the dots its leader runs through, the distance, and
+ * crossing other leaders; a box may never
  * cover more than a few dots, touch another label, an obstacle or the canvas edge, and a leader may never
  * run through another label.
- * A label with no such spot goes to a margin callout beside the cloud's box, on the side nearer its anchor;
+ * A label with no such spot goes to a margin callout beside the cloud's box (any side), where its leader
+ * crosses the fewest dots;
  * with no room there either it is dropped (null), never drawn over another. ``memory`` keeps each label's
  * last choice preferred, so labels do not flicker between sides while the map turns.
  */
@@ -840,8 +848,28 @@ export function placeLabels(items: LabelItem[], w: number, h: number, opts: Plac
     !boxes.some((o) => segmentHitsBox(ax, ay, lx, ly, o)) &&
     !leaders.some(([p, q]) => segmentHitsBox(p[0], p[1], q[0], q[1], b));
   // The cloud's box, for callouts: the dots' extent, or the anchors' when there are no dots.
-  const xs = dots.length > 0 ? dots.map((d) => d.sx) : items.map((i) => i.ax);
-  const hull = xs.length > 0 ? { x0: Math.min(...xs), x1: Math.max(...xs) } : { x0: w / 2, x1: w / 2 };
+  const src = dots.length > 0 ? dots : items.map((i) => ({ sx: i.ax, sy: i.ay }));
+  let hull = { x0: w / 2, x1: w / 2, y0: h / 2, y1: h / 2 };
+  if (src.length > 0) {
+    hull = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    for (const d of src) {
+      hull.x0 = Math.min(hull.x0, d.sx);
+      hull.x1 = Math.max(hull.x1, d.sx);
+      hull.y0 = Math.min(hull.y0, d.sy);
+      hull.y1 = Math.max(hull.y1, d.sy);
+    }
+  }
+  /** Dots near the segment from (ax, ay) to (lx, ly), sampled every 5px through the grid. */
+  const alongLeader = (ax: number, ay: number, lx: number, ly: number): number => {
+    const n = Math.max(1, Math.ceil(Math.hypot(lx - ax, ly - ay) / 5));
+    let sum = 0;
+    for (let i = 1; i <= n; i++) {
+      const x = ax + ((lx - ax) * i) / n;
+      const y = ay + ((ly - ay) * i) / n;
+      sum += cover({ x0: x - 2.5, x1: x + 2.5, y0: y - 2.5, y1: y + 2.5 });
+    }
+    return sum;
+  };
 
   return items.map(({ key, ax, ay, width }) => {
     let best: { b: Box; lx: number; ly: number; score: number; idx: number } | null = null;
@@ -850,12 +878,13 @@ export function placeLabels(items: LabelItem[], w: number, h: number, opts: Plac
       for (const [ux, uy] of DIRECTIONS) {
         const b = candidateBox(ax, ay, width, ux, uy, d);
         const { lx, ly } = leaderEnd(ax, ay, b);
-        const covered = cover(b);
+        // Dots are discs: count those within a dot's radius of the box, not only centres inside it.
+        const covered = cover({ x0: b.x0 - DOT_REACH, y0: b.y0 - DOT_REACH, x1: b.x1 + DOT_REACH, y1: b.y1 + DOT_REACH });
         // A label over the cloud's dots is unreadable: more than a few, and the spot is not a fit.
         if (covered <= MAX_COVERED && free(b, ax, ay, lx, ly)) {
           const crossings = leaders.filter(([p, q]) => segmentsCross(p, q, [ax, ay], [lx, ly])).length;
           const score =
-            4 * covered + 0.6 * d + 0.4 * DIRECTIONS.findIndex(([x, y]) => x === ux && y === uy) + 30 * crossings -
+            4 * covered + 1.5 * alongLeader(ax, ay, lx, ly) + 0.6 * d + 0.4 * DIRECTIONS.findIndex(([x, y]) => x === ux && y === uy) + 30 * crossings -
             (memory?.get(key) === idx ? 8 : 0);
           if (best === null || score < best.score) best = { b, lx, ly, score, idx };
         }
@@ -868,21 +897,33 @@ export function placeLabels(items: LabelItem[], w: number, h: number, opts: Plac
       leaders.push([[ax, ay], [best.lx, best.ly]]);
       return { left: best.b.x0, y: (best.b.y0 + best.b.y1) / 2, lx: best.lx, ly: best.ly, callout: false };
     }
-    // Margin callout: beside the cloud's box, nearer side first, scanning out from the anchor's height.
-    const right = { x0: hull.x1 + 10, x1: hull.x1 + 10 + width };
-    const left = { x0: hull.x0 - 10 - width, x1: hull.x0 - 10 };
-    const sides = ax - hull.x0 > hull.x1 - ax ? [right, left] : [left, right];
-    for (let k = 0; k < Math.ceil(h / LABEL_LINE) * 2; k++) {
-      const dy = (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * LABEL_LINE;
-      for (const side of sides) {
-        const b = { x0: side.x0, x1: side.x1, y0: ay + dy - LABEL_LINE / 2, y1: ay + dy + LABEL_LINE / 2 };
-        const { lx, ly } = leaderEnd(ax, ay, b);
-        if (!free(b, ax, ay, lx, ly)) continue;
-        memory?.set(key, -1);
-        boxes.push(b);
-        leaders.push([[ax, ay], [lx, ly]]);
-        return { left: b.x0, y: ay + dy, lx, ly, callout: true };
-      }
+    // Margin callout: beside the cloud's box (left, right, above or below), wherever its leader crosses
+    // the fewest dots, then nearest the anchor.
+    let call: { b: Box; lx: number; ly: number; score: number } | null = null;
+    const consider = (b: Box) => {
+      const { lx, ly } = leaderEnd(ax, ay, b);
+      if (!free(b, ax, ay, lx, ly)) return;
+      const len = Math.hypot(lx - ax, ly - ay);
+      const score = 3 * alongLeader(ax, ay, lx, ly) + 0.25 * len;
+      if (call === null || score < call.score) call = { b, lx, ly, score };
+    };
+    const half = LABEL_LINE / 2;
+    for (let k = -Math.ceil(h / LABEL_LINE); k <= Math.ceil(h / LABEL_LINE); k++) {
+      const y = ay + k * LABEL_LINE;
+      consider({ x0: hull.x1 + 10, x1: hull.x1 + 10 + width, y0: y - half, y1: y + half });
+      consider({ x0: hull.x0 - 10 - width, x1: hull.x0 - 10, y0: y - half, y1: y + half });
+    }
+    for (let k = -Math.ceil(w / 24); k <= Math.ceil(w / 24); k++) {
+      const x0 = ax - width / 2 + k * 12;
+      consider({ x0, x1: x0 + width, y0: hull.y0 - 10 - LABEL_LINE, y1: hull.y0 - 10 });
+      consider({ x0, x1: x0 + width, y0: hull.y1 + 10, y1: hull.y1 + 10 + LABEL_LINE });
+    }
+    if (call !== null) {
+      const c: { b: Box; lx: number; ly: number } = call;
+      memory?.set(key, -1);
+      boxes.push(c.b);
+      leaders.push([[ax, ay], [c.lx, c.ly]]);
+      return { left: c.b.x0, y: (c.b.y0 + c.b.y1) / 2, lx: c.lx, ly: c.ly, callout: true };
     }
     return null;
   });
