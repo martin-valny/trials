@@ -35,9 +35,9 @@ Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
 ## Current state
 
 First real run: 2026-11-06 snapshot, ChEMBL_37. 909 distinct drug names; ChEMBL maps 247,
-`overrides.csv` adds 200 `manual` rows (name variants, brands, codes, combinations split
+`overrides.csv` adds 199 `manual` rows (name variants, brands, codes, combinations split
 into named components, CAR-T with the target in its name) and 50 `not_a_drug` rows
-(sampling, imaging tracers/contrast, treatment-strategy labels). 63.6% of drug-bearing
+(sampling, imaging tracers/contrast, treatment-strategy labels). 63.8% of drug-bearing
 trials have all their drugs resolved (target 80%). Open questions and suggested
 corrections: `docs/superpowers/research/2026-11-06-mechanism-review-sheet.md`.
 

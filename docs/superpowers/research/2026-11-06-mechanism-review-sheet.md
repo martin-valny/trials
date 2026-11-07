@@ -2,13 +2,13 @@
 
 For Martin. Data: the 2026-11-06 snapshot and ChEMBL_37 (2026-05-01). To correct a row, edit `config/mechanisms/overrides.csv`: an override row replaces the drug's row, always wins, and matches drug names lower-case. Every row I added has a `source` column saying why.
 
-## 0. Coverage: 63.6% (target 80%, not reached)
+## 0. Coverage: 63.8% (target 80%, not reached)
 
 | measure | ChEMBL only | with overrides |
 |---|---|---|
-| drug-bearing trials with all drugs resolved (mapped, manual or not_a_drug) | 592 / 1,314 (45.1%) | **836 / 1,314 (63.6%)** |
-| drug-bearing trials with at least one class | 683 (52.0%) | 866 (65.9%) |
-| drugs: mapped / manual / not_a_drug / unmapped | 247 / 0 / 0 / 662 | 246 / 200 / 50 / 413 |
+| drug-bearing trials with all drugs resolved (mapped, manual or not_a_drug) | 592 / 1,314 (45.1%) | **838 / 1,314 (63.8%)** |
+| drug-bearing trials with at least one class | 683 (52.0%) | 865 (65.8%) |
+| drugs: mapped / manual / not_a_drug / unmapped | 247 / 0 / 0 / 662 | 246 / 199 / 50 / 414 |
 
 What is left: the five groups in section 1 (about 170 trials) and a long tail of 296 names that appear in only one trial each.
 
@@ -21,6 +21,14 @@ What is left: the five groups in section 1 (about 170 trials) and a long tail of
 | stem cells / aHSCT | 49 | autologous HSCT, mesenchymal stem cells (many), lymphodepletion and myeloablative regimens | procedure or cell product with no molecular target | `aHSCT` and `MSC` (cell therapy), or `not_a_drug` for conditioning regimens |
 | drugs without a ChEMBL mechanism | 45 | see the next table | molecule is in ChEMBL with no mechanism record | per drug, below |
 | vaccines | 20 | influenza, pneumococcal, tetanus, zoster, COVID (BNT162, mRNA-1273, Ad26), BCG | mostly vaccine-response studies | `vaccine` (other), or `not_a_drug` |
+
+Arm-type questions (one trial each):
+
+| name | question | current state |
+|---|---|---|
+| dosing interruption of natalizumab | a withdrawal arm: count it as natalizumab, or as `not_a_drug`? | unmapped |
+| baseline treatment | a background-therapy arm: `not_a_drug`? | unmapped |
+| inebilizumab + rapid steroid tapering group | I mapped it to inebilizumab only and dropped the steroid taper, yet I map generic "corticosteroids" to the glucocorticoid class. Add the glucocorticoid class here too? | manual: anti-CD19 only |
 
 Drugs without a ChEMBL mechanism (my reading of the literature; confirm before I add them):
 
@@ -53,15 +61,16 @@ Drugs without a ChEMBL mechanism (my reading of the literature; confirm before I
 | 9 | 3 to 6 classes per drug | paracetamol, metformin, quetiapine, topiramate, hydroxychloroquine, ibudilast | symptomatic drugs inflate the class count | keep one class per drug |
 | 10 | raw ChEMBL names (e.g. "Transient receptor potential cation channel subfamily V member 1 activator") | rare drugs | no short label | add labels where they matter |
 | 11 | background drugs: Bacterial 70S ribosome inhibitor, H1 receptor antagonist, Spike glycoprotein vaccine antigen, Rocuronium agent | antibiotics, premedication, vaccines, sugammadex | correct, but not disease mechanisms | `not_a_drug` if they are premedication or background |
-| 12 | 182 distinct classes | — | a lot for one filter or colour | merge per rows 1–7 |
+| 12 | H1 receptor antagonist, vitamin D receptor modulator | "antihistamine" → CHEMBL17157 and "vitamin d" → CHEMBL1536 | each is an exact ChEMBL synonym match of a generic word, so a whole drug class resolves to one molecule | fine for the class, but the chembl_id and targets belong to one specific molecule |
+| 13 | 182 distinct classes | — | a lot for one filter or colour | merge per rows 1–7 |
 
 ## 3. What I added (each row has a `source`)
 
 | status | rows | what |
 |---|---|---|
-| manual | 200 | name variants, brands and codes of drugs ChEMBL maps (mapping copied); prodrug (fludarabine); combinations split into named parts (nabiximols = THC + CBD, BEAM, Truvada, AVP-923, ADS-5102); generic corticosteroids; CAR-T with the target in its name (CD19, BCMA, CD20, BAFF-R); obe-cel |
+| manual | 199 | name variants, brands and codes of drugs ChEMBL maps (mapping copied); prodrug (fludarabine); combinations split into named parts (nabiximols = THC + CBD, BEAM, Truvada, AVP-923, ADS-5102); generic corticosteroids; CAR-T with the target in its name (CD19, BCMA, CD20, BAFF-R); obe-cel |
 | not_a_drug | 50 | sample collection; imaging tracers and MRI contrast agents; treatment-strategy labels with no single drug ("dmt", "treatment withdrawal", "platform therapies", …) |
-| left unmapped | 413 names | section 1, plus arm placeholders ("a", "formulation b", "dose level 2 group"), cannabis preparations, MD1003 (biotin), mesna, and one-trial codes |
+| left unmapped | 414 names | section 1, plus arm placeholders ("a", "formulation b", "dose level 2 group"), cannabis preparations, MD1003 (biotin), mesna, and one-trial codes |
 
 
 ## 4. Top 60 drugs by trial count
@@ -77,8 +86,8 @@ Drugs without a ChEMBL mechanism (my reading of the literature; confirm before I
 | 7 | natalizumab | 23 | anti-α4-integrin | ITGA4; ITGB1; ITGB7 | antibody | mapped |
 | 8 | cyclophosphamide | 19 | DNA inhibitor | — | small molecule | mapped |
 | 9 | nabiximols | 19 | CB1 receptor inhibitor; CB1 receptor modulator | CNR1 | small molecule | manual |
-| 10 | glatiramer | 18 | — | — | — | unmapped |
-| 11 | teriflunomide | 18 | DHODH inhibitor | DHODH | small molecule | mapped |
+| 10 | teriflunomide | 18 | DHODH inhibitor | DHODH | small molecule | mapped |
+| 11 | glatiramer | 18 | — | — | — | unmapped |
 | 12 | ofatumumab | 18 | anti-CD20 | MS4A1 | antibody | mapped |
 | 13 | ublituximab | 14 | anti-CD20 | MS4A1 | antibody | mapped |
 | 14 | rozanolixizumab | 13 | anti-FcRn | FCGRT | antibody | mapped |
@@ -112,7 +121,7 @@ Drugs without a ChEMBL mechanism (my reading of the literature; confirm before I
 | 42 | memantine | 5 | NMDA receptor inhibitor | GRIN1; GRIN2A; GRIN2B … (7 genes) | small molecule | mapped |
 | 43 | fampridine-sr | 5 | Kv channel inhibitor | KCNA1; KCNA10; KCNA2 … (40 genes) | small molecule | manual |
 | 44 | mesenchymal stem cells | 5 | — | — | — | unmapped |
-| 45 | pbr06 | 5 | — | — | — | unmapped |
+| 45 | pbr06 | 5 | — | — | — | not_a_drug |
 | 46 | evobrutinib | 5 | BTK inhibitor | BTK | small molecule | mapped |
 | 47 | gnbac1 | 4 | anti-syncytin-1 | ERVW-1 | antibody | mapped |
 | 48 | orelabrutinib | 4 | BTK inhibitor | BTK | small molecule | mapped |
@@ -123,8 +132,8 @@ Drugs without a ChEMBL mechanism (my reading of the literature; confirm before I
 | 53 | interferon beta 1a | 4 | IFN-α/β receptor modulator | IFNAR1; IFNAR2 | protein | manual |
 | 54 | fampridine | 4 | Kv channel inhibitor | KCNA1; KCNA10; KCNA2 … (40 genes) | small molecule | mapped |
 | 55 | mitoxantrone | 4 | DNA inhibitor; topoisomerase II inhibitor | TOP2A | small molecule | mapped |
-| 56 | alemtuzumab gz402673 | 4 | anti-CD52 | CD52 | antibody | manual |
-| 57 | paracetamol | 4 | COX inhibitor; Fatty-acid amide hydrolase 1 inhibitor; Transient receptor potential cation channel subfamily V member 1 activator | FAAH; PTGS1; PTGS2; TRPV1 | small molecule | mapped |
+| 56 | paracetamol | 4 | COX inhibitor; Fatty-acid amide hydrolase 1 inhibitor; Transient receptor potential cation channel subfamily V member 1 activator | FAAH; PTGS1; PTGS2; TRPV1 | small molecule | mapped |
+| 57 | alemtuzumab gz402673 | 4 | anti-CD52 | CD52 | antibody | manual |
 | 58 | ivig | 4 | — | — | — | unmapped |
 | 59 | imu-838 | 4 | DHODH inhibitor | DHODH | small molecule | mapped |
 | 60 | baf312 | 4 | S1P receptor modulator | S1PR1 | small molecule | mapped |
@@ -142,7 +151,7 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | DNA inhibitor | 51 | cyclophosphamide, cladribine, mitoxantrone |
 | anti-FcRn | 48 | rozanolixizumab, efgartigimod, efgartigimod ph20 |
 | KEAP1 inhibitor | 37 | dimethyl fumarate, monomethyl fumarate, diroximel fumarate |
-| anti-α4-integrin | 34 | natalizumab, bg00002, tysabri ® |
+| anti-α4-integrin | 33 | natalizumab, bg00002, tysabri ® |
 | BTK inhibitor | 28 | tolebrutinib, fenebrutinib, evobrutinib |
 | anti-C5 | 28 | eculizumab, ravulizumab, zilucoplan |
 | DHODH inhibitor | 25 | teriflunomide, imu-838, teriflunomide hmr1726 |
@@ -183,8 +192,8 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | anti-LINGO-1 | 5 | opicinumab |
 | androgen receptor modulator | 5 | xyosted 75 milligram in auto-injector, testosterone undecanoate, nebido® testosterone undecanoate / solution for |
 | GABA-B receptor modulator | 5 | arbaclofen, kemstro, arbaclofen er |
-| Fatty-acid amide hydrolase 1 inhibitor | 5 | paracetamol, tylenol pill |
 | Transient receptor potential cation channel subfamily V member 1 activator | 5 | paracetamol, tylenol pill |
+| Fatty-acid amide hydrolase 1 inhibitor | 5 | paracetamol, tylenol pill |
 | anti-BAFF | 5 | belimumab, atacicept, ly2127399 |
 | α2-adrenergic receptor modulator | 5 | tizanidine, sublingual tizanidine, guanabenz |
 | anti-RGMa | 4 | elezanumab, abt-555 |
@@ -201,8 +210,8 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | α4-integrin antagonist | 3 | firategrast, firategrast modified release, firategrast immediate release |
 | D2 receptor antagonist | 3 | domperidone, extended-release quetiapine fumarate |
 | CD20 CAR-T | 3 | cd20/bcma-directed car-t cells, cd20/bcma-directed car-t cells autologous 2nd generation |
-| RNA inhibitor | 3 | cytarabine, carmustine, etoposide, cytarabine, and melphalan, carmustine |
 | Glutathione reductase, mitochondrial inhibitor | 3 | carmustine, etoposide, cytarabine, and melphalan, carmustine, beam regimen |
+| RNA inhibitor | 3 | cytarabine, carmustine, etoposide, cytarabine, and melphalan, carmustine |
 | β2-adrenergic receptor modulator | 3 | salbutamol, isoxsuprine, albuterol |
 | 26S proteasome inhibitor | 3 | bortezomib |
 | melatonin receptor modulator | 3 | melatonin |
@@ -230,17 +239,17 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | Tyrosine-protein kinase JAK2 inhibitor | 2 | ruxolitinib, baricitinib |
 | Tyrosine-protein kinase JAK1 inhibitor | 2 | ruxolitinib, baricitinib |
 | Glutamate receptor ionotropic AMPA antagonist | 2 | bgg492, avonex and topamax |
-| Carbonic anhydrase 4 inhibitor | 2 | avonex and topamax, acetazolamide |
 | Glutamate receptor ionotropic kainate antagonist | 2 | bgg492, avonex and topamax |
 | Carbonic anhydrase 2 inhibitor | 2 | avonex and topamax, acetazolamide |
+| Carbonic anhydrase 4 inhibitor | 2 | avonex and topamax, acetazolamide |
 | α4-integrin inhibitor | 2 | cdp323 |
 | calcium channel modulator | 2 | gabapentin |
 | anti-APRIL | 2 | atacicept |
 | Solute carrier family 12 member 3 inhibitor | 2 | indapamide pill, indapamide |
 | cGMP-inhibited 3',5'-cyclic phosphodiesterase 3A inhibitor | 2 | ibudilast, cilostazol |
-| Ferriprotoporphyrin IX inhibitor | 2 | hydroxychloroquine pill, hydroxychloroquine |
 | Toll-like receptor 7 antagonist | 2 | hydroxychloroquine pill, hydroxychloroquine |
 | Toll-like receptor 9 antagonist | 2 | hydroxychloroquine pill, hydroxychloroquine |
+| Ferriprotoporphyrin IX inhibitor | 2 | hydroxychloroquine pill, hydroxychloroquine |
 | anti-IL-23 | 2 | cnto 1275, abt-874/human monoclonal antibody against il-12 |
 | anti-IL-12 | 2 | cnto 1275, abt-874/human monoclonal antibody against il-12 |
 | α9/α10 nicotinic receptor antagonist | 1 | neramexane mesylate |
@@ -250,41 +259,41 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | anti-G-protein coupled receptor family C group 5 member D | 1 | talquetamab |
 | Sulfonylurea receptor 1, Kir6.2 inhibitor | 1 | glibenclamide |
 | Complement factor B inhibitor | 1 | iptacopan |
-| Synaptic vesicle glycoprotein 2A modulator | 1 | levetiracetam |
 | Voltage-dependent N-type calcium channel subunit alpha-1B inhibitor | 1 | levetiracetam |
+| Synaptic vesicle glycoprotein 2A modulator | 1 | levetiracetam |
 | Cysteinyl leukotriene receptor 1 antagonist | 1 | montelukast |
 | Iron agent | 1 | dexrazoxane plus mitoxantrone |
+| Vascular endothelial growth factor receptor 2 inhibitor | 1 | cabozantinib |
 | anti-CTLA-4 | 1 | ipilimumab |
 | Hepatocyte growth factor receptor inhibitor | 1 | cabozantinib |
-| Vascular endothelial growth factor receptor 2 inhibitor | 1 | cabozantinib |
 | Monoglyceride lipase inhibitor | 1 | abx-1431 |
 | Neutrophil elastase inhibitor | 1 | sivelestat hydrate |
 | GABA-A receptor positive modulator | 1 | avonex and topamax |
 | anti-Heterotrimeric lymphotoxin LTa1b2 | 1 | baminercept |
 | anti-Tumor necrosis factor ligand superfamily member 14 | 1 | baminercept |
 | GM-CSF receptor modulator | 1 | granulocyte-macrophage colony-stimulating factor |
-| Carbonic anhydrase 1 inhibitor | 1 | acetazolamide |
 | Carbonic anhydrase 12 inhibitor | 1 | acetazolamide |
+| Carbonic anhydrase 1 inhibitor | 1 | acetazolamide |
 | anti-CCR2 | 1 | mln1202 |
 | CCR2 antagonist | 1 | mk0812 |
 | Matrilysin inhibitor | 1 | interferon beta 1a, doxycycline |
 | Neutrophil collagenase inhibitor | 1 | interferon beta 1a, doxycycline |
-| Interstitial collagenase inhibitor | 1 | interferon beta 1a, doxycycline |
 | Collagenase 3 inhibitor | 1 | interferon beta 1a, doxycycline |
+| Interstitial collagenase inhibitor | 1 | interferon beta 1a, doxycycline |
 | α1-adrenergic receptor modulator | 1 | alfuzosin |
 | Bcr/Abl fusion protein inhibitor | 1 | imatinib mesylate |
 | Platelet-derived growth factor receptor beta inhibitor | 1 | imatinib mesylate |
 | Tyrosine-protein kinase ABL1 inhibitor | 1 | imatinib mesylate |
 | Amiloride-sensitive sodium channel, ENaC inhibitor | 1 | amiloride |
 | anti-FcγRIIb | 1 | obexelimab |
-| GABA-A receptor antagonist | 1 | etifoxine |
 | TSPO modulator | 1 | xbd173 |
-| Vecuronium agent | 1 | sugammadex |
+| GABA-A receptor antagonist | 1 | etifoxine |
 | Rocuronium agent | 1 | sugammadex |
+| Vecuronium agent | 1 | sugammadex |
 | Fibroblast growth factor receptor 2 modulator | 1 | palifermin |
 | Human immunodeficiency virus type 1 integrase inhibitor | 1 | raltegravir |
-| cGMP-specific 3',5'-cyclic phosphodiesterase inhibitor | 1 | ibudilast |
 | cAMP and cAMP-inhibited cGMP 3',5'-cyclic phosphodiesterase 10A inhibitor | 1 | ibudilast |
+| cGMP-specific 3',5'-cyclic phosphodiesterase inhibitor | 1 | ibudilast |
 | Hyaluronic acid agent | 1 | rhuph20 |
 | Glycogen synthase kinase-3 inhibitor | 1 | lithium carbonate |
 | Inositol monophosphatase 1 inhibitor | 1 | lithium carbonate |
@@ -295,17 +304,17 @@ A trial counts once in every class any of its drugs carries. Examples are the dr
 | anti-SNAP-25 | 1 | botulinum toxin type a |
 | Tyrosine-protein kinase JAK3 inhibitor | 1 | ruxolitinib |
 | Non-receptor tyrosine-protein kinase TYK2 inhibitor | 1 | ruxolitinib |
-| Synaptic vesicular amine transporter inhibitor | 1 | lisdexamfetamine |
-| noradrenaline transporter agent | 1 | lisdexamfetamine |
 | dopamine transporter agent | 1 | lisdexamfetamine |
+| noradrenaline transporter agent | 1 | lisdexamfetamine |
+| Synaptic vesicular amine transporter inhibitor | 1 | lisdexamfetamine |
 | Complement C5 mRNA silencer | 1 | pozelimab + cemdisiran, cemdisiran |
 | GLP-1 receptor modulator | 1 | liraglutide pen injector |
 | Vitamin K epoxide reductase complex subunit 1 inhibitor | 1 | s-warfarin |
 | Fast skeletal troponin complex activator | 1 | ck-2017357 |
 | anti-IL-1 receptor | 1 | anakinra |
 | Thyroid hormone receptor modulator | 1 | liothyronine |
-| 5-hydroxytryptamine receptor 2C antagonist | 1 | extended-release quetiapine fumarate |
 | 5-hydroxytryptamine receptor 2A antagonist | 1 | extended-release quetiapine fumarate |
+| 5-hydroxytryptamine receptor 2C antagonist | 1 | extended-release quetiapine fumarate |
 | JAK inhibitor | 1 | tofacitinib |
 | Ryanodine receptor 3 antagonist | 1 | dantrolene |
 | Ryanodine receptor 1 antagonist | 1 | dantrolene |

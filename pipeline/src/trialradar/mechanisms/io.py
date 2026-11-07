@@ -21,7 +21,6 @@ DRUG_COLUMNS = [
     "action_type",
     "targets",
 ]
-_MULTI = ("mechanism_class", "mechanism", "action_type", "targets")
 SEP = ";"
 
 
