@@ -19,7 +19,8 @@ const open = async () => {
 test("button reads all for the full range and opens From/To inputs with the bounds", async () => {
   render(<Host />);
   const { button } = await open();
-  expect(button).toHaveTextContent("Years: all");
+  expect(button).toHaveAccessibleName("Years: all");
+  expect(button).toHaveTextContent(/^Years$/); // at rest only the name shows
   expect(button).toHaveAttribute("aria-expanded", "true");
   const from = screen.getByRole("spinbutton", { name: "From" });
   const to = screen.getByRole("spinbutton", { name: "To" });

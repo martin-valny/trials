@@ -106,15 +106,18 @@ export function Dropdown(props: {
         aria-expanded={open}
         aria-controls={id}
         data-narrowed={props.narrowed}
+        aria-label={`${props.label}: ${props.value}`}
         onClick={() => setOpen((o) => !o)}
       >
         {/* At rest only the name shows; the value joins it once the filter narrows. Screen readers
-            always hear "Name: value". */}
+            always hear "Name: value" (the aria-label). */}
         <span>
           {props.label}
-          <span className={props.narrowed ? "dropdown-summary" : "dropdown-summary visually-hidden"}>
-            : <span className="dropdown-value">{props.value}</span>
-          </span>
+          {props.narrowed ? (
+            <span className="dropdown-summary">
+              : <span className="dropdown-value">{props.value}</span>
+            </span>
+          ) : null}
         </span>
         <svg className="chevron" width="9" height="6" viewBox="0 0 9 6" aria-hidden="true">
           <path d="M0.5 0.75 4.5 4.75 8.5 0.75" />

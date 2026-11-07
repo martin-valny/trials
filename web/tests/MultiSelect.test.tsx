@@ -175,12 +175,13 @@ test("at rest the button shows only its name; narrowed, it adds ': value'", () =
   setup();
   const button = screen.getByRole("button", { name: "Disease: all" });
   // The value stays in the accessible name but is not shown at rest.
-  expect(button.querySelector(".dropdown-summary")).toHaveClass("visually-hidden");
+  expect(button).toHaveTextContent(/^Disease$/);
 });
 
 test("a narrowed dropdown shows ': value' with the value in 700", () => {
   setup({ selected: ["lung"] });
   const button = screen.getByRole("button", { name: "Disease: 1 of 3" });
-  expect(button.querySelector(".dropdown-summary")).not.toHaveClass("visually-hidden");
+  expect(button).toHaveTextContent(/^Disease: 1 of 3$/);
+  expect(button.querySelector(".dropdown-value")).toHaveTextContent("1 of 3");
   expect(button).toHaveAttribute("data-narrowed", "true");
 });

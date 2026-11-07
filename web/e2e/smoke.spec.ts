@@ -286,6 +286,16 @@ test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
   await waitForDraw(page);
   const labels = page.getByRole("group", { name: "Labels" });
   await expect(labels.getByRole("button", { name: "Clusters" })).toHaveAttribute("aria-pressed", "true");
+  if (page.viewportSize()!.width <= 640) {
+    // On a phone the map carries numerals, named in a key under the canvas: Off takes the key away.
+    const key = page.getByRole("list", { name: "Map labels" });
+    await expect(key).toContainText("Anti-CD20 antibodies in relapsing MS");
+    await labels.getByRole("button", { name: "Off" }).click();
+    await expect(key).toHaveCount(0);
+    await labels.getByRole("button", { name: "Clusters" }).click();
+    await expect(key).toBeVisible();
+    return;
+  }
   // Labels are redrawn once the web font has loaded: measure once the count has stopped changing.
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   const withLabels = await stablePixels(page);

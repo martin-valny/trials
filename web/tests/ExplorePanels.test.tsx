@@ -357,7 +357,7 @@ test("Mechanism and Modality dropdowns follow Treatment, with 'none' last", asyn
   const bar = screen.getByRole("group", { name: "Map controls" });
   const names = within(bar)
     .getAllByRole("button")
-    .map((b) => b.getAttribute("aria-expanded") !== null && b.textContent)
+    .map((b) => b.getAttribute("aria-expanded") !== null && b.getAttribute("aria-label"))
     .filter(Boolean);
   const at = (n: string) => names.findIndex((x) => typeof x === "string" && x.startsWith(n));
   expect(at("Treatment:")).toBeGreaterThanOrEqual(0);
