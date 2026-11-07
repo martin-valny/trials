@@ -170,3 +170,17 @@ test("opened as a phone sheet, it scrolls the page so the map sits in view above
   expect(scrollBy).toHaveBeenCalledWith({ top: 943 - 447, behavior: "instant" });
   vi.restoreAllMocks();
 });
+
+test("at rest the button shows only its name; narrowed, it adds ': value'", () => {
+  setup();
+  const button = screen.getByRole("button", { name: "Disease: all" });
+  // The value stays in the accessible name but is not shown at rest.
+  expect(button.querySelector(".dropdown-summary")).toHaveClass("visually-hidden");
+});
+
+test("a narrowed dropdown shows ': value' with the value in 700", () => {
+  setup({ selected: ["lung"] });
+  const button = screen.getByRole("button", { name: "Disease: 1 of 3" });
+  expect(button.querySelector(".dropdown-summary")).not.toHaveClass("visually-hidden");
+  expect(button).toHaveAttribute("data-narrowed", "true");
+});

@@ -257,10 +257,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   border: 1px solid var(--rule); border-top-color: var(--ink);
   font-size: 13px; line-height: 1.4;
 }
+/* The filter field: a hairline pill; focus is one 2px ink outline at 2px offset, on :focus-visible only
+   (no native ring, no border change on top of it). */
 .popover-search {
   font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
-  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px; width: 100%; box-sizing: border-box;
+  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; width: 100%; box-sizing: border-box;
+  appearance: none; -webkit-appearance: none;
 }
+.explore .popover-search:focus { outline: none; }
+.explore .popover-search:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-color: var(--rule); }
 .popover-search::placeholder { color: var(--muted); }
 .popover-search:hover { border-color: var(--ink); }
 .popover-search::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
@@ -408,17 +413,20 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .key-list .swatch { width: 8px; height: 8px; }
 .key-list-link { white-space: nowrap; margin-left: auto; }
 
-/* Laptop widths: the full set needs about 1,350px, so it is set on two deliberate lines instead of
-   wrapping wherever it breaks: find, colour and the count on the first; the filters and Reset all under
-   them. Only the count (not focusable) sits out of DOM order, so Tab still follows the eye. */
-@media (min-width: 901px) and (max-width: 1439px) {
+/* Side by side the full set needs about 1,600px, so it is always set on two deliberate lines instead
+   of wrapping wherever it breaks: find, colour, Results posted and the count on the first; the filters
+   and Reset all under them. Only the count (not focusable) sits out of DOM order, so Tab still follows
+   the eye. */
+@media (min-width: 901px) {
   .toolbar {
-    display: grid; grid-template-columns: auto auto 1fr auto;
-    grid-template-areas: "find colour . count" "filters filters filters reset";
+    display: grid; grid-template-columns: auto auto 1fr auto auto;
+    grid-template-areas: "find colour . results count" "filters filters filters filters reset";
     justify-items: start;
   }
   .toolbar .tb-find { grid-area: find; }
   .toolbar .tb-colour { grid-area: colour; }
+  .toolbar .tb-results { grid-area: results; justify-self: end; }
+  .explore .toolbar .pill.narrowing { margin-left: 0; }
   .toolbar .tb-filters { grid-area: filters; }
   .toolbar .tb-reset { grid-area: reset; justify-self: end; align-self: start; min-height: 28px; } /* level with the first filter line when they wrap */
   .toolbar .tb-count { grid-area: count; justify-self: end; margin-left: 0; }

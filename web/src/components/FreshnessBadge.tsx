@@ -23,12 +23,31 @@ export function FreshnessBadge({ now }: { now?: Date }) {
 
   const { meta } = s;
   if (!meta.last_success_at) return <span className="badge warn">Freshness unknown</span>;
-  const stale = isStale(meta.last_success_at, now ?? new Date());
+  const updated = `Last updated ${meta.last_success_at.replace("T", " ").replace(/:\d\d(\.\d+)?Z$/, " UTC")}`;
+  const registry = meta.data_timestamp ? ` · registry data as of ${meta.data_timestamp.replace("T", " ")}` : "";
+  if (isStale(meta.last_success_at, now ?? new Date())) {
+    // One quiet header note, never a coloured pill: the warning in ink, the date muted; full times on hover.
+    const date = meta.data_timestamp
+      ? `registry as of ${dayMonthYear(meta.data_timestamp)}`
+      : `last updated ${dayMonthYear(meta.last_success_at)}`;
+    return (
+      <span className="badge stale" title={`${updated}${registry}`}>
+        <strong>Data may be stale.</strong> {date}
+      </span>
+    );
+  }
   return (
-    <span className={stale ? "badge warn" : "badge ok"}>
-      {stale ? <strong>Data may be stale. </strong> : null}
-      Last updated {meta.last_success_at.replace("T", " ").replace(/:\d\d(\.\d+)?Z$/, " UTC")}
-      {meta.data_timestamp ? ` · registry data as of ${meta.data_timestamp.replace("T", " ")}` : ""}
+    <span className="badge ok">
+      {updated}
+      {registry}
     </span>
   );
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-11-06T10:00:05" -> "6 Nov 2026" (the date as written, no time-zone shift). */
+function dayMonthYear(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
 }

@@ -41,7 +41,7 @@ function revealAboveSheet(sheet: HTMLElement) {
 export function Dropdown(props: {
   /** The filter's name ("Phase"). */
   label: string;
-  /** What it shows now ("all", "2 of 6", "2014–2019"); the button reads "label: value". */
+  /** What it shows now ("all", "2 of 6", "2014–2019"); the button reads "label: value", the value shown only when narrowed. */
   value: string;
   /** True once it hides something: the button goes from quiet (hairline, muted value) to ink. */
   narrowed: boolean;
@@ -108,8 +108,13 @@ export function Dropdown(props: {
         data-narrowed={props.narrowed}
         onClick={() => setOpen((o) => !o)}
       >
+        {/* At rest only the name shows; the value joins it once the filter narrows. Screen readers
+            always hear "Name: value". */}
         <span>
-          {props.label}: <span className="dropdown-value">{props.value}</span>
+          {props.label}
+          <span className={props.narrowed ? "dropdown-summary" : "dropdown-summary visually-hidden"}>
+            : <span className="dropdown-value">{props.value}</span>
+          </span>
         </span>
         <svg className="chevron" width="9" height="6" viewBox="0 0 9 6" aria-hidden="true">
           <path d="M0.5 0.75 4.5 4.75 8.5 0.75" />

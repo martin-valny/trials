@@ -32,9 +32,11 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .theme-switch-key { width: 9px; height: 9px; flex: none; border: 1px solid currentColor; border-radius: 50%; }
 .theme-switch[data-choice="dark"] .theme-switch-key { background: currentColor; }
 .theme-switch[data-choice="system"] .theme-switch-key { background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
-.badge { font-size: .85rem; padding: .15rem .6rem; border-radius: 1rem; border: 1px solid var(--line); }
-.badge.ok { color: var(--ok); }
-.badge.warn { background: var(--warn-bg); color: var(--warn-fg); }
+/* Freshness: one quiet 12px note in the header, never a tinted pill. Stale: the warning in ink 700,
+   the date muted. */
+.badge { font-size: 12px; line-height: 1.45; color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge.ok { color: var(--muted); }
+.badge.stale strong { color: var(--fg); font-weight: 700; }
 .muted { color: var(--muted); font-size: .85rem; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .tabs { display: flex; gap: .5rem; margin: 1rem 0; }
@@ -52,6 +54,10 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
 .delta { font-weight: 600; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
+/* Up to laptop widths the header keeps to one line: the switch drops its "Theme" word (glyph and choice stay). */
+@media (max-width: 1279px) {
+  .theme-switch-k { display: none; }
+}
 @media (max-width: 640px) {
   .site-header nav { gap: .25rem 1rem; }
   /* On a phone the switch shares the brand's row, right-aligned; no rule to hang off a line start. */

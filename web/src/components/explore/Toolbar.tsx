@@ -60,8 +60,8 @@ function FindGlyph() {
 }
 
 /**
- * The controls above the map, set like a figure's legend line: find, colour, then the filters as
- * dropdowns, the results pill and Reset all, with the count of trials shown closing the row.
+ * The controls above the map, set like a figure's legend line: find, colour, the results pill, then the
+ * filters as dropdowns and Reset all, with the count of trials shown closing the row.
  */
 export function Toolbar(p: ToolbarProps) {
   const { trials, filters, mode, palette } = p;
@@ -170,6 +170,18 @@ export function Toolbar(p: ToolbarProps) {
         </div>
       </div>
 
+      <div className="tb-results">
+        {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}
+        <button
+          type="button"
+          className="pill narrowing"
+          aria-pressed={filters.resultsOnly}
+          onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
+        >
+          Results posted <span className="pill-n">{fmt(withResults)}</span>
+        </button>
+      </div>
+
       <div className="tb-filters">
         <MultiSelect
           label="Disease"
@@ -205,15 +217,6 @@ export function Toolbar(p: ToolbarProps) {
           onChange={set("modalities")}
         />
         <YearRange bounds={p.bounds} value={filters.years} onChange={(years) => p.onFilters({ ...filters, years })} />
-        {/* A narrowing: off (the default) shows every trial; on keeps only those with results posted. */}
-        <button
-          type="button"
-          className="pill narrowing"
-          aria-pressed={filters.resultsOnly}
-          onClick={() => p.onFilters({ ...filters, resultsOnly: !filters.resultsOnly })}
-        >
-          Results posted <span className="pill-n">{fmt(withResults)}</span>
-        </button>
       </div>
 
       <div className="tb-reset">
