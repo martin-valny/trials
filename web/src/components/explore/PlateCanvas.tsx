@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import {
   clusterAnchors,
   clampView,
@@ -203,7 +203,9 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
     dirty.current = true;
   });
 
-  useEffect(() => {
+  // A layout effect, so the map takes wheel, key and pointer input from the moment it is on screen: a
+  // passive effect can run a task later, and input in between would be lost.
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!drawable || !canvas) return;
     const ctx = canvas.getContext("2d");

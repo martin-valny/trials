@@ -227,8 +227,14 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const [zoomed, setZoomed] = useState(false);
   const canvas = useRef<PlateCanvasHandle>(null);
   const onZoomChange = useCallback((z: number) => setZoomed(z > 1), []);
-  // Zoom is not kept across a theme change.
-  useEffect(() => canvas.current?.resetView(), [dark]);
+  // Zoom is not kept across a theme change. Only a change: on mount there is nothing to reset, and a
+  // reset then could undo a zoom made before this effect ran.
+  const lastDark = useRef(dark);
+  useEffect(() => {
+    if (lastDark.current === dark) return;
+    lastDark.current = dark;
+    canvas.current?.resetView();
+  }, [dark]);
 
   const palette = dark ? DARK_PALETTE : LIGHT_PALETTE;
   const order = useMemo(

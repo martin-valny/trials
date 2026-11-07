@@ -154,11 +154,27 @@ test("the map starts still, with a play control that toggles to pause", async ()
   expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
 });
 
+/**
+ * findBy* drains with a 0ms timer before it returns; on a loaded machine that timer can fire before
+ * React's next scheduler task, i.e. before passive effects have run. Force that order, so a test that
+ * acts on the map the moment it appears is deterministic: the map must take input from first paint.
+ */
+async function findMapBeforeEffects(): Promise<HTMLElement> {
+  const real = globalThis.setTimeout;
+  vi.stubGlobal("setTimeout", ((fn: () => void, ms?: number) =>
+    ms ? real(fn, ms) : (queueMicrotask(fn), 0)) as unknown as typeof setTimeout);
+  try {
+    return await screen.findByRole("img", { name: /3D map of/ });
+  } finally {
+    vi.stubGlobal("setTimeout", real);
+  }
+}
+
 test("Reset view appears once the map is zoomed, and a press returns it to 1x", async () => {
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
-  const canvas = await screen.findByRole("img", { name: /3D map of/ });
+  const canvas = await findMapBeforeEffects();
   expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
   act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -300, cancelable: true, bubbles: true })));
   const reset = await screen.findByRole("button", { name: "Reset view" });
