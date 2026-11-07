@@ -257,15 +257,15 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   border: 1px solid var(--rule); border-top-color: var(--ink);
   font-size: 13px; line-height: 1.4;
 }
-/* The filter field: a hairline pill; focus is one 2px ink outline at 2px offset, on :focus-visible only
-   (no native ring, no border change on top of it). */
+/* The filter field: a hairline pill; focus is one 2px ink outline at 2px offset, on :focus-visible only,
+   the hairline giving way to it so only one ring shows (no native ring). */
 .popover-search {
   font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
   border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; width: 100%; box-sizing: border-box;
   appearance: none; -webkit-appearance: none;
 }
 .explore .popover-search:focus { outline: none; }
-.explore .popover-search:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-color: var(--rule); }
+.explore .popover-search:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-color: transparent; }
 .popover-search::placeholder { color: var(--muted); }
 .popover-search:hover { border-color: var(--ink); }
 .popover-search::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
