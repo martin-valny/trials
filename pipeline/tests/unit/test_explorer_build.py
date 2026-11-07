@@ -357,7 +357,8 @@ def test_clusters_reach_the_document(cfg: AreaConfig) -> None:
     assert clusters
     ids = {k["id"] for k in clusters}
     for k in clusters:
-        assert set(k) == {"id", "label", "n", "x", "y", "z"}
+        assert set(k) == {"id", "label", "kind", "n", "x", "y", "z"}
+        assert k["kind"] in {"mechanism", "type", "mixed"}
         assert k["label"]
         members = [t for t in doc["trials"] if t["cluster"] == k["id"]]
         assert k["n"] == len(members)

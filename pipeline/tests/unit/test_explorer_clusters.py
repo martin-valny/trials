@@ -8,7 +8,12 @@ import numpy as np
 import pytest
 
 from trialradar.config import ClusterConfig
-from trialradar.explorer.clusters import build_clusters, find_clusters, name_cluster
+from trialradar.explorer.clusters import (
+    build_clusters,
+    find_clusters,
+    name_and_kind,
+    name_cluster,
+)
 
 CFG = ClusterConfig()
 MS = "Multiple sclerosis"
@@ -74,8 +79,9 @@ def test_build_clusters_lists_clusters_and_nulls_noise() -> None:
     assert per_trial[-1] is None
     assert sum(c["n"] for c in clusters) == sum(p is not None for p in per_trial)
     for c in clusters:
-        assert set(c) == {"id", "label", "n", "x", "y", "z"}
+        assert set(c) == {"id", "label", "kind", "n", "x", "y", "z"}
         assert c["label"] == "MS · behavioural"
+        assert c["kind"] == "type"
         assert c["n"] == sum(p == c["id"] for p in per_trial)
 
 
@@ -207,6 +213,49 @@ def test_drug_suffix_needs_drug_share() -> None:
     assert name_cluster(members, SHORTS, CFG) == "MS · drugs (alpha)"
     tight = CFG.model_copy(update={"drug_share": 0.5})
     assert name_cluster(members, SHORTS, tight) == "MS · drugs"
+
+
+def test_mechanism_drug_is_the_top_drug_within_the_class() -> None:
+    """Regression: the bracketed drug comes from members carrying the named class, not the
+    cluster's overall top drug (which here belongs to another class)."""
+    members = (
+        [_trial(MS, drugs=["a1"], mechanisms=["class A"], types=["DRUG"]) for _ in range(3)]
+        + [_trial(MS, drugs=["a2"], mechanisms=["class A"], types=["DRUG"]) for _ in range(3)]
+        + [_trial(MS, drugs=["zeta"], mechanisms=["class B"], types=["DRUG"]) for _ in range(4)]
+    )
+    # class A 6/10 >= 0.4; overall top drug is zeta (4/10, class B); within class A a1 = a2 = 3,
+    # name order picks a1, and 3/10 >= drug_share
+    assert name_cluster(members, SHORTS, CFG) == "MS · class A (a1)"
+
+
+def test_mechanism_drug_share_is_measured_over_all_members() -> None:
+    members = (
+        [_trial(MS, drugs=[f"a{i}"], mechanisms=["class A"], types=["DRUG"]) for i in range(5)]
+        + [_trial(MS, drugs=["zeta"], mechanisms=["class B"], types=["DRUG"]) for _ in range(4)]
+        + [_trial(MS, types=["BEHAVIORAL"]) for _ in range(3)]
+    )
+    # class A 5/9 drug-bearing >= 0.4; each class-A drug is 1/12 < 0.15 of all members: no suffix,
+    # and zeta (4/12, another class) is never borrowed
+    assert name_cluster(members, SHORTS, CFG) == "MS · class A"
+
+
+def test_kind_follows_the_branch_that_named_the_middle() -> None:
+    mech = [_trial(MS, drugs=["d"], mechanisms=["class A"], types=["DRUG"]) for _ in range(3)]
+    assert name_and_kind(mech, SHORTS, CFG) == ("MS · class A (d)", "mechanism")
+    typed = [_trial(MS, types=["BEHAVIORAL"]) for _ in range(3)]
+    assert name_and_kind(typed, SHORTS, CFG) == ("MS · behavioural", "type")
+    mixed = [
+        _trial(MS, drugs=[f"d{i}"], mechanisms=[f"m{i}"], types=[t])
+        for i, t in enumerate(["DRUG", "DEVICE", "BEHAVIORAL", "PROCEDURE"])
+    ]
+    assert name_and_kind(mixed, SHORTS, CFG) == (
+        "MS · mixed (d0)",
+        "mixed",
+    )  # each drug 1/4: suffix as today
+    assert name_and_kind([], {}, CFG) == ("Mixed", "mixed")
+    # a mixed disease part does not change the kind
+    other = [_trial(f"Disease {i}", types=["DEVICE"]) for i in range(4)]
+    assert name_and_kind(other, {}, CFG) == ("Mixed diseases · devices", "type")
 
 
 # --- config --------------------------------------------------------------------------

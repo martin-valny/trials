@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from sklearn.cluster import HDBSCAN
@@ -19,6 +19,8 @@ MIXED = "Mixed"
 _MIXED_DISEASES = "Mixed diseases"
 _MIXED_MIDDLE = "mixed"
 _DECIMALS = 4
+
+Kind = Literal["mechanism", "type", "mixed"]
 
 TYPE_WORDS: dict[str, str] = {
     "BEHAVIORAL": "behavioural",
@@ -81,25 +83,51 @@ def _disease_part(
     return _MIXED_DISEASES
 
 
-def _middle_part(members: Sequence[Mapping[str, Any]], cfg: ClusterConfig) -> str:
+def _middle_part(
+    members: Sequence[Mapping[str, Any]], cfg: ClusterConfig
+) -> tuple[str, Kind, str | None]:
+    """The middle text, which branch named it, and the mechanism class when that branch did."""
     with_drugs = [m for m in members if m.get("drugs")]
     if with_drugs:
         ranked = _ranked(_count_sets(m.get("mechanisms") or () for m in with_drugs))
         if ranked and ranked[0][1] / len(with_drugs) >= cfg.mechanism_share:
-            return ranked[0][0]
+            return ranked[0][0], "mechanism", ranked[0][0]
     if members:
         ranked = _ranked(_count_sets(m.get("treatment_types") or () for m in members))
         if ranked and ranked[0][1] / len(members) >= cfg.type_share:
             kind = ranked[0][0]
-            return TYPE_WORDS.get(kind, kind.replace("_", " ").lower())
-    return _MIXED_MIDDLE
+            return TYPE_WORDS.get(kind, kind.replace("_", " ").lower()), "type", None
+    return _MIXED_MIDDLE, "mixed", None
 
 
-def _drug_suffix(members: Sequence[Mapping[str, Any]], share: float) -> str:
-    ranked = _ranked(_count_sets(m.get("drugs") or () for m in members))
+def _drug_suffix(
+    members: Sequence[Mapping[str, Any]], share: float, mechanism: str | None = None
+) -> str:
+    """The top drug, bracketed, when it reaches ``share`` of all members.
+
+    With a ``mechanism`` the drug is ranked among the members carrying that class only, so a
+    mechanism name never borrows a drug of another class; the share is still over all members."""
+    pool = (
+        members
+        if mechanism is None
+        else [m for m in members if mechanism in (m.get("mechanisms") or ())]
+    )
+    ranked = _ranked(_count_sets(m.get("drugs") or () for m in pool))
     if members and ranked and ranked[0][1] / len(members) >= share:
         return f" ({ranked[0][0]})"
     return ""
+
+
+def name_and_kind(
+    members: Sequence[Mapping[str, Any]], shorts: Mapping[str, str], cfg: ClusterConfig
+) -> tuple[str, Kind]:
+    """The cluster name (see ``name_cluster``) and its kind: ``"mechanism"``, ``"type"`` or
+    ``"mixed"``, after the branch that named the middle part."""
+    disease = _disease_part(members, shorts, cfg.disease_share)
+    middle, kind, mechanism = _middle_part(members, cfg)
+    if disease == _MIXED_DISEASES and kind == "mixed":
+        return MIXED, kind
+    return f"{disease} · {middle}{_drug_suffix(members, cfg.drug_share, mechanism)}", kind
 
 
 def name_cluster(
@@ -107,12 +135,9 @@ def name_cluster(
 ) -> str:
     """``"<disease> · <mechanism or type>[ (<drug>)]"``; ``"Mixed"`` when both parts are mixed.
 
-    ``members`` are explorer trial dicts; ``shorts`` maps a condition label to its short name."""
-    disease = _disease_part(members, shorts, cfg.disease_share)
-    middle = _middle_part(members, cfg)
-    if disease == _MIXED_DISEASES and middle == _MIXED_MIDDLE:
-        return MIXED
-    return f"{disease} · {middle}{_drug_suffix(members, cfg.drug_share)}"
+    ``members`` are explorer trial dicts; ``shorts`` maps a condition label to its short name.
+    A mechanism-named cluster brackets its top drug among the members of that class."""
+    return name_and_kind(members, shorts, cfg)[0]
 
 
 def build_clusters(
@@ -133,10 +158,12 @@ def build_clusters(
         idx = np.flatnonzero(labels == cid)
         pts = coords[idx]
         anchor = pts[int(np.argmin(np.linalg.norm(pts - np.median(pts, axis=0), axis=1)))]
+        label, kind = name_and_kind([trials[int(i)] for i in idx], shorts, cfg)
         clusters.append(
             {
                 "id": cid,
-                "label": name_cluster([trials[int(i)] for i in idx], shorts, cfg),
+                "label": label,
+                "kind": kind,
                 "n": len(idx),
                 "x": round(float(anchor[0]), _DECIMALS),
                 "y": round(float(anchor[1]), _DECIMALS),
