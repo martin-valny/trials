@@ -5,6 +5,9 @@ import type { ExplorerFile, Meta } from "../types";
 
 const REPO = "https://github.com/martin-valny/trials/blob/main/";
 
+/** A share from the exported cluster config as a whole percentage, or the default when absent. */
+const pc = (v: number | undefined, fallback: number): string => `${Math.round(100 * (v ?? fallback))}%`;
+
 export function Methods() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [method, setMethod] = useState<ExplorerFile["method"] | null>(null);
@@ -119,8 +122,9 @@ export function Methods() {
           A trial can carry several mechanisms or modalities. It counts in each group it touches:
           in the Mechanism and Modality filters, in their counts, and in panel b&apos;s groups. On
           the map such a trial is drawn as a hollow ring, not given one class&apos;s colour. Panel
-          b shows a share for a group only from 10 finished trials; below that the bar is an
-          outline and says it is too few to tell. There are no per-group p-values.
+          b shows a percentage for a group only from 10 finished trials; below that it shows no
+          percentage, only an outline bar, the counts (for example 1/5) and &ldquo;too few to
+          tell&rdquo;. There are no per-group p-values.
         </p>
         <h4>What is not mapped</h4>
         <ul>
@@ -148,22 +152,30 @@ export function Methods() {
           {method?.clusters
             ? ` (min_cluster_size ${method.clusters.min_cluster_size}, min_samples ${method.clusters.min_samples})`
             : ""}
-          ; trials in no cluster are left unlabelled. A name has a disease part and a middle part:
+          ; trials in no cluster are left unlabelled. A cluster&apos;s label is anchored on the
+          member nearest the cluster&apos;s median position (not its densest point, as first
+          planned): every cluster then has a well-defined anchor inside it. Disease labels, by
+          contrast, sit at each condition&apos;s own densest region. A name has a disease part and
+          a middle part:
         </p>
         <ul>
           <li>
-            Disease: the condition most members list first, when it holds at least 60% of the
-            members; otherwise the top two together if they reach 60%; otherwise
+            Disease: the condition most members list first, when it holds at least{" "}
+            {pc(method?.clusters?.disease_share, 0.6)} of the members; otherwise the top two together
+            if they reach {pc(method?.clusters?.disease_share, 0.6)}; otherwise
             &ldquo;Mixed diseases&rdquo;.
           </li>
           <li>
-            Middle: the top mechanism class, when it covers at least 40% of the members that have
-            drugs and at least 25% of all its members, so a few drug trials cannot name a cluster
-            of non-drug trials; otherwise the top intervention type when it covers half the
-            members; otherwise &ldquo;mixed&rdquo;.
+            Middle: the top mechanism class, when it covers at least{" "}
+            {pc(method?.clusters?.mechanism_share, 0.4)} of the members that have drugs and at least{" "}
+            {pc(method?.clusters?.mechanism_min_overall, 0.25)} of all its members, so a few drug
+            trials cannot name a cluster of non-drug trials; otherwise the top intervention type
+            when it covers at least {pc(method?.clusters?.type_share, 0.5)} of the members;
+            otherwise &ldquo;mixed&rdquo;.
           </li>
           <li>
-            The commonest drug is added in brackets when it is in at least 15% of the members
+            The commonest drug is added in brackets when it is in at least{" "}
+            {pc(method?.clusters?.drug_share, 0.15)} of the members
             (for a mechanism name, counted among that class only).
           </li>
         </ul>
@@ -212,8 +224,11 @@ export function Methods() {
           arm. Panel b&apos;s shares and average use the same trials.
         </p>
         <p>
-          For each trial that succeeded we take its 10 nearest neighbours among them by what they
-          study (cosine distance). Trials that share any of its drugs are excluded: drugs both place
+          The question is whether trials that study similar things succeed together, so the
+          neighbours are found on disease, treatment type, molecule and population only; the
+          mechanism block shapes the map but is left out here (which mechanisms work is what panel
+          b&apos;s By mechanism view shows). For each trial that succeeded we take its 10 nearest
+          neighbours among them by what they study (cosine distance). Trials that share any of its drugs are excluded: drugs both place
           trials and define success, so those neighbours would agree by construction. The share of
           neighbours that also succeeded, relative to the average, is compared with the same value
           for 10,000 shuffles of the success labels.
@@ -222,6 +237,11 @@ export function Methods() {
           The p-value is the share of shuffles that reach the observed value (counting the observed
           one). The map says successes cluster only when it is below 0.025; otherwise it says they
           cluster no more than chance. With fewer than 30 successes the result is withheld.
+        </p>
+        <p>
+          On the 6 November 2026 snapshot this gives a lift of 1.32 (shuffled labels 0.62&ndash;1.41,
+          p = 0.061): no more than chance. Had the mechanism block been included, the same snapshot
+          would give 0.71 (p = 0.94).
         </p>
       </section>
 

@@ -247,6 +247,8 @@ test("panel b omits the short-neighbour clause when none were short", async () =
   await ready();
   const b = screen.getByRole("region", { name: /Share that succeeded/ });
   expect(within(b).getByText("Based on 66 trials that succeeded.")).toBeInTheDocument();
+  // The statistic asks about similar trials; mechanisms are panel b's By mechanism view.
+  expect(within(b).getByText(/Similar = same disease, treatment type, molecule and population\./)).toBeInTheDocument();
 });
 
 test("panel b has no basis note when the statistic was not computed", async () => {
@@ -339,6 +341,9 @@ test("success panel switches between disease, modality and mechanism", async () 
   expect(row.querySelector(".bar-track")).not.toBeNull();
   expect(row.querySelector(".bar-k")!.textContent).toMatch(/^\d+\/1/);
   expect(within(row).getByText("too few to tell")).toBeInTheDocument();
+  // Below min_group there is no percentage: the share column reads "—".
+  expect(row.querySelector(".bar-n")!.textContent).toMatch(/^—/);
+  expect(row.textContent).not.toMatch(/%/);
   expect(within(b).getByText(/Outlined: fewer than 10 finished trials\./)).toBeInTheDocument();
   expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By modality" }));

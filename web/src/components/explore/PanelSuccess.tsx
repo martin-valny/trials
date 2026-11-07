@@ -68,23 +68,26 @@ export function PanelSuccess({
       ) : (
         <ul className="bars">
           {rows.map((row) => {
-            // Under min_group the share is still drawn, as the contract's outline bar, with its counts.
+            // Under min_group (row.rate is null) there is no percentage: the outline bar, the counts
+            // and "too few to tell" only. The outline still sits at the raw share, as the contract draws it.
             const few = row.finished < minGroup;
-            const rate = row.finished > 0 ? row.succeeded / row.finished : null;
+            const raw = row.finished > 0 ? row.succeeded / row.finished : null;
             const name = by === "modality" ? modalityLabel(row.group) : row.group;
             return (
               <li className={few ? "bar few" : "bar"} key={row.group}>
                 <span className="bar-label">{name}</span>
                 <span className="bar-track" aria-hidden="true">
-                  {rate !== null && rate > 0 ? <span className="bar-fill" style={{ width: pct(rate) }} /> : null}
+                  {raw !== null && raw > 0 ? <span className="bar-fill" style={{ width: pct(raw) }} /> : null}
                   {avg !== null ? <span className="bar-avg" style={{ left: pct(avg) }} /> : null}
                 </span>
                 <span className="bar-n">
-                  {rate !== null ? pct(rate) : "—"}
+                  {row.rate !== null ? pct(row.rate) : "—"}
                   <span className="visually-hidden">
-                    {rate !== null
+                    {row.rate !== null
                       ? ` (${fmt(row.succeeded)} of ${fmt(row.finished)} finished trials)`
-                      : " (no finished trials yet)"}
+                      : row.finished > 0
+                        ? ` (too few to tell: ${fmt(row.succeeded)} of ${fmt(row.finished)} finished trials)`
+                        : " (no finished trials yet)"}
                   </span>
                 </span>
                 <span className="bar-k">
@@ -107,6 +110,11 @@ export function PanelSuccess({
       ) : null}
       <p className="panel-claim">{liftSentence(stats)}</p>
       {stats.lift !== null ? <p className="panel-note">{basisNote(stats, k)}</p> : null}
+      {/* The statistic compares trials that study similar things; mechanisms are left out of it. */}
+      <p className="panel-note">
+        Similar = same disease, treatment type, molecule and population. Which mechanisms do well:
+        By mechanism, above.
+      </p>
       <p className="panel-note">
         Succeeded = drug moved to a later phase. <a href="#/methods#map">How this is measured</a>
       </p>

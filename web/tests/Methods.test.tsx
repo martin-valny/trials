@@ -76,3 +76,19 @@ test("methods states the mechanism source, licence, coverage, weight, counting r
   // Five feature groups now, mechanism among them.
   expect(text()).toMatch(/Five groups of features/);
 });
+
+test("methods: the statistic leaves out mechanism; no percentage under 10; cluster anchors and thresholds", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods#map");
+  await screen.findByText(/min_cluster_size 25/);
+  const text = document.body.textContent ?? "";
+  expect(text).toMatch(/disease, treatment type, molecule and population only/);
+  expect(text).toMatch(/By mechanism view/);
+  expect(text).toMatch(/lift of 1\.32 \(shuffled labels 0\.62–1\.41,\s+p = 0\.061\)/);
+  expect(text).toMatch(/would give 0\.71 \(p = 0\.94\)/);
+  expect(text).toMatch(/shows no\s+percentage, only an outline bar, the counts/);
+  expect(text).toMatch(/member nearest the cluster's median position/);
+  // Thresholds come from explorer.json method.clusters.
+  expect(text).toMatch(/at least 60% of the members/);
+  expect(text).toMatch(/at least 15% of the members/);
+});
