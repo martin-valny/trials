@@ -66,3 +66,4 @@ Read this file and the review sheet, then continue from the last Progress log en
 ## Progress log
 
 - 2026-11-07: task created. Not started.
+- 2026-11-07 (agent, step 1): worktree `.superpowers/wt/mapping-gaps` on `research/mapping-gaps`. Recomputed the gap list from `drugs.csv` + `overrides.csv` and the 2026-11-06 snapshot (scratch script `gaps.py` in the session scratchpad `mapping-gaps/`, imports `trial_drugs` from `map_mechanisms.py`, no network): 838/1,314 = 63.8% confirmed; 414 unmapped names, 71 with >=2 trials (so "top 60" = all names with >=2 trials), 343 with one trial. Scope fixed as: §1 groups (glatiramer, IVIG/SCIG, stem cells/aHSCT, ChEMBL-no-mechanism drugs, vaccines) + 3 arm questions, §2 rows 1-13, and every unmapped name with >=2 trials. Next: probe each candidate source on a fixed sample of ~45 gap drugs; then research per-drug rows into `2026-11-07-proposed-overrides.csv`; then the report.
