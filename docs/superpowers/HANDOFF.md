@@ -261,7 +261,7 @@ cd ../web && npm run build && (npx vite preview --port 4173 --strictPort &) ; sl
 # Note: build output has no data/; for screenshots copy fixtures:  cp -r tests/fixtures/data dist/data
 ```
 
-**First message to the user when you resume:** say you have read this handoff, that slice 1 and the Explorer are built, and ask whether to restyle the other pages to Figure Plate or continue the Ask-feature design first. Do not re-ask anything this file already answers.
+**First message to the user when you resume:** say you have read this handoff; summarise section 00 in three lines (phases 1–2 done and unpushed, the mapping-gaps research status, the next step); then ask whether to continue with the next step in section 00's list. Do not re-ask anything this file already answers.
 
 ---
 
