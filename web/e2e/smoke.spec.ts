@@ -28,7 +28,7 @@ test("trials list opens a trial", async ({ page }) => {
 });
 
 test("no horizontal scroll", async ({ page }) => {
-  for (const route of ["#/explore", "#/changes", "#/trials", "#/methods"]) {
+  for (const route of ["#/explore", "#/mechanisms/cell", "#/changes", "#/trials", "#/methods"]) {
     await page.goto("/" + route);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(
@@ -325,4 +325,56 @@ test("Colour → Approach paints the map and keys the approaches without errors"
   await expect(key).toContainText("Unclassified");
   await waitForDraw(page);
   expect(errors).toEqual([]);
+});
+
+test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // The fixture has no cell trials: move its first two into aHSCT and mesenchymal cells.
+  await page.route("**/data/explorer.json", async (route) => {
+    const res = await route.fetch();
+    const f = await res.json();
+    f.trials[0] = { ...f.trials[0], approaches: ["cell"], kinds: ["ahsct"] };
+    f.trials[1] = { ...f.trials[1], approaches: ["cell"], kinds: ["msc"] };
+    await route.fulfill({ response: res, json: f });
+  });
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mechanisms" }).click();
+  await expect(page).toHaveURL(/#\/mechanisms\/targeted$/);
+  const rail = page.getByRole("navigation", { name: /Approaches/ });
+  const chip = rail.getByRole("button", { name: /^Cell & transplant/ });
+  await chip.click();
+  await expect(page).toHaveURL(/#\/mechanisms\/cell$/);
+  await expect(chip).toHaveAttribute("aria-pressed", "true");
+  const kind = page.getByRole("button", { name: /^aHSCT/ });
+  await kind.click();
+  const panel = page.getByRole("complementary", { name: /aHSCT/ });
+  await expect(panel).toBeVisible();
+  const box = (await panel.boundingBox())!;
+  const vw = page.viewportSize()!.width;
+  if (vw <= 640) {
+    // On a phone the panel is a bottom sheet across the viewport.
+    expect(Math.round(box.width)).toBe(vw);
+    expect(Math.round(box.y + box.height)).toBe(page.viewportSize()!.height);
+  }
+  const link = panel.getByRole("link", { name: NCT });
+  const nct = (await link.textContent()) ?? "";
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`#/trial/${nct}$`));
+  await expect(page.getByRole("link", { name: /ClinicalTrials\.gov/ }).first()).toHaveAttribute("href", new RegExp(nct));
+  expect(errors).toEqual([]);
+});
+
+test("Mechanisms: Show these trials on the map narrows the map", async ({ page }) => {
+  await page.goto("/#/mechanisms/nondrug");
+  const kind = page.locator(".kind-row").first();
+  await kind.click();
+  const panel = page.getByRole("complementary");
+  await expect(panel).toBeVisible();
+  const n = await panel.locator(".side-trials li").count();
+  await panel.getByRole("link", { name: "Show these trials on the map" }).click();
+  await expect(page).toHaveURL(/#\/explore\?nct=/);
+  await expect(page.getByText(new RegExp(`^Showing ${n} of \\d+ trials$`))).toBeVisible();
+  await page.getByRole("button", { name: "Show all trials" }).click();
+  await expect(page.getByRole("status", { name: "Trial list" })).toHaveCount(0);
 });

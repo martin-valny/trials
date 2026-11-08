@@ -1,5 +1,5 @@
 import { normalizeFile } from "./lib/explorer";
-import type { ChangesFile, ExplorerFile, Meta, TrialFile, TrialsIndex, Window } from "./types";
+import type { ChangesFile, ExplorerFile, GraphFile, Meta, TrialFile, TrialsIndex, Window } from "./types";
 
 const base = (): string => import.meta.env.BASE_URL + "data/";
 
@@ -23,3 +23,6 @@ export const loadTrials = (): Promise<TrialsIndex | null> => fetchJson<TrialsInd
 
 export const loadExplorer = (): Promise<ExplorerFile | null> =>
   fetchJson<ExplorerFile>("explorer.json").then((f) => (f === null ? null : normalizeFile(f)));
+
+/** The Targeted drugs graph (mechanisms.json); null before the first build that writes it. */
+export const loadGraph = (): Promise<GraphFile | null> => fetchJson<GraphFile>("mechanisms.json");

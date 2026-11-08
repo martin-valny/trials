@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadMeta } from "../../data";
 import {
   allFilters,
@@ -280,7 +280,19 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   );
   const mapNames =
     labelMode === "clusters" ? clusterAnchors.map((a) => a.label) : labelMode === "diseases" ? diseaseNames : [];
-  const visible = useCallback((t: ExplorerTrial) => matches(t, filters, bounds), [filters, bounds]);
+  // A list of trials handed over by another page (Mechanisms: "Show these trials on the map"), as
+  // ?nct=NCT1,NCT2&from=<what they are>. It narrows the map on top of the filters until cleared.
+  const [params, setParams] = useSearchParams();
+  const only = useMemo(() => {
+    const v = params.get("nct");
+    return v ? new Set(v.split(",").filter(Boolean)) : null;
+  }, [params]);
+  const onlyN = useMemo(() => (only === null ? 0 : file.trials.filter((t) => only.has(t.nct_id)).length), [file, only]);
+  const onlyFrom = params.get("from");
+  const visible = useCallback(
+    (t: ExplorerTrial) => (only === null || only.has(t.nct_id)) && matches(t, filters, bounds),
+    [only, filters, bounds],
+  );
   const color = useCallback(
     (t: ExplorerTrial) => colorFor(t, mode, palette, series, mechanisms),
     [mode, palette, series, mechanisms],
@@ -305,7 +317,11 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     const t = hover === null ? undefined : file.trials.find((x) => x.nct_id === hover.nct);
     return t !== undefined && visible(t) ? t : null;
   }, [file, hover, visible]);
-  const reset = () => setFilters(allFilters(file));
+  const clearOnly = () => setParams({}, { replace: true });
+  const reset = () => {
+    setFilters(allFilters(file));
+    if (only !== null) clearOnly();
+  };
 
   return (
     <div className="explore">
@@ -328,6 +344,15 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         }}
         onReset={reset}
       />
+      {only !== null ? (
+        <p className="explore-only" role="status" aria-label="Trial list">
+          Only the {onlyN.toLocaleString("en-US")} {onlyN === 1 ? "trial" : "trials"}
+          {onlyFrom ? ` of ${onlyFrom}` : " listed"}.{" "}
+          <button type="button" className="text-button" onClick={clearOnly}>
+            Show all trials
+          </button>
+        </p>
+      ) : null}
       <div className="plate">
         <section className="panel panel-a" aria-labelledby="panel-a-h">
           <h2 className="panel-h" id="panel-a-h">

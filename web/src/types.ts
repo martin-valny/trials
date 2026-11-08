@@ -211,3 +211,49 @@ export interface ExplorerFile {
   stats: ExplorerStats;
   trials: ExplorerTrial[];
 }
+
+/** One node of the mechanism graph (mechanisms.json): a drug, a target or a pathway. */
+export interface GraphNode {
+  /** "drug:<name>", "target:<GENE>", "class:<mechanism class>" or a pathway id (R-HSA-…, GO:…, curated). */
+  id: string;
+  kind: "drug" | "target" | "pathway";
+  label: string;
+  /** Pathways only: where the pathway comes from. */
+  source?: "reactome" | "go" | "curated";
+  /** Pathways only: a top-level pathway (no parent kept). */
+  top_level?: boolean;
+  /** Seeded layout position, normalised to [-1, 1]. */
+  x: number;
+  y: number;
+  /** Drug nodes only: the trials testing the drug. */
+  trials?: string[];
+  /** Every trial reaching the node. */
+  n: number;
+  /** Pool trials reaching the node. */
+  finished: number;
+  /** Pool trials whose winning drug reaches the node (1b). */
+  succeeded: number;
+  stopped: number;
+  running: number;
+  conditions: string[];
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  kind: "acts_on" | "in_pathway" | "parent" | "shares_genes";
+  /** acts_on: the drug's action on the target (ChEMBL action type). */
+  action?: string;
+  /** shares_genes: the overlap between two pathways. */
+  weight?: number;
+  source_db?: string;
+}
+
+/** mechanisms.json: the Targeted drugs bubble's drug -> target -> pathway graph. */
+export interface GraphFile {
+  generated_for: string;
+  reactome_release: string;
+  method: { max_nodes: number; overlap_floor: number; overlap_top_k: number; seed: number };
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}

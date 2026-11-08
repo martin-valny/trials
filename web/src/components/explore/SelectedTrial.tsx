@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadTrial } from "../../data";
+import { mechanismsLink } from "../../lib/approaches";
 import { approachText, mechanismText, modalityText, targetsText, type ApproachNames } from "../../lib/explorer";
 import { firstSentences, outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
@@ -118,6 +119,9 @@ export function SelectedTrial({ trial, names }: { trial: ExplorerTrial | null; n
               <a href={`https://clinicaltrials.gov/study/${trial.nct_id}`} target="_blank" rel="noreferrer">
                 ClinicalTrials.gov
               </a>
+              {names && mechanismsLink(trial, names) !== null ? (
+                <a href={`#${mechanismsLink(trial, names)}`}>Show in mechanism graph</a>
+              ) : null}
             </p>
           </>
         )}

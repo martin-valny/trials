@@ -2,6 +2,7 @@ import { HashRouter, Link, Navigate, NavLink, Route, Routes } from "react-router
 import { ChangesFeed } from "./components/ChangesFeed";
 import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
+import { MechanismsPage } from "./components/mechanisms/MechanismsPage";
 import { Methods } from "./components/Methods";
 import { ThemeSwitch } from "./components/ThemeSwitch";
 import { TrialDetail } from "./components/TrialDetail";
@@ -16,6 +17,7 @@ export function App() {
         </Link>
         <nav aria-label="Main">
           <NavLink to="/explore">Explore</NavLink>
+          <NavLink to="/mechanisms">Mechanisms</NavLink>
           <NavLink to="/changes">Changes</NavLink>
           <NavLink to="/trials">Trials</NavLink>
           <NavLink to="/methods">Methods</NavLink>
@@ -27,6 +29,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/explore" replace />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/mechanisms" element={<Navigate to="/mechanisms/targeted" replace />} />
+          <Route path="/mechanisms/:approach" element={<MechanismsPage />} />
           <Route path="/changes" element={<ChangesFeed />} />
           <Route path="/trials" element={<TrialsList />} />
           <Route path="/trial/:nct" element={<TrialDetail />} />

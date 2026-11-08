@@ -135,6 +135,11 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .pill.narrowing[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
 .explore .pill.narrowing[aria-pressed="true"] .pill-n { color: var(--plate); }
 
+/* A trial list handed over by another page (?nct=): one ink line under the toolbar, cleared by a word. */
+.explore-only { margin: 0; padding: 10px 40px 0; font-size: 12.5px; line-height: 1.4; color: var(--ink); }
+.explore .explore-only .text-button { font-size: 12.5px; margin-left: 4px; }
+@media (max-width: 640px) { .explore-only { padding: 8px 16px 0; } }
+
 /* The short sticky line for a selected trial exists only on narrow screens. */
 .selected-bar { display: none; }
 

@@ -377,3 +377,16 @@ test("labels off: no numbered key on a phone", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Off" }));
   expect(screen.queryByRole("list", { name: "Map labels" })).not.toBeInTheDocument();
 });
+
+test("?nct= narrows the map to the listed trials until Show all trials", async () => {
+  withCanvas();
+  stubFetch();
+  const [a, b] = explorer.trials;
+  renderAt(<Explore />, `/explore?nct=${a.nct_id},${b.nct_id}&from=aHSCT`);
+  expect(await screen.findByText(`Showing 2 of ${explorer.trials.length} trials`)).toBeInTheDocument();
+  const note = screen.getByRole("status", { name: "Trial list" });
+  expect(note).toHaveTextContent("Only the 2 trials of aHSCT.");
+  await userEvent.click(within(note).getByRole("button", { name: "Show all trials" }));
+  expect(screen.getByText(`Showing ${explorer.trials.length} of ${explorer.trials.length} trials`)).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "Trial list" })).not.toBeInTheDocument();
+});
