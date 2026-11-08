@@ -1,5 +1,8 @@
 import { useMemo, type ReactNode } from "react";
 import {
+  APPROACH_SERIES,
+  approachColor,
+  approachLabel,
   categoryColor,
   categorySeries,
   diseaseColor,
@@ -15,9 +18,10 @@ import {
   phasesOf,
   type ColorMode,
   type Palette,
+  UNCLASSIFIED,
 } from "../../lib/explorer";
 import { outcomeLabel, phaseLabel } from "../../lib/format";
-import type { ExplorerTrial } from "../../types";
+import type { ApproachInfo, ExplorerTrial } from "../../types";
 
 export interface ColourKeyProps {
   trials: ExplorerTrial[];
@@ -25,6 +29,8 @@ export interface ColourKeyProps {
   series: string[];
   /** The mechanism classes that take the colour series (mechanismSeries). */
   mechanismSeries?: string[];
+  /** The approach vocabulary (ExplorerFile.approaches), for Approach mode's names. */
+  approaches?: ApproachInfo[];
   mode: ColorMode;
   palette: Palette;
 }
@@ -58,11 +64,12 @@ export function ColourKey(p: ColourKeyProps) {
         swatch: palette.phases[ph] ?? palette.unknown,
       }));
     if (mode === "mechanism" || mode === "modality") return categoryKeys(trials, mode, palette, mechanismSeries ?? []);
+    if (mode === "approach") return approachKeys(trials, palette, p.approaches ?? []);
     // Disease colours go by a trial's first label, so the key lists the conditions that come first
     // somewhere, in the area's order (the order their hues are dealt in).
     const first = firstLabels(trials);
     return series.filter((c) => first.has(c)).map((c) => ({ label: c, swatch: diseaseColor(c, palette, series) }));
-  }, [mode, palette, series, mechanismSeries, counts, trials]);
+  }, [mode, palette, series, mechanismSeries, p.approaches, counts, trials]);
   const name = MODES.find(([m]) => m === mode)?.[1] ?? "";
 
   return (
@@ -103,6 +110,27 @@ function categoryKeys(trials: ExplorerTrial[], mode: "mechanism" | "modality", p
   // Shape, not shade: more than one class is a hollow ink ring on the map, so a ring in the key.
   if (multiple) keys.push({ label: `More than one ${mode}`, swatch: palette.multiple, ring: true });
   if (painted.has(NONE)) keys.push({ label: name(NONE), swatch: categoryColor([], palette, series), none: true });
+  return keys;
+}
+
+/**
+ * Approach key: the hued approaches some trial is painted, in the vocabulary's order, then "More than one
+ * approach" (an ink ring), then Unclassified and "No approach" on the pale ground.
+ */
+function approachKeys(trials: ExplorerTrial[], palette: Palette, approaches: ApproachInfo[]): Key[] {
+  const painted = paintedClasses(trials, "approach");
+  const names = { approaches };
+  const keys: Key[] = APPROACH_SERIES.filter((k) => painted.has(k)).map((k) => ({
+    label: approachLabel(k, names),
+    swatch: approachColor([k], palette),
+  }));
+  // A key outside the vocabulary is painted the other-category slate.
+  const extra = [...painted].filter((k) => k !== NONE && k !== UNCLASSIFIED && !APPROACH_SERIES.includes(k));
+  if (extra.length > 0) keys.push({ label: "Other approach", swatch: palette.otherCategory });
+  if (trials.some((t) => t.approaches.length > 1))
+    keys.push({ label: "More than one approach", swatch: palette.multiple, ring: true });
+  for (const k of [UNCLASSIFIED, NONE])
+    if (painted.has(k)) keys.push({ label: approachLabel(k, names), swatch: palette.noClass, none: true });
   return keys;
 }
 

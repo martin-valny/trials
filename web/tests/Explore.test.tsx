@@ -236,6 +236,12 @@ test("the hover card is a tooltip with the trial's id, title and facts", () => {
   expect(card).toHaveTextContent("dimethyl fumarate · NRF2 activator · Small molecule · Behavioral, Device · Phase 4 · 2015–2016");
 });
 
+test("the hover card names the trial's approach and kind when given the file's names", () => {
+  const t = { ...explorer.trials[0], approaches: ["cell"], kinds: ["ahsct"] };
+  render(<HoverCard trial={t} x={10} y={10} r={6} names={explorer} />);
+  expect(screen.getByRole("tooltip")).toHaveTextContent("Cell & transplant (aHSCT)");
+});
+
 const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 
 test("the map controls toolbar comes before the canvas", async () => {

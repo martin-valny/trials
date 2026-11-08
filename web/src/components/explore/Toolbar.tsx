@@ -1,5 +1,8 @@
 import { useMemo, useRef } from "react";
 import {
+  approachColor,
+  approachesOf,
+  approachLabel,
   categoryColor,
   categorySeries,
   diseaseColor,
@@ -21,9 +24,10 @@ import {
   type Filters,
   type Palette,
   type SetKey,
+  UNCLASSIFIED,
 } from "../../lib/explorer";
 import { outcomeLabel, phaseLabel, treatmentLabel } from "../../lib/format";
-import type { ExplorerTrial } from "../../types";
+import type { ApproachInfo, ExplorerTrial } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "./MultiSelect";
 import { YearRange } from "./YearRange";
 
@@ -38,6 +42,8 @@ export interface ToolbarProps {
   series: string[];
   /** The mechanism classes that take the colour series (mechanismSeries). */
   mechanismSeries: string[];
+  /** The approach vocabulary in order (ExplorerFile.approaches). */
+  approaches: ApproachInfo[];
   mode: ColorMode;
   onMode(m: ColorMode): void;
   palette: Palette;
@@ -81,7 +87,11 @@ export function Toolbar(p: ToolbarProps) {
 
   // A class gets a swatch only when some trial is painted its colour (the figure key's rule).
   const painted = useMemo(
-    () => ({ mechanism: paintedClasses(trials, "mechanism"), modality: paintedClasses(trials, "modality") }),
+    () => ({
+      mechanism: paintedClasses(trials, "mechanism"),
+      modality: paintedClasses(trials, "modality"),
+      approach: paintedClasses(trials, "approach"),
+    }),
     [trials],
   );
 
@@ -127,8 +137,19 @@ export function Toolbar(p: ToolbarProps) {
     const modalities = withNone(counts.modalities);
     const mechanism = category("mechanism", mechanismsOf(mechanisms), mechanisms, mechanismLabel);
     const modality = category("modality", modalitiesOf(modalities), modalities, modalityLabel);
-    return { disease, phase, outcome, treatment, mechanism, modality };
-  }, [counts, mode, palette, p.conditions, p.series, p.mechanismSeries, first, painted]);
+    // Approach: the approaches some trial is in, in the vocabulary's order; "No approach" only when some
+    // trial has none (a file built without the approach config).
+    const names = { approaches: p.approaches };
+    const approach: MultiSelectOption[] = approachesOf(counts.approaches, names).map((k) => ({
+      value: k,
+      label: approachLabel(k, names),
+      n: counts.approaches.get(k) ?? 0,
+      swatch: mode === "approach" && painted.approach.has(k) ? approachColor(k === NONE ? [] : [k], palette) : undefined,
+      // Unclassified and none share the pale ground, so their swatch takes the hairline border.
+      none: k === NONE || k === UNCLASSIFIED,
+    }));
+    return { disease, phase, outcome, treatment, mechanism, modality, approach };
+  }, [counts, mode, palette, p.conditions, p.series, p.mechanismSeries, p.approaches, first, painted]);
 
   return (
     <div className="toolbar" role="group" aria-label="Map controls">
@@ -215,6 +236,12 @@ export function Toolbar(p: ToolbarProps) {
           options={options.modality}
           selected={filters.modalities}
           onChange={set("modalities")}
+        />
+        <MultiSelect
+          label="Approach"
+          options={options.approach}
+          selected={filters.approaches}
+          onChange={set("approaches")}
         />
         <YearRange bounds={p.bounds} value={filters.years} onChange={(years) => p.onFilters({ ...filters, years })} />
       </div>

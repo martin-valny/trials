@@ -327,7 +327,7 @@ test("success panel switches between disease, modality and mechanism", async () 
   const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
   const group = within(b).getByRole("group", { name: "Group by" });
   const buttons = within(group).getAllByRole("button").map((x) => x.textContent);
-  expect(buttons).toEqual(["By disease", "By modality", "By mechanism"]);
+  expect(buttons).toEqual(["By disease", "By modality", "By mechanism", "By approach"]);
   expect(within(group).getByRole("button", { name: "By disease" })).toHaveAttribute("aria-pressed", "true");
   expect(within(b).queryByText("Trials with several mechanisms count in each.")).not.toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By mechanism" }));
@@ -485,4 +485,70 @@ test("clusters too small to label are not offered: Labels defaults to Diseases",
   const labels = screen.getByRole("group", { name: "Labels" });
   expect(within(labels).queryByRole("button", { name: "Clusters" })).not.toBeInTheDocument();
   expect(within(labels).getByRole("button", { name: "Diseases" })).toHaveAttribute("aria-pressed", "true");
+});
+
+/** The fixture with one trial moved into Cell & transplant (aHSCT), so a second bubble has a member. */
+function withCell(): ExplorerFile {
+  const f = readFixture<ExplorerFile>("explorer.json");
+  const t = f.trials.find((x) => x.nct_id === "NCT02343159")!;
+  t.approaches = ["cell"];
+  t.kinds = ["ahsct"];
+  return f;
+}
+
+test("Approach filter: select none, then Cell & transplant shows only cell trials", async () => {
+  stubFetch({ "explorer.json": withCell() });
+  await ready();
+  const bar = screen.getByRole("group", { name: "Map controls" });
+  const names = within(bar)
+    .getAllByRole("button")
+    .map((b) => b.getAttribute("aria-expanded") !== null && b.getAttribute("aria-label"))
+    .filter(Boolean);
+  const at = (n: string) => names.findIndex((x) => typeof x === "string" && x.startsWith(n));
+  expect(at("Approach:")).toBe(at("Modality:") + 1);
+  await userEvent.click(screen.getByRole("button", { name: "Approach: all" }));
+  const rows = within(screen.getByRole("group", { name: "Approach" })).getAllByRole("checkbox");
+  // In the vocabulary's order, only approaches some trial is in.
+  expect(rows.map((r) => r.closest("label")!.querySelector(".check-label")!.textContent)).toEqual([
+    "Targeted drugs",
+    "Cell & transplant",
+    "Non-drug care",
+    "Unclassified",
+  ]);
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("checkbox", { name: "Cell & transplant 1" }));
+  expect(screen.getByText(`Showing 1 of ${N} trials`)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Reset all" })).toBeEnabled();
+});
+
+test("Approach colour mode has its own key: hued approaches, more than one, and Unclassified pale", async () => {
+  await ready();
+  await userEvent.click(screen.getByRole("button", { name: "Approach" }));
+  expect(screen.getByRole("button", { name: "Approach" })).toHaveAttribute("aria-pressed", "true");
+  const key = screen.getByRole("list", { name: "Colour key: Approach" });
+  expect(within(key).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+    "Targeted drugs",
+    "Non-drug care",
+    "More than one approach",
+    "Unclassified",
+  ]);
+});
+
+test("hover card and panel d show approach and kind", async () => {
+  stubFetch({ "explorer.json": withCell() });
+  const box = await ready();
+  await userEvent.type(box, "NCT02343159{Enter}");
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  expect(within(d).getByText(/Cell & transplant \(aHSCT\)/)).toBeInTheDocument();
+});
+
+test("panel b By approach credits success to the drug that moved on", async () => {
+  await ready();
+  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  await userEvent.click(within(b).getByRole("button", { name: "By approach" }));
+  expect(within(b).getByRole("button", { name: "By approach" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(b).getByText("Targeted drugs")).toBeInTheDocument();
+  expect(within(b).getByText("Trials in several approaches count in each.")).toBeInTheDocument();
+  expect(within(b).getByText(/a success counts only for the groups of the drug that moved on/)).toBeInTheDocument();
 });

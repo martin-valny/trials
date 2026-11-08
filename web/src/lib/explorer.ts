@@ -1,7 +1,9 @@
-import type { ExplorerCluster, ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
+import type { DrugInfo, ExplorerCluster, ExplorerFile, ExplorerStats, ExplorerTrial, Outcome } from "../types";
 import { phaseLabel, treatmentLabel } from "./format";
 
-export type ColorMode = "outcome" | "phase" | "disease" | "mechanism" | "modality";
+export type { DrugInfo } from "../types";
+
+export type ColorMode = "outcome" | "phase" | "disease" | "mechanism" | "modality" | "approach";
 
 export interface Filters {
   conditions: Set<string>;
@@ -12,6 +14,8 @@ export interface Filters {
   mechanisms: Set<string>;
   /** Modalities; NONE stands for trials with no known modality. */
   modalities: Set<string>;
+  /** Approach keys; NONE stands for trials with no approach (a file built without the approach config). */
+  approaches: Set<string>;
   query: string;
   /** On: only trials with results posted. Off (default): every trial, results or not. */
   resultsOnly: boolean;
@@ -19,7 +23,14 @@ export interface Filters {
   years: [number, number];
 }
 
-export type SetKey = "conditions" | "phases" | "outcomes" | "treatmentTypes" | "mechanisms" | "modalities";
+export type SetKey =
+  | "conditions"
+  | "phases"
+  | "outcomes"
+  | "treatmentTypes"
+  | "mechanisms"
+  | "modalities"
+  | "approaches";
 
 export interface Palette {
   succeeded: string;
@@ -130,15 +141,22 @@ export function normalizeFile(f: ExplorerFile): ExplorerFile {
   ];
   return {
     ...f,
-    // A file from before phase 2 has none of these: default them so the page still works.
+    // A file from before phase 2 (or before approaches) has none of these: default them so the page still works.
+    approaches: f.approaches ?? [],
     clusters: f.clusters ?? [],
+    drug_index: f.drug_index ?? {},
+    kinds: f.kinds ?? {},
     trials: f.trials.map((t) => ({
       ...t,
+      approaches: t.approaches ?? [],
+      kinds: t.kinds ?? [],
       mechanisms: t.mechanisms ?? [],
       targets: t.targets ?? [],
       modalities: split(t.modalities),
+      succeeded_by: t.succeeded_by ?? [],
       succeeded_in: t.succeeded_in ?? [],
       in_pool: t.in_pool ?? false,
+      unsorted: t.unsorted ?? [],
     })),
   };
 }
@@ -199,10 +217,10 @@ const inSeries = (values: string[], series: string[]): boolean => values.length 
  * The classes some trial is painted as: those a trial has as its only class, plus NONE when some trial
  * has none. The key and the dropdown swatches show only these.
  */
-export function paintedClasses(trials: ExplorerTrial[], mode: "mechanism" | "modality"): Set<string> {
+export function paintedClasses(trials: ExplorerTrial[], mode: "mechanism" | "modality" | "approach"): Set<string> {
   const out = new Set<string>();
   for (const t of trials) {
-    const v = mode === "mechanism" ? t.mechanisms : t.modalities;
+    const v = mode === "mechanism" ? t.mechanisms : mode === "modality" ? t.modalities : t.approaches;
     if (v.length === 0) out.add(NONE);
     else if (v.length === 1) out.add(v[0]);
   }
@@ -249,6 +267,58 @@ export function clusterLabels(clusters: ExplorerCluster[], max: number, minN = C
 }
 
 // --- end mechanism and modality ---------------------------------------------------------------------
+
+// --- Approaches ---------------------------------------------------------------------------------------
+
+/**
+ * The six approaches that take the colour series, in the vocabulary's order (the disease series hues,
+ * so no ink and no red). Unclassified is not among them: it takes the cloud's pale ground, as "no known
+ * mechanism" does.
+ */
+export const APPROACH_SERIES = ["targeted", "cell", "plasma", "tolerisation", "diffuse", "nondrug"];
+
+/** The approach a trial lands in when it is in no other. */
+export const UNCLASSIFIED = "unclassified";
+
+/** An approach key as shown: its label in the file, NONE -> "No approach", an unknown key as itself. */
+export const approachLabel = (key: string, f: Pick<ExplorerFile, "approaches">): string =>
+  key === NONE ? "No approach" : (f.approaches.find((a) => a.key === key)?.label ?? key);
+
+/** Approach keys present in ``counts`` in the file's order, unknown keys after alphabetically, NONE last. */
+export function approachesOf(counts: Map<string, number>, f: Pick<ExplorerFile, "approaches">): string[] {
+  const order = f.approaches.map((a) => a.key);
+  const rank = (k: string) => (k === NONE ? Infinity : order.includes(k) ? order.indexOf(k) : order.length);
+  return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
+
+/** Approach colour: Unclassified and none take the pale ground; otherwise as categoryColor. */
+export function approachColor(approaches: string[], palette: Palette): string {
+  if (approaches.length === 1 && approaches[0] === UNCLASSIFIED) return palette.noClass;
+  return categoryColor(approaches, palette, APPROACH_SERIES);
+}
+
+/** The names the hover card and panel d use for approaches and kinds. */
+export type ApproachNames = Pick<ExplorerFile, "approaches" | "kinds">;
+
+/**
+ * Each of a trial's approaches with its kinds in brackets: "Targeted drugs; Non-drug care (other
+ * behavioural, other device)". One part per approach; empty when the trial has none.
+ */
+export function approachParts(t: ExplorerTrial, names: ApproachNames): string[] {
+  return t.approaches.map((a) => {
+    const kinds = t.kinds.filter((k) => names.kinds[k]?.approach === a).map((k) => names.kinds[k].label);
+    const label = approachLabel(a, names);
+    return kinds.length > 0 ? `${label} (${kinds.join(", ")})` : label;
+  });
+}
+
+/** Panel d's approach part: every approach with its kinds; null when none. */
+export function approachText(t: ExplorerTrial, names: ApproachNames): string | null {
+  const parts = approachParts(t, names);
+  return parts.length === 0 ? null : parts.join("; ");
+}
+
+// --- end approaches ---------------------------------------------------------------------------------
 
 /**
  * Disease colour for a condition label, by its place in ``series`` (see diseaseSeries): each condition
@@ -316,6 +386,7 @@ export function filterCounts(trials: ExplorerTrial[]) {
     treatmentTypes: tally(trials, (t) => t.treatment_types),
     mechanisms: tally(trials, (t) => orNone(t.mechanisms)),
     modalities: tally(trials, (t) => orNone(t.modalities)),
+    approaches: tally(trials, (t) => orNone(t.approaches)),
   };
 }
 
@@ -332,6 +403,7 @@ export const MODES: [ColorMode, string][] = [
   ["disease", "Disease"],
   ["mechanism", "Mechanism"],
   ["modality", "Modality"],
+  ["approach", "Approach"],
 ];
 
 const sameSet = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean =>
@@ -346,6 +418,7 @@ export function sameFilters(a: Filters, b: Filters): boolean {
     sameSet(a.treatmentTypes, b.treatmentTypes) &&
     sameSet(a.mechanisms, b.mechanisms) &&
     sameSet(a.modalities, b.modalities) &&
+    sameSet(a.approaches, b.approaches) &&
     a.query === b.query &&
     a.resultsOnly === b.resultsOnly &&
     a.years[0] === b.years[0] &&
@@ -380,12 +453,14 @@ export function filtersFor(trials: ExplorerTrial[], conditionLabels: Iterable<st
   const treatmentTypes = new Set<string>();
   const mechanisms = new Set<string>([NONE]);
   const modalities = new Set<string>([NONE]);
+  const approaches = new Set<string>([NONE]);
   for (const t of trials) {
     t.condition_labels.forEach((l) => conditions.add(l));
     phases.add(phaseKey(t));
     t.treatment_types.forEach((x) => treatmentTypes.add(x));
     t.mechanisms.forEach((x) => mechanisms.add(x));
     t.modalities.forEach((x) => modalities.add(x));
+    t.approaches.forEach((x) => approaches.add(x));
   }
   return {
     conditions,
@@ -394,6 +469,7 @@ export function filtersFor(trials: ExplorerTrial[], conditionLabels: Iterable<st
     treatmentTypes,
     mechanisms,
     modalities,
+    approaches,
     query: "",
     resultsOnly: false,
     years: yearBounds(trials),
@@ -414,6 +490,7 @@ export function matches(t: ExplorerTrial, f: Filters, bounds: [number, number]):
   if (t.treatment_types.length > 0 && !t.treatment_types.some((x) => f.treatmentTypes.has(x))) return false;
   if (!orNone(t.mechanisms).some((x) => f.mechanisms.has(x))) return false;
   if (!orNone(t.modalities).some((x) => f.modalities.has(x))) return false;
+  if (!orNone(t.approaches).some((x) => f.approaches.has(x))) return false;
   const q = f.query.trim().toLowerCase();
   if (q) {
     const hay = [t.nct_id, t.title, ...t.drugs, t.lead_sponsor ?? ""];
@@ -430,7 +507,8 @@ export const outcomeColor = (o: Outcome, palette: Palette): string =>
  * Which visible trials the canvas redraws on top (opaque, at least 3px, knockout ring): succeeded trials
  * in outcome mode; in disease mode every trial whose first condition is not the dominant one, so small
  * conditions are not buried under the large one; in mechanism and modality modes the trials painted a
- * series colour (one class, among ``mechanisms`` or the modality series); none in phase mode.
+ * series colour (one class, among ``mechanisms`` or the modality series); in approach mode the trials in
+ * one hued approach (not Unclassified); none in phase mode.
  */
 export function emphasisFor(
   mode: ColorMode,
@@ -441,17 +519,19 @@ export function emphasisFor(
   if (mode === "disease") return (t) => t.condition_labels.length > 0 && t.condition_labels[0] !== ranked[0];
   if (mode === "mechanism") return (t) => inSeries(t.mechanisms, mechanisms);
   if (mode === "modality") return (t) => inSeries(t.modalities, MODALITY_SERIES);
+  if (mode === "approach") return (t) => inSeries(t.approaches, APPROACH_SERIES);
   return undefined;
 }
 
 /**
  * Which trials are drawn as a hollow 1px ring instead of a filled dot (Shape-Not-Shade): unknown outcomes
- * in outcome mode; in mechanism and modality modes, trials with more than one class. None otherwise.
+ * in outcome mode; in mechanism, modality and approach modes, trials with more than one class. None otherwise.
  */
 export function hollowFor(mode: ColorMode): ((t: ExplorerTrial) => boolean) | undefined {
   if (mode === "outcome") return (t) => t.outcome === "unknown";
   if (mode === "mechanism") return (t) => t.mechanisms.length > 1;
   if (mode === "modality") return (t) => t.modalities.length > 1;
+  if (mode === "approach") return (t) => t.approaches.length > 1;
   return undefined;
 }
 
@@ -470,6 +550,7 @@ export function colorFor(
   if (mode === "phase") return (t.phase && palette.phases[t.phase]) || palette.unknown;
   if (mode === "mechanism") return categoryColor(t.mechanisms, palette, mechanisms);
   if (mode === "modality") return categoryColor(t.modalities, palette, MODALITY_SERIES);
+  if (mode === "approach") return approachColor(t.approaches, palette);
   return diseaseColor(t.condition_labels[0], palette, series);
 }
 
@@ -578,7 +659,7 @@ export function formatP(p: number): string {
   return p < 0.001 ? "< 0.001" : String(Number(p.toPrecision(2)));
 }
 
-export type SuccessBy = "disease" | "modality" | "mechanism";
+export type SuccessBy = "disease" | "modality" | "mechanism" | "approach";
 export interface SuccessGroup {
   group: string;
   finished: number;
@@ -586,9 +667,44 @@ export interface SuccessGroup {
   rate: number | null;
 }
 
+/** The groups a trial touches in a grouping: its conditions, modalities, mechanism classes or approaches. */
+export function groupsOf(t: ExplorerTrial, by: SuccessBy): string[] {
+  if (by === "disease") return t.condition_labels;
+  if (by === "modality") return t.modalities;
+  if (by === "mechanism") return t.mechanisms;
+  return t.approaches;
+}
+
+/** A drug's groups in a grouping (modalities split on ";", as normalizeFile splits a trial's). */
+const drugGroups = (d: DrugInfo, by: Exclude<SuccessBy, "disease">): string[] =>
+  by === "modality"
+    ? d.modalities.flatMap((m) => m.split(";").map((x) => x.trim()))
+    : by === "mechanism"
+      ? d.mechanisms
+      : d.approaches;
+
 /**
- * Panel b grouping: finished trials that could succeed (the pool), counted in every group they touch.
- * Disease groups use succeeded_in (per-condition success); the others use the trial's own outcome.
+ * True when a trial counts as a success in ``group`` (1b: success is credited to the drug that moved on).
+ * Disease groups use succeeded_in (R21: only where the drug moved on). Every other grouping credits a
+ * succeeded trial only to the groups of a drug in its succeeded_by, looked up in ``drugIndex``: an aHSCT
+ * + cyclophosphamide trial that succeeded because cyclophosphamide moved on is a success for alkylating
+ * agents and Targeted drugs, not for Cell & transplant. A file from before succeeded_by (empty on a
+ * succeeded trial) credits the trial's own outcome, as before.
+ */
+export function wonIn(t: ExplorerTrial, by: SuccessBy, group: string, drugIndex: Record<string, DrugInfo>): boolean {
+  if (by === "disease") return t.succeeded_in.includes(group);
+  if (t.outcome !== "succeeded") return false;
+  if (t.succeeded_by.length === 0) return groupsOf(t, by).includes(group);
+  return t.succeeded_by.some((d) => {
+    const info = drugIndex[d];
+    return info !== undefined && drugGroups(info, by).includes(group);
+  });
+}
+
+/**
+ * Panel b grouping: finished trials that could succeed (the pool), counted in the denominator of every
+ * group they touch. With ``drugIndex`` a success counts only in the groups of the drug that moved on
+ * (wonIn); without it, the trial's own outcome (disease groups always use succeeded_in).
  * `rate` is null below minGroup. Sorted by finished desc, capped at topN.
  * `order` is for the disease view only: it keeps that area order, lists every group even with none finished,
  * and disables sorting and topN.
@@ -599,16 +715,22 @@ export function successGroups(
   minGroup: number,
   topN = 8,
   order?: string[],
+  drugIndex?: Record<string, DrugInfo>,
 ): SuccessGroup[] {
   const acc = new Map<string, { finished: number; succeeded: number }>();
   for (const g of order ?? []) acc.set(g, { finished: 0, succeeded: 0 });
   for (const t of trials) {
     if (!t.in_pool) continue;
-    const groups = by === "disease" ? t.condition_labels : by === "modality" ? t.modalities : t.mechanisms;
-    for (const g of new Set(groups)) {
+    for (const g of new Set(groupsOf(t, by))) {
       const row = acc.get(g) ?? { finished: 0, succeeded: 0 };
       row.finished += 1;
-      if (by === "disease" ? t.succeeded_in.includes(g) : t.outcome === "succeeded") row.succeeded += 1;
+      const won =
+        by === "disease"
+          ? t.succeeded_in.includes(g)
+          : drugIndex === undefined
+            ? t.outcome === "succeeded"
+            : wonIn(t, by, g, drugIndex);
+      if (won) row.succeeded += 1;
       acc.set(g, row);
     }
   }
@@ -962,12 +1084,16 @@ export function yearSpan(t: ExplorerTrial): string {
 const firstOf = (items: string[], n: number): string =>
   items.slice(0, n).join(", ") + (items.length > n ? ` +${items.length - n}` : "");
 
-/** The hover card's two lines: what the trial is, then what it tests, its phase and its years. */
-export function popupLines(t: ExplorerTrial): [string, string] {
+/**
+ * The hover card's two lines: what the trial is, then what it tests (with its approach and kind when
+ * ``names`` are given), its phase and its years.
+ */
+export function popupLines(t: ExplorerTrial, names?: ApproachNames): [string, string] {
   const parts = [
     firstOf(t.drugs, 2),
     firstOf(t.mechanisms, 1),
     firstOf(t.modalities.map(modalityLabel), 1),
+    names ? firstOf(approachParts(t, names), 1) : "",
     firstOf(t.treatment_types.slice(0, 2).map(treatmentLabel), 2),
     phaseLabel(t.phase),
     yearSpan(t),

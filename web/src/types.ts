@@ -92,6 +92,8 @@ export interface TrialsIndex {
 export type Outcome = "succeeded" | "stopped" | "completed_unknown" | "running" | "unknown";
 
 export interface ExplorerTrial {
+  /** Approach keys (ExplorerFile.approaches), sorted; ["unclassified"] when nothing else applies; [] without approach data. */
+  approaches: string[];
   cluster: number | null; // id in ExplorerFile.clusters; null = noise or no clusters
   condition_labels: string[];
   drugs: string[];
@@ -100,6 +102,8 @@ export interface ExplorerTrial {
   enrollment: number | null;
   has_results: boolean;
   in_pool: boolean; // a finished trial that could succeed (the statistic's pool)
+  /** Kind keys (ExplorerFile.kinds) of its no-target and non-drug interventions. */
+  kinds: string[];
   lead_sponsor: string | null;
   mechanisms: string[];
   modalities: string[];
@@ -109,8 +113,12 @@ export interface ExplorerTrial {
   start_year: number | null;
   targets: string[];
   succeeded_in: string[]; // condition labels the trial succeeded in (R21), sorted
+  /** The drugs that moved on (R21) and made this trial a success, sorted; empty unless it succeeded. */
+  succeeded_by: string[];
   title: string;
   treatment_types: string[];
+  /** Unmapped drug names and unmatched intervention names (the Unclassified backlog). */
+  unsorted: string[];
   x: number;
   y: number;
   z: number;
@@ -156,9 +164,38 @@ export interface ExplorerClusterMethod {
   drug_share: number;
 }
 
+/** One approach bubble, in the vocabulary's order. */
+export interface ApproachInfo {
+  key: string;
+  label: string;
+}
+
+/** A kind without a molecular target (or a type fallback), and where it sits. */
+export interface KindInfo {
+  approach: string;
+  group: string;
+  label: string;
+  /** One short sentence, shown as "proposed"; empty for type fallbacks. */
+  rationale: string;
+  source_url: string;
+}
+
+/** What a drug name belongs to: the groups a success of that drug is credited to (1b). */
+export interface DrugInfo {
+  mechanisms: string[];
+  modalities: string[];
+  kinds: string[];
+  approaches: string[];
+}
+
 export interface ExplorerFile {
+  /** The approach vocabulary in order; empty when the approach config was missing or invalid. */
+  approaches: ApproachInfo[];
   clusters: ExplorerCluster[]; // empty when no clusters were found
+  /** Every drug or mapping-type name in any trial, with its groups. */
+  drug_index: Record<string, DrugInfo>;
   generated_for: string;
+  kinds: Record<string, KindInfo>;
   method: {
     algorithm: string;
     dims: number;

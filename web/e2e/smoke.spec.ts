@@ -306,3 +306,23 @@ test("Labels: Off takes the cluster labels off the map", async ({ page }) => {
   await labels.getByRole("button", { name: "Clusters" }).click();
   await expect.poll(() => paintedPixels(page), { message: "the label is back" }).toBeGreaterThan(without + 100);
 });
+
+test("Colour → Approach paints the map and keys the approaches without errors", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto("/#/explore");
+  await waitForDraw(page);
+  await page.getByRole("group", { name: "Colour" }).getByRole("button", { name: "Approach" }).click();
+  await expect(page.getByRole("group", { name: "Colour" }).getByRole("button", { name: "Approach" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const key = page.getByRole("list", { name: "Colour key: Approach" });
+  await expect(key).toContainText("Targeted drugs");
+  await expect(key).toContainText("Unclassified");
+  await waitForDraw(page);
+  expect(errors).toEqual([]);
+});

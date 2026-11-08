@@ -49,6 +49,7 @@ import type { ExplorerCluster, ExplorerFile, ExplorerStats, ExplorerTrial } from
 import { readFixture } from "./helpers";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
+  approaches: [],
   cluster: null,
   condition_labels: ["Alpha", "Beta"],
   drugs: ["fooumab"],
@@ -57,6 +58,7 @@ const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
   enrollment: 10,
   has_results: false,
   in_pool: true,
+  kinds: [],
   lead_sponsor: "Acme Pharma",
   mechanisms: [],
   modalities: [],
@@ -65,9 +67,11 @@ const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
   phase: "PHASE2",
   start_year: 2020,
   targets: [],
+  succeeded_by: [],
   succeeded_in: ["Alpha"],
   title: "A Study of Things",
   treatment_types: ["DRUG"],
+  unsorted: [],
   x: 0,
   y: 0,
   z: 0,
@@ -93,6 +97,7 @@ describe("allFilters / matches", () => {
     treatmentTypes: new Set(["DRUG"]),
     mechanisms: new Set(["anti-CD20", NONE]),
     modalities: new Set(["antibody", NONE]),
+    approaches: new Set([NONE]),
     query: "",
     resultsOnly: false,
     years: B,
@@ -890,8 +895,8 @@ describe("mechanism and modality: colour", () => {
     colorFor(trial({ mechanisms }), "mechanism", p, [], top);
   const top = ["anti-CD20", "S1P modulator", "NRF2 activator", "FcRn blocker", "C5 inhibitor", "anti-CD19"];
 
-  it("has five colour modes: Outcome, Phase, Disease, Mechanism, Modality", () => {
-    expect(MODES.map(([, l]) => l)).toEqual(["Outcome", "Phase", "Disease", "Mechanism", "Modality"]);
+  it("has six colour modes: Outcome, Phase, Disease, Mechanism, Modality, Approach", () => {
+    expect(MODES.map(([, l]) => l)).toEqual(["Outcome", "Phase", "Disease", "Mechanism", "Modality", "Approach"]);
   });
   it("shape, not shade: other is slate, more than one an ink ring, none the cloud's pale ground", () => {
     expect(L.otherCategory).toBe("#8796a3");

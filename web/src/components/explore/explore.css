@@ -95,6 +95,12 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* Too few finished trials to lean on: the share is drawn as an outline, not a solid bar. */
 .bar.few .bar-fill { background: var(--plate); border: 1px solid var(--ink); }
 .panel-switch { margin: 2px 0 4px; }
+.explore .panel-switch .segmented button { white-space: nowrap; }
+/* Four groupings do not fit panel b's line where the column is narrow (901 to 1099px, and phones):
+   the split pill becomes a two-by-two block, as the phone's colour pill does. */
+@media (min-width: 901px) and (max-width: 1099px), (max-width: 640px) {
+  .panel-switch .segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; border-radius: 13px; }
+}
 /* Under the count of a group below min_group: quiet words, not a sentence in place of the bar. */
 .bar-few { display: block; font-size: 11px; line-height: 1.15; color: var(--muted); white-space: nowrap; }
 .panel-note + .panel-note { margin-top: -6px; }
@@ -431,6 +437,20 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .toolbar .tb-reset { grid-area: reset; justify-self: end; align-self: start; min-height: 28px; } /* level with the first filter line when they wrap */
   .toolbar .tb-count { grid-area: count; justify-self: end; margin-left: 0; }
 }
+/* Six colour modes on the first line: below 1200px the find field and the colour parts give up a
+   little width so find, colour, Results posted and the count still share one line. Below 1100px even
+   that does not fit: Results posted opens the filters' line instead (it narrows, as they do). */
+@media (min-width: 901px) and (max-width: 1199px) {
+  .tb-find input { width: 11.5rem; }
+  .explore .toolbar .segmented button { padding: 3px 7px; }
+}
+@media (min-width: 901px) and (max-width: 1099px) {
+  .toolbar {
+    grid-template-columns: auto auto auto 1fr auto;
+    grid-template-areas: "find colour colour . count" "results filters filters filters reset";
+  }
+  .toolbar .tb-results { justify-self: start; align-self: start; }
+}
 @media (max-width: 900px) {
   .toolbar .tb-count { margin-left: auto; }
 }
@@ -440,10 +460,12 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
   .toolbar::after { left: 16px; right: 16px; }
   .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
-  /* Five colour modes: the split pill spans the line, its parts sharing the width. */
-  .toolbar .tb-colour { width: 100%; }
-  .toolbar .segmented { flex: 1 1 auto; min-width: 0; }
-  .explore .toolbar .segmented button { flex: 1 1 auto; padding: 3px 4px; }
+  /* Six colour modes do not fit one phone line: the split pill becomes a three-by-two block spanning
+     the line, the same hairline frame with softer corners, its parts sharing the width. */
+  .toolbar .tb-colour { width: 100%; display: flex; align-items: flex-start; }
+  .toolbar .tb-colour .tb-k { padding-top: 4px; }
+  .toolbar .segmented { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-radius: 13px; }
+  .explore .toolbar .segmented button { padding: 3px 4px; }
   .sheet-head {
     display: flex; align-items: baseline; justify-content: space-between;
     padding-bottom: 8px; border-bottom: 1px solid var(--rule);

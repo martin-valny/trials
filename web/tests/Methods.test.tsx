@@ -92,3 +92,32 @@ test("methods: the statistic leaves out mechanism; no percentage under 10; clust
   expect(text).toMatch(/at least 60% of the members/);
   expect(text).toMatch(/at least 15% of the members/);
 });
+
+test("Methods describes treatments without a molecular target", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods#map");
+  const h = await screen.findByRole("heading", { name: "Treatments without a molecular target" });
+  expect(h).toBeInTheDocument();
+  const text = (document.body.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/Open Targets/);
+  expect(text).toMatch(/ChEMBL/);
+  expect(text).toMatch(/no target/i);
+  expect(text).toMatch(/MeSH/);
+  expect(text).toMatch(/E02/);
+  for (const label of [
+    "Targeted drugs",
+    "Cell & transplant",
+    "Antibody & plasma",
+    "Tolerisation",
+    "Broad immunomodulators",
+    "Non-drug care",
+    "Unclassified",
+  ])
+    expect(text).toContain(label);
+  expect(text).toMatch(/credited to the drug that moved on/);
+  expect(text).toMatch(/proposed/);
+  // Coverage restated as two numbers.
+  expect(text).toMatch(/1,121 of 1,314 drug-bearing trials \(85\.3%\)/);
+  expect(text).toMatch(/2,156 of 2,987 trials \(72\.2%\)/);
+  expect(text).toMatch(/Sorensen/);
+});

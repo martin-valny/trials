@@ -164,7 +164,8 @@ export function MultiSelect(props: {
     <Dropdown
       className="multiselect"
       label={label}
-      value={filterSummary(selected.size, options.length)}
+      // Only values offered as rows count: a set may hold a value no row shows (an unlisted NONE).
+      value={filterSummary(options.filter((o) => selected.has(o.value)).length, options.length)}
       narrowed={options.some((o) => !selected.has(o.value))}
     >
       <MultiSelectBody label={label} options={options} selected={selected} onChange={onChange} searchable={props.searchable} />

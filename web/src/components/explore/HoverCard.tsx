@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import { popupLines, popupPosition } from "../../lib/explorer";
+import { popupLines, popupPosition, type ApproachNames } from "../../lib/explorer";
 import type { ExplorerTrial } from "../../types";
 
 /** Clear space (px) between the dot's ring and the card, bridged by the leader. */
@@ -9,11 +9,24 @@ const LEADER = 10;
  * Two lines on the trial under the pointer, set centred above its dot inside the map panel (below it
  * only at the panel's top edge), with a 1px ink leader from the card to the dot's ring, like the
  * cluster labels' leaders. It is placed after it is measured, before paint. ``r`` is the ring's radius.
+ * ``names`` (the file's approaches and kinds) adds the trial's approach and kind to the facts.
  */
-export function HoverCard({ trial, x, y, r }: { trial: ExplorerTrial; x: number; y: number; r: number }) {
+export function HoverCard({
+  trial,
+  x,
+  y,
+  r,
+  names,
+}: {
+  trial: ExplorerTrial;
+  x: number;
+  y: number;
+  r: number;
+  names?: ApproachNames;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const line = useRef<SVGLineElement>(null);
-  const [head, facts] = popupLines(trial);
+  const [head, facts] = popupLines(trial, names);
   const title = head.slice(trial.nct_id.length + " · ".length);
 
   useLayoutEffect(() => {

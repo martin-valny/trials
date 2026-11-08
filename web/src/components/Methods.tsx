@@ -129,12 +129,13 @@ export function Methods() {
         <h4>What is not mapped</h4>
         <ul>
           <li>
-            Drugs ChEMBL does not know by that exact name, or knows without a mechanism record
-            (for example glatiramer and immunoglobulin), stay unmapped rather than guessed.
+            Drugs ChEMBL does not know by that exact name stay unmapped rather than guessed.
           </li>
           <li>
-            Cell products and procedures without a molecular target (stem cells, transplants,
-            conditioning regimens) and most vaccines are not given a class.
+            Products ChEMBL knows without a molecular target (for example glatiramer and
+            immunoglobulin), cell products and procedures (stem cells, transplants) are not given a
+            mechanism class; they are sorted into approaches instead (next section). Most vaccines
+            are not given a class.
           </li>
           <li>
             Names that would match two different molecules stay unmapped until resolved by hand.
@@ -144,6 +145,62 @@ export function Methods() {
           </li>
         </ul>
         <p>Trials with no known mechanism are shown as such, never folded into a class.</p>
+
+        <h3 id="approaches">Treatments without a molecular target</h3>
+        <p>
+          Many treatments in these diseases have no single molecular target: stem-cell
+          transplants, mesenchymal cells, immunoglobulin, plasma exchange, peptide tolerisation,
+          glatiramer, and every non-drug trial (rehabilitation, devices, diet, behavioural care).
+          They are not forced into a mechanism class. Other sources do the same: Open Targets
+          leaves vaccines, blood products and cell therapies out of its target layer, ChEMBL records
+          glatiramer and immunoglobulin with no target rather than leaving them blank, and the MeSH
+          Therapeutics tree (E02) groups treatments by system, such as cell- and tissue-based
+          therapy, plasmapheresis, rehabilitation and nutrition therapy.
+        </p>
+        <p>
+          Instead every trial is sorted into one or more of seven approaches. The rule: a drug with
+          a molecular mechanism (a gene target, or a defined action on DNA or RNA, as for
+          cladribine) is a Targeted drug. A drug without one carries a kind (for example aHSCT or
+          mesenchymal stem cells) written once in a hand-made table, each with its approach. A
+          non-drug intervention is sorted by a reviewed list of whole-word phrases, then by its
+          registry intervention type. Nothing is guessed from how a name ends; a name nothing sorts
+          is listed as not yet sorted. On the 6 November 2026 snapshot (2,987 trials; a trial counts
+          in each approach it is in):
+        </p>
+        <ul>
+          <li>Targeted drugs: 974 trials. Drugs with a molecular mechanism; these open into the mechanism graph.</li>
+          <li>Cell &amp; transplant: 68. aHSCT, mesenchymal and other cell products.</li>
+          <li>Antibody &amp; plasma: 52. Immunoglobulin, plasma exchange, immunoadsorption, ATG.</li>
+          <li>Tolerisation: 15. Myelin and AChR peptides, helminths.</li>
+          <li>Broad immunomodulators: 40. A stated effect but no defined target, such as glatiramer.</li>
+          <li>Non-drug care: 1,062. Rehabilitation, devices, behavioural care, diet, procedures.</li>
+          <li>
+            Unclassified: 831. Trials in no other approach: not a treatment (diagnostics,
+            sampling; 92) or not yet sorted (739, of which 429 have no experimental arm).
+          </li>
+        </ul>
+        <p>
+          Coverage, as two numbers: every drug is sorted (molecular, a kind, or not a drug) for
+          1,121 of 1,314 drug-bearing trials (85.3%), and 2,156 of 2,987 trials (72.2%) are in an
+          approach other than Unclassified.
+        </p>
+        <p>
+          Each kind carries a one-line rationale with a source (MeSH, NCI Thesaurus, a review or a
+          label). It is marked proposed: it says why the treatment might work, not a mechanism, and
+          it is never drawn as a molecular target or pathway.
+        </p>
+        <p>
+          Success keeps its definition (below), so non-drug trials are never in the pool. When a
+          trial tested several treatments, it counts in every group it touches, but its success is
+          credited to the drug that moved on: an aHSCT trial that succeeded because its
+          cyclophosphamide moved to a later phase counts as a success for alkylating agents and
+          Targeted drugs, not for Cell &amp; transplant. Panel b&apos;s By mechanism, By modality and By
+          approach views all follow this rule; By disease keeps the per-disease rule.
+        </p>
+        <p>
+          A later addition may tag treatments that work as a pulsed immune reset against those
+          given continuously (Sorensen &amp; Sellebjerg, 2019), across the approaches.
+        </p>
 
         <h3 id="clusters">Named clusters</h3>
         <p>

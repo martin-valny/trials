@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
+import { approachLabel, liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
 import type { SuccessBy } from "../../lib/explorer";
-import type { ExplorerStats, ExplorerTrial } from "../../types";
+import type { ApproachInfo, DrugInfo, ExplorerStats, ExplorerTrial } from "../../types";
 
 const pct = (r: number): string => `${Math.round(r * 100)}%`;
 
@@ -9,7 +9,15 @@ const VIEWS: [SuccessBy, string][] = [
   ["disease", "By disease"],
   ["modality", "By modality"],
   ["mechanism", "By mechanism"],
+  ["approach", "By approach"],
 ];
+
+/** The note under a non-disease grouping: a trial counts in each of its groups. */
+const SEVERAL: Record<Exclude<SuccessBy, "disease">, string> = {
+  modality: "Trials with several modalities count in each.",
+  mechanism: "Trials with several mechanisms count in each.",
+  approach: "Trials in several approaches count in each.",
+};
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
 
@@ -20,19 +28,26 @@ function basisNote(stats: ExplorerStats, k: number): string {
 }
 
 /**
- * Panel b: per condition, the share of finished trials that could succeed (the pool: Early Phase 1 to
- * Phase 2/3 with an experimental drug) that did succeed, against the pool average.
+ * Panel b: per condition (or modality, mechanism, approach), the share of finished trials that could
+ * succeed (the pool: Early Phase 1 to Phase 2/3 with an experimental drug) that did succeed, against the
+ * pool average. Outside the disease view a success is credited only to the groups of the drug that
+ * moved on (``drugIndex``, 1b).
  */
 export function PanelSuccess({
   stats,
   k,
   trials,
   minGroup,
+  approaches = [],
+  drugIndex = {},
 }: {
   stats: ExplorerStats;
   k: number;
   trials: ExplorerTrial[];
   minGroup: number;
+  /** The approach vocabulary, for the By approach row names. */
+  approaches?: ApproachInfo[];
+  drugIndex?: Record<string, DrugInfo>;
 }) {
   const avg = stats.success_rate;
   const [by, setBy] = useState<SuccessBy>("disease");
@@ -44,8 +59,9 @@ export function PanelSuccess({
         minGroup,
         8,
         by === "disease" ? stats.by_condition.map((c) => c.label) : undefined,
+        drugIndex,
       ),
-    [trials, by, minGroup, stats.by_condition],
+    [trials, by, minGroup, stats.by_condition, drugIndex],
   );
   return (
     <section className="panel panel-b" aria-labelledby="panel-b-h">
@@ -72,7 +88,12 @@ export function PanelSuccess({
             // and "too few to tell" only. The outline still sits at the raw share, as the contract draws it.
             const few = row.finished < minGroup;
             const raw = row.finished > 0 ? row.succeeded / row.finished : null;
-            const name = by === "modality" ? modalityLabel(row.group) : row.group;
+            const name =
+              by === "modality"
+                ? modalityLabel(row.group)
+                : by === "approach"
+                  ? approachLabel(row.group, { approaches })
+                  : row.group;
             return (
               <li className={few ? "bar few" : "bar"} key={row.group}>
                 <span className="bar-label">{name}</span>
@@ -102,7 +123,12 @@ export function PanelSuccess({
         </ul>
       )}
       {by !== "disease" ? (
-        <p className="panel-note">Trials with several {by === "modality" ? "modalities" : "mechanisms"} count in each.</p>
+        <>
+          <p className="panel-note">{SEVERAL[by]}</p>
+          <p className="panel-note">
+            Where a trial tested several treatments, a success counts only for the groups of the drug that moved on.
+          </p>
+        </>
       ) : null}
       {avg !== null ? <p className="panel-note">Tick: average across all finished trials that could succeed ({pct(avg)}).</p> : null}
       {rows.some((r) => r.finished < minGroup) ? (

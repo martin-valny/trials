@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadTrial } from "../../data";
-import { mechanismText, modalityText, targetsText } from "../../lib/explorer";
+import { approachText, mechanismText, modalityText, targetsText, type ApproachNames } from "../../lib/explorer";
 import { firstSentences, outcomeLabel, phaseLabel } from "../../lib/format";
 import type { ExplorerTrial } from "../../types";
 
@@ -14,15 +14,16 @@ function drugList(drugs: string[]): string | null {
 }
 
 /**
- * The facts line's parts after the NCT number: drugs, mechanism, targets, modality, phase, outcome, enrollment,
- * sponsor (missing ones left out).
+ * The facts line's parts after the NCT number: drugs, mechanism, targets, modality, approach (with its kinds,
+ * when ``names`` are given), phase, outcome, enrollment, sponsor (missing ones left out).
  */
-function factsOf(trial: ExplorerTrial): [string, string][] {
+function factsOf(trial: ExplorerTrial, names?: ApproachNames): [string, string][] {
   const all: [string, string | null][] = [
     ["drugs", drugList(trial.drugs)],
     ["mechanism", mechanismText(trial)],
     ["targets", targetsText(trial)],
     ["modality", modalityText(trial)],
+    ["approach", names ? approachText(trial, names) : null],
     ["phase", phaseLabel(trial.phase)],
     ["outcome", outcomeLabel(trial.outcome)],
     ["enrollment", trial.enrollment !== null ? `${trial.enrollment.toLocaleString("en-US")}\u00a0enrolled` : null],
@@ -31,11 +32,11 @@ function factsOf(trial: ExplorerTrial): [string, string][] {
   return all.filter((f): f is [string, string] => f[1] !== null);
 }
 
-function Facts({ trial }: { trial: ExplorerTrial }) {
+function Facts({ trial, names }: { trial: ExplorerTrial; names?: ApproachNames }) {
   return (
     <>
       <b>{trial.nct_id}</b>
-      {factsOf(trial).map(([field, f]) => (
+      {factsOf(trial, names).map(([field, f]) => (
         <span key={field}> · {f}</span>
       ))}
     </>
@@ -48,12 +49,12 @@ export const SELECTED_ID = "explore-selected";
  * On narrow screens: only the selected trial's facts line, stuck to the bottom of the viewport, with a link
  * down to the full panel d. Hidden on wide screens, where d sits beside the controls.
  */
-export function SelectedBar({ trial }: { trial: ExplorerTrial | null }) {
+export function SelectedBar({ trial, names }: { trial: ExplorerTrial | null; names?: ApproachNames }) {
   if (trial === null) return null;
   return (
     <div className="selected-bar">
       <p className="selected-facts" aria-hidden="true">
-        <Facts trial={trial} />
+        <Facts trial={trial} names={names} />
       </p>
       <button
         type="button"
@@ -67,7 +68,7 @@ export function SelectedBar({ trial }: { trial: ExplorerTrial | null }) {
 }
 
 /** Panel d: the selected trial's facts and the start of its registry summary, loaded on demand. */
-export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
+export function SelectedTrial({ trial, names }: { trial: ExplorerTrial | null; names?: ApproachNames }) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const nct = trial?.nct_id ?? null;
 
@@ -100,7 +101,7 @@ export function SelectedTrial({ trial }: { trial: ExplorerTrial | null }) {
         ) : (
           <>
             <p className="selected-facts">
-              <Facts trial={trial} />
+              <Facts trial={trial} names={names} />
             </p>
             <p className="selected-summary">
               <span className="selected-src">From the registry</span>{" "}

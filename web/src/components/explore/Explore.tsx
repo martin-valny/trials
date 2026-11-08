@@ -318,6 +318,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         conditions={conditions}
         series={series}
         mechanismSeries={mechanisms}
+        approaches={file.approaches}
         mode={mode}
         onMode={setMode}
         palette={palette}
@@ -337,6 +338,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             trials={file.trials}
             series={series}
             mechanismSeries={mechanisms}
+            approaches={file.approaches}
             mode={mode}
             palette={palette}
           />
@@ -375,7 +377,9 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
                 {!reducedMotion && <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />}
               </div>
             )}
-            {hover && hoverTrial && <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} r={hover.r} />}
+            {hover && hoverTrial && (
+              <HoverCard trial={hoverTrial} x={hover.x} y={hover.y} r={hover.r} names={file} />
+            )}
             {total === 0 ? (
               <div className="plate-empty" role="status">
                 <p>The map needs at least 4 trials in this area.</p>
@@ -407,13 +411,20 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
             {announced}
           </p>
         </section>
-        <PanelSuccess stats={file.stats} k={file.method.k} trials={file.trials} minGroup={file.method.min_group} />
+        <PanelSuccess
+          stats={file.stats}
+          k={file.method.k}
+          trials={file.trials}
+          minGroup={file.method.min_group}
+          approaches={file.approaches}
+          drugIndex={file.drug_index}
+        />
         <PanelPhase trials={shown} />
       </div>
       <LegendBar>
-        <SelectedTrial trial={selectedTrial} />
+        <SelectedTrial trial={selectedTrial} names={file} />
       </LegendBar>
-      <SelectedBar trial={selectedTrial} />
+      <SelectedBar trial={selectedTrial} names={file} />
     </div>
   );
 }
