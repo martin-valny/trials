@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadMeta } from "../../data";
 import {
@@ -20,6 +20,7 @@ import {
   type Filters,
 } from "../../lib/explorer";
 import { useTheme } from "../../lib/theme";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import type { ExplorerFile, ExplorerTrial, Meta } from "../../types";
 import { ColourKey, LegendBar } from "./LegendBar";
 import { Toolbar } from "./Toolbar";
@@ -35,24 +36,6 @@ type State =
   | { state: "missing" }
   | { state: "error" }
   | { state: "ready"; file: ExplorerFile; meta: Meta | null };
-
-/** Live value of a CSS media query; false where matchMedia is unavailable. */
-function useMediaQuery(query: string): boolean {
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      if (typeof window.matchMedia !== "function") return () => undefined;
-      const m = window.matchMedia(query);
-      m.addEventListener("change", onChange);
-      return () => m.removeEventListener("change", onChange);
-    },
-    [query],
-  );
-  return useSyncExternalStore(
-    subscribe,
-    () => typeof window.matchMedia === "function" && window.matchMedia(query).matches,
-    () => false,
-  );
-}
 
 /** Feature names from the export, read as plain words ("treatment_type" -> "treatment"). */
 const featureWords = (features: string[]): string =>

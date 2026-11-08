@@ -34,6 +34,7 @@ import {
   popupPosition,
   yearSpan,
   successGroups,
+  inApproachOrder,
   filterCounts,
   MODALITIES,
   MODES,
@@ -870,6 +871,26 @@ describe("successGroups", () => {
     const targeted = rows.find((r) => r.group === "targeted")!;
     expect(targeted.rate).toBeCloseTo(4 / 12);
     expect(targeted.successDefined).toBeUndefined();
+  });
+
+  it("lists approaches in the vocabulary order with Unclassified last, as the rail and key do", () => {
+    const ts = [
+      ...many(9, { approaches: ["unclassified"] }),
+      ...many(5, { approaches: ["nondrug"] }),
+      ...many(3, { approaches: ["cell"] }),
+      ...many(12, { approaches: ["targeted"] }),
+      ...many(2, { approaches: ["diffuse"] }),
+    ];
+    const vocab = [
+      { key: "targeted" },
+      { key: "cell" },
+      { key: "unclassified" },
+      { key: "plasma" },
+      { key: "diffuse" },
+      { key: "nondrug" },
+    ];
+    const rows = inApproachOrder(successGroups(ts, "approach", 1, 8, undefined, {}), vocab);
+    expect(rows.map((r) => r.group)).toEqual(["targeted", "cell", "diffuse", "nondrug", "unclassified"]);
   });
 
   it("sorts by finished desc, then name, and keeps the top N", () => {

@@ -46,13 +46,18 @@
 .canvas-empty p { margin: 0; font-weight: 700; }
 
 /* --- Panel b, Targeted drugs: the graph -------------------------------------------------------------- */
-/* Key and search share one line over the frame; the canvas is the figure, bounded by hairlines only. */
+/* The Find pill on a right-aligned line of its own, then the key on one line directly over the frame;
+   the canvas is the figure, bounded by hairlines only. The key never stretches: it is as tall as its
+   lines (it once took a flex-basis of 28rem as height in the phone's column). */
 .graph-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.graph-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 18px; }
-.graph-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 1.45; flex: 1 1 28rem; min-width: 0; }
+.graph-bar { display: flex; flex-direction: column; gap: 8px; }
+.graph-key {
+  flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px 14px; min-width: 0;
+  font-size: 12px; line-height: 1.45;
+}
 .key-shape { flex: none; color: var(--ink); overflow: visible; }
 .share-ramp { display: inline-block; width: 28px; height: 8px; flex: none; }
-.graph-search { flex: none; }
+.graph-search { flex: none; align-self: flex-end; }
 .graph-search input { width: 15rem; }
 .graph-matches {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; list-style: none; margin: 0; padding: 4px 0;
@@ -71,6 +76,7 @@
 .graph-canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .graph-fallback { margin: 0; padding: 24px 0; font-size: 13px; }
 .graph-note, .graph-cut, .graph-dropped { max-width: 84ch; }
+.graph-label-key { margin-top: 0; }
 
 /* Where successes converge: a short ranked list under the figure, set as a table of contents. */
 .converge { max-width: 40rem; }
@@ -82,7 +88,8 @@
 .mechanisms .text-button.node-link { font-size: inherit; text-align: left; }
 
 /* The tree: group headings over indented kind rows, set in the figure's type scale. */
-.tree { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; }
+/* Capped at a reading measure, so a row's share sits by its strip however wide the canvas is. */
+.tree { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; max-width: 46rem; }
 .tree-group { min-width: 0; }
 .tree-h { margin: 0; padding-bottom: 4px; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 700; line-height: 1.3; }
 .tree-kinds { list-style: none; margin: 2px 0 0; padding: 0 0 0 14px; }
@@ -174,8 +181,9 @@
   .rail-rows { margin: 8px -16px 0; padding: 2px 16px 4px; scroll-padding: 0 16px; }
   .side-panel { padding-left: 16px; padding-right: 16px; }
   .graph-frame { height: 24rem; }
-  .graph-bar { flex-direction: column-reverse; align-items: stretch; }
+  .graph-search { align-self: stretch; }
   .graph-search input { width: 100%; }
+  .graph-key { gap: 6px 12px; }
   .graph-matches { left: 0; right: auto; }
   .tree-kinds { padding-left: 10px; }
   /* Label, count and share on one line; the strip runs the full width beneath them. */

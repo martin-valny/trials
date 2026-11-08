@@ -9,6 +9,7 @@ import {
   litByTrials,
   neighbours,
   nodeShare,
+  restLabels,
   shareColor,
   sourceLink,
   trialsOf,
@@ -206,4 +207,18 @@ test("succeeded paths under a Disease filter follow succeeded_in (R21)", () => {
   // An older file without succeeded_in on a succeeded trial keeps the trial's own success.
   const old = { ...t, succeeded_in: [] } as unknown as ExplorerTrial;
   expect(winningDrugs([old], new Set(["Myasthenia gravis"]))).toEqual(new Set(["drug:fingolimod"]));
+});
+
+test("restLabels: the top-level pathways labelled at rest, most trials first, then by name", () => {
+  const g = {
+    nodes: [
+      node("R-1", "pathway", { label: "Zeta", top_level: true, n: 3 }),
+      node("R-2", "pathway", { label: "Alpha", top_level: true, n: 3 }),
+      node("R-3", "pathway", { label: "Big", top_level: true, n: 9 }),
+      node("R-4", "pathway", { label: "Child", n: 20 }),
+      node("drug:x", "drug", { n: 30 }),
+    ],
+    edges: [],
+  } as unknown as GraphFile;
+  expect(restLabels(g).map((n) => n.label)).toEqual(["Big", "Alpha", "Zeta"]);
 });

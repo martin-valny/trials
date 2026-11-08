@@ -9,6 +9,7 @@ import {
   droppedNote,
   litByTrials,
   nodeShare,
+  restLabels,
   succeededPaths,
   trialsOf,
 } from "../../lib/graph";
@@ -27,6 +28,7 @@ import {
 } from "../../lib/explorer";
 import { outcomeLabel } from "../../lib/format";
 import { useTheme } from "../../lib/theme";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import type { ExplorerFile, ExplorerTrial, GraphFile, Meta, Outcome } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
 import { ApproachRail } from "./ApproachRail";
@@ -479,6 +481,9 @@ function GraphView({
     return shown.filter((t) => drugTrials.has(t.nct_id)).length;
   }, [graph, shown]);
 
+  // Phone: the top-level pathways carry numerals at rest, named in a key under the canvas.
+  const phone = useMediaQuery("(max-width: 640px)");
+  const keyed = useMemo(() => (graph && phone ? restLabels(graph) : []), [graph, phone]);
   const caption = graph ? cutCaption(graph) : null;
   const missing = graph && focus !== null ? droppedDrug(graph, focus) : null;
 
@@ -500,9 +505,10 @@ function GraphView({
   }
   return (
     <div className="graph-view">
+      {/* The Find pill on a line of its own (right-aligned side by side), the key one line under it. */}
       <div className="graph-bar">
-        <GraphKey palette={palette} topShare={topShare} />
         <GraphSearch graph={graph} onSelect={onFocus} />
+        <GraphKey palette={palette} topShare={topShare} />
       </div>
       {missing ? (
         <p className="panel-note graph-dropped" role="status" aria-label={missing.drug}>
@@ -522,14 +528,25 @@ function GraphView({
           minGroup={minGroup}
           palette={palette}
           topShare={topShare}
+          numbered={phone}
         />
       </div>
+      {keyed.length ? (
+        <ol className="cluster-key graph-label-key" aria-label="Graph labels">
+          {keyed.map((n, i) => (
+            <li key={n.id}>
+              <b className="cluster-key-n">{i + 1}</b>
+              <span>{n.label}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
       {caption ? <p className="panel-note graph-cut">{caption}</p> : null}
       <p className="panel-note graph-note">
         {narrowed
           ? `Full ink: the nodes reached by the ${trialsWord(reached)} shown; succeeded paths in red, credited to the drug that moved on.`
           : "Hover a node to light its neighbours; click to follow its chain from drug to pathway. Filters light up the paths their trials take."}{" "}
-        Reactome {graph.reactome_release}.
+        Pathways from Reactome release {graph.reactome_release}.
       </p>
       {converge.length ? (
         <section className="converge" aria-labelledby="converge-h">
@@ -548,7 +565,7 @@ function GraphView({
               </li>
             ))}
           </ol>
-          <p className="side-muted">Below the top-level pathways, success share in the pool (all trials).</p>
+          <p className="side-muted">Pathways below the top level, ranked by success share among pool trials.</p>
         </section>
       ) : null}
     </div>

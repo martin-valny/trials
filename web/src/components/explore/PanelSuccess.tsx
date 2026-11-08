@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { approachLabel, liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
+import { approachLabel, inApproachOrder, liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
 import type { SuccessBy } from "../../lib/explorer";
 import type { ApproachInfo, DrugInfo, ExplorerStats, ExplorerTrial } from "../../types";
 
@@ -20,6 +20,8 @@ const SEVERAL: Record<Exclude<SuccessBy, "disease">, string> = {
 };
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
+const NO_APPROACHES: ApproachInfo[] = [];
+const NO_DRUGS: Record<string, DrugInfo> = {};
 
 /** "Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours." (second clause only when some did). */
 function basisNote(stats: ExplorerStats, k: number): string {
@@ -38,8 +40,8 @@ export function PanelSuccess({
   k,
   trials,
   minGroup,
-  approaches = [],
-  drugIndex = {},
+  approaches = NO_APPROACHES,
+  drugIndex = NO_DRUGS,
 }: {
   stats: ExplorerStats;
   k: number;
@@ -51,18 +53,18 @@ export function PanelSuccess({
 }) {
   const avg = stats.success_rate;
   const [by, setBy] = useState<SuccessBy>("disease");
-  const rows = useMemo(
-    () =>
-      successGroups(
-        trials,
-        by,
-        minGroup,
-        8,
-        by === "disease" ? stats.by_condition.map((c) => c.label) : undefined,
-        drugIndex,
-      ),
-    [trials, by, minGroup, stats.by_condition, drugIndex],
-  );
+  const rows = useMemo(() => {
+    const groups = successGroups(
+      trials,
+      by,
+      minGroup,
+      8,
+      by === "disease" ? stats.by_condition.map((c) => c.label) : undefined,
+      drugIndex,
+    );
+    // By approach keeps the rail's order (vocabulary, Unclassified last), not the largest first.
+    return by === "approach" ? inApproachOrder(groups, approaches) : groups;
+  }, [trials, by, minGroup, stats.by_condition, drugIndex, approaches]);
   return (
     <section className="panel panel-b" aria-labelledby="panel-b-h">
       <h2 className="panel-h" id="panel-b-h">
@@ -95,12 +97,12 @@ export function PanelSuccess({
                   ? approachLabel(row.group, { approaches })
                   : row.group;
             if (row.successDefined === false)
-              // Non-drug care: success means a drug moved on, so a dash and the words, as the rail says.
+              // Non-drug care: success means a drug moved on, so a short dash and the words, drawn as the rail draws them.
               return (
                 <li className="bar undefined" key={row.group}>
                   <span className="bar-label">{name}</span>
-                  <span className="bar-track" aria-hidden="true">
-                    {avg !== null ? <span className="bar-avg" style={{ left: pct(avg) }} /> : null}
+                  <span className="bar-track none" aria-hidden="true">
+                    <span className="bar-dash" />
                   </span>
                   <span className="bar-n">—</span>
                   <span className="bar-k">

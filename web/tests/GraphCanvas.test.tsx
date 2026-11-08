@@ -14,6 +14,7 @@ const H = 400;
 
 let frames: FrameRequestCallback[] = [];
 let texts: string[] = [];
+let spots: { text: string; x: number; y: number }[] = [];
 const step = () =>
   act(() => {
     const run = frames;
@@ -24,9 +25,14 @@ const step = () =>
 beforeEach(() => {
   frames = [];
   texts = [];
+  spots = [];
   const ctx = new Proxy({} as CanvasRenderingContext2D, {
     get: (_t, key) => {
-      if (key === "fillText") return (t: string) => void texts.push(t);
+      if (key === "fillText")
+        return (t: string, x: number, y: number) => {
+          texts.push(t);
+          spots.push({ text: t, x, y });
+        };
       if (key === "measureText") return (t: string) => ({ width: t.length * 6 });
       return () => undefined;
     },
@@ -42,7 +48,10 @@ beforeEach(() => {
   vi.stubGlobal("cancelAnimationFrame", () => undefined);
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const click = (el: Element, x: number, y: number) => {
   fireEvent.pointerDown(el, { clientX: x, clientY: y, pointerId: 1, pointerType: "mouse" });
@@ -96,6 +105,63 @@ test("GraphCanvas labels only top-level pathways at rest, and a hovered node's n
   step();
   expect(texts).toEqual(expect.arrayContaining(["MS4A1", "example drug"]));
   expect(texts).not.toContain("dimethyl fumarate");
+});
+
+test("numbered (phone): at rest the top-level pathways carry numerals, never their names", () => {
+  render(
+    <GraphCanvas
+      graph={graph}
+      focus={null}
+      onFocus={() => undefined}
+      lit={null}
+      red={new Set()}
+      minGroup={10}
+      palette={LIGHT_PALETTE}
+      topShare={0}
+      numbered
+    />,
+  );
+  step();
+  const top = graph.nodes.filter((n) => n.top_level);
+  expect(new Set(texts)).toEqual(new Set(top.map((_, i) => String(i + 1))));
+  // Something lit is named in full, as side by side.
+  texts = [];
+  const target = graph.nodes.find((n) => n.id === "target:MS4A1")!;
+  const p = placeNode(target, W, H);
+  fireEvent.pointerMove(screen.getByRole("img"), { clientX: p.x, clientY: p.y, pointerType: "mouse" });
+  step();
+  expect(texts).toEqual(expect.arrayContaining(["MS4A1", "example drug"]));
+});
+
+test("a phone numeral moves off another node's mark: right and left blocked, it sits above or below", () => {
+  const g = structuredClone(graph);
+  const top = g.nodes.find((n) => n.label === "Immune System")!;
+  for (const n of g.nodes) if (n.top_level && n !== top) n.top_level = false;
+  const p = placeNode(top, W, H);
+  const unit = (x: number) => ((x - 28) / (W - 56)) * 2 - 1;
+  const right = g.nodes.find((n) => n.kind === "drug")!;
+  right.x = unit(p.x + 20);
+  right.y = top.y;
+  const left = g.nodes.find((n) => n.kind === "target")!;
+  left.x = unit(p.x - 20);
+  left.y = top.y;
+  render(
+    <GraphCanvas
+      graph={g}
+      focus={null}
+      onFocus={() => undefined}
+      lit={null}
+      red={new Set()}
+      minGroup={10}
+      palette={LIGHT_PALETTE}
+      topShare={0}
+      numbered
+    />,
+  );
+  step();
+  const one = spots.find((t) => t.text === "1")!;
+  expect(one).toBeDefined();
+  expect(Math.abs(one.y - p.y)).toBeGreaterThan(8);
 });
 
 /** Shows where the app went, so a test can read it. */
@@ -267,4 +333,30 @@ test("an older mechanisms.json without the cut still renders, with no caption (R
   const box = screen.getByRole("combobox", { name: "Find a drug, target or pathway" });
   await userEvent.type(box, "dimethyl");
   expect(screen.getByRole("option", { name: /dimethyl fumarate/ })).toBeInTheDocument();
+});
+
+test("on a phone the graph's top-level pathways are keyed by numeral under the canvas", async () => {
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({
+        matches: query.includes("max-width: 640px"),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }) as unknown as MediaQueryList,
+  );
+  stubFetch();
+  renderPage("/mechanisms/targeted");
+  const key = await screen.findByRole("list", { name: "Graph labels" });
+  const top = graph.nodes.filter((n) => n.top_level);
+  expect(within(key).getAllByRole("listitem")).toHaveLength(top.length);
+  expect(within(key).getAllByRole("listitem")[0]).toHaveTextContent(/^1/);
+});
+
+test("side by side there is no numeral key; the caption names the Reactome release in a sentence", async () => {
+  stubFetch();
+  renderPage("/mechanisms/targeted");
+  await screen.findByRole("img", { name: /Mechanism graph/ });
+  expect(screen.queryByRole("list", { name: "Graph labels" })).not.toBeInTheDocument();
+  expect(screen.getByText(/Pathways from Reactome release test\./)).toBeInTheDocument();
 });

@@ -194,6 +194,16 @@ export function trialsOf(g: GraphFile, id: string): string[] {
   return [...out].sort();
 }
 
+/**
+ * The nodes labelled at rest: the top-level pathways, most trials first, then by name. On a phone the
+ * canvas numbers them in this order and the key under it names them.
+ */
+export function restLabels(g: GraphFile): GraphNode[] {
+  return g.nodes
+    .filter((n) => n.kind === "pathway" && n.top_level)
+    .sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
+}
+
 /** Success share among the node's pool trials (1b); null with fewer than ``minGroup`` finished, or none. */
 export function nodeShare(n: GraphNode, minGroup: number): number | null {
   if (n.finished === 0 || n.finished < minGroup) return null;

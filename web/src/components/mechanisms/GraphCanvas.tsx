@@ -1,6 +1,6 @@
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { clampView, IDENTITY_VIEW, panBy, zoomAt, type Palette, type View } from "../../lib/explorer";
-import { chain, drugNodeId, findMatches, neighbours, nodeShare, shareColor, type Match } from "../../lib/graph";
+import { chain, drugNodeId, findMatches, neighbours, nodeShare, restLabels, shareColor, type Match } from "../../lib/graph";
 import type { GraphFile, GraphNode } from "../../types";
 
 /** Canvas px kept clear around the layout, so edge nodes and their labels stay inside. */
@@ -12,6 +12,12 @@ const PINCH_WHEEL_ZOOM = 0.01;
 const KEY_ZOOM = 1.4;
 const MAX_LABELS = 32;
 const LABEL_FONT = 11;
+/** Clear space (px) kept between two labels, and between a label at rest and another node's mark. */
+const LABEL_GAP = 3;
+
+type Box = { x0: number; y0: number; x1: number; y1: number };
+const hits = (a: Box, b: Box, gap = 0): boolean =>
+  a.x0 < b.x1 + gap && b.x0 < a.x1 + gap && a.y0 < b.y1 + gap && b.y0 < a.y1 + gap;
 
 /** A node's spot on a w x h canvas at 1x: the layout's [-1, 1] square stretched to the padded frame. */
 export function placeNode(n: Pick<GraphNode, "x" | "y">, w: number, h: number): { x: number; y: number } {
@@ -41,6 +47,11 @@ export interface GraphCanvasProps {
   palette: Palette;
   /** The highest defined share, the red end of the fill scale. */
   topShare: number;
+  /**
+   * Phone widths: at rest the top-level pathways carry numerals (1, 2, ...; restLabels order) instead of
+   * their names, keyed under the canvas. Lit nodes are still named.
+   */
+  numbered?: boolean;
   ref?: Ref<GraphCanvasHandle>;
 }
 
@@ -131,7 +142,7 @@ export function GraphCanvas({ ref, ...props }: GraphCanvasProps) {
 
     const draw = () => {
       frame = 0;
-      const { graph, focus, lit, red, minGroup, palette, topShare, maxN, ink, plate, muted, font } = live.current;
+      const { graph, focus, lit, red, minGroup, palette, topShare, numbered, maxN, ink, plate, muted, font } = live.current;
       ctx.clearRect(0, 0, w, h);
       const byId = new Map(graph.nodes.map((n) => [n.id, n]));
       const pos = new Map(graph.nodes.map((n) => [n.id, at(n)]));
@@ -201,52 +212,78 @@ export function GraphCanvas({ ref, ...props }: GraphCanvasProps) {
         }
       }
 
-      // Labels: top-level pathways at rest; lit nodes (the hovered or focused one first, then by size)
-      // when something is lit. Greedy: a label that would overlap one already set is left out.
-      const placed: { x0: number; y0: number; x1: number; y1: number }[] = [];
-      const wanted =
-        active === null
-          ? graph.nodes.filter((n) => n.top_level)
-          : graph.nodes
-              .filter((n) => active.has(n.id))
-              .sort(
-                (a, b) =>
-                  Number(b.id === hovered || b.id === focused) - Number(a.id === hovered || a.id === focused) ||
-                  b.n - a.n,
-              )
-              .slice(0, MAX_LABELS);
+      // Labels: top-level pathways at rest (numerals on a phone); lit nodes (the hovered or focused one
+      // first, then by size) when something is lit. Greedy: a label that would overlap one already set
+      // (with a 3px gap) is left out. A phone numeral also looks for a spot clear of every other node's
+      // mark; side by side the full names keep the plate knockout over the marks they cross.
+      const rest = active === null;
+      const marks = rest && numbered
+        ? graph.nodes.map((n) => {
+            const p = pos.get(n.id)!;
+            const r = nodeRadius(n.n, maxN) * (n.kind === "pathway" ? 1.2 : 1);
+            return { id: n.id, box: { x0: p.x - r, y0: p.y - r, x1: p.x + r, y1: p.y + r } };
+          })
+        : [];
+      const placed: Box[] = [];
+      const wanted = rest
+        ? restLabels(graph)
+        : graph.nodes
+            .filter((n) => active.has(n.id))
+            .sort(
+              (a, b) =>
+                Number(b.id === hovered || b.id === focused) - Number(a.id === hovered || a.id === focused) ||
+                b.n - a.n,
+            )
+            .slice(0, MAX_LABELS);
       ctx.textBaseline = "middle";
       ctx.lineJoin = "round";
-      for (const n of wanted) {
+      wanted.forEach((n, i) => {
         const p = pos.get(n.id)!;
-        const r = nodeRadius(n.n, maxN);
+        const r = nodeRadius(n.n, maxN) * (n.kind === "pathway" ? 1.2 : 1);
         const strong = n.id === hovered || n.id === focused;
-        ctx.font = `${strong ? 700 : 400} ${LABEL_FONT}px ${font}`;
-        let text = n.source === "curated" ? `${n.label} (curated)` : n.label;
+        const numeral = rest && numbered;
+        ctx.font = numeral ? `800 ${LABEL_FONT}px ${font}` : `${strong ? 700 : 400} ${LABEL_FONT}px ${font}`;
+        let text = numeral ? String(i + 1) : n.source === "curated" ? `${n.label} (curated)` : n.label;
         let tw = ctx.measureText(text).width;
         // The side with room, else the roomier side with the label cut to fit (never off the canvas).
         const roomR = w - 4 - (p.x + r + 4);
         const roomL = p.x - r - 4 - 4;
-        const right = tw <= roomR || (tw > roomL && roomR >= roomL);
-        const room = right ? roomR : roomL;
-        if (tw > room) {
+        if (!numeral && tw > Math.max(roomR, roomL)) {
+          const room = Math.max(roomR, roomL);
           while (text.length > 1 && ctx.measureText(`${text}…`).width > room) text = text.slice(0, -1);
           text = `${text.trimEnd()}…`;
           tw = ctx.measureText(text).width;
         }
-        const x = right ? p.x + r + 4 : p.x - r - 4 - tw;
-        const box = { x0: x - 2, y0: p.y - 8, x1: x + tw + 2, y1: p.y + 8 };
-        if (!strong && placed.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1)) continue;
-        if (box.x1 < 0 || box.x0 > w || box.y1 < 0 || box.y0 > h) continue;
-        placed.push(box);
-        ctx.globalAlpha = active === null ? 0.75 : 1;
+        // Spots to try, in order: right, left; a numeral also above and below its node.
+        const at = (x: number, y: number): Box => ({ x0: x - 2, y0: y - 8, x1: x + tw + 2, y1: y + 8 });
+        const right = { x: p.x + r + 4, y: p.y };
+        const left = { x: p.x - r - 4 - tw, y: p.y };
+        const spots = numeral
+          ? [right, left, { x: p.x - tw / 2, y: p.y - r - 9 }, { x: p.x - tw / 2, y: p.y + r + 9 }]
+          : tw <= roomR || roomR >= roomL
+            ? [right, left]
+            : [left, right];
+        const inside = (b: Box) => b.x0 >= 0 && b.x1 <= w && b.y0 >= 0 && b.y1 <= h;
+        const clearOfLabels = (b: Box) => strong || !placed.some((q) => hits(q, b, LABEL_GAP));
+        const clearOfMarks = (b: Box) => !marks.some((m) => m.id !== n.id && hits(m.box, b, LABEL_GAP));
+        let spot = spots.find((s) => inside(at(s.x, s.y)) && clearOfLabels(at(s.x, s.y)) && clearOfMarks(at(s.x, s.y)));
+        // A numeral is keyed under the canvas, so it is always set: next to a mark if nowhere else is clear.
+        if (!spot && numeral) spot = spots.find((s) => inside(at(s.x, s.y)) && clearOfLabels(at(s.x, s.y)));
+        if (!spot && !rest) {
+          const s0 = spots[0];
+          const b = at(s0.x, s0.y);
+          if (clearOfLabels(b) && !(b.x1 < 0 || b.x0 > w || b.y1 < 0 || b.y0 > h)) spot = s0;
+        }
+        if (!spot) return;
+        placed.push(at(spot.x, spot.y));
+        ctx.globalAlpha = rest ? (numeral ? 1 : 0.75) : 1;
         ctx.textAlign = "left";
         ctx.strokeStyle = plate;
         ctx.lineWidth = 3;
-        ctx.strokeText(text, x, p.y);
-        ctx.fillStyle = reds.has(n.id) ? palette.succeeded : active === null ? muted : ink;
-        ctx.fillText(text, x, p.y);
-      }
+        ctx.strokeText(text, spot.x, spot.y);
+        ctx.fillStyle = reds.has(n.id) ? palette.succeeded : numeral ? ink : rest ? muted : ink;
+        ctx.fillText(text, spot.x, spot.y);
+      });
       ctx.globalAlpha = 1;
     };
     function request() {

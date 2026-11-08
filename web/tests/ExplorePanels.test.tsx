@@ -572,6 +572,9 @@ test("panel b By approach never gives Non-drug care a share, even with enough fi
   expect(row).toHaveTextContent("success not defined");
   expect(row).not.toHaveTextContent("%");
   expect(row.querySelector(".bar-fill")).toBeNull();
+  // Drawn as the rail draws it: a short muted dash where the bar would be, no track or average tick.
+  expect(row.querySelector(".bar-dash")).not.toBeNull();
+  expect(row.querySelector(".bar-avg")).toBeNull();
   const targeted = within(b).getByText("Targeted drugs").closest("li")!;
   expect(targeted).toHaveTextContent("25%");
 });

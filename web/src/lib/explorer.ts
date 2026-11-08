@@ -749,6 +749,20 @@ export function successGroups(
   return rows.sort((a, b) => b.finished - a.finished || a.group.localeCompare(b.group)).slice(0, topN);
 }
 
+/**
+ * Panel b By approach rows in the approach vocabulary's order, Unclassified last, so the rail, the
+ * Approach key and panel b list the approaches the same way. Groups outside the vocabulary follow, by name.
+ */
+export function inApproachOrder(rows: SuccessGroup[], approaches: readonly { key: string }[]): SuccessGroup[] {
+  const keys = approaches.map((a) => a.key).filter((k) => k !== UNCLASSIFIED);
+  const rank = (g: string): number => {
+    if (g === UNCLASSIFIED) return keys.length + 1;
+    const i = keys.indexOf(g);
+    return i === -1 ? keys.length : i;
+  };
+  return [...rows].sort((a, b) => rank(a.group) - rank(b.group) || a.group.localeCompare(b.group));
+}
+
 /** "p = 0.058" or "p < 0.001", with non-breaking spaces so the clause never wraps. */
 const pClause = (p: number): string => {
   const f = formatP(p);
