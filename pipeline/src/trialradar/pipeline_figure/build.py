@@ -26,7 +26,7 @@ from trialradar.pipeline_figure.rules import (
     unlisted_classes,
 )
 
-TITLE_MAX = 110
+TITLE_MAX = 80
 WHY_MAX = 300
 UNLISTED_SPONSOR_MIN = 3
 _NOT_GIVEN = "Not given"
@@ -76,22 +76,26 @@ def build_pipeline_doc(
         succeeded_by = list(t.get("succeeded_by", ()))
         for row_id, drug in placed.items():
             state, via = mark_state(t["outcome"], drug, succeeded_by)
-            marks[row_id].append(
-                {
-                    "n": nct,
-                    "c": max(columns),
-                    "span": span(phases),
-                    "s": state,
-                    "via": via,
-                    "si": _codes(t.get("succeeded_in", ()), by_label),
-                    "y": t.get("start_year"),
-                    "y2": t.get("end_year"),
-                    "est": bool(t.get("end_estimated", False)),
-                    "dz": _codes(t.get("condition_labels", ()), by_label),
-                    "drug": drug,
-                    "sp": sponsor,  # replaced by an index below
-                }
-            )
+            mark: dict[str, Any] = {
+                "n": nct,
+                "c": max(columns),
+                "s": state,
+                "y": t.get("start_year"),
+                "y2": t.get("end_year"),
+                "dz": _codes(t.get("condition_labels", ()), by_label),
+                "drug": drug,
+                "sp": sponsor,  # replaced by an index below
+            }
+            # Default-valued keys are omitted (readers treat absent as the default).
+            if (sp := span(phases)) is not None:
+                mark["span"] = sp
+            if via is not None:
+                mark["via"] = via
+            if si := _codes(t.get("succeeded_in", ()), by_label):
+                mark["si"] = si
+            if t.get("end_estimated"):
+                mark["est"] = True
+            marks[row_id].append(mark)
         entry: dict[str, Any] = {"t": (t.get("title") or "")[:TITLE_MAX]}
         if t["outcome"] == "stopped":
             why = row.get("why_stopped")

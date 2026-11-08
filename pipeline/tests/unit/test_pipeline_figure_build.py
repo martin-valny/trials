@@ -118,7 +118,14 @@ def test_build_pipeline_doc_shapes(cfg: AreaConfig, fig: FigureConfig) -> None:
             succeeded_in=["Multiple sclerosis"],
             phase="PHASE2",
         ),
-        _t("NCT00000003", ["ocrelizumab"], outcome="stopped", start_year=2018, end_year=2019),
+        _t(
+            "NCT00000003",
+            ["ocrelizumab"],
+            outcome="stopped",
+            start_year=2018,
+            end_year=2019,
+            end_estimated=True,
+        ),
         _t("NCT00000004", ["ocrelizumab"], phase="NA"),
         _t("NCT00000005", ["mystery"], approaches=["nondrug"]),
     ]
@@ -151,14 +158,19 @@ def test_build_pipeline_doc_shapes(cfg: AreaConfig, fig: FigureConfig) -> None:
     assert cd20["NCT00000002"]["drug"] == "Ocrelizumab"
     assert cd20["NCT00000002"]["s"] == "fin" and cd20["NCT00000002"]["via"] == "kyv-101"
     assert car["NCT00000002"]["drug"] == "kyv-101" and car["NCT00000002"]["s"] == "adv"
-    assert car["NCT00000002"]["via"] is None
+    assert "via" not in car["NCT00000002"]
     assert cd20["NCT00000002"]["c"] == 2 and cd20["NCT00000002"]["span"] == "1/2"
     assert cd20["NCT00000003"]["c"] == 3 and cd20["NCT00000003"]["span"] == "2/3"
-    assert cd20["NCT00000001"]["span"] is None
-    assert car["NCT00000002"]["si"] == ["MS"] and cd20["NCT00000001"]["si"] == []
+    assert cd20["NCT00000003"]["est"] is True
+    assert car["NCT00000002"]["si"] == ["MS"]
     assert cd20["NCT00000001"]["dz"] == ["MS"]
-    assert set(cd20["NCT00000001"]) == {
-        "n", "c", "span", "s", "via", "si", "y", "y2", "est", "dz", "drug", "sp",
+    # a mark with defaults has none of span/via/si/est; the combo mark keeps what applies
+    assert set(cd20["NCT00000001"]) == {"n", "c", "s", "y", "y2", "dz", "drug", "sp"}
+    assert set(cd20["NCT00000002"]) == {
+        "n", "c", "s", "y", "y2", "dz", "drug", "sp", "span", "via", "si",
+    }  # fmt: skip
+    assert set(car["NCT00000002"]) == {
+        "n", "c", "s", "y", "y2", "dz", "drug", "sp", "span", "si",
     }  # fmt: skip
     assert doc["trials"]["NCT00000003"] == {
         "t": "A trial",
@@ -193,7 +205,7 @@ def test_build_title_and_why_truncated(cfg: AreaConfig, fig: FigureConfig) -> No
     table = _table([("NCT00000001", ["PHASE3"], "w" * 500, "OTHER")])
     doc, _ = _build(cfg, fig, trials, table)
     entry = doc["trials"]["NCT00000001"]
-    assert len(entry["t"]) == 110 and len(entry["why"]) == 300
+    assert len(entry["t"]) == 80 and len(entry["why"]) == 300
 
 
 def test_build_warns_unlisted_class(cfg: AreaConfig, fig: FigureConfig) -> None:
