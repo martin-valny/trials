@@ -18,6 +18,20 @@ _SEXES = {"ALL", "FEMALE", "MALE"}
 _DRUG_PREFIXES = {"drug", "biological"}
 _DRUG_TYPES = {"DRUG", "BIOLOGICAL"}
 
+MAPPING_TYPES: frozenset[str] = frozenset(
+    {"DRUG", "BIOLOGICAL", "DIETARY_SUPPLEMENT", "GENETIC", "COMBINATION_PRODUCT"}
+)
+"""Intervention types whose names are looked up in the drug mapping (spec 2026-11-08 §6.2)."""
+
+
+@dataclass(frozen=True)
+class ExperimentalIntervention:
+    """One experimental-arm intervention: CT.gov type enum, raw name and description."""
+
+    type: str
+    name: str
+    description: str
+
 
 @dataclass(frozen=True)
 class StudyExtras:
@@ -30,11 +44,12 @@ class StudyExtras:
     experimental_drugs: tuple[str, ...]
     mesh_terms: tuple[str, ...]
     condition_labels: tuple[str, ...]
+    experimental_interventions: tuple[ExperimentalIntervention, ...] = ()
 
 
 def empty_extras(nct_id: str) -> StudyExtras:
     """Extras for a trial whose record gave none: no summary, labels or drugs."""
-    return StudyExtras(nct_id, None, None, None, None, False, (), (), ())
+    return StudyExtras(nct_id, None, None, None, None, False, (), (), (), ())
 
 
 def parse_age_years(text: object) -> float | None:
@@ -79,10 +94,68 @@ def _experimental_drugs(arms_module: dict[str, Any]) -> tuple[str, ...]:
     return _dedupe(names)
 
 
+def _intervention(item: dict[str, Any]) -> ExperimentalIntervention | None:
+    name = str(item.get("name") or "").strip()
+    if not name:
+        return None
+    return ExperimentalIntervention(
+        type=str(item.get("type") or "").strip(),
+        name=name,
+        description=str(item.get("description") or "").strip(),
+    )
+
+
+def _experimental_interventions(
+    arms_module: dict[str, Any],
+) -> tuple[ExperimentalIntervention, ...]:
+    """Every intervention of every type in EXPERIMENTAL arms (the ``_experimental_drugs`` rule).
+
+    An arm's ``"Type: Name"`` entry is resolved to the ``interventions`` item of the same name
+    for its type and description; with no such item, the prefix gives the type (a bare label
+    with no prefix keeps an empty type, so it stays visible). A study with
+    no arm groups takes all its interventions. Deduped by name."""
+    items = [i for i in arms_module.get("interventions") or [] if isinstance(i, dict)]
+    by_name: dict[str, list[ExperimentalIntervention]] = {}
+    for item in items:
+        iv = _intervention(item)
+        key = norm_text(iv.name) if iv else None
+        if iv is not None and key:
+            by_name.setdefault(key, []).append(iv)
+    out: list[ExperimentalIntervention] = []
+    arm_groups = arms_module.get("armGroups") or []
+    for arm in arm_groups:
+        if not isinstance(arm, dict) or arm.get("type") != "EXPERIMENTAL":
+            continue
+        for raw in arm.get("interventionNames") or []:
+            prefix, sep, rest = str(raw).partition(":")
+            name = rest.strip() if sep else prefix.strip()
+            if not name:
+                continue
+            # the prefix gives the type; a bare label with no prefix keeps an empty type
+            kind = prefix.strip().upper().replace(" ", "_") if sep else ""
+            matches = by_name.get(norm_text(name) or "", [])
+            same_type = [m for m in matches if m.type == kind]
+            if same_type or matches:
+                out.append((same_type or matches)[0])
+            else:
+                out.append(ExperimentalIntervention(kind, name, ""))
+    if not arm_groups:
+        out = [iv for iv in (_intervention(i) for i in items) if iv is not None]
+    seen: set[str] = set()
+    deduped: list[ExperimentalIntervention] = []
+    for iv in out:
+        key = norm_text(iv.name)
+        if key and key not in seen:
+            seen.add(key)
+            deduped.append(iv)
+    return tuple(deduped)
+
+
 def _extras(study: dict[str, Any], cfg: AreaConfig) -> StudyExtras:
     proto = study.get("protocolSection") or {}
     elig = proto.get("eligibilityModule") or {}
     sex = elig.get("sex")
+    arms = proto.get("armsInterventionsModule") or {}
     meshes = ((study.get("derivedSection") or {}).get("conditionBrowseModule") or {}).get(
         "meshes"
     ) or []
@@ -93,9 +166,10 @@ def _extras(study: dict[str, Any], cfg: AreaConfig) -> StudyExtras:
         min_age_years=parse_age_years(elig.get("minimumAge")),
         max_age_years=parse_age_years(elig.get("maximumAge")),
         has_results=bool(study.get("hasResults", False)),
-        experimental_drugs=_experimental_drugs(proto.get("armsInterventionsModule") or {}),
+        experimental_drugs=_experimental_drugs(arms),
         mesh_terms=tuple(m["term"] for m in meshes if isinstance(m, dict) and m.get("term")),
         condition_labels=tuple(condition_labels(study, cfg)),
+        experimental_interventions=_experimental_interventions(arms),
     )
 
 

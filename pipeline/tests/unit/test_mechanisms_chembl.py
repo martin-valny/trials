@@ -417,6 +417,26 @@ def test_script_coverage_applies_overrides(
     assert "2 / 2 drug-bearing trials have every drug resolved (100.0%)" in capsys.readouterr().out
 
 
+def test_trial_drugs_includes_supplements(tmp_path: Path) -> None:
+    mm = _load_script()
+    supplement = make_study(
+        "NCT00000002",
+        **{
+            "armsInterventionsModule.interventions": [
+                {"type": "DIETARY_SUPPLEMENT", "name": "Vitamin D3"},
+                {"type": "BEHAVIORAL", "name": "Exercise"},
+            ]
+        },
+    )
+    snap = _snap(tmp_path, _drug_study("NCT00000001", "Fingolimod"), supplement)
+    config = REPO_ROOT / "config" / "area.yaml"
+    got = mm.trial_drugs(snap, config)
+    assert got["NCT00000001"] == frozenset({"fingolimod"})
+    assert got["NCT00000002"] == frozenset({"vitamin d3"})
+    narrow = mm.trial_drugs(snap, config, frozenset({"DRUG", "BIOLOGICAL"}))
+    assert narrow == {"NCT00000001": frozenset({"fingolimod"})}
+
+
 def _mol(cid: str, parent: str, name: str, *syns: str) -> dict[str, Any]:
     return {
         "molecule_chembl_id": cid,

@@ -1,5 +1,8 @@
 """Map every experimental drug in a raw snapshot to its ChEMBL mechanism (hand-run, network).
 
+"Drug" here is every experimental-arm intervention of a mapping type: Drug, Biological,
+Dietary Supplement, Genetic and Combination Product (``MAPPING_TYPES``).
+
 Usage:
   uv run python scripts/map_mechanisms.py <snapshot.jsonl.gz | raw dir>
       [--config PATH] [--out config/mechanisms] [--cache pipeline/.cache/chembl]
@@ -23,7 +26,7 @@ from typing import Any
 
 from trialradar.config import load_config
 from trialradar.explorer.drugs import clean_drug_name
-from trialradar.explorer.extras import extract_extras
+from trialradar.explorer.extras import MAPPING_TYPES, extract_extras
 from trialradar.mechanisms.chembl import ChemblClient, ChemblError
 from trialradar.mechanisms.classify import map_drug
 from trialradar.mechanisms.io import DrugMapping, read_drugs, read_target_labels, write_drugs
@@ -103,16 +106,21 @@ def _snapshot_path(path: Path) -> Path:
     return path
 
 
-def trial_drugs(snapshot: Path, config: Path) -> dict[str, frozenset[str]]:
-    """Each relevant trial's distinct cleaned experimental drug names (trials with none left out)."""
+def trial_drugs(
+    snapshot: Path, config: Path, types: frozenset[str] = MAPPING_TYPES
+) -> dict[str, frozenset[str]]:
+    """Each relevant trial's distinct cleaned experimental intervention names whose type is in
+    ``types`` (default: drugs, biologicals, supplements, genetic and combination products);
+    trials with none are left out."""
     cfg = load_config(config)
     aliases = load_aliases(cfg.aliases_dir / "intervention.csv")
     relevant = filter_relevant(read_snapshot(snapshot), cfg)
     out: dict[str, frozenset[str]] = {}
     for nct, extras in extract_extras(relevant, cfg)[0].items():
         names = {
-            clean_drug_name(n, aliases, cfg.explorer.exclude_terms)
-            for n in extras.experimental_drugs
+            clean_drug_name(i.name, aliases, cfg.explorer.exclude_terms)
+            for i in extras.experimental_interventions
+            if i.type in types
         }
         if names := {n for n in names if n}:
             out[nct] = frozenset(names)
