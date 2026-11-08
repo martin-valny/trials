@@ -62,8 +62,8 @@ test("methods states the mechanism source, licence, coverage, weight, counting r
   expect(text()).toMatch(/min_samples 10/);
   expect(screen.getByRole("link", { name: "ChEMBL" })).toHaveAttribute("href", "https://www.ebi.ac.uk/chembl/");
   expect(screen.getByRole("link", { name: "CC BY-SA 3.0" })).toBeInTheDocument();
-  expect(text()).toMatch(/838 of 1,314 drug-bearing trials \(63\.8%\)/);
-  expect(text()).toMatch(/182 mechanism classes/);
+  expect(text()).toMatch(/1,112 of 1,314 drug-bearing trials \(84\.6%\)/);
+  expect(text()).toMatch(/201 mechanism classes/);
   expect(text()).toMatch(/weight 1\.0/);
   expect(screen.getByRole("link", { name: /weight research note/ })).toHaveAttribute(
     "href",

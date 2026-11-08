@@ -102,8 +102,8 @@ export function Methods() {
           update never calls ChEMBL.
         </p>
         <p>
-          At the last mapping (6 November 2026) every drug was resolved for 838 of 1,314
-          drug-bearing trials (63.8%), giving 182 mechanism classes. A class is named from the
+          At the last mapping (8 November 2026) every drug was resolved for 1,112 of 1,314
+          drug-bearing trials (84.6%), giving 201 mechanism classes. A class is named from the
           target and the action, for example &ldquo;anti-CD20&rdquo; or &ldquo;S1P receptor
           modulator&rdquo;.
         </p>
