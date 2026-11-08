@@ -22,7 +22,7 @@ A clinical-operations or competitive-intelligence lead wants to know *what chang
 
 ## The front door: pipeline figure and target pages
 
-Routes: `/` the pipeline figure, `/target/:slug` a target page, `/approaches` (and `/approaches/:approach`; the old `/mechanisms/...` redirects), `/explore` the trial map, `/changes`, `/trials`, `/trial/:nct`, `/methods`. The header's Explore menu holds the Trial map and the Mechanism graph.
+Routes: `/` the pipeline figure, `/target/:slug` a target page, `/approaches` (and `/approaches/:approach`; the old `/mechanisms/...` redirects), `/changes`, `/trials` (also the target of every "List these {n} trials →" link, with `?nct=…&from=…`), `/trial/:nct`, `/methods`. The nav is Pipeline · Approaches · Changes · Trials · Methods; `/explore` (the experimental similarity map) still works but is linked only from Methods. The pipeline figure has three arrangements: By phase, By disease and By year (`view=year`).
 
 **The pipeline figure** (`/`) answers *what is being tried against which targets, by whom, and how far has it got?* One row per target class (CD20, FcRn, BTK, S1P receptor, CD19 CAR-T and so on, 28 in all, grouped into families), one dot per trial: advanced to a later phase, still running, stopped, finished with no follow-on, or status unknown. Columns are the phases or, under **By disease**, the diseases. A headline states a finding computed from the data (on the 2026-11-06 snapshot: "185 targeted-drug trials are running…"), with key numbers, a source line that says what is and is not in the figure, a **company lens** (pick Roche and the figure shows its trials and rows), up to four computed margin notes, and a "Mostly historical" tail. "Advanced" means only that the drug has a later-phase trial on the registry (the 1b rule: credited to the drug that moved on); it does not mean the drug worked. Real numbers on that snapshot: 693 of 2,987 trials sit in a row, 369 more targeted-drug trials sit in smaller classes.
 
@@ -44,7 +44,7 @@ Only registered ClinicalTrials.gov trials are in it: no preclinical programmes, 
 
 A bad row stops the stage with `<file>:<line>: <problem>`; the run continues without `pipeline.json` and the front page shows a calm "not available" fallback (R19). To check coverage after a rebuild, run `uv run python scripts/pipeline_report.py <site_dir>` from `pipeline/`: it prints the row table, the "Other" stop-reason share, unlisted classes and sponsors (from the run warnings), comparator cases (a trial in two rows) and the size of `pipeline.json`, and exits 1 if it is missing or over 200 KB (it is about 178 KB on the real snapshot).
 
-## The Explore map (Figure 1)
+## The Explore map (Figure 1, experimental, not in the nav)
 
 The Trial map (`/explore`) draws every tracked trial as a dot on a single map, so you can see how the trials of an area group together. Dot size follows enrollment; colour can show outcome, phase, disease, drug mechanism, modality or approach (see the Approaches page below), and the same six can filter the map. Named clusters (HDBSCAN on the map) are labelled beside their dots. Select a dot for the trial's key facts, the start of its registry summary and links to its trial page and the registry record. A "Results posted" toggle keeps only trials with results on the registry. Two small panels beside the map show what the layout implies, in plain words; panel b can group success by disease, modality, mechanism or approach.
 

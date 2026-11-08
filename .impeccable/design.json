@@ -436,10 +436,10 @@
       "css": ""
     },
     {
-      "name": "Site nav with Explore drawer",
+      "name": "Site nav",
       "kind": "custom",
       "refersTo": "",
-      "description": "Pipeline, Approaches, Explore (disclosure menu: Trial map, Mechanism graph; arrow keys, Escape returns focus), Changes, Trials, Methods. On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
+      "description": "Pipeline, Approaches, Changes, Trials, Methods (no Explore entry; /explore is linked only from Methods). On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
       "html": "",
       "css": ""
     }
