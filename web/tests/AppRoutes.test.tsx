@@ -62,3 +62,13 @@ test("the brand links to the pipeline", () => {
   go("/changes");
   expect(screen.getByRole("link", { name: /Trial Radar/ })).toHaveAttribute("href", "/");
 });
+
+test("the Explore menu closes when focus tabs away", async () => {
+  stubFetch();
+  go("/changes");
+  const btn = screen.getByRole("button", { name: /Explore/ });
+  await userEvent.click(btn);
+  await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+  await userEvent.tab();
+  expect(btn).toHaveAttribute("aria-expanded", "false");
+});

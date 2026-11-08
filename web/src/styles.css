@@ -2,14 +2,14 @@
   --bg: #fff; --fg: #1a1d21; --muted: #5a6370; --line: #d9dde3; --accent: #0b5cad;
   --ok: #1d6b3a; --warn-bg: #fff3cd; --warn-fg: #6b4e00; --card: #f6f8fa;
   /* Pipeline marks: running (blue), stopped, finished, unknown; the family band ink; the live dot. */
-  --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb; --fam: #8796a3; --live: #2f9e6b; --brand-dot: #c8102e;
+  --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb; --fam: #62758a; --live: #2f9e6b; --brand-dot: #c8102e;
   color-scheme: light;
 }
 /* The theme is a choice (System, Light, Dark) resolved onto <html data-theme> before first paint. */
 :root[data-theme="dark"] {
   --bg: #14171a; --fg: #e8eaed; --muted: #9aa3ad; --line: #2e343b; --accent: #6cb0f5;
   --ok: #6fcf97; --warn-bg: #3d3200; --warn-fg: #ffd866; --card: #1b1f23;
-  --run: #8da3d6; --stop: #eceae4; --fin: #50575f; --unk: #6a7178; --fam: #6c7f93; --live: #4fbf8b; --brand-dot: #ff8a3d;
+  --run: #8da3d6; --stop: #eceae4; --fin: #50575f; --unk: #6a7178; --fam: #7a8ea5; --live: #4fbf8b; --brand-dot: #ff8a3d;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }

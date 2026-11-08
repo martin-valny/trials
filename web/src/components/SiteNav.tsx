@@ -114,7 +114,12 @@ function ExploreMenu({ active }: { active: boolean }) {
     }
   };
   return (
-    <div className={`nav-explore${active ? " on" : ""}`} ref={box} onKeyDown={key}>
+    <div
+      className={`nav-explore${active ? " on" : ""}`}
+      ref={box}
+      onKeyDown={key}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOpen(() => false)}
+    >
       <button ref={btn} type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         Explore
       </button>
