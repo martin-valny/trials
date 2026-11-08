@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import type { TreeKind } from "../../lib/approaches";
 import { outcomeLabel } from "../../lib/format";
 import { chemblLink, isClassNode, nodeShare, sourceLink } from "../../lib/graph";
-import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome, PipelineRow } from "../../types";
+import { rowForGene } from "../../lib/pipeline";
+import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome, PipelineFile, PipelineRow } from "../../types";
 import { outcomeWords, Rationale, trialsWord } from "./KindTree";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
@@ -157,14 +158,25 @@ export function SidePanel({
 const KIND_WORD: Record<GraphNode["kind"], string> = { drug: "Drug", target: "Target", pathway: "Pathway" };
 
 /** Node links as buttons: each focuses that node on the graph (and opens its panel). */
-function NodeLinks({ nodes, onFocus, notes }: { nodes: GraphNode[]; onFocus(id: string): void; notes?: Map<string, string> }) {
+function NodeLinks({
+  nodes,
+  onFocus,
+  notes,
+  names,
+}: {
+  nodes: GraphNode[];
+  onFocus(id: string): void;
+  notes?: Map<string, string>;
+  /** Display names that replace a node's label (a protein name for a gene). */
+  names?: Map<string, string>;
+}) {
   return (
     <>
       {nodes.map((n, i) => (
         <span key={n.id}>
           {i > 0 ? ", " : null}
           <button type="button" className="text-button node-link" onClick={() => onFocus(n.id)}>
-            {n.label}
+            {names?.get(n.id) ?? n.label}
           </button>
           {notes?.get(n.id) ? <span className="side-muted"> ({notes.get(n.id)})</span> : null}
         </span>
@@ -186,6 +198,7 @@ export function NodePanel({
   minGroup,
   narrowed,
   row = null,
+  pipeline = null,
   disease = null,
   onFocus,
   onClose,
@@ -199,6 +212,8 @@ export function NodePanel({
   narrowed: boolean;
   /** The pipeline row of a target node's gene, if it has one. */
   row?: PipelineRow | null;
+  /** The pipeline file, to name a gene target by its protein. */
+  pipeline?: PipelineFile | null;
   /** The one disease chosen (its code), carried to the target page. */
   disease?: string | null;
   onFocus(id: string): void;
@@ -226,9 +241,18 @@ export function NodePanel({
     const mech = drugIndex[node.label]?.mechanisms ?? [];
     if (mech.length) facts.push(["Drug target class", mech.join(", ")]);
     const targets = nodesOf(out.map((e) => e.target));
-    // A gene target reads "Target: MS4A1 (gene)"; a molecular class has no gene, so no note.
-    const genes = new Map(targets.filter((n) => !isClassNode(n)).map((n) => [n.id, "gene"]));
-    facts.push(["Target", <NodeLinks key="t" nodes={targets} onFocus={onFocus} notes={genes} />]);
+    // "Target: CD20 (gene MS4A1)" when the pipeline names the protein; otherwise just the gene symbol.
+    const names = new Map<string, string>();
+    const genes = new Map<string, string>();
+    for (const n of targets) {
+      if (isClassNode(n) || !pipeline) continue;
+      const protein = rowForGene(pipeline, n.label)?.label;
+      if (protein && protein !== n.label) {
+        names.set(n.id, protein);
+        genes.set(n.id, `gene ${n.label}`);
+      }
+    }
+    facts.push(["Target", <NodeLinks key="t" nodes={targets} onFocus={onFocus} notes={genes} names={names} />]);
   } else if (node.kind === "target") {
     facts.push(["Acted on by", <NodeLinks key="d" nodes={nodesOf(into.map((e) => e.source))} onFocus={onFocus} />]);
     if (isClassNode(node)) {

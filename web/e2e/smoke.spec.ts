@@ -401,7 +401,7 @@ test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it",
   await expect(page).toHaveURL(/#\/approaches\/targeted\?node=drug%3Aexample\+drug$/);
   const panel = page.getByRole("complementary", { name: /example drug/ });
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole("button", { name: "MS4A1" })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "CD20" })).toBeVisible();
   await expect(panel.getByRole("link", { name: NCT }).first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(panel).toHaveCount(0);

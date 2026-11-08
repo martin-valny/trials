@@ -109,8 +109,15 @@ test("Approaches (targeted graph and a kind) use plain words", async () => {
   const first = page("/approaches/targeted?node=drug:dimethyl fumarate");
   const panel = await screen.findByRole("complementary", { name: /dimethyl fumarate/ });
   expect(within(panel).getByText("Target")).toBeInTheDocument();
+  expect(panel.textContent).toMatch(/TargetNFE2L2/); // no pipeline row: just the gene
+  expect(panel.textContent).not.toMatch(/\(gene/);
   noOldWords();
   first.unmount();
+
+  const second = page("/approaches/targeted?node=drug:example drug");
+  const drugPanel = await screen.findByRole("complementary", { name: /example drug/ });
+  await waitFor(() => expect(drugPanel.textContent).toMatch(/TargetCD20\s*\(gene MS4A1\)/));
+  second.unmount();
 
   page("/approaches/cell?kind=msc");
   const side = await screen.findByRole("complementary", { name: /Mesenchymal stem cells/ });

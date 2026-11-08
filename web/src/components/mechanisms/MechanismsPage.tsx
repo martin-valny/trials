@@ -420,6 +420,7 @@ function Plate({
             minGroup={minGroup}
             narrowed={narrowed}
             row={nodeRow}
+            pipeline={pipeline}
             disease={disease}
             onFocus={focusNode}
             onClose={closeNode}
