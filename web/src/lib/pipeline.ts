@@ -443,12 +443,25 @@ const STATE_RANK: Record<MarkState, number> = { adv: 0, run: 1, stop: 2, fin: 3,
 const byStateThenYear = (a: PipelineMark, b: PipelineMark): number =>
   STATE_RANK[a.s] - STATE_RANK[b.s] || (a.y ?? Infinity) - (b.y ?? Infinity);
 
+/**
+ * Maps each drug key to its root: a name that starts with another drug name in the same row plus a space
+ * ("efgartigimod ph20" after "efgartigimod") is that drug. The shortest such root wins.
+ */
+export function drugRoots(marks: PipelineMark[]): { root: (key: string) => string; display: Map<string, string> } {
+  const display = new Map<string, string>();
+  for (const m of marks) if (!display.has(normKey(m.drug))) display.set(normKey(m.drug), m.drug);
+  const keys = [...display.keys()].sort((a, b) => a.length - b.length || a.localeCompare(b));
+  const root = (key: string): string => keys.find((k) => k === key || key.startsWith(`${k} `)) ?? key;
+  return { root, display };
+}
+
 /** One lane per drug with at least LANE_MIN_TRIALS trials, biggest first; the rest pooled last. */
 export function drugLanes(marks: PipelineMark[], label: string): { name: string; marks: PipelineMark[] }[] {
+  const { root, display } = drugRoots(marks);
   const groups = new Map<string, { name: string; marks: PipelineMark[] }>();
   for (const m of marks) {
-    const key = normKey(m.drug);
-    const g = groups.get(key) ?? { name: m.drug, marks: [] };
+    const key = root(normKey(m.drug));
+    const g = groups.get(key) ?? { name: display.get(key) ?? m.drug, marks: [] };
     g.marks.push(m);
     groups.set(key, g);
   }
@@ -481,10 +494,14 @@ export function targetCompanies(
     g.marks.push(m);
     industry.set(key, g);
   }
+  const { root, display } = drugRoots(marks);
   const finish = (g: G) => {
     const sorted = [...g.marks].sort(byStateThenYear);
     const drugCount = new Map<string, number>();
-    for (const m of sorted) drugCount.set(m.drug, (drugCount.get(m.drug) ?? 0) + 1);
+    for (const m of sorted) {
+      const name = display.get(root(normKey(m.drug))) ?? m.drug;
+      drugCount.set(name, (drugCount.get(name) ?? 0) + 1);
+    }
     const drugs = [...drugCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([d]) => d);
     return { parent: g.parent, drugs, marks: sorted, run: sorted.filter((m) => m.s === "run").length };
   };

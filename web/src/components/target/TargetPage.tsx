@@ -56,12 +56,19 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   const [open, setOpen] = useState<Open | null>(null);
   const close = useCallback(() => setOpen(null), []);
 
-  const marks: PipelineMark[] = useMemo(() => (disease === null ? row.marks : row.marks.filter((m) => m.dz.includes(disease))), [row, disease]);
+  // One mark per trial: a row holds a trial once (the pipeline places it by row), but the counts and keys rely on it.
+  const marks: PipelineMark[] = useMemo(() => {
+    const seen = new Set<string>();
+    return row.marks.filter((m) => (disease === null || m.dz.includes(disease)) && !seen.has(m.n) && seen.add(m.n));
+  }, [row, disease]);
   const counts = useMemo(() => {
     const dz = new Map<string, number>();
     for (const m of row.marks) for (const d of m.dz) dz.set(d, (dz.get(d) ?? 0) + 1);
-    return file.diseases.filter((d) => dz.has(d.code)).map((d) => ({ code: d.code, n: dz.get(d.code)! })).sort((a, b) => b.n - a.n);
-  }, [file, row]);
+    return file.diseases
+      .filter((d) => dz.has(d.code) || d.code === disease)
+      .map((d) => ({ code: d.code, n: dz.get(d.code) ?? 0 }))
+      .sort((a, b) => b.n - a.n);
+  }, [file, row, disease]);
   const stats = useMemo(() => {
     const parents = new Set<string>();
     let run = 0;
@@ -71,7 +78,8 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       const s = markState(m, disease);
       if (s === "run") {
         run++;
-        parents.add(normKey(file.sponsors[m.sp]?.parent ?? "Unknown sponsor"));
+        const sp = file.sponsors[m.sp];
+        if (sp?.kind === "industry") parents.add(normKey(sp.parent));
       }
       if (s === "adv") adv++;
       if (s === "stop") stop++;
@@ -108,13 +116,18 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               {format ? ` · ${format}` : ""}
             </small>
           </h1>
-          <p className="tl">
-            <span className="runw">{lede.head}</span>
-            {lede.tail}
-            <em>{lede.adv}</em>
-            {lede.rest.slice(lede.adv.length)}
-          </p>
+          {marks.length === 0 ? (
+            <p className="tl">No {row.label} trials{disease ? ` in ${disease}` : ""}.</p>
+          ) : (
+            <p className="tl">
+              <span className="runw">{lede.head}</span>
+              {lede.tail}
+              <em>{lede.adv}</em>
+              {lede.rest.slice(lede.adv.length)}
+            </p>
+          )}
         </div>
+        {marks.length > 0 && (
         <div className="keys" role="group" aria-label="Key numbers">
           <div className="key">
             <b className="k-run">{n(stats.run)}</b>
@@ -129,6 +142,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
             <span>stopped</span>
           </div>
         </div>
+        )}
       </header>
       <div className="dzs" role="group" aria-label="Diseases">
         {counts.map((d) => (
@@ -146,7 +160,12 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       </div>
 
       {marks.length === 0 ? (
-        <p className="sec empty-line">No {row.label} trials in this disease.</p>
+        <p className="sec empty-line">
+          No {row.label} trials in {disease}.{" "}
+          <Link to={`/target/${row.id}`} replace>
+            Show all diseases →
+          </Link>
+        </p>
       ) : (
         <>
           <section className="sec" aria-labelledby="pa">

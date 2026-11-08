@@ -318,6 +318,16 @@ describe("target page helpers", () => {
     const lanes = drugLanes(marks, "CD20");
     expect(lanes.map((l) => [l.name, l.marks.length])).toEqual([["big", 5], ["Mid", 4], ["Other CD20", 3]]);
   });
+  it("drugLanes merges a drug variant into the drug it starts with", () => {
+    const marks = [...many(3, { drug: "efgartigimod" }), ...many(2, { drug: "Efgartigimod ph20" }), ...many(4, { drug: "other drug" }), mark({ drug: "efgartigimodx" })];
+    const lanes = drugLanes(marks, "FcRn");
+    expect(lanes.map((l) => [l.name, l.marks.length])).toEqual([["efgartigimod", 5], ["other drug", 4], ["Other FcRn", 1]]);
+  });
+  it("targetCompanies lists a drug variant under its root drug", () => {
+    const f = file([]);
+    const marks = [mark({ sp: 0, drug: "a" }), mark({ sp: 0, drug: "a ph20" }), mark({ sp: 0, drug: "a ph20" }), mark({ sp: 0, drug: "b" })];
+    expect(targetCompanies(f, marks)[0]!.drugs).toEqual(["a", "b"]);
+  });
   it("targetCompanies groups by parent with an academic tail", () => {
     const f = file([]);
     const marks = [mark({ sp: 0, s: "run", drug: "a" }), mark({ sp: 1, s: "adv", drug: "b" }), mark({ sp: 2, s: "fin" }), mark({ sp: 4 }), mark({ sp: 5 })];

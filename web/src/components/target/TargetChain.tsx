@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { loadGraph } from "../../data";
-import { normKey } from "../../lib/pipeline";
+import { drugRoots, normKey } from "../../lib/pipeline";
 import type { GraphFile, GraphNode, PipelineFile, PipelineMark, PipelineRow } from "../../types";
 
 const DRUGS_IN_PILL = 4;
@@ -51,10 +51,11 @@ function pathways(g: GraphFile, gene: string): { node: GraphNode | null; pills: 
 }
 
 function drugsOf(marks: PipelineMark[]): { names: string[]; total: number } {
+  const { root, display } = drugRoots(marks);
   const count = new Map<string, { name: string; n: number }>();
   for (const m of marks) {
-    const k = normKey(m.drug);
-    const c = count.get(k) ?? { name: m.drug, n: 0 };
+    const k = root(normKey(m.drug));
+    const c = count.get(k) ?? { name: display.get(k) ?? m.drug, n: 0 };
     c.n++;
     count.set(k, c);
   }

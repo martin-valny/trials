@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import type { PipelineFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
@@ -142,4 +142,45 @@ test("Show on map link carries every NCT", async () => {
     ["NCT90000001", "NCT90000002", "NCT90000004", "NCT90000005", "NCT90000006", "NCT90000007", "NCT90000008", "NCT90000099"],
   );
   expect(q.get("from")).toBe("CD20");
+});
+
+const ledeText = () => screen.getByText((_, el) => el?.tagName === "P" && el.classList.contains("tl")).textContent;
+
+test("lede counts industry parents with a running trial only", async () => {
+  const f = variant((p) => {
+    p.sponsors.push({ raw: "Some University", parent: "Some University", kind: "academic" });
+    p.rows[0]!.marks[3]!.sp = 2;
+  });
+  stubFetch({ "pipeline.json": f });
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  expect(ledeText()).toContain("7 of 8 trials are running, from 1 company or academic group.");
+  expect(screen.getByLabelText("Key numbers")).toBeInTheDocument();
+});
+
+test("a valid disease with no trials in the row shows calm copy and keeps the chip", async () => {
+  stubFetch();
+  renderPage("/target/cd20?disease=AE");
+  await screen.findByRole("heading", { level: 1 });
+  expect(screen.queryByText(/0 of 0/)).not.toBeInTheDocument();
+  expect(ledeText()).toBe("No CD20 trials in AE.");
+  expect(screen.getByRole("button", { name: /^AE\s*0$/ })).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(screen.getByRole("link", { name: /Show all diseases/ }));
+  expect(screen.getByTestId("where")).toHaveTextContent("/target/cd20");
+  expect(screen.getByTestId("where").textContent).not.toContain("disease");
+  expect(ledeText()).toMatch(/^7 of 8 trials/);
+});
+
+test("a trial marked twice in a row is counted once, with no duplicate keys", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks.push({ ...p.rows[0]!.marks[1]! });
+  });
+  stubFetch({ "pipeline.json": f });
+  const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  expect(ledeText()).toMatch(/^7 of 8 trials are running/);
+  expect(container.querySelectorAll('svg [data-n="NCT90000002"]').length).toBe(1);
+  expect(err.mock.calls.filter((c) => String(c[0]).includes("same key"))).toHaveLength(0);
+  err.mockRestore();
 });
