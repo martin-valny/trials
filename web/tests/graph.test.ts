@@ -2,12 +2,17 @@ import { expect, test } from "vitest";
 import {
   chain,
   convergence,
+  cutCaption,
+  droppedDrug,
+  droppedNote,
+  findMatches,
   litByTrials,
   neighbours,
   nodeShare,
   shareColor,
   sourceLink,
   trialsOf,
+  succeededPaths,
   winningDrugs,
 } from "../src/lib/graph";
 import { LIGHT_PALETTE } from "../src/lib/explorer";
@@ -133,4 +138,72 @@ test("sourceLink names Reactome, GO and curated sources", () => {
 test("shareColor runs from the pale ground (noClass) to the success red", () => {
   expect(shareColor(0, 0.5, LIGHT_PALETTE)).toBe(LIGHT_PALETTE.noClass);
   expect(shareColor(0.5, 0.5, LIGHT_PALETTE).toLowerCase()).toBe(LIGHT_PALETTE.succeeded.toLowerCase());
+});
+
+const CUT: NonNullable<GraphFile["cut"]> = {
+  drugs: { before: 515, after: 66 },
+  targets: { before: 472, after: 137 },
+  pathways: { before: 795, after: 97 },
+  min_trials: 4,
+  all_succeeded: true,
+  dropped: [
+    { drug: "abatacept", n: 3, trials: ["NCT11", "NCT12", "NCT13"] },
+    { drug: "ocrelizumab biosimilar", n: 1, trials: ["NCT14"] },
+  ],
+};
+
+test("cutCaption says how many drugs are drawn and by what rule", () => {
+  expect(cutCaption({ ...G, cut: CUT })).toBe(
+    "Showing 66 of 515 drugs: every drug credited with a success and those in 4 or more trials.",
+  );
+  expect(cutCaption({ ...G, cut: { ...CUT, min_trials: null } })).toBe(
+    "Showing 66 of 515 drugs: every drug credited with a success.",
+  );
+  expect(cutCaption({ ...G, cut: { ...CUT, all_succeeded: false, min_trials: null } })).toBe(
+    "Showing 66 of 515 drugs: only drugs credited with a success, those in the most trials first.",
+  );
+  // Nothing left out, or an older file without the cut (R19): no caption.
+  expect(cutCaption({ ...G, cut: { ...CUT, drugs: { before: 66, after: 66 }, dropped: [] } })).toBeNull();
+  expect(cutCaption(G)).toBeNull();
+});
+
+test("a dropped drug is found by name and its note says why it is not drawn", () => {
+  const g = { ...G, cut: CUT };
+  expect(droppedDrug(g, "drug:abatacept")).toEqual(CUT.dropped[0]);
+  expect(droppedDrug(g, "drug:ocrelizumab")).toBeNull();
+  expect(droppedDrug(G, "drug:abatacept")).toBeNull();
+  expect(droppedNote(g, CUT.dropped[0])).toBe(
+    "abatacept is not drawn: it is in 3 trials, and the graph shows every drug credited with a success and those in 4 or more trials.",
+  );
+  expect(droppedNote(g, CUT.dropped[1])).toMatch(/^ocrelizumab biosimilar is not drawn: it is in 1 trial,/);
+});
+
+test("findMatches searches drawn nodes and dropped drugs", () => {
+  const g = { ...G, cut: CUT };
+  const ids = (q: string) => findMatches(g, q).map((m) => (m.dropped ? `dropped:${m.dropped.drug}` : m.node!.id));
+  // Prefix matches first, then drawn before dropped, then by trials.
+  expect(ids("ocre")).toEqual(["drug:ocrelizumab", "dropped:ocrelizumab biosimilar"]);
+  expect(ids("abat")).toEqual(["dropped:abatacept"]);
+  expect(ids("  ")).toEqual([]);
+  expect(findMatches(G, "abat")).toEqual([]);
+});
+
+test("succeeded paths under a Disease filter follow succeeded_in (R21)", () => {
+  const t = {
+    nct_id: "NCT01",
+    outcome: "succeeded",
+    succeeded_by: ["fingolimod"],
+    succeeded_in: ["Multiple sclerosis"],
+    condition_labels: ["Multiple sclerosis", "Myasthenia gravis"],
+  } as unknown as ExplorerTrial;
+  expect(winningDrugs([t], new Set(["Myasthenia gravis"]))).toEqual(new Set());
+  expect(winningDrugs([t], new Set(["Multiple sclerosis"]))).toEqual(new Set(["drug:fingolimod"]));
+  expect(winningDrugs([t], null)).toEqual(new Set(["drug:fingolimod"]));
+  expect(succeededPaths(G, [t], new Set(["Myasthenia gravis"]))).toEqual(new Set());
+  expect(succeededPaths(G, [t], new Set(["Multiple sclerosis"]))).toEqual(
+    new Set(["drug:fingolimod", "target:S1PR1", "R-C", "R-TOP2"]),
+  );
+  // An older file without succeeded_in on a succeeded trial keeps the trial's own success.
+  const old = { ...t, succeeded_in: [] } as unknown as ExplorerTrial;
+  expect(winningDrugs([old], new Set(["Myasthenia gravis"]))).toEqual(new Set(["drug:fingolimod"]));
 });

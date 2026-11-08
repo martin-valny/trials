@@ -419,3 +419,33 @@ test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it",
   await expect(page.getByRole("complementary", { name: /NFE2L2/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("Mechanisms: a drug the node cap left out is found, explained and handed to the map", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // The fixture graph draws every drug: add a cut with one drug left out.
+  await page.route("**/data/mechanisms.json", async (route) => {
+    const g = await (await route.fetch()).json();
+    g.cut = {
+      drugs: { before: 3, after: 2 },
+      targets: { before: 3, after: 2 },
+      pathways: { before: 9, after: 9 },
+      min_trials: 4,
+      all_succeeded: true,
+      dropped: [{ drug: "rare drug", n: 1, trials: ["NCT90000001"] }],
+    };
+    await route.fulfill({ json: g });
+  });
+  await page.goto("/#/mechanisms/targeted");
+  await expect(page.getByRole("img", { name: /^Mechanism graph of 2 drugs/ })).toBeVisible();
+  await expect(
+    page.getByText("Showing 2 of 3 drugs: every drug credited with a success and those in 4 or more trials."),
+  ).toBeVisible();
+  await page.getByRole("combobox", { name: "Find a drug, target or pathway" }).fill("rare");
+  await page.getByRole("option", { name: /rare drug/ }).click();
+  const note = page.getByRole("status", { name: "rare drug" });
+  await expect(note).toContainText("rare drug is not drawn: it is in 1 trial");
+  await note.getByRole("link", { name: "Show its 1 trial on the map" }).click();
+  await expect(page).toHaveURL(/#\/explore\?nct=NCT90000001&from=rare\+drug$/);
+  expect(errors).toEqual([]);
+});

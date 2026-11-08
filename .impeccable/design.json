@@ -379,7 +379,7 @@
       "name": "Mechanism graph",
       "kind": "custom",
       "refersTo": "",
-      "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. At rest reduced ink with top-level pathways labelled; hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it.",
+      "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. At rest reduced ink with top-level pathways labelled; hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it. The graph is capped at 300 nodes: a muted caption under it gives the cut, and Find lists the left-out drugs as 'not drawn' with a note saying why and a link to their trials on the map.",
       "html": "",
       "css": ""
     }

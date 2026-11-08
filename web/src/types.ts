@@ -254,10 +254,32 @@ export interface GraphEdge {
 }
 
 /** mechanisms.json: the Targeted drugs bubble's drug -> target -> pathway graph. */
+/** A drug the node cap left out of the graph, with the trials that name it. */
+export interface DroppedDrug {
+  drug: string;
+  n: number;
+  trials: string[];
+}
+
+/** The node cap (``max_nodes`` over all nodes): counts before and after, and the rule's threshold. */
+export interface GraphCut {
+  drugs: { before: number; after: number };
+  targets: { before: number; after: number };
+  pathways: { before: number; after: number };
+  /** The fewest trials of a kept drug not credited with a success; null when only credited drugs are kept. */
+  min_trials: number | null;
+  /** True when every drug credited with a success is drawn. */
+  all_succeeded: boolean;
+  /** The drugs left out, most trials first. */
+  dropped: DroppedDrug[];
+}
+
 export interface GraphFile {
   generated_for: string;
   reactome_release: string;
-  method: { max_nodes: number; overlap_floor: number; overlap_top_k: number; seed: number };
+  method: { max_nodes: number; pathway_share?: number; overlap_floor: number; overlap_top_k: number; seed: number };
+  /** What the node cap left out (absent in files from before the cap). */
+  cut?: GraphCut;
   nodes: GraphNode[];
   edges: GraphEdge[];
 }

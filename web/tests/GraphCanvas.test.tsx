@@ -207,3 +207,64 @@ test("a filter lights the reached nodes and names them in the canvas summary", a
   // Only the stopped trials are lit: both drugs have one.
   expect(await screen.findByText(/reached by the 2 trials shown/)).toBeInTheDocument();
 });
+
+/** The fixture graph with one more drug left out by the cap. */
+function withCut(): GraphFile {
+  const g = structuredClone(graph);
+  g.cut = {
+    drugs: { before: 3, after: 2 },
+    targets: { before: 3, after: 2 },
+    pathways: { before: 9, after: 9 },
+    min_trials: 4,
+    all_succeeded: true,
+    dropped: [{ drug: "rare drug", n: 2, trials: ["NCT03838770", "NCT04334031"] }],
+  };
+  return g;
+}
+
+test("the canvas caption says how many drugs the graph draws and by what rule", async () => {
+  stubFetch({ "mechanisms.json": withCut() });
+  renderPage("/mechanisms/targeted");
+  await screen.findByRole("img", { name: /Mechanism graph/ });
+  expect(
+    screen.getByText("Showing 2 of 3 drugs: every drug credited with a success and those in 4 or more trials."),
+  ).toBeInTheDocument();
+});
+
+test("Find lists a dropped drug; choosing it says why it is not drawn and hands its trials to the map", async () => {
+  stubFetch({ "mechanisms.json": withCut() });
+  renderPage("/mechanisms/targeted");
+  const box = await screen.findByRole("combobox", { name: "Find a drug, target or pathway" });
+  await userEvent.type(box, "rare");
+  const option = screen.getByRole("option", { name: /rare drug/ });
+  expect(within(option).getByText("not drawn")).toBeInTheDocument();
+  await userEvent.click(option);
+  const note = await screen.findByRole("status", { name: "rare drug" });
+  expect(note).toHaveTextContent(
+    "rare drug is not drawn: it is in 2 trials, and the graph shows every drug credited with a success and those in 4 or more trials.",
+  );
+  expect(within(note).getByRole("link", { name: "Show its 2 trials on the map" })).toHaveAttribute(
+    "href",
+    "/explore?nct=NCT03838770%2CNCT04334031&from=rare+drug",
+  );
+  expect(screen.getAllByTestId("where").at(-1)!.textContent).toBe("/mechanisms/targeted?node=drug%3Arare+drug");
+  expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+});
+
+test("a link to a dropped drug's node (?node=) explains it is not drawn", async () => {
+  stubFetch({ "mechanisms.json": withCut() });
+  renderPage("/mechanisms/targeted?node=drug%3Arare%20drug");
+  expect(await screen.findByRole("status", { name: "rare drug" })).toHaveTextContent(/rare drug is not drawn/);
+});
+
+test("an older mechanisms.json without the cut still renders, with no caption (R19)", async () => {
+  const g = structuredClone(graph);
+  delete g.cut;
+  stubFetch({ "mechanisms.json": g });
+  renderPage("/mechanisms/targeted");
+  await screen.findByRole("img", { name: /Mechanism graph of 2 drugs/ });
+  expect(screen.queryByText(/^Showing \d+ of \d+ drugs/)).not.toBeInTheDocument();
+  const box = screen.getByRole("combobox", { name: "Find a drug, target or pathway" });
+  await userEvent.type(box, "dimethyl");
+  expect(screen.getByRole("option", { name: /dimethyl fumarate/ })).toBeInTheDocument();
+});

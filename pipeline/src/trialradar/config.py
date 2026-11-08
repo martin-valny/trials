@@ -106,19 +106,19 @@ class ClusterConfig(_Strict):
 
 
 class GraphConfig(_Strict):
-    """The mechanism graph (``mechanisms.json``): pruning, shared-gene links and layout.
+    """The mechanism graph (``mechanisms.json``): the node cap, shared-gene links and layout.
 
-    ``max_nodes`` caps the **pathway** nodes. Drug and target nodes are never pruned, so every
-    targeted trial stays reachable; pathways are pruned toward the cap (single-target leaves
-    first, then the leaves reached by the fewest trials). The layout seed is
-    ``ExplorerConfig.seed``.
+    ``max_nodes`` caps **all** nodes, drugs, targets and pathways together (spec 2026-11-06
+    §7.1 aims at ~150-300). ``pathway_share`` of the cap is reserved for pathways (never more
+    than the drugs could reach). Drugs fill the rest with the targets they act on: drugs
+    credited with a success first (most trials, then name), then whole tiers of the others by
+    trial count, most first, while they fit. Pathways are pruned into what is left
+    (single-target leaves first, then the leaves reached by the fewest trials; a kept pathway's
+    ancestors stay). The file's ``cut`` names every drug left out with its trials, so the page
+    can find it. The layout seed is ``ExplorerConfig.seed``."""
 
-    Deviation, open for Martin: spec 2026-11-06 §7.1 aims at ~150-300 nodes in total and the plan
-    (Task 7) at a cap on all nodes. With drugs and targets unpruned the 2026-11-06 snapshot builds
-    1,237 nodes (515 drugs, 472 targets, 250 pathways) and 4,198 edges, about 4x that aim. Accept
-    it, or prune / merge low-n drugs and targets (HANDOFF §00 open items)."""
-
-    max_nodes: int = Field(default=250, ge=0)
+    max_nodes: int = Field(default=300, ge=0)
+    pathway_share: float = Field(default=0.3, ge=0, le=1)
     overlap_floor: float = Field(default=0.3, gt=0, le=1)
     overlap_top_k: int = Field(default=3, ge=0)
     layout_iterations: int = Field(default=300, ge=1)

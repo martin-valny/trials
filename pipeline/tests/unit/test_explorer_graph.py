@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import shutil
+from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
@@ -22,7 +23,7 @@ CFG = GraphConfig(max_nodes=250, overlap_floor=0.3, overlap_top_k=3, layout_iter
 SEED = 42
 D1, TS1 = date(2026, 3, 1), "2026-03-01T06:00:00"
 
-TOP_KEYS = {"generated_for", "reactome_release", "method", "nodes", "edges"}
+TOP_KEYS = {"generated_for", "reactome_release", "method", "cut", "nodes", "edges"}
 NODE_KEYS = {
     "id",
     "kind",
@@ -201,7 +202,13 @@ def test_nodes_and_edges_from_fixture() -> None:
     assert set(g) == TOP_KEYS
     assert g["generated_for"] == "2026-03-01"
     assert g["reactome_release"] == "test"
-    assert g["method"] == {"max_nodes": 250, "overlap_floor": 0.3, "overlap_top_k": 3, "seed": 42}
+    assert g["method"] == {
+        "max_nodes": 250,
+        "pathway_share": 0.3,
+        "overlap_floor": 0.3,
+        "overlap_top_k": 3,
+        "seed": 42,
+    }
     nodes = _nodes(g)
     assert set(nodes) == {
         "drug:example drug",
@@ -337,34 +344,126 @@ def test_supplement_names_reach_drug_nodes() -> None:
     assert _nodes(g)["drug:fingolimod"]["trials"] == ["NCT01"]
 
 
-def test_pruning_respects_cap() -> None:
-    """Single-target leaves go first, then the leaves reached by the fewest trials; a
-    target keeps an edge to its nearest kept ancestor; drug and target nodes stay."""
-    full = _build()
-    pathways = {n["id"] for n in full["nodes"] if n["kind"] == "pathway"}
-    assert len(pathways) == 7
+def _kinds(g: dict[str, Any]) -> dict[str, set[str]]:
+    out: dict[str, set[str]] = defaultdict(set)
+    for n in g["nodes"]:
+        out[n["kind"]].add(n["id"])
+    return out
 
-    g = _build(cfg=CFG.model_copy(update={"max_nodes": 4}))
+
+def test_pathway_pruning_into_remaining_budget() -> None:
+    """Pathways are pruned by the existing rule into what the drugs and targets leave: single-
+    target leaves first, then the leaves reached by the fewest trials; a target keeps an edge
+    to its nearest kept ancestor."""
+    full = _build()
+    assert len(_kinds(full)["pathway"]) == 7
+    assert len(full["nodes"]) == 5 + 5 + 7
+
+    # 10 drugs and targets; 4 left for pathways.
+    g = _build(cfg=CFG.model_copy(update={"max_nodes": 14}))
     nodes = _nodes(g)
-    kept = {k for k, n in nodes.items() if n["kind"] == "pathway"}
-    assert len(kept) <= 4
-    # drugs and targets are never pruned
-    assert {k for k, n in nodes.items() if n["kind"] != "pathway"} == {
-        k for k, n in _nodes(full).items() if n["kind"] != "pathway"
-    }
+    kinds = _kinds(g)
+    assert len(g["nodes"]) <= 14
+    assert len(kinds["pathway"]) == 4
+    assert kinds["drug"] | kinds["target"] == _kinds(full)["drug"] | _kinds(full)["target"]
     # the GO node is the only pathway of FCGRT: single-target leaves of Reactome go first
-    assert "GO:0002416" in kept
-    # every edge joins kept nodes; MS4A1 and CD19 are re-routed to their kept ancestor
+    assert "GO:0002416" in kinds["pathway"]
     for e in g["edges"]:
         assert e["source"] in nodes and e["target"] in nodes
     in_pw = _edges(g, "in_pathway")
     for gene in ("MS4A1", "CD19"):
         assert any(s == f"target:{gene}" for s, _ in in_pw)
-    assert "R-HSA-TOP1" in kept
+    assert "R-HSA-TOP1" in kinds["pathway"]
+    assert g["cut"]["pathways"] == {"before": 7, "after": 4}
 
+
+def test_max_nodes_caps_all_nodes() -> None:
+    """``max_nodes`` caps drugs, targets and pathways together. Drugs credited with a success
+    come first (most trials first), then whole tiers of trial count while they fit."""
+    trials = [*TRIALS, _trial("NCT07", ["inebilizumab"])]  # inebilizumab: 2 trials
+    cfg = CFG.model_copy(update={"max_nodes": 8, "pathway_share": 0.0})
+    g = _build(trials, cfg=cfg)
+    kinds = _kinds(g)
+    assert len(g["nodes"]) <= 8
+    # ocrelizumab and fingolimod are credited; inebilizumab is the 2-trial tier; the 1-trial
+    # tier (efgartigimod and cladribine, 4 nodes) does not fit.
+    assert kinds["drug"] == {"drug:ocrelizumab", "drug:fingolimod", "drug:inebilizumab"}
+    assert kinds["target"] == {"target:MS4A1", "target:S1PR1", "target:CD19"}
+    assert len(kinds["pathway"]) == 2
+    for e in g["edges"]:
+        assert e["source"] in _nodes(g) and e["target"] in _nodes(g)
+    assert g["cut"] == {
+        "drugs": {"before": 5, "after": 3},
+        "targets": {"before": 5, "after": 3},
+        "pathways": {"before": 7, "after": 2},
+        "min_trials": 2,
+        "all_succeeded": True,
+        "dropped": [
+            {"drug": "cladribine", "n": 1, "trials": ["NCT05"]},
+            {"drug": "efgartigimod", "n": 1, "trials": ["NCT04"]},
+        ],
+    }
+
+
+def test_cut_keeps_whole_tiers() -> None:
+    """A tier of drugs with the same trial count goes in whole or not at all, so the caption's
+    "those in N or more trials" is true."""
+    cfg = CFG.model_copy(update={"max_nodes": 7, "pathway_share": 0.0})
+    g = _build(cfg=cfg)
+    # successes: 4 nodes; the 1-trial tier (inebilizumab, efgartigimod, cladribine) needs 6
+    assert _kinds(g)["drug"] == {"drug:ocrelizumab", "drug:fingolimod"}
+    assert g["cut"]["min_trials"] is None
+    assert g["cut"]["all_succeeded"] is True
+    assert [d["drug"] for d in g["cut"]["dropped"]] == [
+        "cladribine",
+        "efgartigimod",
+        "inebilizumab",
+    ]
+
+
+def test_successes_alone_overflow() -> None:
+    """When even the credited drugs do not fit, they go in by trials (then name) while the
+    budget allows."""
+    cfg = CFG.model_copy(update={"max_nodes": 3, "pathway_share": 0.0})
+    g = _build(cfg=cfg)
+    assert _kinds(g)["drug"] == {"drug:ocrelizumab"}  # 2 trials; fingolimod would need 2 more
+    assert len(g["nodes"]) <= 3
+    assert g["cut"]["all_succeeded"] is False
+    assert g["cut"]["min_trials"] is None
+    assert {"drug": "fingolimod", "n": 1, "trials": ["NCT02"]} in g["cut"]["dropped"]
+
+
+def test_pathway_share_reserves_room() -> None:
+    """``pathway_share`` of the cap is kept for pathways: drugs and targets fill the rest."""
+    trials = [*TRIALS, _trial("NCT07", ["inebilizumab"])]
+    cfg = CFG.model_copy(update={"max_nodes": 10, "pathway_share": 0.5})
+    g = _build(trials, cfg=cfg)
+    kinds = _kinds(g)
+    # 5 for drugs and targets: the two credited drugs (4) fit, inebilizumab (2 more) does not
+    assert kinds["drug"] == {"drug:ocrelizumab", "drug:fingolimod"}
+    assert len(kinds["pathway"]) <= 6 and len(g["nodes"]) <= 10
+    assert g["method"]["pathway_share"] == 0.5
+
+
+def test_counts_over_kept_drugs() -> None:
+    """A kept target counts only the trials of kept drugs (the drawn structure)."""
+    trials = [*TRIALS, _trial("NCT08", ["efgartigimod", "ocrelizumab"])]
+    cfg = CFG.model_copy(update={"max_nodes": 4, "pathway_share": 0.0})
+    g = _build(trials, cfg=cfg)
+    nodes = _nodes(g)
+    assert set(_kinds(g)["drug"]) == {"drug:ocrelizumab", "drug:fingolimod"}
+    assert nodes["drug:ocrelizumab"]["n"] == 3
+    assert "drug:efgartigimod" not in nodes and "target:FCGRT" not in nodes
+
+
+def test_no_cut_when_everything_fits() -> None:
+    g = _build()
+    assert g["cut"]["dropped"] == []
+    assert g["cut"]["drugs"] == {"before": 5, "after": 5}
+    assert g["cut"]["min_trials"] == 1
     tiny = _build(cfg=CFG.model_copy(update={"max_nodes": 0}))
-    assert not [n for n in tiny["nodes"] if n["kind"] == "pathway"]
-    assert not _edges(tiny, "in_pathway")
+    assert tiny["nodes"] == [] and tiny["edges"] == []
+    assert tiny["cut"]["drugs"] == {"before": 5, "after": 0}
 
 
 def test_overlap_top_k_and_floor() -> None:
@@ -414,6 +513,7 @@ def test_drug_node_carries_chembl_id() -> None:
 def test_empty_graph_without_targeted_drugs() -> None:
     g = build_graph(_doc(TRIALS, {}), MAPPINGS, PATHWAYS, CFG, SEED)
     assert g["nodes"] == [] and g["edges"] == []
+    assert g["cut"]["drugs"] == {"before": 0, "after": 0} and g["cut"]["min_trials"] is None
 
 
 def test_missing_pathways_degrades(cfg: AreaConfig, tmp_path: Path) -> None:

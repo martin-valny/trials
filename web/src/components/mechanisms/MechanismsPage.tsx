@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadGraph, loadMeta } from "../../data";
 import { isApproachKey, kindTree, railRows, UNSORTED_ROW_PREFIX } from "../../lib/approaches";
-import { convergence, downstream, litByTrials, nodeShare, trialsOf, winningDrugs } from "../../lib/graph";
+import {
+  convergence,
+  cutCaption,
+  droppedDrug,
+  droppedNote,
+  litByTrials,
+  nodeShare,
+  succeededPaths,
+  trialsOf,
+} from "../../lib/graph";
 import {
   allFilters,
   DARK_PALETTE,
@@ -23,7 +32,7 @@ import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
 import { ApproachRail } from "./ApproachRail";
 import { GraphCanvas, GraphSearch } from "./GraphCanvas";
 import { KindTree, STRIP_ORDER, trialsWord } from "./KindTree";
-import { NodePanel, SidePanel } from "./SidePanel";
+import { mapLink, NodePanel, SidePanel } from "./SidePanel";
 import "../explore/explore.css";
 import "./mechanisms.css";
 
@@ -219,6 +228,12 @@ function Plate({
     return [...all].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [file, order]);
   const pristine = useMemo(() => sameFilters(filters, allFilters(file)), [filters, file]);
+  // The diseases chosen, or null when the Disease filter is not narrowed (succeeded paths follow R21).
+  const diseases = useMemo(() => {
+    const all = allFilters(file).conditions;
+    const same = all.size === filters.conditions.size && [...all].every((c) => filters.conditions.has(c));
+    return same ? null : filters.conditions;
+  }, [filters, file]);
 
   const shown = useMemo(() => file.trials.filter((t) => matches(t, filters, bounds)), [file, filters, bounds]);
   const rows = useMemo(() => railRows(shown, file, minGroup), [shown, file, minGroup]);
@@ -321,9 +336,10 @@ function Plate({
               graph={graph}
               shown={shown}
               narrowed={narrowed}
+              diseases={diseases}
               minGroup={minGroup}
               palette={palette}
-              focus={graphNode?.id ?? null}
+              focus={approach === DEFAULT_APPROACH ? nodeKey : null}
               onFocus={focusNode}
             />
           ) : (
@@ -430,6 +446,7 @@ function GraphView({
   graph,
   shown,
   narrowed,
+  diseases,
   minGroup,
   palette,
   focus,
@@ -438,6 +455,8 @@ function GraphView({
   graph: GraphState;
   shown: ExplorerTrial[];
   narrowed: boolean;
+  /** The diseases chosen, or null when the Disease filter is not narrowed. */
+  diseases: ReadonlySet<string> | null;
   minGroup: number;
   palette: Palette;
   focus: string | null;
@@ -446,8 +465,8 @@ function GraphView({
   const ncts = useMemo(() => new Set(shown.map((t) => t.nct_id)), [shown]);
   const lit = useMemo(() => (graph && narrowed ? litByTrials(graph, ncts) : null), [graph, narrowed, ncts]);
   const red = useMemo(
-    () => (graph && narrowed ? downstream(graph, winningDrugs(shown)) : new Set<string>()),
-    [graph, narrowed, shown],
+    () => (graph && narrowed ? succeededPaths(graph, shown, diseases) : new Set<string>()),
+    [graph, narrowed, shown, diseases],
   );
   const topShare = useMemo(
     () => (graph ? Math.max(0, ...graph.nodes.map((n) => nodeShare(n, minGroup) ?? 0)) : 0),
@@ -459,6 +478,9 @@ function GraphView({
     const drugTrials = new Set(graph.nodes.flatMap((n) => (n.kind === "drug" ? (n.trials ?? []) : [])));
     return shown.filter((t) => drugTrials.has(t.nct_id)).length;
   }, [graph, shown]);
+
+  const caption = graph ? cutCaption(graph) : null;
+  const missing = graph && focus !== null ? droppedDrug(graph, focus) : null;
 
   if (graph === undefined) {
     return (
@@ -482,10 +504,18 @@ function GraphView({
         <GraphKey palette={palette} topShare={topShare} />
         <GraphSearch graph={graph} onSelect={onFocus} />
       </div>
+      {missing ? (
+        <p className="panel-note graph-dropped" role="status" aria-label={missing.drug}>
+          {droppedNote(graph, missing)}{" "}
+          <Link to={mapLink(missing.trials, missing.drug)}>
+            Show its {trialsWord(missing.n)} on the map
+          </Link>
+        </p>
+      ) : null}
       <div className="graph-frame">
         <GraphCanvas
           graph={graph}
-          focus={focus}
+          focus={missing ? null : focus}
           onFocus={onFocus}
           lit={lit}
           red={red}
@@ -494,6 +524,7 @@ function GraphView({
           topShare={topShare}
         />
       </div>
+      {caption ? <p className="panel-note graph-cut">{caption}</p> : null}
       <p className="panel-note graph-note">
         {narrowed
           ? `Full ink: the nodes reached by the ${trialsWord(reached)} shown; succeeded paths in red, credited to the drug that moved on.`

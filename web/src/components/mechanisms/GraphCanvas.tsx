@@ -1,6 +1,6 @@
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { clampView, IDENTITY_VIEW, panBy, zoomAt, type Palette, type View } from "../../lib/explorer";
-import { chain, neighbours, nodeShare, shareColor } from "../../lib/graph";
+import { chain, drugNodeId, findMatches, neighbours, nodeShare, shareColor, type Match } from "../../lib/graph";
 import type { GraphFile, GraphNode } from "../../types";
 
 /** Canvas px kept clear around the layout, so edge nodes and their labels stay inside. */
@@ -424,27 +424,19 @@ export function GraphSearch({ graph, onSelect }: { graph: GraphFile; onSelect(id
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listId = useId();
-  const matches = useMemo(() => {
-    const needle = q.trim().toLocaleLowerCase();
-    if (!needle) return [];
-    return graph.nodes
-      .filter((n) => n.label.toLocaleLowerCase().includes(needle) || n.id.toLocaleLowerCase() === needle)
-      .sort(
-        (a, b) =>
-          Number(b.label.toLocaleLowerCase().startsWith(needle)) - Number(a.label.toLocaleLowerCase().startsWith(needle)) ||
-          b.n - a.n ||
-          a.label.localeCompare(b.label),
-      )
-      .slice(0, 8);
-  }, [graph, q]);
+  const matches = useMemo(() => findMatches(graph, q), [graph, q]);
   const open = matches.length > 0;
-  const choose = (n: GraphNode) => {
+  // A dropped drug selects its drug id too: the page then says why it is not drawn.
+  const choose = (m: Match) => {
     setQ("");
     setActive(0);
-    onSelect(n.id);
+    onSelect(m.node ? m.node.id : drugNodeId(m.dropped!.drug));
   };
-  const kindWord = (n: GraphNode) =>
-    n.kind === "drug" ? "drug" : n.kind === "target" ? "target" : n.source === "curated" ? "curated" : "pathway";
+  const kindWord = (m: Match) => {
+    const n = m.node;
+    if (!n) return "not drawn";
+    return n.kind === "drug" ? "drug" : n.kind === "target" ? "target" : n.source === "curated" ? "curated" : "pathway";
+  };
 
   return (
     <div className="tb-find graph-search">
@@ -484,17 +476,17 @@ export function GraphSearch({ graph, onSelect }: { graph: GraphFile; onSelect(id
       />
       {open ? (
         <ul className="graph-matches" role="listbox" id={listId} aria-label="Matching nodes">
-          {matches.map((n, i) => (
+          {matches.map((m, i) => (
             <li
-              key={n.id}
+              key={m.node ? m.node.id : `dropped:${m.dropped!.drug}`}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === active}
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => choose(n)}
+              onClick={() => choose(m)}
             >
-              <span className="match-label">{n.label}</span>
-              <span className="match-kind">{kindWord(n)}</span>
+              <span className="match-label">{m.node ? m.node.label : m.dropped!.drug}</span>
+              <span className="match-kind">{kindWord(m)}</span>
             </li>
           ))}
         </ul>

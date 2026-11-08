@@ -1,7 +1,7 @@
 // The Targeted drugs graph (mechanisms.json): what lights up, what a node counts, where successes
 // converge. Pure functions over the GraphFile, so the canvas and the side panel only read their results
 // (spec 2026-11-06 §7.2).
-import type { ExplorerTrial, GraphFile, GraphNode } from "../types";
+import type { DroppedDrug, ExplorerTrial, GraphFile, GraphNode } from "../types";
 import type { Palette } from "./explorer";
 
 /** Edge kinds focus and filters travel along. Shared-gene links are context: drawn, never followed. */
@@ -92,11 +92,96 @@ export function litByTrials(g: GraphFile, ncts: Set<string>): Set<string> {
   );
 }
 
-/** Drug nodes credited with a success (1b): the drugs in a succeeded trial's ``succeeded_by``. */
-export function winningDrugs(trials: ExplorerTrial[]): Set<string> {
+/**
+ * Drug nodes credited with a success (1b): the drugs in a succeeded trial's ``succeeded_by``. Under a
+ * Disease filter (``diseases``, null when not narrowed by disease) a trial counts only when it succeeded
+ * in one of them (R21 ``succeeded_in``): a drug that moved on in MS lights no red path for MG. A file
+ * from before ``succeeded_in`` (empty on a succeeded trial) keeps the trial's own success.
+ */
+export function winningDrugs(trials: ExplorerTrial[], diseases: ReadonlySet<string> | null = null): Set<string> {
   const out = new Set<string>();
-  for (const t of trials) if (t.outcome === "succeeded") for (const d of t.succeeded_by) out.add(drugNodeId(d));
+  for (const t of trials) {
+    if (t.outcome !== "succeeded") continue;
+    const where = t.succeeded_in ?? [];
+    if (diseases && where.length > 0 && !where.some((c) => diseases.has(c))) continue;
+    for (const d of t.succeeded_by) out.add(drugNodeId(d));
+  }
   return out;
+}
+
+/** The nodes on a succeeded path among the trials (drawn in the success red): winning drugs and downstream. */
+export function succeededPaths(
+  g: GraphFile,
+  trials: ExplorerTrial[],
+  diseases: ReadonlySet<string> | null = null,
+): Set<string> {
+  return downstream(g, winningDrugs(trials, diseases));
+}
+
+const plural = (n: number, word: string): string => `${n.toLocaleString("en-US")} ${word}${n === 1 ? "" : "s"}`;
+
+/** The cap's rule in words ("every drug credited with a success and those in 4 or more trials"). */
+function cutRule(g: GraphFile): string | null {
+  const c = g.cut;
+  if (!c) return null;
+  if (!c.all_succeeded) return "only drugs credited with a success, those in the most trials first";
+  return c.min_trials === null
+    ? "every drug credited with a success"
+    : `every drug credited with a success and those in ${c.min_trials} or more trials`;
+}
+
+/** The canvas caption when the cap left drugs out; null when nothing was left out or the file predates the cap. */
+export function cutCaption(g: GraphFile): string | null {
+  const c = g.cut;
+  const rule = cutRule(g);
+  if (!c || !rule || c.drugs.after >= c.drugs.before) return null;
+  return `Showing ${c.drugs.after.toLocaleString("en-US")} of ${plural(c.drugs.before, "drug")}: ${rule}.`;
+}
+
+/** The dropped drug a node id ("drug:<name>") names, or null when it is drawn or unknown. */
+export function droppedDrug(g: GraphFile, id: string): DroppedDrug | null {
+  if (!id.startsWith("drug:")) return null;
+  const name = id.slice("drug:".length);
+  return g.cut?.dropped.find((d) => d.drug === name) ?? null;
+}
+
+/** Why a dropped drug is not drawn. */
+export function droppedNote(g: GraphFile, d: DroppedDrug): string {
+  const rule = cutRule(g) ?? "the drugs in the most trials";
+  return `${d.drug} is not drawn: it is in ${plural(d.n, "trial")}, and the graph shows ${rule}.`;
+}
+
+export interface Match {
+  node?: GraphNode;
+  dropped?: DroppedDrug;
+}
+
+/**
+ * Find: drawn nodes by label (or exact id) and the drugs the cap left out, by name. Prefix matches
+ * first, then drawn before dropped, then most trials, then label.
+ */
+export function findMatches(g: GraphFile, q: string, limit = 8): Match[] {
+  const needle = q.trim().toLocaleLowerCase();
+  if (!needle) return [];
+  const rows: { m: Match; label: string; n: number; drawn: boolean }[] = [];
+  for (const n of g.nodes) {
+    if (n.label.toLocaleLowerCase().includes(needle) || n.id.toLocaleLowerCase() === needle)
+      rows.push({ m: { node: n }, label: n.label, n: n.n, drawn: true });
+  }
+  for (const d of g.cut?.dropped ?? []) {
+    if (d.drug.toLocaleLowerCase().includes(needle)) rows.push({ m: { dropped: d }, label: d.drug, n: d.n, drawn: false });
+  }
+  const starts = (label: string) => Number(label.toLocaleLowerCase().startsWith(needle));
+  return rows
+    .sort(
+      (a, b) =>
+        starts(b.label) - starts(a.label) ||
+        Number(b.drawn) - Number(a.drawn) ||
+        b.n - a.n ||
+        a.label.localeCompare(b.label),
+    )
+    .slice(0, limit)
+    .map((r) => r.m);
 }
 
 /** The trials of every drug that reaches the node (the node itself, for a drug), sorted. */

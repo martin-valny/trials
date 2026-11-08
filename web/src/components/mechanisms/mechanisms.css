@@ -70,7 +70,7 @@
 .graph-canvas:focus { outline: none; }
 .graph-canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .graph-fallback { margin: 0; padding: 24px 0; font-size: 13px; }
-.graph-note { max-width: 84ch; }
+.graph-note, .graph-cut, .graph-dropped { max-width: 84ch; }
 
 /* Where successes converge: a short ranked list under the figure, set as a table of contents. */
 .converge { max-width: 40rem; }

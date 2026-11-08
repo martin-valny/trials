@@ -11,6 +11,12 @@ amended by 2026-11-08 §6.4).
 - Counts per node: ``n``, ``running`` and ``stopped`` over every trial that reaches it,
   ``finished`` over pool trials, and ``succeeded`` by 1b: a pool trial whose ``succeeded_by``
   holds a drug that reaches the node.
+- ``max_nodes`` caps every node (spec §7.1, ~150–300 in total). Drugs go in by rank: those
+  credited with a success (in any trial's ``succeeded_by``) first, by trials then name, then
+  whole tiers of trial count, most trials first, while drugs plus the targets they add fit in
+  the cap less the pathway reserve (``pathway_share``). A target is kept when a kept drug acts
+  on it; pathways are pruned into what is left. ``cut`` records what was left out, so the page
+  can say so and still find a dropped drug's trials.
 - Positions come from a seeded Fruchterman–Reingold layout of the structure alone (never the
   outcomes), normalised to [-1, 1].
 """
@@ -100,6 +106,46 @@ def _prune(
         for p in parents.get(drop, ()):
             n_children[p] -= 1
     return kept
+
+
+def _select_drugs(
+    acts: Mapping[str, list[str]],
+    n_trials: Mapping[str, int],
+    credited: set[str],
+    budget: int,
+) -> tuple[list[str], bool, int | None]:
+    """The drugs kept within ``budget`` drug + target nodes, whether every credited drug is
+    among them, and the fewest trials of a kept drug not credited with a success.
+
+    Credited drugs first (most trials, then name), each while it fits; then, only when every
+    credited drug fits, whole tiers of the others by trial count, most first, stopping at the
+    first tier that does not fit."""
+    kept: list[str] = []
+    have: set[str] = set()
+    used = 0
+    for d in sorted((d for d in acts if d in credited), key=lambda d: (-n_trials[d], d)):
+        cost = 1 + len(set(acts[d]) - have)
+        if used + cost > budget:
+            return kept, False, None
+        kept.append(d)
+        have |= set(acts[d])
+        used += cost
+    tiers: dict[int, list[str]] = defaultdict(list)
+    for d in acts:
+        if d not in credited:
+            tiers[n_trials[d]].append(d)
+    floor: int | None = None
+    for n in sorted(tiers, reverse=True):
+        tier = sorted(tiers[n])
+        new = set().union(*(acts[d] for d in tier)) - have
+        cost = len(tier) + len(new)
+        if used + cost > budget:
+            break
+        kept += tier
+        have |= new
+        used += cost
+        floor = n
+    return kept, True, floor
 
 
 def _layout(
@@ -204,17 +250,38 @@ def build_graph(
         if unique:
             actions[d] = "; ".join(unique)
 
-    # pathways reached by the gene targets, plus their ancestors
     refs = pathways.pathways
     parents = {pid: tuple(p for p in ref.parents if p in refs) for pid, ref in refs.items()}
+
+    def reach(gene_set: Iterable[str]) -> tuple[set[str], dict[str, set[str]]]:
+        """Pathways reached by the genes (lowest-level ones plus ancestors), and the genes
+        reaching each."""
+        universe: set[str] = set()
+        by: dict[str, set[str]] = defaultdict(set)
+        for g in sorted(gene_set):
+            for pid in (p for p in pathways.targets.get(g, ()) if p in refs):
+                for p in {pid} | _ancestors(pid, parents):
+                    universe.add(p)
+                    by[p].add(g)
+        return universe, by
+
+    # the cap: drugs by rank, the targets they act on, pathways in what is left
+    all_targets = {tid for tids in acts.values() for tid in tids}
+    all_universe, _ = reach(genes)
+    credited = {d for row in rows.values() for d in row.get("succeeded_by") or ()}
+    n_of = {d: len(drug_trials[d]) for d in acts}
+    reserve = min(int(cfg.max_nodes * cfg.pathway_share), len(all_universe))
+    chosen, all_credited, floor = _select_drugs(
+        acts, n_of, credited & set(acts), cfg.max_nodes - reserve
+    )
+    dropped = sorted(set(acts) - set(chosen), key=lambda d: (-n_of[d], d))
+    acts = {d: acts[d] for d in sorted(chosen)}
+    genes = {
+        tid.split(":", 1)[1] for tids in acts.values() for tid in tids if tid.startswith("target:")
+    }
+    n_targets = len({tid for tids in acts.values() for tid in tids})
     lowest = {g: {p for p in pathways.targets.get(g, ()) if p in refs} for g in sorted(genes)}
-    universe: set[str] = set()
-    reach_targets: dict[str, set[str]] = defaultdict(set)
-    for g, ids in lowest.items():
-        for pid in ids:
-            for p in {pid} | _ancestors(pid, parents):
-                universe.add(p)
-                reach_targets[p].add(g)
+    universe, reach_targets = reach(genes)
 
     target_trials: dict[str, set[str]] = defaultdict(set)
     target_drugs: dict[str, set[str]] = defaultdict(set)
@@ -228,7 +295,8 @@ def build_graph(
         for p in universe
     }
     single_ok = {p: refs[p].source == "reactome" and p not in top for p in universe}
-    kept = _prune(universe, parents, top, reach_targets, pre_n, single_ok, cfg.max_nodes)
+    room = max(0, cfg.max_nodes - len(acts) - n_targets)
+    kept = _prune(universe, parents, top, reach_targets, pre_n, single_ok, room)
 
     edges: list[dict[str, Any]] = []
     for d, tids in acts.items():
@@ -310,9 +378,20 @@ def build_graph(
         "reactome_release": pathways.release,
         "method": {
             "max_nodes": cfg.max_nodes,
+            "pathway_share": cfg.pathway_share,
             "overlap_floor": cfg.overlap_floor,
             "overlap_top_k": cfg.overlap_top_k,
             "seed": seed,
+        },
+        "cut": {
+            "drugs": {"before": len(n_of), "after": len(acts)},
+            "targets": {"before": len(all_targets), "after": n_targets},
+            "pathways": {"before": len(all_universe), "after": len(kept)},
+            "min_trials": floor,
+            "all_succeeded": all_credited,
+            "dropped": [
+                {"drug": d, "n": n_of[d], "trials": sorted(drug_trials[d])} for d in dropped
+            ],
         },
         "nodes": [nodes[i] for i in order],
         "edges": sorted(edges, key=lambda e: (e["kind"], e["source"], e["target"])),
