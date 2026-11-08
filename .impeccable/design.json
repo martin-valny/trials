@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-08T20:00:00Z",
+  "generatedAt": "2026-11-08T23:00:00Z",
   "title": "Design System: Trial Radar",
   "extensions": {
     "colorMeta": {
@@ -168,6 +168,26 @@
         "role": "secondary",
         "displayName": "Dark none known",
         "canonical": "#50575f"
+      },
+      "outcome-unknown": {
+        "role": "neutral",
+        "displayName": "Status unknown (--unk)",
+        "canonical": "#aab3bb"
+      },
+      "dark-outcome-unknown": {
+        "role": "neutral",
+        "displayName": "Status unknown, dark (--unk)",
+        "canonical": "#6a7178"
+      },
+      "family-band": {
+        "role": "neutral",
+        "displayName": "Family band ink (--fam)",
+        "canonical": "#62758a"
+      },
+      "dark-family-band": {
+        "role": "neutral",
+        "displayName": "Family band ink, dark (--fam)",
+        "canonical": "#7a8ea5"
       }
     },
     "typographyMeta": {
@@ -382,6 +402,46 @@
       "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. Above it the Find pill on a right-aligned line of its own, then the key on one line over the frame. At rest reduced ink with top-level pathways labelled (on a phone, ink numerals 1 to n clear of other marks, named in a numbered key under the canvas); hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it. The graph is capped at 300 nodes: a muted caption under it gives the cut, and Find lists the left-out drugs as 'not drawn' with a note saying why and a link to their trials on the map.",
       "html": "",
       "css": ""
+    },
+    {
+      "name": "Pipeline figure",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Front page (/). Lede: kicker, a computed headline (500, clamp 24-34px, max 22ch) with its first sentence in --run, three key numbers (30px/500: running --run, advanced red, companies with a running trial), a 12px source line. Controls: By phase | By disease segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select. Legend of five marks. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note. Family bands in 11px/700 uppercase --fam; the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Pipeline mark",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "One dot per trial, 8px (6px on a phone strip): advanced solid red (orange in dark), running hollow 1.6px --run ring, stopped solid --stop, finished solid --fin, unknown dashed 1.2px --unk ring; a two-phase trial has a 5px muted tail to its left. Lens hit: 1.5px ink outline, others 13% opacity.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial card",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Popover (330px, 1px ink border, 10px corners) beside a mark, or a bottom sheet on a phone: NCT, title, facts (Drug, Sponsor, Phase, Dates, State), the registry's stop reason as a quotation with a 2px ink rule, actions Open trial page, Show on map, ClinicalTrials.gov. Focus on open, Escape closes, the disease rides along on links.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Target page",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "/target/:slug. Breadcrumb, 48px/600 class name with gene and family, a computed 19px lede and three key numbers, disease chips, then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (reason chips and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph).",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Site nav with Explore drawer",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Pipeline, Approaches, Explore (disclosure menu: Trial map, Mechanism graph; arrow keys, Escape returns focus), Changes, Trials, Methods. On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
+      "html": "",
+      "css": ""
     }
   ],
   "narrative": {
@@ -416,6 +476,10 @@
         "name": "The Emphasis Pass",
         "body": "Marks that carry the reading are redrawn on top, opaque, radius at least 3px, with a 1px plate knockout: succeeded (Outcome), every condition but the largest (Disease), and hued series classes (Mechanism, Modality). Phase has none.",
         "section": "shapes"
+      },
+      {
+        "name": "The Advanced Rule",
+        "body": "On the front door 'advanced' always means the drug has a later-phase trial on the registry, never that it worked; running trials are never drawn as failures; every sentence is computed from the data."
       }
     ],
     "dos": [
@@ -429,7 +493,8 @@
       "Don't use red (or dark-mode orange) for anything but succeeded data.",
       "Don't add shadows, glows, gradients or card chrome to panels.",
       "Don't reorder the layout into filters-left / canvas-centre / details-right.",
-      "Don't claim the rest of the site follows this system."
+      "Don't claim the rest of the site follows this system.",
+      "Don't read 'advanced' as 'worked', fade running trials, or hand-write a headline or margin note on the front door."
     ]
   }
 }

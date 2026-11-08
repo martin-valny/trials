@@ -2,7 +2,7 @@
 
 **What's changing in clinical trials for a therapeutic area?** Trial Radar downloads the ClinicalTrials.gov registry once a day, compares it with the previous day, and publishes a field-level change feed (status changes, slipped primary-completion dates, enrollment swings, endpoint edits) as a static site. It runs on GitHub Actions and Pages for $0.
 
-> **Status: slice 1 of 6, plus the Explore map and the Mechanisms page.** The home page is the Explore map (Figure 1); the Mechanisms page (Figure 2) sorts every trial by how its treatment works, with a drug → target → pathway graph for targeted drugs; the change feed and trial pages sit beside them. Drug mechanisms are real data from ChEMBL, pathways from Reactome. Open Targets genetic evidence and preprints are **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
+> **Status: slice 1 of 6, plus the front door, the Explore map and the Approaches page.** The home page is a pipeline figure of MS and autoimmune-neurology drug targets (rows) by phase or disease (columns), with a company lens; each row opens a target page. Approaches (Figure 2) sorts every trial by how its treatment works, with a drug → target → pathway graph; the Explore map (Figure 1), the change feed and trial pages sit beside them. Drug mechanisms are real data from ChEMBL, pathways from Reactome. Open Targets genetic evidence and preprints are **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
 
 Live site: <https://martin-valny.github.io/trials/> · Architecture: [docs/architecture.md](docs/architecture.md)
 
@@ -20,9 +20,33 @@ A clinical-operations or competitive-intelligence lead wants to know *what chang
 
 **What Trial Radar does not do:** it is not curated or analyst-reviewed, covers only ClinicalTrials.gov (not EU CTIS or other registries), has no history before the day it started running, and does not predict anything yet.
 
+## The front door: pipeline figure and target pages
+
+Routes: `/` the pipeline figure, `/target/:slug` a target page, `/approaches` (and `/approaches/:approach`; the old `/mechanisms/...` redirects), `/explore` the trial map, `/changes`, `/trials`, `/trial/:nct`, `/methods`. The header's Explore menu holds the Trial map and the Mechanism graph.
+
+**The pipeline figure** (`/`) answers *what is being tried against which targets, by whom, and how far has it got?* One row per target class (CD20, FcRn, BTK, S1P receptor, CD19 CAR-T and so on, 28 in all, grouped into families), one dot per trial: advanced to a later phase, still running, stopped, finished with no follow-on, or status unknown. Columns are the phases or, under **By disease**, the diseases. A headline states a finding computed from the data (on the 2026-11-06 snapshot: "185 targeted-drug trials are running…"), with key numbers, a source line that says what is and is not in the figure, a **company lens** (pick Roche and the figure shows its trials and rows), up to four computed margin notes, and a "Mostly historical" tail. "Advanced" means only that the drug has a later-phase trial on the registry (the 1b rule: credited to the drug that moved on); it does not mean the drug worked. Real numbers on that snapshot: 693 of 2,987 trials sit in a row, 369 more targeted-drug trials sit in smaller classes.
+
+**A target page** shows one row's trials over time by drug, who is working on it (by parent company), what stopped and why (the registry's own words, grouped by reason), and the drug → gene → pathway chain with a link into the mechanism graph. Hand-offs carry the disease filter between the figure, target pages, Approaches, the graph and the map.
+
+Only registered ClinicalTrials.gov trials are in it: no preclinical programmes, company pipeline disclosures or EU-only trials.
+
+**Config that decides the figure** (hand-kept, read by the daily run, never written by it):
+
+| Path | What it does |
+|---|---|
+| [`config/pipeline/rows.csv`](config/pipeline/README.md) | The rows: slug, label, family and order, the ChEMBL mechanism classes and canonical drug names that put a trial in the row, the gene (for the graph hand-off), a blurb and related rows |
+| `config/pipeline/unrowed.csv` | Mechanism classes that are deliberately not a row; a test requires every class with 3 or more trials since 2012 to be in a row or here |
+| `config/pipeline/background.csv` | Drugs (corticosteroids, interferon-β spellings, conditioning chemotherapy) that never put a trial in a row when it has another experimental drug |
+| [`config/sponsors/parents.csv`](config/sponsors/README.md) | Raw lead-sponsor string to the company a reader knows (`parent`) and its `kind`, for the company lens |
+| `config/stop_reasons.csv` | Ordered `pattern,group` regexes that sort registry `why_stopped` text into reason groups (first match wins; "Other" was 3.2% of stopped trials with a reason) |
+| `config/area.yaml` `figure_order` | Each condition's column order in the figure |
+| `config/aliases/intervention.csv` | Also folds drug-name variants (ocr, ofatunumab and others) into one name pipeline-wide |
+
+A bad row stops the stage with `<file>:<line>: <problem>`; the run continues without `pipeline.json` and the front page shows a calm "not available" fallback (R19). To check coverage after a rebuild, run `uv run python scripts/pipeline_report.py <site_dir>` from `pipeline/`: it prints the row table, the "Other" stop-reason share, unlisted classes and sponsors (from the run warnings), comparator cases (a trial in two rows) and the size of `pipeline.json`, and exits 1 if it is missing or over 200 KB (it is about 178 KB on the real snapshot).
+
 ## The Explore map (Figure 1)
 
-The home page draws every tracked trial as a dot on a single map, so you can see how the trials of an area group together. Dot size follows enrollment; colour can show outcome, phase, disease, drug mechanism, modality or approach (see the Mechanisms page below), and the same six can filter the map. Named clusters (HDBSCAN on the map) are labelled beside their dots. Select a dot for the trial's key facts, the start of its registry summary and links to its trial page and the registry record. A "Results posted" toggle keeps only trials with results on the registry. Two small panels beside the map show what the layout implies, in plain words; panel b can group success by disease, modality, mechanism or approach.
+The Trial map (`/explore`) draws every tracked trial as a dot on a single map, so you can see how the trials of an area group together. Dot size follows enrollment; colour can show outcome, phase, disease, drug mechanism, modality or approach (see the Approaches page below), and the same six can filter the map. Named clusters (HDBSCAN on the map) are labelled beside their dots. Select a dot for the trial's key facts, the start of its registry summary and links to its trial page and the registry record. A "Results posted" toggle keeps only trials with results on the registry. Two small panels beside the map show what the layout implies, in plain words; panel b can group success by disease, modality, mechanism or approach.
 
 **How the layout is made.** Position depends on content only: disease, treatment type, molecule (the cleaned name of the drug in the experimental arms), drug mechanism and study population. Outcomes are never used for position; they only colour the dots. Nearby dots are therefore trials that look alike on paper, and any grouping by outcome is something the map can be tested on rather than something built into it.
 
@@ -32,9 +56,9 @@ The home page draws every tracked trial as a dot on a single map, so you can see
 
 **Drug mechanisms.** Each experimental drug is matched by exact name (no fuzzy matching, nothing guessed) to its mechanism of action, targets and modality in [ChEMBL](https://www.ebi.ac.uk/chembl/) (ChEMBL_37, licensed [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)). The mapping is committed under [`config/mechanisms/`](config/mechanisms/README.md), keyed by drug, with a hand-written overrides file that always wins; it is made by hand with `pipeline/scripts/map_mechanisms.py`, and the daily run never calls ChEMBL. Coverage at the last mapping (8 November 2026, after the reviewed mapping-gaps proposals were applied): every drug resolved for 1,112 of 1,314 drug-bearing trials (84.6%), up from 838 (63.8%) at the first mapping; 201 mechanism classes. Unmapped drugs stay unmapped. A trial with several mechanisms counts in each group it touches.
 
-## The Mechanisms page (Figure 2)
+## The Approaches page (Figure 2)
 
-`/mechanisms` answers *which kinds of treatment are being tried, and how do they fare?* Every trial sits in one or more of seven **approaches**, sorted from its experimental arms: Targeted drugs (any drug with a molecular mechanism), Cell & transplant, Antibody & plasma, Tolerisation, Broad immunomodulators, Non-drug care, and Unclassified. Nothing is guessed: names are matched exactly against the drug mapping and a hand-written list of kinds (`config/approaches/`, each with a "proposed" rationale and a MeSH, NCIt, ChEMBL or PubMed source), and non-drug names against reviewed whole-word phrases. Anything left over stays visible under Unclassified › Not yet sorted, by trial count.
+`/approaches` (formerly `/mechanisms`) answers *which kinds of treatment are being tried, and how do they fare?* Every trial sits in one or more of seven **approaches**, sorted from its experimental arms: Targeted drugs (any drug with a molecular mechanism), Cell & transplant, Antibody & plasma, Tolerisation, Broad immunomodulators, Non-drug care, and Unclassified. Nothing is guessed: names are matched exactly against the drug mapping and a hand-written list of kinds (`config/approaches/`, each with a "proposed" rationale and a MeSH, NCIt, ChEMBL or PubMed source), and non-drug names against reviewed whole-word phrases. Anything left over stays visible under Unclassified › Not yet sorted, by trial count.
 
 - **The rail** (panel a) lists all seven approaches with their trial counts and success share. On the 2026-11-06 snapshot (2,987 trials): Targeted drugs 1,062 (17% succeeded), Cell & transplant 72 (3%), Antibody & plasma 58 (13%), Tolerisation 15 (8%), Broad immunomodulators 52 (6%), Non-drug care 1,222 (success not defined), Unclassified 570 (2%). 55 trials sit in more than one approach.
 - **Targeted drugs** opens into a graph of drugs, their gene targets and the [Reactome](https://reactome.org/) pathways those targets sit in (release 98, CC BY 4.0), with Gene Ontology (CC BY 4.0) and a short curated list where Reactome has nothing. The graph is capped at 300 nodes so it stays readable: every drug credited with a success and the drugs in 4 or more trials (66 of 515), the 137 targets they act on and 97 pathways, with 606 edges; it reaches 546 of the 974 trials whose drugs have a mapped mechanism. The cap changes only what is drawn: each target and pathway still counts the trials of every mapped drug that reaches it, drawn or not, so its success share is not pushed up by leaving out drugs that never succeeded. The canvas caption says so, and Find still finds every left-out drug, says why it is not drawn and shows its trials on the map. Hover lights a node's neighbours; a click follows the chain from drug to pathway and opens its panel. Filters light up the paths their trials take instead of hiding the rest. "Where successes converge" lists the pathways below the top level with the highest pool success share.
@@ -46,7 +70,7 @@ The graph is built by the pipeline with a seeded layout (`mechanisms.json`); pat
 
 ## How it works
 
-Daily: fetch → relevance filter → normalize → quality gate → diff → store → explorer layout → export → deploy. Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
+Daily: fetch → relevance filter → normalize → quality gate → diff → store → explorer layout → pipeline figure → mechanism graph → export → deploy. Besides the change feed, the export writes `explorer.json`, `mechanisms.json` and `pipeline.json` (the front page's only data file besides `meta.json`). Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
 
 A change is **notable** when status changes, a primary endpoint changes, enrollment moves by 20% or more, or a primary-completion/completion date slips by 90 days or more (thresholds in `config/area.yaml`).
 
@@ -92,7 +116,7 @@ All data is public ClinicalTrials.gov registry data. It is **self-reported by sp
 - Relevance matches conditions, keywords and MeSH terms as whole phrases against configured synonyms. Titles are not used. Studies that list only a bare abbreviation (for example a two-letter acronym) as their condition are missed.
 - If a trial drops out of the registry response and returns, only an "added" row is recorded; field changes during its absence are not reported.
 - A partial registry response under the 25% drop threshold can still produce a burst of removed/added rows.
-- Mechanism coverage is partial (84.6% of drug-bearing trials fully mapped); trials with unmapped drugs show as "no known mechanism", and their names are listed under Unclassified › Not yet sorted on the Mechanisms page (or, when the trial also has a mapped drug and so sits in another approach, in the last Unclassified group, "Not yet sorted, in trials of other approaches").
+- Mechanism coverage is partial (84.6% of drug-bearing trials fully mapped); trials with unmapped drugs show as "no known mechanism", and their names are listed under Unclassified › Not yet sorted on the Approaches page (or, when the trial also has a mapped drug and so sits in another approach, in the last Unclassified group, "Not yet sorted, in trials of other approaches").
 - Slice 1 has no AI and no prediction model: every value comes straight from the registry record or the committed ChEMBL mapping. The Explore layout is a deterministic dimensionality reduction of registry fields, and its success label is the proxy described above.
 
 ## Evaluation
@@ -119,7 +143,7 @@ The scheduled run is designed to be unattended.
 
 ## Repository layout
 
-`pipeline/` Python package, tests, scripts · `web/` Vite + React app · `config/` area, thresholds, aliases, drug mechanisms · `.github/workflows/` CI and schedules · `docs/` architecture, specs, plans.
+`pipeline/` Python package, tests, scripts · `web/` Vite + React app · `config/` area, thresholds, aliases, drug mechanisms, approaches, pipeline rows, sponsor parents, stop reasons · `.github/workflows/` CI and schedules · `docs/` architecture, specs, plans.
 
 Branch protection: importable rulesets are in [`.github/rulesets/`](.github/rulesets/README.md).
 
