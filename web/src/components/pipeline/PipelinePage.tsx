@@ -21,7 +21,7 @@ import "./pipeline.css";
 const PHONE = "(max-width: 640px)";
 
 /** True at phone width; false where matchMedia is missing (tests, old engines). */
-function usePhone(): boolean {
+export function usePhone(): boolean {
   return useSyncExternalStore(
     (cb) => {
       if (typeof matchMedia !== "function") return () => undefined;
@@ -34,9 +34,9 @@ function usePhone(): boolean {
   );
 }
 
-type Load = { s: "loading" } | { s: "missing" } | { s: "ready"; file: PipelineFile };
+export type Load = { s: "loading" } | { s: "missing" } | { s: "ready"; file: PipelineFile };
 
-function usePipeline(): Load {
+export function usePipeline(): Load {
   const [load, setLoad] = useState<Load>({ s: "loading" });
   useEffect(() => {
     let live = true;

@@ -1,10 +1,11 @@
-import { HashRouter, Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ChangesFeed } from "./components/ChangesFeed";
 import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { MechanismsPage } from "./components/mechanisms/MechanismsPage";
 import { Methods } from "./components/Methods";
 import { PipelinePage } from "./components/pipeline/PipelinePage";
+import { TargetPage } from "./components/target/TargetPage";
 import { Brand, SiteNav } from "./components/SiteNav";
 import { ThemeSwitch } from "./components/ThemeSwitch";
 import { TrialDetail } from "./components/TrialDetail";
@@ -15,16 +16,6 @@ function MechanismsRedirect() {
   const rest = useParams()["*"] ?? "";
   const { search } = useLocation();
   return <Navigate to={`/approaches${rest ? `/${rest}` : ""}${search}`} replace />;
-}
-
-/** Placeholder until the target page lands; keeps /target/:slug a real route. */
-function TargetStub() {
-  const { slug } = useParams();
-  return (
-    <p className="placeholder">
-      Target page for {slug}. <Link to="/">Back to the pipeline</Link>
-    </p>
-  );
 }
 
 /** The header and routes, inside whatever router the caller provides. */
@@ -40,7 +31,7 @@ export function AppRoutes() {
       <main>
         <Routes>
           <Route path="/" element={<PipelinePage />} />
-          <Route path="/target/:slug" element={<TargetStub />} />
+          <Route path="/target/:slug" element={<TargetPage />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/mechanisms/*" element={<MechanismsRedirect />} />
           <Route path="/mechanisms" element={<MechanismsRedirect />} />
