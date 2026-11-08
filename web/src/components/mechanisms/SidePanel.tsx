@@ -3,17 +3,13 @@ import { Link } from "react-router-dom";
 import type { TreeKind } from "../../lib/approaches";
 import { outcomeLabel } from "../../lib/format";
 import { chemblLink, isClassNode, nodeShare, sourceLink } from "../../lib/graph";
-import { rowForGene } from "../../lib/pipeline";
+import { rowForGene, trialsLink } from "../../lib/pipeline";
 import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome, PipelineFile, PipelineRow } from "../../types";
 import { outcomeWords, Rationale, trialsWord } from "./KindTree";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
 /** Trials listed before "Show all": a pathway near the top can reach hundreds. */
 const TRIAL_ROWS = 40;
-
-/** The map, narrowed to these trials (Explore's ``?nct=`` list), with where they came from. */
-export const mapLink = (ncts: string[], from: string, disease: string | null = null): string =>
-  `/explore?${new URLSearchParams({ nct: ncts.join(","), from, ...(disease ? { disease } : {}) }).toString()}`;
 
 /**
  * Panel c's frame: "c title" with Close, beside the canvas on wide screens and a bottom sheet on narrow
@@ -100,7 +96,7 @@ function kindOutcome(t: ExplorerTrial, kind: TreeKind, successDefined: boolean):
 
 /**
  * Panel c: one kind's trials. Its rationale (marked proposed, with its source), its counts, "Show these
- * trials on the map", and every trial with a link to its page. Escape or Close hands focus back to the
+ * trials", and every trial with a link to its page. Escape or Close hands focus back to the
  * row that opened it.
  */
 export function SidePanel({
@@ -138,7 +134,7 @@ export function SidePanel({
       </p>
       {rationale ? <Rationale text={rationale.text} url={rationale.url} /> : null}
       <p className="side-map">
-        <Link to={mapLink(kind.trials, kind.label)}>Show these trials on the map</Link>
+        <Link to={trialsLink(kind.trials, kind.label, null)}>List these trials →</Link>
       </p>
       <ul className="side-trials">
         {trials.map((t) => (
@@ -335,7 +331,7 @@ export function NodePanel({
       {trials.length ? (
         <>
           <p className="side-map">
-            <Link to={mapLink(trials.map((t) => t.nct_id), node.label, disease)}>Show these trials on the map</Link>
+            <Link to={trialsLink(trials.map((t) => t.nct_id), node.label, disease)}>List these trials →</Link>
           </p>
           <TrialList key={node.id} trials={trials} />
         </>

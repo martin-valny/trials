@@ -15,6 +15,7 @@ import {
   stopSummary,
   targetCompanies,
   cellMarks,
+  trialsLink,
   yearBins,
   binOf,
   yearNotes,
@@ -515,5 +516,14 @@ describe("year binning and By year notes", () => {
     const v = rowViews(file(rows), YEAR, 2026);
     expect(marginNotes(v, YEAR, 2026)).toEqual(yearNotes(v, YEAR, 2026));
     expect(r).toBeTruthy();
+  });
+});
+
+describe("trialsLink", () => {
+  it("builds /trials?nct=…&from=…", () => {
+    expect(trialsLink(["NCT1", "NCT2"], "CD20", null)).toBe("/trials?nct=NCT1%2CNCT2&from=CD20");
+  });
+  it("carries the disease when set", () => {
+    expect(trialsLink(["NCT1"], "rare drug", "MS")).toBe("/trials?nct=NCT1&from=rare+drug&disease=MS");
   });
 });

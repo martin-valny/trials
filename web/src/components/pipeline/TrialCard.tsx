@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { markState, MARK_LABEL, withDisease } from "../../lib/pipeline";
+import { markState, MARK_LABEL } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark } from "../../types";
 
 interface Props {
@@ -49,7 +49,7 @@ export function TrialCard({ nct, file, rowId, disease = null, onClose, variant, 
   const hit = find(file, nct, rowId);
   const info = file.trials[nct];
   if (!hit) return null;
-  const { m, label } = hit;
+  const { m } = hit;
   const sp = file.sponsors[m.sp];
   const state = markState(m, disease);
   const dates = m.y === null ? "dates not given" : `${m.y} to ${m.y2 === null ? "no end date given" : `${m.y2}${m.est ? " (expected)" : ""}`}`;
@@ -89,7 +89,6 @@ export function TrialCard({ nct, file, rowId, disease = null, onClose, variant, 
       {state === "stop" && info?.why && <blockquote className="tc-why">{info.why}</blockquote>}
       <div className="tc-actions">
         <Link to={`/trial/${nct}`}>Open trial page</Link>
-        <Link to={withDisease(`/explore?nct=${encodeURIComponent(nct)}&from=${encodeURIComponent(label)}`, disease)}>Show on map</Link>
         <a href={`https://clinicaltrials.gov/study/${nct}`} target="_blank" rel="noreferrer">
           ClinicalTrials.gov ↗
         </a>

@@ -110,7 +110,7 @@ test("renders the unavailable state when pipeline.json is missing", async () => 
   stubFetch({ "pipeline.json": 404 });
   renderPage();
   expect(await screen.findByText("The pipeline figure isn't available for this data refresh")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Trial map" })).toHaveAttribute("href", "/explore");
+  expect(screen.queryByRole("link", { name: "Trial map" })).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Trials" })).toHaveAttribute("href", "/trials");
 });
 

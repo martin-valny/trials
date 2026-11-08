@@ -19,13 +19,13 @@ const show = (nct: string, variant: "popover" | "sheet" = "popover") =>
     </MemoryRouter>,
   );
 
-test("shows why a trial stopped, and the three actions", () => {
+test("shows why a trial stopped, and the actions", () => {
   show("NCT90000001");
   expect(screen.getByText("Study of a thing")).toBeInTheDocument();
   expect(screen.getByText("Stopped")).toBeInTheDocument();
   expect(screen.getByText(/Sponsor decision/)).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Open trial page" })).toHaveAttribute("href", "/trial/NCT90000001");
-  expect(screen.getByRole("link", { name: "Show on map" })).toHaveAttribute("href", "/explore?nct=NCT90000001&from=CD20");
+  expect(screen.queryByRole("link", { name: /map/i })).not.toBeInTheDocument();
   const ct = screen.getByRole("link", { name: /ClinicalTrials\.gov/ });
   expect(ct).toHaveAttribute("href", "https://clinicaltrials.gov/study/NCT90000001");
 });
@@ -35,13 +35,4 @@ test("a combination trial shows which drug advanced", () => {
   expect(screen.getByText("Advanced, through other drug")).toBeInTheDocument();
   expect(screen.queryByText(/Sponsor decision/)).not.toBeInTheDocument();
   expect(screen.getByRole("dialog")).toHaveClass("sheet");
-});
-
-test("Show on map carries the disease when one is set", () => {
-  render(
-    <MemoryRouter>
-      <TrialCard nct="NCT90000001" file={file()} rowId="cd20" disease="MS" onClose={vi.fn()} variant="popover" />
-    </MemoryRouter>,
-  );
-  expect(screen.getByRole("link", { name: "Show on map" })).toHaveAttribute("href", "/explore?nct=NCT90000001&from=CD20&disease=MS");
 });

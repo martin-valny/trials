@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { usePhone } from "../lib/useMediaQuery";
 import { FreshnessBadge } from "./FreshnessBadge";
@@ -26,16 +26,10 @@ function useRouteScopedOpen(): [boolean, (f: (o: boolean) => boolean) => void] {
   return [open, set];
 }
 
-const EXPLORE: [string, string][] = [
-  ["Trial map", "/explore"],
-  ["Mechanism graph", "/approaches/targeted"],
-];
-
-/** Pipeline, Approaches, Explore (disclosure), Changes, Trials, Methods. A menu button on a phone. */
+/** Pipeline, Approaches, Changes, Trials, Methods. A menu button on a phone. */
 export function SiteNav() {
   const phone = usePhone();
   const [open, setOpen] = useRouteScopedOpen();
-  const { pathname } = useLocation();
 
   if (phone)
     return (
@@ -47,9 +41,6 @@ export function SiteNav() {
           <div className="nav-sheet">
             <NavLink to="/" end>Pipeline</NavLink>
             <NavLink to="/approaches">Approaches</NavLink>
-            {EXPLORE.map(([label, to]) => (
-              <Link key={to} to={to} className="sub">{label}</Link>
-            ))}
             <NavLink to="/changes">Changes</NavLink>
             <NavLink to="/trials">Trials</NavLink>
             <NavLink to="/methods">Methods</NavLink>
@@ -64,65 +55,9 @@ export function SiteNav() {
     <nav aria-label="Main">
       <NavLink to="/" end>Pipeline</NavLink>
       <NavLink to="/approaches">Approaches</NavLink>
-      <ExploreMenu active={pathname.startsWith("/explore")} />
       <NavLink to="/changes">Changes</NavLink>
       <NavLink to="/trials">Trials</NavLink>
       <NavLink to="/methods">Methods</NavLink>
     </nav>
-  );
-}
-
-function ExploreMenu({ active }: { active: boolean }) {
-  const [open, setOpen] = useRouteScopedOpen();
-  const box = useRef<HTMLDivElement>(null);
-  const btn = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(() => false);
-    document.addEventListener("mousedown", away);
-    return () => document.removeEventListener("mousedown", away);
-  }, [open, setOpen]);
-
-  const items = () => [...(box.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
-  const move = (dir: 1 | -1) => {
-    const all = items();
-    if (!all.length) return;
-    const i = all.indexOf(document.activeElement as HTMLElement);
-    all[i < 0 ? (dir === 1 ? 0 : all.length - 1) : (i + dir + all.length) % all.length]!.focus();
-  };
-  const key = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape" && open) {
-      e.preventDefault();
-      setOpen(() => false);
-      btn.current?.focus();
-    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      if (!open) {
-        setOpen(() => true);
-        return;
-      }
-      move(e.key === "ArrowDown" ? 1 : -1);
-    }
-  };
-  return (
-    <div
-      className={`nav-explore${active ? " on" : ""}`}
-      ref={box}
-      onKeyDown={key}
-      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOpen(() => false)}
-    >
-      <button ref={btn} type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        Explore
-      </button>
-      {open && (
-        <ul role="menu" aria-label="Explore">
-          {EXPLORE.map(([label, to]) => (
-            <li key={to} role="none">
-              <Link to={to} role="menuitem" tabIndex={-1}>{label}</Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   );
 }

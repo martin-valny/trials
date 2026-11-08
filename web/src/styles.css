@@ -25,20 +25,11 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .site-header nav { order: 2; margin-left: auto; display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
 .site-header .badge { order: 1; }
 .site-header nav a { color: var(--muted); text-decoration: none; }
-.site-header nav a[aria-current="page"], .site-header nav .nav-explore.on > button { color: var(--fg); font-weight: 700; }
-.site-header nav a:hover, .nav-explore > button:hover { color: var(--fg); }
-/* Explore is a disclosure: a button that opens a two-link menu. */
-.nav-explore { position: relative; }
-.nav-explore > button { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: .3rem; }
-.nav-explore > button::after { content: ""; border: 3.5px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
-.nav-explore ul { position: absolute; z-index: 40; right: 0; top: calc(100% + .6rem); margin: 0; padding: .35rem; list-style: none; min-width: 11rem;
-  background: var(--bg); border: 1px solid var(--fg); border-radius: .6rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); }
-.nav-explore li a { display: block; padding: .4rem .65rem; border-radius: .4rem; color: var(--fg); }
-.nav-explore li a:hover, .nav-explore li a:focus-visible { background: var(--card); }
+.site-header nav a[aria-current="page"] { color: var(--fg); font-weight: 700; }
+.site-header nav a:hover { color: var(--fg); }
 .nav-menu-btn { display: none; order: 2; margin-left: auto; border: 0; background: none; font-size: 22px; line-height: 1; padding: 0 .25rem; color: var(--fg); cursor: pointer; }
 .nav-sheet { position: absolute; z-index: 45; left: 0; right: 0; top: 100%; display: flex; flex-direction: column; padding: .25rem 1rem .5rem; background: var(--bg); border-bottom: 1px solid var(--fg); box-shadow: 0 12px 24px rgba(0, 0, 0, .12); }
 .nav-sheet a { padding: .65rem 0; font-size: 1rem; border-bottom: 1px solid var(--line); }
-.nav-sheet .sub { padding-left: 1rem; font-size: .9rem; }
 /* Theme: a setting, not a destination. Set off from the nav by a hairline, in the nav's type,
    with a 9px key that reads like the plate's legend swatches: empty light, solid dark, half system. */
 .theme-switch { order: 3; display: inline-flex; align-items: center; gap: .45rem;
@@ -103,3 +94,7 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
 .timeline { padding-left: 1.25rem; }
 .filters input[type="search"] { font: inherit; padding: .3rem; min-width: min(18rem, 100%); }
 table.trials td[data-label="Last change"] { white-space: nowrap; }
+
+/* The arrival banner when another page hands over a list of trials. */
+.trials-only { margin: 0 0 1rem; font-size: .9rem; color: var(--fg); }
+.trials-only .text-button { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }

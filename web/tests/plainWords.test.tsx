@@ -35,6 +35,12 @@ const OLD: [string, RegExp][] = [
   ["Data may be stale", /Data may be stale/],
 ];
 
+/** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */
+const noMapWords = () => {
+  const text = document.body.textContent ?? "";
+  expect(/on the map|Trial map|Show on map/.test(text), "a map link is on the page").toBe(false);
+};
+
 const noOldWords = () => {
   const text = document.body.textContent ?? "";
   for (const [name, re] of OLD) expect(re.test(text), `old wording "${name}" is on the page`).toBe(false);
@@ -82,6 +88,7 @@ test("Pipeline and a target page use no old wording", async () => {
   );
   await screen.findByRole("heading", { level: 1 });
   noOldWords();
+  noMapWords();
 });
 
 test("a target page uses no old wording", async () => {
@@ -95,6 +102,7 @@ test("a target page uses no old wording", async () => {
   );
   await screen.findByRole("heading", { level: 1, name: /CD20/ });
   noOldWords();
+  noMapWords();
 });
 
 test("Approaches (targeted graph and a kind) use plain words", async () => {

@@ -32,16 +32,29 @@ test("a company name turns on the lens and the chip clears it", async ({ page })
   await expect(page).not.toHaveURL(/company=/);
 });
 
-test("row -> target page -> trials on the map -> arrival banner", async ({ page }) => {
+test("the nav has no Explore", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Main" }).getByText(/Explore|Trial map/)).toHaveCount(0);
+});
+
+test("phone: By year has no horizontal scroll", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/#/?view=year");
+  await expect(page.locator(".plate, .pipeline, main").first()).toBeVisible();
+  const over = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(over).toBe(false);
+});
+
+test("row -> target page -> List these trials -> Trials with the banner", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /^CD20: \d+ trials?/ }).click();
   await expect(page).toHaveURL(/#\/target\/cd20/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("CD20");
-  await page.getByRole("link", { name: /^Show these \d+ trials on the map/ }).click();
-  await expect(page).toHaveURL(/#\/explore\?nct=.*&from=CD20/);
-  const banner = page.getByRole("status").filter({ hasText: "Show all trials" });
-  await expect(banner).toContainText(/^Only the \d+ trials? of CD20/);
-  await banner.getByRole("button", { name: "Show all trials" }).click();
+  await page.getByRole("link", { name: /^List these \d+ trials →/ }).click();
+  await expect(page).toHaveURL(/#\/trials\?nct=.*&from=CD20/);
+  const banner = page.locator(".trials-only");
+  await expect(banner).toContainText(/^Showing \d+ trials? from CD20/);
+  await banner.getByRole("button", { name: "Clear" }).click();
   await expect(banner).toHaveCount(0);
 });
 

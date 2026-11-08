@@ -149,6 +149,11 @@ export function withDisease(path: string, disease: string | null): string {
   return `${path}${path.includes("?") ? "&" : "?"}disease=${encodeURIComponent(disease)}`;
 }
 
+/** The Trials page narrowed to these trials, with where they came from (replaces every "on the map" link). */
+export function trialsLink(ncts: string[], from: string, disease: string | null): string {
+  return `/trials?${new URLSearchParams({ nct: ncts.join(","), from, ...(disease ? { disease } : {}) }).toString()}`;
+}
+
 // ---------------------------------------------------------------- rows
 
 export interface CompanyCount {

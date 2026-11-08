@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { expect, test } from "vitest";
 import { AppRoutes } from "../src/App";
@@ -43,39 +42,24 @@ test("an unknown route goes to the pipeline", async () => {
   expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
 });
 
-test("Explore is a disclosure with a two-link menu that closes on Escape and on navigation", async () => {
+test("the nav is Pipeline, Approaches, Changes, Trials, Methods: no Explore, no Trial map", () => {
   stubFetch();
   go("/changes");
-  const btn = screen.getByRole("button", { name: /Explore/ });
-  expect(btn).toHaveAttribute("aria-expanded", "false");
-  await userEvent.click(btn);
-  expect(btn).toHaveAttribute("aria-expanded", "true");
-  expect(screen.getByRole("menuitem", { name: "Trial map" })).toHaveAttribute("href", "/explore");
-  expect(screen.getByRole("menuitem", { name: "Mechanism graph" })).toHaveAttribute("href", "/approaches/targeted");
-  await userEvent.keyboard("{ArrowDown}");
-  expect(screen.getByRole("menuitem", { name: "Trial map" })).toHaveFocus();
-  await userEvent.keyboard("{ArrowDown}");
-  expect(screen.getByRole("menuitem", { name: "Mechanism graph" })).toHaveFocus();
-  await userEvent.keyboard("{Escape}");
-  expect(btn).toHaveAttribute("aria-expanded", "false");
-  expect(btn).toHaveFocus();
-  await userEvent.click(btn);
-  await userEvent.click(screen.getByRole("menuitem", { name: "Trial map" }));
-  expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+  const nav = screen.getByRole("navigation", { name: "Main" });
+  expect(within(nav).queryByRole("button", { name: /Explore/ })).not.toBeInTheDocument();
+  expect(within(nav).queryByText("Trial map")).not.toBeInTheDocument();
+  expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual(["Pipeline", "Approaches", "Changes", "Trials", "Methods"]);
+});
+
+test("/explore still renders the map for old bookmarks", async () => {
+  stubFetch();
+  go("/explore?nct=NCT90000001&from=old");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/explore?nct=NCT90000001&from=old"));
+  expect(await screen.findByText(/similar trials sit close together/)).toBeInTheDocument();
 });
 
 test("the brand links to the pipeline", () => {
   stubFetch();
   go("/changes");
   expect(screen.getByRole("link", { name: /Trial Radar/ })).toHaveAttribute("href", "/");
-});
-
-test("the Explore menu closes when focus tabs away", async () => {
-  stubFetch();
-  go("/changes");
-  const btn = screen.getByRole("button", { name: /Explore/ });
-  await userEvent.click(btn);
-  await userEvent.keyboard("{ArrowDown}{ArrowDown}");
-  await userEvent.tab();
-  expect(btn).toHaveAttribute("aria-expanded", "false");
 });

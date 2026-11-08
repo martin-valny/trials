@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { kindTree, NOT_YET_SORTED, NOT_YET_SORTED_ELSEWHERE } from "../lib/approaches";
-import { mapLink } from "./mechanisms/SidePanel";
+import { trialsLink } from "../lib/pipeline";
 import { loadExplorer, loadMeta, loadPipeline } from "../data";
 import type { ExplorerFile, Meta, PipelineFile } from "../types";
 
@@ -43,7 +43,7 @@ function NotYetGroup({ group: raw, kinds }: { group: string; kinds: { key: strin
         </button>
       ) : null}
       <p>
-        <Link to={mapLink(ncts, group === GROUP_LABEL[raw] ? group : `Not yet categorised: ${group}`)}>Show these trials on the map</Link>
+        <Link to={trialsLink(ncts, group === GROUP_LABEL[raw] ? group : `Not yet categorised: ${group}`, null)}>List these trials →</Link>
       </p>
     </section>
   );
@@ -471,6 +471,9 @@ export function Methods() {
 
         <section id="map-statistic" aria-labelledby="map-statistic-h">
         <h3 id="map-statistic-h">Do successes cluster?</h3>
+        <p>
+          <Link to="/explore">Similarity map (experimental): trials laid out by how alike they are →</Link>
+        </p>
         <p>
           The comparison uses only finished trials that could succeed: completed, stopped or
           succeeded trials in Early Phase 1 to Phase 2/3 with at least one drug in an experimental

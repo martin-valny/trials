@@ -140,7 +140,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
       <footer className="foot">
         <span>&lsquo;Advanced&rsquo; means the drug has a later-phase trial on the registry. It does not mean the drug worked or was approved.</span>
         <span className="foot-links">
-          <Link to="/methods">Methods</Link> · <Link to="/explore">Trial map</Link> · <Link to="/approaches/targeted">Mechanism graph</Link>
+          <Link to="/methods">Methods</Link> · <Link to="/approaches/targeted">Mechanism graph</Link>
         </span>
       </footer>
     </div>
@@ -223,7 +223,7 @@ function Unavailable() {
           <div className="kicker">MS and autoimmune neurology · drug pipeline</div>
           <h1 className="headline">The pipeline figure isn't available for this data refresh</h1>
           <p className="source">
-            The rest of the data is. Browse the <Link to="/explore">Trial map</Link> or the list of <Link to="/trials">Trials</Link>.
+            The rest of the data is. Browse the list of <Link to="/trials">Trials</Link>.
           </p>
         </div>
       </header>

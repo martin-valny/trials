@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadGraph, loadMeta } from "../../data";
 import { isApproachKey, kindTree, railRows, uncategorised } from "../../lib/approaches";
-import { rowForGene } from "../../lib/pipeline";
+import { rowForGene, trialsLink } from "../../lib/pipeline";
 import { useDiseaseParam, usePipelineFile } from "../../lib/useDisease";
 import { UNCLASSIFIED } from "../../lib/explorer";
 import {
@@ -37,7 +37,7 @@ import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
 import { ApproachRail } from "./ApproachRail";
 import { GraphCanvas, GraphSearch } from "./GraphCanvas";
 import { KindTree, STRIP_ORDER, trialsWord } from "./KindTree";
-import { mapLink, NodePanel, SidePanel } from "./SidePanel";
+import { NodePanel, SidePanel } from "./SidePanel";
 import "../explore/explore.css";
 import "./mechanisms.css";
 
@@ -108,7 +108,7 @@ export function MechanismsPage() {
           {s.state === "error"
             ? "The approaches could not be loaded. Try again shortly."
             : "Approaches appear after the next update."}{" "}
-          Meanwhile, every tracked trial is on the <Link to="/explore">map</Link>.
+          Meanwhile, every tracked trial is in the <Link to="/trials">Trials</Link> list.
         </p>
       </div>
     );
@@ -548,8 +548,8 @@ function GraphView({
       {missing ? (
         <p className="panel-note graph-dropped" role="status" aria-label={missing.drug}>
           {droppedNote(graph, missing)}{" "}
-          <Link to={mapLink(missing.trials, missing.drug, disease)}>
-            Show its {trialsWord(missing.n)} on the map
+          <Link to={trialsLink(missing.trials, missing.drug, disease)}>
+            List its {trialsWord(missing.n)} →
           </Link>
         </p>
       ) : null}

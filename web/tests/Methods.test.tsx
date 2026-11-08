@@ -146,8 +146,8 @@ test("Methods lists the not-yet-categorised names with counts, grouped, and link
   expect(rows[0]).toHaveTextContent("mystery drug 0 2 trials");
   await userEvent.click(within(group).getByRole("button", { name: /^Show all \d+$/ }));
   expect(within(group).getAllByRole("listitem").length).toBeGreaterThanOrEqual(12);
-  expect(within(group).getByRole("link", { name: "Show these trials on the map" }).getAttribute("href")).toMatch(
-    /^\/explore\?nct=NCT70000000/,
+  expect(within(group).getByRole("link", { name: "List these trials →" }).getAttribute("href")).toMatch(
+    /^\/trials\?nct=NCT70000000/,
   );
   expect(screen.getByRole("region", { name: "No experimental treatment listed" })).toBeInTheDocument();
 });
@@ -182,4 +182,12 @@ test("Methods has the six sections with their ids", async () => {
   const stat = container.querySelector("#map-statistic") as HTMLElement;
   expect(stat.textContent).toMatch(/p-value/);
   expect(stat.textContent).toMatch(/10,000 shuffles/);
+});
+
+test("the map statistic section points to the similarity map", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods");
+  const link = await screen.findByRole("link", { name: /Similarity map \(experimental\)/ });
+  expect(link).toHaveAttribute("href", "/explore");
+  expect(link.closest("section")).toHaveAttribute("id", "map-statistic");
 });

@@ -131,13 +131,13 @@ test("panel d hides the graph link when mechanisms.json is missing", async () =>
   expect(screen.queryByRole("link", { name: /Open in the mechanism graph/ })).not.toBeInTheDocument();
 });
 
-test("Show on map link carries every NCT", async () => {
+test("List these trials link carries every NCT", async () => {
   stubFetch();
   renderPage();
   await screen.findByRole("heading", { level: 1 });
-  const link = screen.getByRole("link", { name: /Show these 8 trials on the map/ });
+  const link = screen.getByRole("link", { name: /List these 8 trials →/ });
   const href = link.getAttribute("href")!;
-  expect(href.startsWith("/explore?nct=")).toBe(true);
+  expect(href.startsWith("/trials?nct=")).toBe(true);
   const q = new URLSearchParams(href.split("?")[1]);
   expect(q.get("nct")!.split(",").sort()).toEqual(
     ["NCT90000001", "NCT90000002", "NCT90000004", "NCT90000005", "NCT90000006", "NCT90000007", "NCT90000008", "NCT90000099"],
@@ -195,7 +195,7 @@ test("with a disease set, every outgoing link carries it", async () => {
   await screen.findByRole("heading", { level: 1 });
   const graph = await screen.findByRole("link", { name: /Open in the mechanism graph/ });
   expect(graph.getAttribute("href")).toBe("/approaches/targeted?node=target:MS4A1&from=cd20&disease=MS");
-  expect(screen.getByRole("link", { name: /Show these \d+ trials on the map/ }).getAttribute("href")).toMatch(/&disease=MS$/);
+  expect(screen.getByRole("link", { name: /List these \d+ trials →/ }).getAttribute("href")).toMatch(/&disease=MS$/);
   const company = within(screen.getByText("Who is working on CD20").closest("div")!.parentElement!).getAllByRole("link")[0]!;
   expect(company.getAttribute("href")).toMatch(/^\/\?.*disease=MS/);
   expect(company.getAttribute("href")).toMatch(/company=/);
@@ -207,7 +207,7 @@ test("without a disease the links stay as they were", async () => {
   renderPage();
   const graph = await screen.findByRole("link", { name: /Open in the mechanism graph/ });
   expect(graph.getAttribute("href")).not.toContain("disease");
-  expect(screen.getByRole("link", { name: /Show these \d+ trials on the map/ }).getAttribute("href")).not.toContain("disease");
+  expect(screen.getByRole("link", { name: /List these \d+ trials →/ }).getAttribute("href")).not.toContain("disease");
 });
 
 test("on a phone the graph link sits under the chain, not in the hidden section caption", async () => {

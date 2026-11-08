@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, withDisease } from "../../lib/pipeline";
+import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, trialsLink } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
 import { usePhone } from "../../lib/useMediaQuery";
 import { usePipeline } from "../pipeline/PipelinePage";
@@ -204,7 +204,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       <footer className="foot">
         <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
         {ncts.length > 0 && (
-          <Link to={withDisease(`/explore?nct=${ncts.join(",")}&from=${encodeURIComponent(row.label)}`, disease)}>Show these {n(ncts.length)} trials on the map →</Link>
+          <Link to={trialsLink(ncts, row.label, disease)}>List these {n(ncts.length)} trials →</Link>
         )}
       </footer>
 
@@ -245,7 +245,7 @@ function Unavailable() {
       <div className="notfound">
         <h1>The pipeline figure isn&rsquo;t available for this data refresh</h1>
         <p>
-          The rest of the data is. Browse the <Link to="/explore">Trial map</Link> or the list of <Link to="/trials">Trials</Link>.
+          The rest of the data is. Browse the list of <Link to="/trials">Trials</Link>.
         </p>
       </div>
     </div>

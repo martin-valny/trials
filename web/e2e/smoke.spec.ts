@@ -358,18 +358,18 @@ test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }
   expect(errors).toEqual([]);
 });
 
-test("Mechanisms: Show these trials on the map narrows the map", async ({ page }) => {
+test("Mechanisms: List these trials opens the filtered Trials page", async ({ page }) => {
   await page.goto("/#/approaches/nondrug");
   const kind = page.locator(".kind-row").first();
   await kind.click();
   const panel = page.getByRole("complementary");
   await expect(panel).toBeVisible();
   const n = await panel.locator(".side-trials li").count();
-  await panel.getByRole("link", { name: "Show these trials on the map" }).click();
-  await expect(page).toHaveURL(/#\/explore\?nct=/);
-  await expect(page.getByText(new RegExp(`^Showing ${n} of \\d+ trials$`))).toBeVisible();
-  await page.getByRole("button", { name: "Show all trials" }).click();
-  await expect(page.locator(".explore-only")).toHaveCount(0);
+  await panel.getByRole("link", { name: "List these trials →" }).click();
+  await expect(page).toHaveURL(/#\/trials\?nct=/);
+  await expect(page.getByText(new RegExp(`^Showing ${n} trials from `))).toBeVisible();
+  await page.getByRole("button", { name: "Clear" }).click();
+  await expect(page.locator(".trials-only")).toHaveCount(0);
 });
 
 test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it", async ({ page }) => {
@@ -438,7 +438,7 @@ test("Mechanisms: a drug the node cap left out is found, explained and handed to
   await page.getByRole("option", { name: /rare drug/ }).click();
   const note = page.getByRole("status", { name: "rare drug" });
   await expect(note).toContainText("rare drug is not drawn: it is in 1 trial");
-  await note.getByRole("link", { name: "Show its 1 trial on the map" }).click();
-  await expect(page).toHaveURL(/#\/explore\?nct=NCT90000001&from=rare\+drug$/);
+  await note.getByRole("link", { name: "List its 1 trial →" }).click();
+  await expect(page).toHaveURL(/#\/trials\?nct=NCT90000001&from=rare\+drug$/);
   expect(errors).toEqual([]);
 });

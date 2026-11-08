@@ -3,7 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { expect, test } from "vitest";
 import { TrialsList } from "../src/components/TrialsList";
 import type { TrialsIndex } from "../src/types";
+import { render } from "@testing-library/react";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { readFixture, renderAt, stubFetch } from "./helpers";
+
+function Where() {
+  const loc = useLocation();
+  return <p data-testid="where">{loc.pathname + loc.search}</p>;
+}
+const renderWithWhere = (route: string) =>
+  render(
+    <MemoryRouter initialEntries={[route]}>
+      <TrialsList />
+      <Where />
+    </MemoryRouter>,
+  );
 
 const index = readFixture<TrialsIndex>("trials.json");
 const rows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
@@ -82,4 +96,34 @@ test("server error is shown", async () => {
   stubFetch({ "trials.json": 500 });
   renderAt(<TrialsList />);
   expect(await screen.findByRole("alert")).toHaveTextContent("Could not load trials");
+});
+
+const ids = () => rows().map((r) => within(r).getAllByRole("link")[0].textContent);
+
+test("?nct= narrows the list; unknown and duplicate ids are ignored and the count is right", async () => {
+  stubFetch();
+  const [a, b] = index.trials;
+  renderWithWhere(`/trials?nct=${a.nct_id},${a.nct_id},NCT00000000,${b.nct_id}&from=CD20`);
+  await screen.findByRole("table");
+  expect(ids().sort()).toEqual([a.nct_id, b.nct_id].sort());
+  const banner = screen.getByRole("status");
+  expect(banner).toHaveTextContent("Showing 2 trials from CD20");
+});
+
+test("Clear removes the nct and from params and shows every trial", async () => {
+  stubFetch();
+  renderWithWhere(`/trials?nct=${index.trials[0].nct_id}&from=CD20&disease=MS`);
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(1);
+  await userEvent.click(screen.getByRole("button", { name: "Clear" }));
+  expect(rows()).toHaveLength(index.trials.length);
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  expect(screen.getByTestId("where").textContent).toBe("/trials?disease=MS");
+});
+
+test("a list with no known trials says so", async () => {
+  stubFetch();
+  renderWithWhere("/trials?nct=NCT00000000&from=X");
+  expect(await screen.findByText("None of these trials are in the current data.")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("Showing 0 trials from X");
 });

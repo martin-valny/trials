@@ -109,7 +109,7 @@ test("a missing explorer file also says approaches appear after the next update"
   expect(await screen.findByText(/Approaches appear after the next update\./)).toBeInTheDocument();
 });
 
-test('kind panel lists trials with /trial links and "Show these trials on the map"', async () => {
+test('kind panel lists trials with /trial links and "List these trials"', async () => {
   const f = withCell();
   stubFetch({ "explorer.json": f });
   renderPage("/approaches/cell");
@@ -122,8 +122,8 @@ test('kind panel lists trials with /trial links and "Show these trials on the ma
   expect(within(panel).getByRole("link", { name: nct })).toHaveAttribute("href", `/trial/${nct}`);
   expect(within(panel).getByText("Thought to work by:")).toBeInTheDocument();
   expect(within(panel).getByRole("link", { name: "source" })).toHaveAttribute("href", f.kinds.ahsct.source_url);
-  await userEvent.click(within(panel).getByRole("link", { name: "Show these trials on the map" }));
-  expect(where()).toBe(`/explore?nct=${nct}&from=aHSCT`);
+  await userEvent.click(within(panel).getByRole("link", { name: "List these trials →" }));
+  expect(where()).toBe(`/trials?nct=${nct}&from=aHSCT`);
 });
 
 test("Escape closes the kind panel and returns focus to its row", async () => {

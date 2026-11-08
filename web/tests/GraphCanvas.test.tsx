@@ -195,7 +195,7 @@ test("search box selects a node and opens the side panel", async () => {
   expect(within(panel).getByText(/Acted on by/)).toBeInTheDocument();
   expect(within(panel).getByRole("button", { name: "example drug" })).toBeInTheDocument();
   expect(within(panel).getByRole("link", { name: "NCT90000001" })).toHaveAttribute("href", "/trial/NCT90000001");
-  expect(within(panel).getByRole("link", { name: "Show these trials on the map" })).toBeInTheDocument();
+  expect(within(panel).getByRole("link", { name: "List these trials →" })).toBeInTheDocument();
   expect(screen.getAllByTestId("where").at(-1)!.textContent).toBe("/mechanisms/targeted?node=target%3AMS4A1");
 
   // Enter picks the first match.
@@ -309,9 +309,9 @@ test("Find lists a dropped drug; choosing it says why it is not drawn and hands 
   expect(note).toHaveTextContent(
     "rare drug is not drawn: it is in 2 trials, and the graph shows every drug credited with a success and those in 4 or more trials.",
   );
-  expect(within(note).getByRole("link", { name: "Show its 2 trials on the map" })).toHaveAttribute(
+  expect(within(note).getByRole("link", { name: "List its 2 trials →" })).toHaveAttribute(
     "href",
-    "/explore?nct=NCT03838770%2CNCT04334031&from=rare+drug",
+    "/trials?nct=NCT03838770%2CNCT04334031&from=rare+drug",
   );
   expect(screen.getAllByTestId("where").at(-1)!.textContent).toBe("/mechanisms/targeted?node=drug%3Arare+drug");
   expect(screen.queryByRole("complementary")).not.toBeInTheDocument();

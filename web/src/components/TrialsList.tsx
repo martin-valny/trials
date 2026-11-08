@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { loadTrials } from "../data";
 import { formatDate, formatValue } from "../lib/format";
 import type { TrialSummary } from "../types";
@@ -11,6 +11,23 @@ export function TrialsList() {
   const [result, setResult] = useState<Result | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  // A list handed over by another page: ?nct=NCT1,NCT2&from=<what they are>[&disease=…].
+  const [params, setParams] = useSearchParams();
+  const only = useMemo(() => {
+    const v = params.get("nct");
+    return v === null ? null : new Set(v.split(",").filter(Boolean));
+  }, [params]);
+  const from = params.get("from");
+  const clearOnly = () =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.delete("nct");
+        next.delete("from");
+        return next;
+      },
+      { replace: true },
+    );
 
   useEffect(() => {
     let live = true;
@@ -25,12 +42,14 @@ export function TrialsList() {
   }, []);
 
   const all = useMemo(() => (result && "trials" in result ? result.trials : []), [result]);
+  const onlyN = useMemo(() => (only === null ? 0 : all.filter((t) => only.has(t.nct_id)).length), [all, only]);
   const statuses = useMemo(() => [...new Set(all.map((t) => t.overall_status))].sort(), [all]);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return all
       .filter(
         (t) =>
+          (only === null || only.has(t.nct_id)) &&
           (!status || t.overall_status === status) &&
           (!q ||
             [t.nct_id, t.title, t.lead_sponsor ?? ""].some((v) => v.toLowerCase().includes(q))),
@@ -40,7 +59,7 @@ export function TrialsList() {
           (b.last_change ?? "").localeCompare(a.last_change ?? "") ||
           a.nct_id.localeCompare(b.nct_id),
       );
-  }, [all, query, status]);
+  }, [all, query, status, only]);
 
   return (
     <section aria-labelledby="trials-heading">
@@ -52,6 +71,15 @@ export function TrialsList() {
       ) : null}
       {result && "trials" in result && all.length === 0 ? (
         <p>No trials are tracked yet.</p>
+      ) : null}
+
+      {all.length > 0 && only !== null ? (
+        <p className="trials-only" role="status">
+          Showing {onlyN} {onlyN === 1 ? "trial" : "trials"}{from ? ` from ${from}` : ""} ·{" "}
+          <button type="button" className="text-button" onClick={clearOnly}>
+            Clear
+          </button>
+        </p>
       ) : null}
 
       {all.length > 0 ? (
@@ -80,7 +108,11 @@ export function TrialsList() {
           </form>
 
           {shown.length === 0 ? (
-            <p>No trials match these filters.</p>
+            <p>
+              {only !== null && !all.some((t) => only.has(t.nct_id))
+                ? "None of these trials are in the current data."
+                : "No trials match these filters."}
+            </p>
           ) : (
             <table className="changes trials">
               <caption>
