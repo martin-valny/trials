@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
@@ -195,7 +195,7 @@ test("panel c scales to the largest phased column and moves trials without a pha
 
 test("the colour key is a line under panel a's heading, before the map; panel d sits under the plate", async () => {
   await ready();
-  const a = screen.getByRole("region", { name: /Embedding of/ });
+  const a = screen.getByRole("region", { name: /similar trials sit close together/ });
   const key = within(a).getByRole("list", { name: /^Colour key/ });
   const canvas = screen.getByRole("img", { name: /^3D map/ });
   const d = screen.getByRole("region", { name: "Selected trial" });
@@ -327,7 +327,7 @@ test("success panel switches between disease, modality and mechanism", async () 
   const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
   const group = within(b).getByRole("group", { name: "Group by" });
   const buttons = within(group).getAllByRole("button").map((x) => x.textContent);
-  expect(buttons).toEqual(["By disease", "By modality", "By mechanism", "By approach"]);
+  expect(buttons).toEqual(["By disease", "By modality", "By mechanism"]);
   expect(within(group).getByRole("button", { name: "By disease" })).toHaveAttribute("aria-pressed", "true");
   expect(within(b).queryByText("Trials with several mechanisms count in each.")).not.toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By mechanism" }));
@@ -435,7 +435,7 @@ test("panel d names the trial's mechanism and modality", async () => {
 
 test("the Labels switch sits in panel a's corner; with no clusters it offers Diseases (default) and Off", async () => {
   await ready();
-  const a = screen.getByRole("region", { name: /Embedding of/ });
+  const a = screen.getByRole("region", { name: /similar trials sit close together/ });
   const labels = within(a).getByRole("group", { name: "Labels" });
   expect(within(labels).queryByRole("button", { name: "Clusters" })).not.toBeInTheDocument();
   const diseases = within(labels).getByRole("button", { name: "Diseases" });
@@ -444,8 +444,7 @@ test("the Labels switch sits in panel a's corner; with no clusters it offers Dis
   await userEvent.click(off);
   expect(off).toHaveAttribute("aria-pressed", "true");
   expect(diseases).toHaveAttribute("aria-pressed", "false");
-  // Beside Play, in the same corner.
-  expect(labels.closest(".plate-controls")).toBe(within(a).getByRole("button", { name: "Play rotation" }).closest(".plate-controls"));
+  expect(labels.closest(".plate-controls")).not.toBeNull();
 });
 
 test("with named clusters the Labels switch defaults to Clusters", async () => {
@@ -513,7 +512,7 @@ test("Approach filter: select none, then Cell & transplant shows only cell trial
     "Targeted drugs",
     "Cell & transplant",
     "Non-drug care",
-    "Unclassified",
+    "Not yet categorised",
   ]);
   await userEvent.click(screen.getByRole("button", { name: "Select none" }));
   expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
@@ -531,7 +530,7 @@ test("Approach colour mode has its own key: hued approaches, more than one, and 
     "Targeted drugs",
     "Non-drug care",
     "More than one approach",
-    "Unclassified",
+    "Not yet categorised",
   ]);
 });
 
@@ -543,38 +542,9 @@ test("hover card and panel d show approach and kind", async () => {
   expect(within(d).getByText(/Cell & transplant \(aHSCT\)/)).toBeInTheDocument();
 });
 
-test("panel b By approach credits success to the drug that moved on", async () => {
+test("map has no By approach panel and no Play control", async () => {
   await ready();
   const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
-  await userEvent.click(within(b).getByRole("button", { name: "By approach" }));
-  expect(within(b).getByRole("button", { name: "By approach" })).toHaveAttribute("aria-pressed", "true");
-  expect(within(b).getByText("Targeted drugs")).toBeInTheDocument();
-  expect(within(b).getByText("Trials in several approaches count in each.")).toBeInTheDocument();
-  expect(within(b).getByText(/a success counts only for the groups of the drug that moved on/)).toBeInTheDocument();
-});
-
-test("panel b By approach never gives Non-drug care a share, even with enough finished trials", async () => {
-  const { PanelSuccess } = await import("../src/components/explore/PanelSuccess");
-  const pool = explorer.trials[0];
-  const trials = Array.from({ length: 12 }, (_, i) => ({
-    ...pool,
-    nct_id: `NCT9000000${i}`,
-    approaches: ["targeted", "nondrug"],
-    in_pool: true,
-    outcome: i < 3 ? ("succeeded" as const) : ("completed_unknown" as const),
-    succeeded_by: [],
-  }));
-  render(<PanelSuccess stats={explorer.stats} k={10} trials={trials} minGroup={10} approaches={explorer.approaches} drugIndex={{}} />);
-  const b = screen.getByRole("region", { name: /Share that succeeded/ });
-  await userEvent.click(within(b).getByRole("button", { name: "By approach" }));
-  const row = within(b).getByText("Non-drug care").closest("li")!;
-  expect(row).toHaveTextContent("—");
-  expect(row).toHaveTextContent("success not defined");
-  expect(row).not.toHaveTextContent("%");
-  expect(row.querySelector(".bar-fill")).toBeNull();
-  // Drawn as the rail draws it: a short muted dash where the bar would be, no track or average tick.
-  expect(row.querySelector(".bar-dash")).not.toBeNull();
-  expect(row.querySelector(".bar-avg")).toBeNull();
-  const targeted = within(b).getByText("Targeted drugs").closest("li")!;
-  expect(targeted).toHaveTextContent("25%");
+  expect(within(b).queryByRole("button", { name: "By approach" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Play|Pause|rotation/ })).not.toBeInTheDocument();
 });

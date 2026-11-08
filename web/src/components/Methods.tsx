@@ -202,6 +202,29 @@ export function Methods() {
           given continuously (Sorensen &amp; Sellebjerg, 2019), across the approaches.
         </p>
 
+        <h3 id="not-yet-categorised">Not yet categorised</h3>
+        <p>
+          A trial that lands in none of the approaches above is not yet categorised. It is not an
+          approach to open, so the Approaches page leaves it out of the rail and notes how many
+          there are; on the map it stays a filter value, last in every list.
+        </p>
+        <ul>
+          <li>
+            Unsorted names: a drug or intervention name that is not in the drug mapping, the kind
+            table or the keyword rules. Each is a mapping still to decide, so none is guessed from
+            how it ends.
+          </li>
+          <li>
+            Diagnostic or not a treatment: sampling, imaging and diagnostic studies, and trials
+            with no experimental treatment listed (placebo or usual care only).
+          </li>
+        </ul>
+        <p>
+          How we sort is above: a drug with a molecular mechanism is Targeted, a drug without one
+          carries a kind, and a non-drug intervention is sorted by a reviewed list of phrases, then
+          by its registry type.
+        </p>
+
         <h3 id="clusters">Named clusters</h3>
         <p>
           The labelled regions on the map are clusters found by HDBSCAN on the trials&apos; 3D

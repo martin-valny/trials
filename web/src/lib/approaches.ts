@@ -2,7 +2,7 @@ import type { DrugInfo, ExplorerFile, ExplorerTrial, Outcome } from "../types";
 import { APPROACH_SERIES, NONDRUG, OUTCOMES, UNCLASSIFIED, wonIn } from "./explorer";
 import { drugNodeId } from "./graph";
 
-/** The seven approach keys, in the vocabulary's order (the URL's /mechanisms/:approach). */
+/** The seven approach keys, in the vocabulary's order (the URL's /approaches/:approach). */
 export const APPROACH_KEYS: readonly string[] = [...APPROACH_SERIES, UNCLASSIFIED];
 
 export const isApproachKey = (key: string | undefined): key is string =>
@@ -266,17 +266,34 @@ export function mechanismsLink(
   if (approach === "targeted") {
     const drug = t.drugs.find((d) => f.drug_index?.[d]?.approaches.includes("targeted"));
     return drug === undefined
-      ? "/mechanisms/targeted"
-      : `/mechanisms/targeted?${new URLSearchParams({ node: drugNodeId(drug) }).toString()}`;
+      ? "/approaches/targeted"
+      : `/approaches/targeted?${new URLSearchParams({ node: drugNodeId(drug) }).toString()}`;
   }
-  const unclassified = approach === UNCLASSIFIED;
-  // In Unclassified the "Not yet sorted" rows are the unsorted names (never the type fallbacks)
-  const kind = t.kinds.find(
-    (k) => f.kinds[k]?.approach === approach && !(unclassified && f.kinds[k]?.group === NOT_YET_SORTED),
-  );
-  if (kind === undefined && unclassified) {
-    const key = unsortedKey(t.unsorted[0] ?? "");
-    return `/mechanisms/${approach}?kind=${encodeURIComponent(key)}`;
+  // Not yet categorised has no page of its own now; Methods lists what it holds.
+  if (approach === UNCLASSIFIED) return null;
+  const kind = t.kinds.find((k) => f.kinds[k]?.approach === approach);
+  return kind === undefined ? `/approaches/${approach}` : `/approaches/${approach}?kind=${encodeURIComponent(kind)}`;
+}
+
+/** The footnote under the rail: trials in no approach yet, split into unsorted names and not-a-treatment. */
+export interface Uncategorised {
+  /** Trials in Unclassified. */
+  n: number;
+  /** Distinct names nothing sorts yet. */
+  u: number;
+  /** Trials with no unsorted name: diagnostics, sampling, or no treatment at all. */
+  d: number;
+}
+
+export function uncategorised(trials: ExplorerTrial[]): Uncategorised {
+  const names = new Set<string>();
+  let n = 0;
+  let d = 0;
+  for (const t of trials) {
+    if (!t.approaches.includes(UNCLASSIFIED)) continue;
+    n += 1;
+    if (t.unsorted.length === 0) d += 1;
+    for (const x of t.unsorted) names.add(x);
   }
-  return kind === undefined ? `/mechanisms/${approach}` : `/mechanisms/${approach}?kind=${encodeURIComponent(kind)}`;
+  return { n, u: names.size, d };
 }

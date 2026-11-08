@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { TreeKind } from "../../lib/approaches";
 import { outcomeLabel } from "../../lib/format";
 import { chemblLink, isClassNode, nodeShare, sourceLink } from "../../lib/graph";
-import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome } from "../../types";
+import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome, PipelineRow } from "../../types";
 import { outcomeWords, Rationale, trialsWord } from "./KindTree";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
@@ -11,8 +11,8 @@ const fmt = (n: number): string => n.toLocaleString("en-US");
 const TRIAL_ROWS = 40;
 
 /** The map, narrowed to these trials (Explore's ``?nct=`` list), with where they came from. */
-export const mapLink = (ncts: string[], from: string): string =>
-  `/explore?${new URLSearchParams({ nct: ncts.join(","), from }).toString()}`;
+export const mapLink = (ncts: string[], from: string, disease: string | null = null): string =>
+  `/explore?${new URLSearchParams({ nct: ncts.join(","), from, ...(disease ? { disease } : {}) }).toString()}`;
 
 /**
  * Panel c's frame: "c title" with Close, beside the canvas on wide screens and a bottom sheet on narrow
@@ -186,6 +186,8 @@ export function NodePanel({
   drugIndex,
   minGroup,
   narrowed,
+  row = null,
+  disease = null,
   onFocus,
   onClose,
 }: {
@@ -196,6 +198,10 @@ export function NodePanel({
   drugIndex: Record<string, DrugInfo>;
   minGroup: number;
   narrowed: boolean;
+  /** The pipeline row of a target node's gene, if it has one. */
+  row?: PipelineRow | null;
+  /** The one disease chosen (its code), carried to the target page. */
+  disease?: string | null;
   onFocus(id: string): void;
   onClose(): void;
 }) {
@@ -246,6 +252,11 @@ export function NodePanel({
         Targeted drugs › {KIND_WORD[node.kind]}
         {source ? <> · {source.label === "curated" ? <b>curated</b> : source.label}</> : null}
       </p>
+      {node.kind === "target" && row ? (
+        <p className="side-map">
+          <Link to={`/target/${row.id}${disease ? `?disease=${disease}` : ""}`}>Open {row.label} page →</Link>
+        </p>
+      ) : null}
       {facts.length ? (
         <dl className="side-facts">
           {facts.map(([k, v]) => (
@@ -299,7 +310,7 @@ export function NodePanel({
       {trials.length ? (
         <>
           <p className="side-map">
-            <Link to={mapLink(trials.map((t) => t.nct_id), node.label)}>Show these trials on the map</Link>
+            <Link to={mapLink(trials.map((t) => t.nct_id), node.label, disease)}>Show these trials on the map</Link>
           </p>
           <TrialList key={node.id} trials={trials} />
         </>

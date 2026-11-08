@@ -220,19 +220,52 @@ export function nodeShare(n: GraphNode, minGroup: number): number | null {
   return n.succeeded / n.finished;
 }
 
+/** One line of "Where successes converge": a pathway and the others the very same trials reach. */
+export interface ConvergenceEntry {
+  node: GraphNode;
+  /** Pathways reached by exactly the same trials, shown as "+k related pathways (same trials)". */
+  related: GraphNode[];
+}
+
+/** How many steps a pathway sits below the top level (its ancestors along parent edges). */
+function pathwayDepth(g: GraphFile, id: string): number {
+  const a = adjacency(g);
+  return walk([id], a.down).size - 1;
+}
+
 /**
  * Where successes converge: pathways reached by the trials, never top-level (every chain ends at those
- * hubs), with a defined share and at least one success; best share first, then most successes.
+ * hubs), with a defined share and at least one success; best share first, then most successes. Pathways
+ * reached by exactly the same set of trials (one drug family lighting six signalling pathways through a
+ * shared gene) collapse into one entry: the deepest, then the one with most trials, then by label, leads.
  */
-export function convergence(g: GraphFile, ncts: Set<string>, minGroup: number): GraphNode[] {
+export function convergence(g: GraphFile, ncts: Set<string>, minGroup: number): ConvergenceEntry[] {
   const lit = litByTrials(g, ncts);
-  return g.nodes
+  const ranked = g.nodes
     .filter((n) => n.kind === "pathway" && !n.top_level && lit.has(n.id) && n.succeeded > 0)
     .filter((n) => nodeShare(n, minGroup) !== null)
     .sort(
       (a, b) =>
         nodeShare(b, minGroup)! - nodeShare(a, minGroup)! || b.succeeded - a.succeeded || a.label.localeCompare(b.label),
     );
+  const groups = new Map<string, GraphNode[]>();
+  for (const n of ranked) {
+    const key = trialsOf(g, n.id).join(",");
+    const list = groups.get(key);
+    if (list) list.push(n);
+    else groups.set(key, [n]);
+  }
+  const out: ConvergenceEntry[] = [];
+  for (const members of groups.values()) {
+    const [node, ...related] = members
+      .map((n) => ({ n, depth: pathwayDepth(g, n.id) }))
+      .sort((a, b) => b.depth - a.depth || b.n.n - a.n.n || a.n.label.localeCompare(b.n.label))
+      .map((x) => x.n);
+    out.push({ node: node!, related });
+  }
+  // Each group sits where its best-ranked member did.
+  const at = (e: ConvergenceEntry) => Math.min(ranked.indexOf(e.node), ...e.related.map((r) => ranked.indexOf(r)));
+  return out.sort((a, b) => at(a) - at(b));
 }
 
 /** Where a pathway node comes from, with a link; null for drugs and targets. */

@@ -26,6 +26,8 @@ import { ColourKey, LegendBar } from "./LegendBar";
 import { Toolbar } from "./Toolbar";
 import { PanelPhase } from "./PanelPhase";
 import { PanelSuccess } from "./PanelSuccess";
+import { rowsForTrial } from "../../lib/pipeline";
+import { useDiseaseParam, usePipelineFile } from "../../lib/useDisease";
 import { HoverCard } from "./HoverCard";
 import { fitToUnit, PlateCanvas, type PlateCanvasHandle, type PlateHover } from "./PlateCanvas";
 import { SelectedBar, SelectedTrial } from "./SelectedTrial";
@@ -36,10 +38,6 @@ type State =
   | { state: "missing" }
   | { state: "error" }
   | { state: "ready"; file: ExplorerFile; meta: Meta | null };
-
-/** Feature names from the export, read as plain words ("treatment_type" -> "treatment"). */
-const featureWords = (features: string[]): string =>
-  features.map((f) => f.replace(/_type$/, "").replace(/_/g, " ")).join(", ");
 
 /** ``value`` once it has stayed the same for ``ms`` milliseconds (the first value immediately). */
 function useSettled<T>(value: T, ms: number): T {
@@ -60,27 +58,7 @@ function summary(shown: ExplorerTrial[]): string {
   );
 }
 
-/**
- * Play/pause for the map's slow turn: text plus a glyph drawn in ink at a 1.5px stroke. Its name says
- * what a press will do ("Play rotation" / "Pause rotation"), so it carries no aria-pressed as well.
- */
-function SpinToggle({ spinning, onToggle }: { spinning: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className="plate-control spin-toggle"
-      aria-label={spinning ? "Pause rotation" : "Play rotation"}
-      onClick={onToggle}
-    >
-      <svg className="spin-glyph" viewBox="0 0 10 10" width="10" height="10" aria-hidden="true" focusable="false">
-        {spinning ? <path d="M2.75 1.5v7M7.25 1.5v7" /> : <path d="M2.5 1.25 8.5 5l-6 3.75z" />}
-      </svg>
-      {spinning ? "Pause" : "Play"}
-    </button>
-  );
-}
-
-/** Back to 1x: shown only while the map is zoomed, beside Play, with a drawn 10px frame glyph. */
+/** Back to 1x: shown only while the map is zoomed, with a drawn 10px frame glyph. */
 function ResetView({ onReset }: { onReset: () => void }) {
   return (
     <button type="button" className="plate-control" onClick={onReset}>
@@ -96,7 +74,7 @@ type LabelMode = "clusters" | "diseases" | "off";
 
 /**
  * Which names the map carries: the named clusters (offered only when the file has some), each disease at
- * its densest point, or none. Quiet words beside Play, the chosen one in ink.
+ * its densest point, or none. Quiet words, the chosen one in ink.
  */
 function LabelSwitch({
   value,
@@ -215,6 +193,7 @@ export function Explore() {
 function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const dark = useTheme().theme === "dark";
   const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const pipeline = usePipelineFile();
   // A touch screen has no hover, so the caption does not offer one.
   const coarse = useMediaQuery("(pointer: coarse)");
   const phone = useMediaQuery("(max-width: 640px)");
@@ -226,8 +205,6 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     clusterLabels(file.clusters, 1).length > 0 ? "clusters" : "diseases",
   );
   const [selected, setSelected] = useState<string | null>(null);
-  // The map starts still; the turn is opt-in, and never offered under reduced motion.
-  const [spinning, setSpinning] = useState(false);
   const [hover, setHover] = useState<PlateHover | null>(null);
   // Zoom lives in the canvas; React only learns whether it is past 1x, to offer Reset view.
   const [zoomed, setZoomed] = useState(false);
@@ -266,6 +243,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   // A list of trials handed over by another page (Mechanisms: "Show these trials on the map"), as
   // ?nct=NCT1,NCT2&from=<what they are>. It narrows the map on top of the filters until cleared.
   const [params, setParams] = useSearchParams();
+  const allConditions = useMemo(() => allFilters(file).conditions, [file]);
+  const disease = useDiseaseParam(pipeline, params, setParams, filters, setFilters, allConditions);
   const only = useMemo(() => {
     const v = params.get("nct");
     return v ? new Set(v.split(",").filter(Boolean)) : null;
@@ -300,7 +279,16 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
     const t = hover === null ? undefined : file.trials.find((x) => x.nct_id === hover.nct);
     return t !== undefined && visible(t) ? t : null;
   }, [file, hover, visible]);
-  const clearOnly = () => setParams({}, { replace: true });
+  const clearOnly = () =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.delete("nct");
+        next.delete("from");
+        return next;
+      },
+      { replace: true },
+    );
   const reset = () => {
     setFilters(allFilters(file));
     if (only !== null) clearOnly();
@@ -340,7 +328,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         <section className="panel panel-a" aria-labelledby="panel-a-h">
           <h2 className="panel-h" id="panel-a-h">
             <span className="panel-l">a</span>
-            Embedding of {total.toLocaleString("en-US")} trials ({featureWords(file.method.features)})
+            {total.toLocaleString("en-US")} trials; similar trials sit close together
           </h2>
           <ColourKey
             trials={file.trials}
@@ -365,7 +353,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               selected={selected}
               onSelect={setSelected}
               reducedMotion={reducedMotion}
-              spinning={spinning}
+              spinning={false}
               onHover={setHover}
               ringColor={palette.stopped}
               onZoomChange={onZoomChange}
@@ -382,7 +370,6 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
                   />
                 )}
                 <LabelSwitch value={labelMode} onChange={setLabelMode} clusters={hasClusters} />
-                {!reducedMotion && <SpinToggle spinning={spinning} onToggle={() => setSpinning((on) => !on)} />}
               </div>
             )}
             {hover && hoverTrial && (
@@ -424,13 +411,17 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           k={file.method.k}
           trials={file.trials}
           minGroup={file.method.min_group}
-          approaches={file.approaches}
           drugIndex={file.drug_index}
         />
         <PanelPhase trials={shown} />
       </div>
       <LegendBar>
-        <SelectedTrial trial={selectedTrial} names={file} />
+        <SelectedTrial
+          trial={selectedTrial}
+          names={file}
+          rows={pipeline && selectedTrial ? rowsForTrial(pipeline, selectedTrial.nct_id) : undefined}
+          disease={disease}
+        />
       </LegendBar>
       <SelectedBar trial={selectedTrial} names={file} />
     </div>

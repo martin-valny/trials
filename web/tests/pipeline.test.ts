@@ -8,6 +8,8 @@ import {
   markState,
   parseFigureState,
   rowAccessibleName,
+  rowForGene,
+  rowsForTrial,
   rowViews,
   sourceLine,
   stopSummary,
@@ -383,5 +385,23 @@ describe("fixture", () => {
     expect(v.length).toBeGreaterThan(0);
     expect(headline(f, v, DEFAULT).trials).toBeGreaterThan(0);
     expect(companyOptions(f).length).toBeGreaterThan(0);
+  });
+});
+
+describe("hand-offs", () => {
+  const f = readFixture<PipelineFile>("pipeline.json");
+  it("rowForGene finds the row for a gene, the first in figure order when several share it", () => {
+    expect(rowForGene(f, "MS4A1")?.id).toBe("cd20");
+    const both = f.rows.filter((r) => r.gene === "CD19").sort((a, b) => a.order - b.order);
+    expect(both).toHaveLength(2);
+    expect(rowForGene(f, "CD19")?.id).toBe(both[0]!.id);
+    expect(rowForGene(f, "NOPE")).toBeNull();
+  });
+  it("rowsForTrial lists every row a trial sits in", () => {
+    const two = structuredClone(f);
+    const m = two.rows[0]!.marks[0]!;
+    two.rows[1]!.marks.push({ ...m });
+    expect(rowsForTrial(two, m.n).map((r) => r.id)).toEqual([two.rows[0]!.id, two.rows[1]!.id]);
+    expect(rowsForTrial(f, "NCT00000000")).toEqual([]);
   });
 });

@@ -4,7 +4,13 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
 import { HoverCard } from "../src/components/explore/HoverCard";
 import type { ExplorerFile, Meta } from "../src/types";
+import { useLocation } from "react-router-dom";
 import { readFixture, renderAt, stubFetch } from "./helpers";
+
+function Where() {
+  const loc = useLocation();
+  return <p data-testid="where">{loc.pathname + loc.search}</p>;
+}
 
 const explorer = readFixture<ExplorerFile>("explorer.json");
 const meta = readFixture<Meta>("meta.json");
@@ -39,14 +45,15 @@ test("renders figure title from meta area", async () => {
       name: `3D map of ${explorer.trials.length} trials. Scroll or press + and − to zoom, 0 to reset.`,
     }),
   ).toBeInTheDocument();
-  expect(screen.getByText(new RegExp(`^${explorer.trials.length} trials;`))).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: `a${explorer.trials.length} trials; similar trials sit close together` })).toBeInTheDocument();
+  expect(screen.queryByText(/Embedding of/)).not.toBeInTheDocument();
 });
 
 test("panel a carries a caption on how to read the map", async () => {
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
-  const a = await screen.findByRole("region", { name: /Embedding of/ });
+  const a = await screen.findByRole("region", { name: /similar trials sit close together/ });
   expect(
     within(a).getByText(
       "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom; drag to turn, or to pan when zoomed (Shift-drag turns). Hover for details, click to open.",
@@ -67,10 +74,66 @@ test("on a coarse pointer the caption says tap to open and never mentions hover"
       }) as unknown as MediaQueryList,
   );
   renderAt(<Explore />, "/explore");
-  const a = await screen.findByRole("region", { name: /Embedding of/ });
+  const a = await screen.findByRole("region", { name: /similar trials sit close together/ });
   const caption = within(a).getByText(/^Dot size: enrollment\./);
   expect(caption).toHaveTextContent("Pinch to zoom; drag to turn, or to pan when zoomed. Tap to open.");
   expect(caption.textContent).not.toMatch(/hover/i);
+});
+
+test("selected trial links to its target page", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const box = await screen.findByLabelText("Find a trial");
+  await userEvent.type(box, "NCT90000001{Enter}");
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  expect(await within(d).findByRole("link", { name: "Open CD20 target page →" })).toHaveAttribute("href", "/target/cd20");
+});
+
+test("a selected trial in no row has no target page link", async () => {
+  withCanvas();
+  stubFetch();
+  renderAt(<Explore />, "/explore");
+  const box = await screen.findByLabelText("Find a trial");
+  await userEvent.type(box, "NCT02343159{Enter}");
+  const d = screen.getByRole("region", { name: "Selected trial" });
+  expect(within(d).getByRole("link", { name: "Trial page" })).toBeInTheDocument();
+  expect(within(d).queryByRole("link", { name: /target page/ })).not.toBeInTheDocument();
+});
+
+test("?disease=MG preselects MG on the map and keeps it in the query", async () => {
+  withCanvas();
+  const f = structuredClone(explorer);
+  f.trials[0] = { ...f.trials[0], condition_labels: ["Myasthenia gravis"] };
+  stubFetch({ "explorer.json": f });
+  renderAt(
+    <>
+      <Explore />
+      <Where />
+    </>,
+    "/explore?disease=MG",
+  );
+  await screen.findByRole("img", { name: /3D map of/ });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Disease: 1 of 6" })).toBeInTheDocument());
+  expect(screen.getByTestId("where")).toHaveTextContent("/explore?disease=MG");
+});
+
+test("choosing two diseases drops ?disease from the map's address", async () => {
+  withCanvas();
+  const f = structuredClone(explorer);
+  f.trials[0] = { ...f.trials[0], condition_labels: ["Myasthenia gravis"] };
+  stubFetch({ "explorer.json": f });
+  renderAt(
+    <>
+      <Explore />
+      <Where />
+    </>,
+    "/explore?disease=MG",
+  );
+  await waitFor(() => expect(screen.getByRole("button", { name: "Disease: 1 of 6" })).toBeInTheDocument());
+  await userEvent.click(screen.getByRole("button", { name: "Disease: 1 of 6" }));
+  await userEvent.click(screen.getByRole("button", { name: "Select all" }));
+  await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent(/^\/explore$/));
 });
 
 test("missing explorer shows explanation", async () => {
@@ -132,7 +195,7 @@ test("the screen-reader summary waits for typing to pause", async () => {
   renderAt(<Explore />, "/explore");
   const box = await screen.findByLabelText("Find a trial");
   const n = explorer.trials.length;
-  const live = screen.getByText(new RegExp(`^${n} trials;`));
+  const live = screen.getByText(new RegExp(`^${n} trials; \\d+ succeeded`));
   expect(live).toHaveAttribute("aria-live", "polite");
   await userEvent.type(box, "zzz");
   // Right after typing the announcement has not changed yet ...
@@ -141,17 +204,12 @@ test("the screen-reader summary waits for typing to pause", async () => {
   await waitFor(() => expect(live.textContent).toMatch(/^0 trials;/), { timeout: 2000 });
 });
 
-test("the map starts still, with a play control that toggles to pause", async () => {
+test("the map has no Play control: it never turns on its own", async () => {
   withCanvas();
   stubFetch();
   renderAt(<Explore />, "/explore");
-  // The name says what a press will do, so it carries no pressed state as well.
-  const play = await screen.findByRole("button", { name: "Play rotation" });
-  expect(play).not.toHaveAttribute("aria-pressed");
-  await userEvent.click(play);
-  const pause = screen.getByRole("button", { name: "Pause rotation" });
-  expect(pause).not.toHaveAttribute("aria-pressed");
-  expect(screen.queryByRole("button", { name: "Play rotation" })).not.toBeInTheDocument();
+  await screen.findByRole("img", { name: /3D map of/ });
+  expect(screen.queryByRole("button", { name: /rotation|Play|Pause/ })).not.toBeInTheDocument();
 });
 
 /**
@@ -178,9 +236,8 @@ test("Reset view appears once the map is zoomed, and a press returns it to 1x", 
   expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
   act(() => void canvas.dispatchEvent(new WheelEvent("wheel", { deltaY: -300, cancelable: true, bubbles: true })));
   const reset = await screen.findByRole("button", { name: "Reset view" });
-  // It sits with Play, in the same quiet text style.
+  // It is in the plate's quiet text style.
   expect(reset).toHaveClass("plate-control");
-  expect(screen.getByRole("button", { name: "Play rotation" })).toHaveClass("plate-control");
   await userEvent.click(reset);
   expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
   // The control leaves with the zoom: focus goes to the map, not to the page.
@@ -197,23 +254,6 @@ test("+ zooms and 0 resets while the map has focus", async () => {
   expect(await screen.findByRole("button", { name: "Reset view" })).toBeInTheDocument();
   await userEvent.keyboard("0");
   expect(screen.queryByRole("button", { name: "Reset view" })).not.toBeInTheDocument();
-});
-
-test("with reduced motion there is no rotation control", async () => {
-  withCanvas();
-  stubFetch();
-  vi.stubGlobal(
-    "matchMedia",
-    (query: string) =>
-      ({
-        matches: query.includes("prefers-reduced-motion"),
-        addEventListener: () => undefined,
-        removeEventListener: () => undefined,
-      }) as unknown as MediaQueryList,
-  );
-  renderAt(<Explore />, "/explore");
-  await screen.findByRole("heading", { level: 1 });
-  expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });
 
 test("the hover card draws a 1px leader to the dot's ring", () => {
@@ -308,7 +348,7 @@ test("Reset all hands keyboard focus to the Find field instead of dropping it", 
   expect(screen.getByLabelText("Find a trial")).toHaveFocus();
 });
 
-test("the Labels switch stays under reduced motion, where there is no Play", async () => {
+test("the Labels switch stays under reduced motion", async () => {
   withCanvas();
   stubFetch();
   vi.stubGlobal(
@@ -323,7 +363,6 @@ test("the Labels switch stays under reduced motion, where there is no Play", asy
   renderAt(<Explore />, "/explore");
   const labels = await screen.findByRole("group", { name: "Labels" });
   expect(within(labels).getByRole("button", { name: "Diseases" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.queryByRole("button", { name: /rotation/ })).not.toBeInTheDocument();
 });
 
 const withClusters = (): ExplorerFile => {

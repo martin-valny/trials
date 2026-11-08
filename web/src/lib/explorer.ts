@@ -280,14 +280,22 @@ export const APPROACH_SERIES = ["targeted", "cell", "plasma", "tolerisation", "d
 /** The approach a trial lands in when it is in no other. */
 export const UNCLASSIFIED = "unclassified";
 
-/** An approach key as shown: its label in the file, NONE -> "No approach", an unknown key as itself. */
+/** An approach key as shown: its label in the file, NONE -> "No approach", Unclassified -> "Not yet categorised". */
 export const approachLabel = (key: string, f: Pick<ExplorerFile, "approaches">): string =>
-  key === NONE ? "No approach" : (f.approaches.find((a) => a.key === key)?.label ?? key);
+  key === NONE
+    ? "No approach"
+    : key === UNCLASSIFIED
+      ? "Not yet categorised"
+      : (f.approaches.find((a) => a.key === key)?.label ?? key);
 
-/** Approach keys present in ``counts`` in the file's order, unknown keys after alphabetically, NONE last. */
+/**
+ * Approach keys present in ``counts`` in the file's order, unknown keys after alphabetically, then Not yet
+ * categorised, NONE last.
+ */
 export function approachesOf(counts: Map<string, number>, f: Pick<ExplorerFile, "approaches">): string[] {
-  const order = f.approaches.map((a) => a.key);
-  const rank = (k: string) => (k === NONE ? Infinity : order.includes(k) ? order.indexOf(k) : order.length);
+  const order = f.approaches.map((a) => a.key).filter((k) => k !== UNCLASSIFIED);
+  const rank = (k: string) =>
+    k === NONE ? Infinity : k === UNCLASSIFIED ? Number.MAX_SAFE_INTEGER : order.includes(k) ? order.indexOf(k) : order.length;
   return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 

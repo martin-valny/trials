@@ -29,6 +29,13 @@ test("/mechanisms and /approaches land on the targeted graph", async () => {
   await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/approaches/targeted"));
 });
 
+test("/approaches/unclassified lands on Methods, not-yet-categorised", async () => {
+  stubFetch();
+  go("/approaches/unclassified");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/methods"));
+  expect(await screen.findByRole("heading", { name: "Not yet categorised" })).toBeInTheDocument();
+});
+
 test("an unknown route goes to the pipeline", async () => {
   stubFetch();
   go("/nowhere/at/all");

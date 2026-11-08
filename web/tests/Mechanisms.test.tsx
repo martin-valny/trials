@@ -27,8 +27,8 @@ function renderPage(route: string) {
   return render(
     <MemoryRouter initialEntries={[route]}>
       <Routes>
-        <Route path="/mechanisms/:approach" element={<MechanismsPage />} />
-        <Route path="/mechanisms" element={<MechanismsPage />} />
+        <Route path="/approaches/:approach" element={<MechanismsPage />} />
+        <Route path="/approaches" element={<MechanismsPage />} />
         <Route path="*" element={<Where />} />
       </Routes>
       <Routes>
@@ -47,26 +47,26 @@ beforeEach(() => {
 
 test("MechanismsPage selects from the URL and switches on rail click", async () => {
   stubFetch({ "explorer.json": withCell() });
-  renderPage("/mechanisms/cell");
+  renderPage("/approaches/cell");
   const canvas = await screen.findByRole("region", { name: /^b\s*Cell & transplant/ });
   expect(within(canvas).getByRole("heading", { name: "Haematopoietic reset" })).toBeInTheDocument();
   expect(within(canvas).getByRole("heading", { name: "Mesenchymal cells" })).toBeInTheDocument();
   await userEvent.click(within(rail()).getByRole("button", { name: /^Non-drug care/ }));
-  expect(where()).toBe("/mechanisms/nondrug");
+  expect(where()).toBe("/approaches/nondrug");
   expect(await screen.findByRole("region", { name: /^b\s*Non-drug care/ })).toBeInTheDocument();
   expect(screen.getByText(/Success not defined/)).toBeInTheDocument();
 });
 
 test("an unknown or missing approach goes to Targeted drugs", async () => {
   stubFetch();
-  renderPage("/mechanisms/bogus");
+  renderPage("/approaches/bogus");
   expect(await screen.findByRole("region", { name: /^b\s*Targeted drugs/ })).toBeInTheDocument();
-  expect(where()).toBe("/mechanisms/targeted");
+  expect(where()).toBe("/approaches/targeted");
 });
 
 test("rail rows are buttons with aria-pressed", async () => {
   stubFetch({ "explorer.json": withCell() });
-  renderPage("/mechanisms/targeted");
+  renderPage("/approaches/targeted");
   await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
   const buttons = within(rail()).getAllByRole("button");
   expect(buttons.map((b) => b.textContent?.match(/^\D+/)?.[0])).toEqual([
@@ -76,7 +76,6 @@ test("rail rows are buttons with aria-pressed", async () => {
     "Tolerisation",
     "Broad immunomodulators",
     "Non-drug care",
-    "Unclassified",
   ]);
   expect(buttons[0]).toHaveAttribute("aria-pressed", "true");
   buttons.slice(1).forEach((b) => expect(b).toHaveAttribute("aria-pressed", "false"));
@@ -85,35 +84,35 @@ test("rail rows are buttons with aria-pressed", async () => {
 
 test("MechanismsPage shows the empty message when filters exclude all", async () => {
   stubFetch({ "explorer.json": withCell() });
-  renderPage("/mechanisms/cell");
+  renderPage("/approaches/cell");
   await screen.findByRole("region", { name: /^b\s*Cell & transplant/ });
   await userEvent.click(screen.getByRole("button", { name: "Outcome: all" }));
   await userEvent.click(screen.getByRole("button", { name: "Select none" }));
   expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
   // The rail keeps every row, each at 0.
   const rows = within(rail()).getAllByRole("button");
-  expect(rows).toHaveLength(7);
+  expect(rows).toHaveLength(6);
   rows.forEach((r) => expect(within(r).getByText("0")).toBeInTheDocument());
   expect(screen.getByText(/^Showing 0 of/)).toBeInTheDocument();
 });
 
 test('missing approaches shows "Approaches appear after the next update"', async () => {
   stubFetch({ "explorer.json": { ...base, approaches: [], kinds: {} } });
-  renderPage("/mechanisms/targeted");
+  renderPage("/approaches/targeted");
   expect(await screen.findByText(/Approaches appear after the next update\./)).toBeInTheDocument();
   expect(screen.queryByRole("navigation", { name: /Approaches/ })).not.toBeInTheDocument();
 });
 
 test("a missing explorer file also says approaches appear after the next update", async () => {
   stubFetch({ "explorer.json": 404 });
-  renderPage("/mechanisms/cell");
+  renderPage("/approaches/cell");
   expect(await screen.findByText(/Approaches appear after the next update\./)).toBeInTheDocument();
 });
 
 test('kind panel lists trials with /trial links and "Show these trials on the map"', async () => {
   const f = withCell();
   stubFetch({ "explorer.json": f });
-  renderPage("/mechanisms/cell");
+  renderPage("/approaches/cell");
   await screen.findByRole("region", { name: /^b\s*Cell & transplant/ });
   const row = screen.getByRole("button", { name: /^aHSCT/ });
   await userEvent.click(row);
@@ -129,7 +128,7 @@ test('kind panel lists trials with /trial links and "Show these trials on the ma
 
 test("Escape closes the kind panel and returns focus to its row", async () => {
   stubFetch({ "explorer.json": withCell() });
-  renderPage("/mechanisms/cell?kind=msc");
+  renderPage("/approaches/cell?kind=msc");
   const panel = await screen.findByRole("complementary", { name: /Mesenchymal stem cells/ });
   expect(within(panel).getByRole("heading", { name: /Mesenchymal stem cells/ })).toHaveFocus();
   await userEvent.keyboard("{Escape}");
@@ -137,17 +136,90 @@ test("Escape closes the kind panel and returns focus to its row", async () => {
   await vi.waitFor(() => expect(screen.getByRole("button", { name: /^Mesenchymal stem cells/ })).toHaveFocus());
 });
 
-test("unclassified lists its not-yet-sorted names", async () => {
+test("rail has no Unclassified chip and shows the footnote", async () => {
   stubFetch();
-  renderPage("/mechanisms/unclassified");
-  const canvas = await screen.findByRole("region", { name: /^b\s*Unclassified/ });
-  const group = within(canvas).getByRole("region", { name: "Not yet sorted" });
-  for (const t of base.trials.filter((x) => x.approaches.includes("unclassified")))
-    for (const name of t.unsorted)
-      expect(within(group).getByRole("button", { name: new RegExp(`^${name}`) })).toBeInTheDocument();
+  renderPage("/approaches/targeted");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  expect(within(rail()).queryByRole("button", { name: /Unclassified|Not yet categorised/ })).not.toBeInTheDocument();
+  const u = base.trials.filter((t) => t.approaches.includes("unclassified"));
+  const names = new Set(u.flatMap((t) => t.unsorted));
+  const d = u.filter((t) => t.unsorted.length === 0).length;
+  const note = within(rail()).getByText(/trials not yet categorised/);
+  expect(note.textContent).toBe(
+    `${u.length} trials not yet categorised (${names.size} unsorted names, ${d} diagnostic or not a treatment). How we sort →`,
+  );
+  expect(within(note).getByRole("link", { name: "How we sort →" })).toHaveAttribute("href", "/methods#not-yet-categorised");
 });
 
-test("panel d links to /mechanisms/<approach>", () => {
+test("/approaches/unclassified redirects to methods", async () => {
+  stubFetch();
+  renderPage("/approaches/unclassified");
+  await vi.waitFor(() => expect(where()).toBe("/methods"));
+});
+
+test("targeted lede links to the pipeline", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  expect(screen.getByText(/Targeted drugs are on the Pipeline, grouped by target\./)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open the pipeline →" })).toHaveAttribute("href", "/");
+});
+
+test("target node shows Open page link when the gene has a row", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted?node=target:MS4A1");
+  const panel = await screen.findByRole("complementary");
+  expect(await within(panel).findByRole("link", { name: "Open CD20 page →" })).toHaveAttribute("href", "/target/cd20");
+});
+
+test("a target node whose gene has no row has no Open page link", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted?node=target:NFE2L2");
+  const panel = await screen.findByRole("complementary");
+  await vi.waitFor(() => expect(within(panel).getByText("Targeted drugs › Target")).toBeInTheDocument());
+  expect(within(panel).queryByRole("link", { name: /^Open .* page/ })).not.toBeInTheDocument();
+});
+
+test("from param shows Back link", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted?node=target:MS4A1&from=cd20");
+  expect(await screen.findByRole("link", { name: "← Back to CD20" })).toHaveAttribute("href", "/target/cd20");
+  expect(screen.queryByRole("link", { name: /Back to/ })).toBeInTheDocument();
+});
+
+test("an unknown from row shows no Back link", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted?from=nope");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  await screen.findByRole("link", { name: "Open the pipeline →" });
+  expect(screen.queryByRole("link", { name: /Back to/ })).not.toBeInTheDocument();
+});
+
+/** The fixture with a Myasthenia gravis trial, so that disease can be chosen. */
+function withMg(): ExplorerFile {
+  const f = structuredClone(base);
+  f.trials[0] = { ...f.trials[0], condition_labels: ["Myasthenia gravis"] };
+  return f;
+}
+
+test("?disease=MG preselects MG on the graph page and keeps it in the query", async () => {
+  stubFetch({ "explorer.json": withMg() });
+  renderPage("/approaches/targeted?disease=MG");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Disease: 1 of 6" })).toBeInTheDocument());
+  expect(where()).toBe("/approaches/targeted?disease=MG");
+  expect(screen.getByRole("link", { name: "Open the pipeline →" })).toHaveAttribute("href", "/?disease=MG");
+});
+
+test("an unknown disease code is ignored and dropped from the query", async () => {
+  stubFetch({ "explorer.json": withMg() });
+  renderPage("/approaches/targeted?disease=XYZ");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  await vi.waitFor(() => expect(where()).toBe("/approaches/targeted"));
+  expect(screen.getByRole("button", { name: "Disease: all" })).toBeInTheDocument();
+});
+
+test("panel d links to /approaches/<approach>", () => {
   const f = withCell();
   render(
     <MemoryRouter>
@@ -156,7 +228,7 @@ test("panel d links to /mechanisms/<approach>", () => {
   );
   expect(screen.getByRole("link", { name: "Show in mechanism graph" })).toHaveAttribute(
     "href",
-    "#/mechanisms/cell?kind=ahsct",
+    "#/approaches/cell?kind=ahsct",
   );
 });
 
@@ -169,7 +241,7 @@ test("panel d links a targeted trial to its drug in the graph", () => {
   );
   expect(screen.getByRole("link", { name: "Show in mechanism graph" })).toHaveAttribute(
     "href",
-    "#/mechanisms/targeted?node=drug%3Adimethyl+fumarate",
+    "#/approaches/targeted?node=drug%3Adimethyl+fumarate",
   );
 });
 
@@ -264,7 +336,7 @@ test("Non-drug care's strip key has no Succeeded entry", async () => {
   const f = structuredClone(base);
   f.trials[0] = { ...f.trials[0], approaches: ["nondrug"], kinds: Object.keys(f.kinds).filter((k) => f.kinds[k].approach === "nondrug").slice(0, 1) };
   stubFetch({ "explorer.json": f });
-  renderPage("/mechanisms/nondrug");
+  renderPage("/approaches/nondrug");
   const key = await screen.findByRole("list", { name: "Outcome strip key" });
   expect(key).not.toHaveTextContent("Succeeded");
   expect(key).toHaveTextContent("Completed");

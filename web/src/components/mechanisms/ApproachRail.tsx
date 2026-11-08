@@ -1,4 +1,5 @@
-import type { RailRow } from "../../lib/approaches";
+import { Link } from "react-router-dom";
+import type { RailRow, Uncategorised } from "../../lib/approaches";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
 const pct = (r: number): string => `${Math.round(r * 100)}%`;
@@ -41,11 +42,14 @@ export function ApproachRail({
   selected,
   minGroup,
   onSelect,
+  uncategorised,
 }: {
   rows: RailRow[];
   selected: string;
   minGroup: number;
   onSelect(key: string): void;
+  /** Trials in no approach yet: a footnote, since they are not an approach to open. */
+  uncategorised?: Uncategorised;
 }) {
   return (
     <nav className="rail" aria-labelledby="rail-h">
@@ -73,6 +77,12 @@ export function ApproachRail({
         Bars: share of finished trials that could succeed that did, credited to the drug that moved on. Under {minGroup}{" "}
         finished trials, too few to tell.
       </p>
+      {uncategorised && uncategorised.n > 0 ? (
+        <p className="panel-note rail-note rail-uncategorised">
+          {fmt(uncategorised.n)} trials not yet categorised ({fmt(uncategorised.u)} unsorted names, {fmt(uncategorised.d)}{" "}
+          diagnostic or not a treatment). <Link to="/methods#not-yet-categorised">How we sort →</Link>
+        </p>
+      ) : null}
     </nav>
   );
 }

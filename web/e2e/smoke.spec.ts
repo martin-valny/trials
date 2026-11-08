@@ -194,30 +194,15 @@ test("explore canvas draws", async ({ page }) => {
   await waitForDraw(page);
 });
 
-test("reduced motion keeps the map still and offers no rotation control", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("the map is still and has no rotation control", async ({ page }) => {
   await page.goto("/#/explore");
   await waitForDraw(page);
-  // The map starts still for everyone; under reduced motion the turn is not even offered.
-  await expect(page.getByRole("button", { name: /rotation/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /rotation|Play|Pause/ })).toHaveCount(0);
   const canvas = canvasOf(page);
   const a = await canvas.screenshot();
   await page.waitForTimeout(500);
   const b = await canvas.screenshot();
   expect(a.equals(b)).toBe(true);
-});
-
-test("negative control: without reduced motion the map turns once Play is pressed", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goto("/#/explore");
-  await waitForDraw(page);
-  const canvas = canvasOf(page);
-  // The map starts still; the turn is opt-in.
-  await page.getByRole("button", { name: "Play rotation" }).click();
-  const a = await canvas.screenshot();
-  await page.waitForTimeout(500);
-  const b = await canvas.screenshot();
-  expect(a.equals(b)).toBe(false);
 });
 
 test("theme switch persists across reload", async ({ page }) => {
@@ -330,7 +315,7 @@ test("Colour → Approach paints the map and keys the approaches without errors"
   );
   const key = page.getByRole("list", { name: "Colour key: Approach" });
   await expect(key).toContainText("Targeted drugs");
-  await expect(key).toContainText("Unclassified");
+  await expect(key).toContainText("Not yet categorised");
   await waitForDraw(page);
   expect(errors).toEqual([]);
 });

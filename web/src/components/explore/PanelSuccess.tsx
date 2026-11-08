@@ -1,26 +1,26 @@
 import { useMemo, useState } from "react";
-import { approachLabel, inApproachOrder, liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
+import { liftSentence, modalityLabel, successGroups } from "../../lib/explorer";
 import type { SuccessBy } from "../../lib/explorer";
-import type { ApproachInfo, DrugInfo, ExplorerStats, ExplorerTrial } from "../../types";
+import type { DrugInfo, ExplorerStats, ExplorerTrial } from "../../types";
 
 const pct = (r: number): string => `${Math.round(r * 100)}%`;
 
-const VIEWS: [SuccessBy, string][] = [
+/** The views offered. "approach" has its own page now (Approaches); the grouping stays in lib/explorer. */
+type View = Exclude<SuccessBy, "approach">;
+
+const VIEWS: [View, string][] = [
   ["disease", "By disease"],
   ["modality", "By modality"],
   ["mechanism", "By mechanism"],
-  ["approach", "By approach"],
 ];
 
 /** The note under a non-disease grouping: a trial counts in each of its groups. */
-const SEVERAL: Record<Exclude<SuccessBy, "disease">, string> = {
+const SEVERAL: Record<Exclude<View, "disease">, string> = {
   modality: "Trials with several modalities count in each.",
   mechanism: "Trials with several mechanisms count in each.",
-  approach: "Trials in several approaches count in each.",
 };
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
-const NO_APPROACHES: ApproachInfo[] = [];
 const NO_DRUGS: Record<string, DrugInfo> = {};
 
 /** "Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours." (second clause only when some did). */
@@ -30,7 +30,7 @@ function basisNote(stats: ExplorerStats, k: number): string {
 }
 
 /**
- * Panel b: per condition (or modality, mechanism, approach), the share of finished trials that could
+ * Panel b: per condition (or modality, mechanism), the share of finished trials that could
  * succeed (the pool: Early Phase 1 to Phase 2/3 with an experimental drug) that did succeed, against the
  * pool average. Outside the disease view a success is credited only to the groups of the drug that
  * moved on (``drugIndex``, 1b).
@@ -40,31 +40,28 @@ export function PanelSuccess({
   k,
   trials,
   minGroup,
-  approaches = NO_APPROACHES,
   drugIndex = NO_DRUGS,
 }: {
   stats: ExplorerStats;
   k: number;
   trials: ExplorerTrial[];
   minGroup: number;
-  /** The approach vocabulary, for the By approach row names. */
-  approaches?: ApproachInfo[];
   drugIndex?: Record<string, DrugInfo>;
 }) {
   const avg = stats.success_rate;
-  const [by, setBy] = useState<SuccessBy>("disease");
-  const rows = useMemo(() => {
-    const groups = successGroups(
-      trials,
-      by,
-      minGroup,
-      8,
-      by === "disease" ? stats.by_condition.map((c) => c.label) : undefined,
-      drugIndex,
-    );
-    // By approach keeps the rail's order (vocabulary, Unclassified last), not the largest first.
-    return by === "approach" ? inApproachOrder(groups, approaches) : groups;
-  }, [trials, by, minGroup, stats.by_condition, drugIndex, approaches]);
+  const [by, setBy] = useState<View>("disease");
+  const rows = useMemo(
+    () =>
+      successGroups(
+        trials,
+        by,
+        minGroup,
+        8,
+        by === "disease" ? stats.by_condition.map((c) => c.label) : undefined,
+        drugIndex,
+      ),
+    [trials, by, minGroup, stats.by_condition, drugIndex],
+  );
   return (
     <section className="panel panel-b" aria-labelledby="panel-b-h">
       <h2 className="panel-h" id="panel-b-h">
@@ -90,12 +87,7 @@ export function PanelSuccess({
             // and "too few to tell" only. The outline still sits at the raw share, as the contract draws it.
             const few = row.finished < minGroup;
             const raw = row.finished > 0 ? row.succeeded / row.finished : null;
-            const name =
-              by === "modality"
-                ? modalityLabel(row.group)
-                : by === "approach"
-                  ? approachLabel(row.group, { approaches })
-                  : row.group;
+            const name = by === "modality" ? modalityLabel(row.group) : row.group;
             if (row.successDefined === false)
               // Non-drug care: success means a drug moved on, so a short dash and the words, drawn as the rail draws them.
               return (

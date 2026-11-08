@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadGraph, loadMeta } from "../../data";
-import { isApproachKey, kindTree, railRows, UNSORTED_ROW_PREFIX } from "../../lib/approaches";
+import { isApproachKey, kindTree, railRows, UNSORTED_ROW_PREFIX, uncategorised } from "../../lib/approaches";
+import { rowForGene } from "../../lib/pipeline";
+import { useDiseaseParam, usePipelineFile } from "../../lib/useDisease";
+import { UNCLASSIFIED } from "../../lib/explorer";
 import {
   convergence,
   cutCaption,
@@ -53,13 +56,13 @@ type GraphState = GraphFile | null | undefined;
 function Title() {
   return (
     <h1 className="plate-title">
-      <b>Figure 2 |</b> Every trial by how its treatment works: drugs with a molecular target, and the approaches
-      without one.
+      <b>Figure 2 |</b> Approaches: every trial by how its treatment works, from drugs with a molecular target to
+      the approaches without one.
     </h1>
   );
 }
 
-/** Route ``/mechanisms/:approach``: an unknown approach goes to Targeted drugs. */
+/** Route ``/approaches/:approach``: an unknown approach goes to Targeted drugs. */
 export function MechanismsPage() {
   const { approach } = useParams();
   const [s, setS] = useState<State>({ state: "loading" });
@@ -81,7 +84,9 @@ export function MechanismsPage() {
     };
   }, []);
 
-  if (!isApproachKey(approach)) return <Navigate to={`/mechanisms/${DEFAULT_APPROACH}`} replace />;
+  // The old Unclassified deep link: what it held is listed on Methods now.
+  if (approach === UNCLASSIFIED) return <Navigate to="/methods#not-yet-categorised" replace />;
+  if (!isApproachKey(approach)) return <Navigate to={`/approaches/${DEFAULT_APPROACH}`} replace />;
   if (s.state === "loading") {
     return (
       <div className="explore mechanisms" aria-busy="true">
@@ -221,6 +226,7 @@ function Plate({
   const kindKey = params.get("kind");
   const nodeKey = params.get("node");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
+  const pipeline = usePipelineFile();
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   const minGroup = file.method.min_group;
   const order = useMemo(() => meta?.conditions ?? file.stats.by_condition.map((c) => c.label), [meta, file]);
@@ -229,6 +235,8 @@ function Plate({
     const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length);
     return [...all].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [file, order]);
+  const allConditions = useMemo(() => allFilters(file).conditions, [file]);
+  const disease = useDiseaseParam(pipeline, params, setParams, filters, setFilters, allConditions);
   const pristine = useMemo(() => sameFilters(filters, allFilters(file)), [filters, file]);
   // The diseases chosen, or null when the Disease filter is not narrowed (succeeded paths follow R21).
   const diseases = useMemo(() => {
@@ -240,6 +248,9 @@ function Plate({
   const shown = useMemo(() => file.trials.filter((t) => matches(t, filters, bounds)), [file, filters, bounds]);
   const rows = useMemo(() => railRows(shown, file, minGroup), [shown, file, minGroup]);
   const row = rows.find((r) => r.key === approach) ?? null;
+  // Not yet categorised is a footnote under the rail, not a row.
+  const railed = useMemo(() => rows.filter((r) => r.key !== UNCLASSIFIED), [rows]);
+  const notYet = useMemo(() => uncategorised(shown), [shown]);
   const tree = useMemo(
     () => (approach === DEFAULT_APPROACH ? [] : kindTree(approach, shown, file, minGroup)),
     [approach, shown, file, minGroup],
@@ -258,11 +269,22 @@ function Plate({
     return info && info.rationale ? { text: info.rationale, url: info.source_url || null } : null;
   };
 
-  const choose = (key: string) => navigate(`/mechanisms/${key}`);
-  const openKind = (key: string) => setParams(key === kindKey ? {} : { kind: key }, { replace: true });
+  const choose = (key: string) => navigate(`/approaches/${key}`);
+  // The query keeps what other pages put there (disease, from) while one thing is opened or closed.
+  const withParam = (name: string, value: string | null) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        if (value === null) next.delete(name);
+        else next.set(name, value);
+        return next;
+      },
+      { replace: true },
+    );
+  const openKind = (key: string) => withParam("kind", key === kindKey ? null : key);
   const closeKind = () => {
     const key = kindKey;
-    setParams({}, { replace: true });
+    withParam("kind", null);
     if (key !== null) {
       requestAnimationFrame(() =>
         document.querySelector<HTMLElement>(`.kind-row[data-kind="${CSS.escape(key)}"]`)?.focus(),
@@ -274,7 +296,13 @@ function Plate({
   // The graph's focused node (?node=), if the graph has it.
   const graphNode =
     approach === DEFAULT_APPROACH && graph && nodeKey !== null ? (graph.nodes.find((x) => x.id === nodeKey) ?? null) : null;
-  const focusNode = (id: string | null) => setParams(id === null ? {} : { node: id }, { replace: true });
+  const focusNode = (id: string | null) => withParam("node", id);
+  // Arriving from a target page (?from=<row id>): the way back, while the row exists.
+  const fromRow = pipeline?.rows.find((r) => r.id === params.get("from")) ?? null;
+  const nodeRow = graphNode && graphNode.kind === "target" && graphNode.id.startsWith("target:") && pipeline
+    ? rowForGene(pipeline, graphNode.id.slice("target:".length))
+    : null;
+  const search = disease ? `?disease=${disease}` : "";
   const closeNode = () => {
     focusNode(null);
     requestAnimationFrame(() => document.querySelector<HTMLElement>(".graph-canvas")?.focus({ preventScroll: true }));
@@ -306,7 +334,7 @@ function Plate({
         pristine={pristine}
       />
       <div className="mech-plate">
-        <ApproachRail rows={rows} selected={approach} minGroup={minGroup} onSelect={choose} />
+        <ApproachRail rows={railed} selected={approach} minGroup={minGroup} onSelect={choose} uncategorised={notYet} />
         <section className="mech-canvas" aria-labelledby="canvas-h" data-sheet-reveal="">
           <h2 className="panel-h" id="canvas-h">
             <span className="panel-l">b</span>
@@ -319,6 +347,17 @@ function Plate({
                 : ""}
             </span>
           </h2>
+          {approach === DEFAULT_APPROACH ? (
+            <p className="panel-note graph-lede">
+              {fromRow ? (
+                <>
+                  <Link to={`/target/${fromRow.id}${search}`}>← Back to {fromRow.label}</Link>
+                  {" · "}
+                </>
+              ) : null}
+              Targeted drugs are on the Pipeline, grouped by target. <Link to={`/${search}`}>Open the pipeline →</Link>
+            </p>
+          ) : null}
           {row && !row.successDefined ? (
             <p className="panel-note">
               Success not defined: success here means a drug moved to a later phase, and these treatments are not drugs.
@@ -339,6 +378,7 @@ function Plate({
               shown={shown}
               narrowed={narrowed}
               diseases={diseases}
+              disease={disease}
               minGroup={minGroup}
               palette={palette}
               focus={approach === DEFAULT_APPROACH ? nodeKey : null}
@@ -379,6 +419,8 @@ function Plate({
             drugIndex={file.drug_index}
             minGroup={minGroup}
             narrowed={narrowed}
+            row={nodeRow}
+            disease={disease}
             onFocus={focusNode}
             onClose={closeNode}
           />
@@ -449,6 +491,7 @@ function GraphView({
   shown,
   narrowed,
   diseases,
+  disease,
   minGroup,
   palette,
   focus,
@@ -459,6 +502,8 @@ function GraphView({
   narrowed: boolean;
   /** The diseases chosen, or null when the Disease filter is not narrowed. */
   diseases: ReadonlySet<string> | null;
+  /** The one disease chosen (its code), carried in outgoing links. */
+  disease: string | null;
   minGroup: number;
   palette: Palette;
   focus: string | null;
@@ -513,7 +558,7 @@ function GraphView({
       {missing ? (
         <p className="panel-note graph-dropped" role="status" aria-label={missing.drug}>
           {droppedNote(graph, missing)}{" "}
-          <Link to={mapLink(missing.trials, missing.drug)}>
+          <Link to={mapLink(missing.trials, missing.drug, disease)}>
             Show its {trialsWord(missing.n)} on the map
           </Link>
         </p>
@@ -554,7 +599,7 @@ function GraphView({
             Where successes converge
           </h3>
           <ol className="converge-list">
-            {converge.map((n) => (
+            {converge.map(({ node: n, related }) => (
               <li key={n.id}>
                 <button type="button" className="text-button node-link" onClick={() => onFocus(n.id)}>
                   {n.label}
@@ -562,6 +607,12 @@ function GraphView({
                 <span className="converge-n">
                   {fmt(n.succeeded)} of {fmt(n.finished)} · {Math.round((nodeShare(n, minGroup) ?? 0) * 100)}%
                 </span>
+                {related.length ? (
+                  <span className="converge-related" title={related.map((r) => r.label).join(", ")}>
+                    {" "}
+                    +{related.length} related {related.length === 1 ? "pathway" : "pathways"} (same trials)
+                  </span>
+                ) : null}
               </li>
             ))}
           </ol>

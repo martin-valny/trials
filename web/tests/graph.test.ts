@@ -134,10 +134,41 @@ test("nodeShare null under minGroup", () => {
 });
 
 test("convergence skips top-level pathways", () => {
-  const ranked = convergence(G, new Set(["NCT01", "NCT02", "NCT03"]), 10).map((n) => n.id);
-  // R-TOP (50%) is the best share but is top-level; R-C is under min_group.
-  expect(ranked).toEqual(["R-A", "R-MID"]);
+  const ranked = convergence(G, new Set(["NCT01", "NCT02", "NCT03"]), 10);
+  // R-TOP (50%) is the best share but is top-level; R-C is under min_group. R-A and R-MID have the same
+  // trials, so they are one entry (R-A, the deeper one, leads).
+  expect(ranked.map((e) => e.node.id)).toEqual(["R-A"]);
+  expect(ranked[0]!.related.map((n) => n.id)).toEqual(["R-MID"]);
   expect(convergence(G, new Set(["NCT03"]), 10)).toEqual([]);
+});
+
+test("convergence collapses pathways with identical trial sets", () => {
+  // Daclizumab and IL-2 reach IL2RG, which sits under six signalling pathways: one drug family, six rows.
+  const ids = ["R-IL2", "R-IL7", "R-IL9", "R-IL15", "R-IL21", "R-ALK"];
+  const g: GraphFile = {
+    ...G,
+    nodes: [
+      node("drug:daclizumab", "drug", { trials: ["NCT10", "NCT11"], n: 2 }),
+      node("target:IL2RG", "target"),
+      node("R-SIG", "pathway", { top_level: true }),
+      node("R-MID2", "pathway", { top_level: false, finished: 10, succeeded: 5 }),
+      ...ids.map((id, i) =>
+        node(id, "pathway", { top_level: false, finished: 10, succeeded: 5, n: 10 - i, label: id.slice(2) }),
+      ),
+    ],
+    edges: [
+      edge("drug:daclizumab", "target:IL2RG", "acts_on"),
+      ...ids.map((id) => edge("target:IL2RG", id, "in_pathway")),
+      ...ids.map((id) => edge(id, "R-MID2", "parent")),
+      edge("R-MID2", "R-SIG", "parent"),
+    ],
+  };
+  const out = convergence(g, new Set(["NCT10", "NCT11"]), 10);
+  // R-MID2 is reached by the same trials too: all seven collapse; R-IL2 (deepest, most trials) leads.
+  expect(out).toHaveLength(1);
+  expect(out[0]!.node.id).toBe("R-IL2");
+  expect(out[0]!.related.map((n) => n.id).sort()).toEqual(["R-ALK", "R-IL15", "R-IL21", "R-IL7", "R-IL9", "R-MID2"]);
+  expect(out[0]!.related).toHaveLength(6);
 });
 
 test("winningDrugs credits only the drugs that moved on (1b)", () => {

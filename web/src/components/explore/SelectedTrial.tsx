@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { loadTrial } from "../../data";
 import { mechanismsLink } from "../../lib/approaches";
 import { approachText, mechanismText, modalityText, targetsText, type ApproachNames } from "../../lib/explorer";
 import { firstSentences, outcomeLabel, phaseLabel } from "../../lib/format";
-import type { ExplorerTrial } from "../../types";
+import type { ExplorerTrial, PipelineRow } from "../../types";
 
 type Summary = { nct: string; text: string | null };
 
@@ -69,7 +70,19 @@ export function SelectedBar({ trial, names }: { trial: ExplorerTrial | null; nam
 }
 
 /** Panel d: the selected trial's facts and the start of its registry summary, loaded on demand. */
-export function SelectedTrial({ trial, names }: { trial: ExplorerTrial | null; names?: ApproachNames }) {
+export function SelectedTrial({
+  trial,
+  names,
+  rows,
+  disease = null,
+}: {
+  trial: ExplorerTrial | null;
+  names?: ApproachNames;
+  /** The pipeline rows this trial sits in: each gets a link to its target page. */
+  rows?: PipelineRow[];
+  /** The one disease chosen (its code), carried to the target page. */
+  disease?: string | null;
+}) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const nct = trial?.nct_id ?? null;
 
@@ -122,6 +135,11 @@ export function SelectedTrial({ trial, names }: { trial: ExplorerTrial | null; n
               {names && mechanismsLink(trial, names) !== null ? (
                 <a href={`#${mechanismsLink(trial, names)}`}>Show in mechanism graph</a>
               ) : null}
+              {(rows ?? []).map((r) => (
+                <Link key={r.id} to={`/target/${r.id}${disease ? `?disease=${disease}` : ""}`}>
+                  Open {r.label} target page →
+                </Link>
+              ))}
             </p>
           </>
         )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kindTree, mechanismsLink, railRows, unsortedKey, APPROACH_KEYS, isApproachKey, NOT_YET_SORTED_ELSEWHERE } from "../src/lib/approaches";
+import { kindTree, mechanismsLink, railRows, uncategorised, APPROACH_KEYS, isApproachKey, NOT_YET_SORTED_ELSEWHERE } from "../src/lib/approaches";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
@@ -313,20 +313,19 @@ describe("unclassified rows that no drug can win", () => {
   });
 });
 
-describe("mechanismsLink for Unclassified trials", () => {
+describe("mechanismsLink for Not yet categorised trials", () => {
   const f = file([]);
-  it("links a Not yet sorted trial to its unsorted-name row, never a type fallback", () => {
-    const t = trial({ approaches: ["unclassified"], kinds: ["type:OTHER"], unsorted: ["standard therapy"] });
-    const link = mechanismsLink(t, f);
-    expect(link).toBe(`/mechanisms/unclassified?kind=${encodeURIComponent(unsortedKey("standard therapy"))}`);
-    expect(link).not.toContain("type%3AOTHER");
+  it("has no page to open: the Approaches rail no longer lists them", () => {
+    expect(mechanismsLink(trial({ approaches: ["unclassified"], kinds: ["type:OTHER"], unsorted: ["standard therapy"] }), f)).toBeNull();
+    expect(mechanismsLink(trial({ approaches: ["unclassified"], kinds: [], unsorted: [] }), f)).toBeNull();
   });
-  it("keeps a real kind row such as Not a treatment", () => {
-    const t = trial({ approaches: ["unclassified"], kinds: ["not_a_treatment"] });
-    expect(mechanismsLink(t, f)).toBe("/mechanisms/unclassified?kind=not_a_treatment");
-  });
-  it("links a trial with nothing listed to the no-treatment row", () => {
-    const t = trial({ approaches: ["unclassified"], kinds: [], unsorted: [] });
-    expect(mechanismsLink(t, f)).toBe(`/mechanisms/unclassified?kind=${encodeURIComponent(unsortedKey(""))}`);
+  it("counts them for the rail footnote: unsorted names, and trials that are not a treatment", () => {
+    const ts = [
+      trial({ nct_id: "A", approaches: ["unclassified"], unsorted: ["x", "y"] }),
+      trial({ nct_id: "B", approaches: ["unclassified"], unsorted: ["x"] }),
+      trial({ nct_id: "C", approaches: ["unclassified"], unsorted: [] }),
+      trial({ nct_id: "D", approaches: ["cell"], unsorted: ["z"] }),
+    ];
+    expect(uncategorised(ts)).toEqual({ n: 3, u: 2, d: 1 });
   });
 });

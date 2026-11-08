@@ -528,3 +528,16 @@ export function stopSummary(
   const other = counts.get("Other") ?? 0;
   return { groups, showGroups: given === 0 || other / given <= OTHER_MAX_SHARE, stops };
 }
+
+// ---------------------------------------------------------------- hand-offs
+
+/** The row a gene belongs to (the first in figure order when several share it, e.g. CD19 and CD19 CAR-T); null if none. */
+export function rowForGene(f: PipelineFile, gene: string): PipelineRow | null {
+  const rows = f.rows.filter((r) => r.gene === gene);
+  return rows.reduce<PipelineRow | null>((best, r) => (best === null || r.order < best.order ? r : best), null);
+}
+
+/** Every row the trial sits in, in figure order (a combination trial can sit in two). */
+export function rowsForTrial(f: PipelineFile, nct: string): PipelineRow[] {
+  return f.rows.filter((r) => r.marks.some((m) => m.n === nct)).sort((a, b) => a.order - b.order);
+}
