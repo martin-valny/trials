@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-08T18:00:00Z",
+  "generatedAt": "2026-11-08T20:00:00Z",
   "title": "Design System: Trial Radar",
   "extensions": {
     "colorMeta": {
@@ -205,7 +205,7 @@
       },
       "canvas-numeral": {
         "displayName": "Canvas numeral",
-        "purpose": "Phone (<=640px): 800 11px ink numerals 1-6 on a 3px plate halo at cluster anchors, keyed under the canvas."
+        "purpose": "Phone (<=640px): 800 11px ink numerals on a 3px plate halo, keyed under the canvas: 1-6 at Explore's cluster anchors, 1-n beside Figure 2's top-level pathways."
       },
       "header-note": {
         "displayName": "Header note",
@@ -363,7 +363,7 @@
       "name": "Kind row and outcome strip",
       "kind": "list",
       "refersTo": "",
-      "description": "A tree row: label, a dotted muted leader, 'N trials' (tabular), a 6px square-ended strip whose length is the kind against the largest kind, split succeeded (red, the only red), stopped (ink), completed (pale), running (navy), unknown (hairline outline); then the share or 'too few to tell'. A 'proposed' rationale line with a quiet source link sits under a group heading or a row. Groups over 20 rows end in a 'Show N more, M trials' text button.",
+      "description": "A tree row: label, a dotted muted leader, 'N trials' (tabular), a 6px square-ended strip whose length is the kind against the largest kind, split succeeded (red, the only red), stopped (ink), completed (pale), running (navy), unknown (hairline outline); then the share or 'too few to tell'. A 'proposed' rationale line with a quiet source link sits under a group heading or a row. Groups over 20 rows end in a 'Show N more, M trials' text button. The tree keeps a 46rem measure so the share sits by its strip.",
       "html": "<div class=\"ds-kr\"><span>mesenchymal stem cells</span><span class=\"l\"></span><span class=\"n\">35 trials</span><span class=\"st\"><i style=\"flex:5;background:#111\"></i><i style=\"flex:19;background:#c9d1d8\"></i><i style=\"flex:8;background:#3c5488\"></i><i style=\"flex:3;border:1px solid #c9d1d8\"></i></span><span>0%</span></div>",
       "css": ".ds-kr{display:grid;grid-template-columns:auto 1fr auto 12rem 6rem;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-kr .l{border-bottom:1px dotted var(--muted,#5b6268);height:0;align-self:center}.ds-kr .n{font-variant-numeric:tabular-nums}.ds-kr .st{display:flex;height:6px;width:60%}.ds-kr .st i{display:block}"
     },
@@ -379,7 +379,7 @@
       "name": "Mechanism graph",
       "kind": "custom",
       "refersTo": "",
-      "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. At rest reduced ink with top-level pathways labelled; hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it. The graph is capped at 300 nodes: a muted caption under it gives the cut, and Find lists the left-out drugs as 'not drawn' with a note saying why and a link to their trials on the map.",
+      "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. Above it the Find pill on a right-aligned line of its own, then the key on one line over the frame. At rest reduced ink with top-level pathways labelled (on a phone, ink numerals 1 to n clear of other marks, named in a numbered key under the canvas); hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it. The graph is capped at 300 nodes: a muted caption under it gives the cut, and Find lists the left-out drugs as 'not drawn' with a note saying why and a link to their trials on the map.",
       "html": "",
       "css": ""
     }

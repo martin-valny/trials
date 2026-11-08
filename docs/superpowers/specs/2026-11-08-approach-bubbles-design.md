@@ -182,6 +182,7 @@ Immune cells
 - The rationale line sits under the group or kind, marked "proposed", with a source link.
 - Clicking a kind opens the side panel (same as the graph's): its trials with links to `/trial/:nct`, "Show these trials on the map", and the rationale with its source.
 - Unclassified uses the same tree. "Not yet sorted" lists its names by trial count, which makes the mapping backlog visible.
+  - Amendment (2026-11-08, whole-branch review; **pending Martin's sign-off**): the Unclassified tree ends with a fourth group, "Not yet sorted, in trials of other approaches", listing unsorted names carried only by trials sorted into another bubble (an unmapped drug beside a mapped one), with those trials. Without it those names (73 names, 66 trials on the 2026-11-06 snapshot) appear nowhere on the page. If Martin declines it, drop the group and say in the Unclassified note that such names are not listed.
 
 ### 7.3 Elsewhere
 - The map gains an **Approach** colour mode and filter, using the seven approaches. The existing **Mechanism** mode keeps molecular classes only. Drug-free and no-target trials take the neutral fill, as now.
