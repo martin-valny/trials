@@ -182,6 +182,7 @@ Run by hand (Martin's Mac) or by a manual-dispatch workflow that opens a PR; nev
 14. (Phase 2 outcome) "Too few to tell" (item 7) is drawn as the outline bar with its counts plus small "too few to tell" words, in every panel b grouping, rather than a sentence in place of the bar. Layout weight 1.0; HDBSCAN `min_cluster_size` 25, `min_samples` 10 (section 11).
 15. (Phase 2 outcome) Departure from R17: a named cluster's label is anchored on the member nearest the cluster's median position, not its densest point; every cluster then has a well-defined anchor inside it. Disease labels still use each condition's own densest region (weighted by its share of neighbours).
 16. (Phase 2 outcome, Martin's call 2026-11-07) The neighbourhood statistic leaves out the mechanism block (`method.stat_features`); the layout keeps it. On the 2026-11-06 snapshot: lift 1.32, p = 0.061 without it vs 0.71, p = 0.94 with it.
+17. (Phase 3, 2026-11-08) §6.1 items 3, 4, 7 and §7 are amended by `docs/superpowers/specs/2026-11-08-approach-bubbles-design.md`: seven approach bubbles, a graph only for Targeted drugs, trees for the rest, success credited to the drug that moved on (1b).
 
 ## 11. Left to the builder
 HDBSCAN parameters; the starting mechanism weight (decided with `cluster_report.py`); Jaccard floor and top-k; pathway pruning cap; force-layout algorithm and parameters; exact palettes within `DESIGN.md`; popup and dropdown styling; whether the manual mapping workflow is added in phase 2 or later.
