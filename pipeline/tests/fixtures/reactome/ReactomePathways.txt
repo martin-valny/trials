@@ -1,0 +1,30 @@
+R-HSA-174577	Activation of C3 and C5	Homo sapiens
+R-HSA-1280218	Adaptive Immune System	Homo sapiens
+R-HSA-983695	Antigen activates B Cell Receptor (BCR) leading to generation of second messengers	Homo sapiens
+R-HSA-373076	Class A/1 (Rhodopsin-like receptors)	Homo sapiens
+R-HSA-166658	Complement cascade	Homo sapiens
+R-HSA-1280215	Cytokine Signaling in Immune system	Homo sapiens
+R-HSA-1643685	Disease	Homo sapiens
+R-HSA-418594	G alpha (i) signalling events	Homo sapiens
+R-HSA-388396	GPCR downstream signalling	Homo sapiens
+R-HSA-500792	GPCR ligand binding	Homo sapiens
+R-HSA-168256	Immune System	Homo sapiens
+R-HSA-5663205	Infectious disease	Homo sapiens
+R-HSA-168249	Innate Immune System	Homo sapiens
+R-HSA-6785807	Interleukin-4 and Interleukin-13 signaling	Homo sapiens
+R-HSA-419408	Lysosphingolipid and LPA receptors	Homo sapiens
+R-HSA-392499	Metabolism of proteins	Homo sapiens
+R-HSA-375276	Peptide ligand-binding receptors	Homo sapiens
+R-HSA-163125	Post-translational modification: synthesis of GPI-anchored proteins	Homo sapiens
+R-HSA-597592	Post-translational protein modification	Homo sapiens
+R-HSA-9679191	Potential therapeutics for SARS	Homo sapiens
+R-HSA-977606	Regulation of Complement cascade	Homo sapiens
+R-HSA-9992296	Rituximab:MS4A1 (rituximab:CD20) targets B cells for antibody-dependent cellular cytotoxicity by NK cells	Homo sapiens
+R-HSA-9679506	SARS-CoV Infections	Homo sapiens
+R-HSA-162582	Signal Transduction	Homo sapiens
+R-HSA-372790	Signaling by GPCR	Homo sapiens
+R-HSA-449147	Signaling by Interleukins	Homo sapiens
+R-HSA-983705	Signaling by the B Cell Receptor (BCR)	Homo sapiens
+R-HSA-166665	Terminal pathway of complement	Homo sapiens
+R-HSA-9824446	Viral Infection Pathways	Homo sapiens
+R-MMU-983705	Signaling by the B Cell Receptor (BCR)	Mus musculus

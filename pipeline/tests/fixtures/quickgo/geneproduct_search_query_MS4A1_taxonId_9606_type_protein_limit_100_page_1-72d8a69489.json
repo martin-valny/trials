@@ -1,0 +1,177 @@
+{
+ "pageInfo": {
+  "resultsPerPage": 100,
+  "current": 1,
+  "total": 1
+ },
+ "results": [
+  {
+   "id": "E9PPL6",
+   "symbol": "MS4A1",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "E9PKH8",
+   "symbol": "MS4A1",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "P11836",
+   "symbol": "MS4A1",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "B-lymphocyte antigen CD20"
+  },
+  {
+   "id": "E9PIX5",
+   "symbol": "MS4A12",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "E9PRG6",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "A0ACI8Q9Q6",
+   "symbol": "MS4A12",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A12"
+  },
+  {
+   "id": "H0YD53",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "F6X344",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A14"
+  },
+  {
+   "id": "E9PNI3",
+   "symbol": "MS4A12",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A12"
+  },
+  {
+   "id": "Q3C1V0",
+   "symbol": "MS4A18",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 18"
+  },
+  {
+   "id": "E9PIL9",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A14"
+  },
+  {
+   "id": "E9PPG1",
+   "symbol": "MS4A13",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A13"
+  },
+  {
+   "id": "Q96JA4",
+   "symbol": "MS4A14",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 14"
+  },
+  {
+   "id": "A0A0A0MS57",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A14"
+  },
+  {
+   "id": "B7ZVW7",
+   "symbol": "MS4A13",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MS4A13 protein"
+  },
+  {
+   "id": "Q8N5U1",
+   "symbol": "MS4A15",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 15"
+  },
+  {
+   "id": "Q96PG2",
+   "symbol": "MS4A10",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 10"
+  },
+  {
+   "id": "E7ET34",
+   "symbol": "MS4A15",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A15"
+  },
+  {
+   "id": "E9PPA2",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A14"
+  },
+  {
+   "id": "E9PRA6",
+   "symbol": "MS4A14",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "Q9NXJ0",
+   "symbol": "MS4A12",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 12"
+  },
+  {
+   "id": "A0ACI8Q054",
+   "symbol": "MS4A15",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CD20-like transmembrane domain-containing protein"
+  },
+  {
+   "id": "A0ACI8RH06",
+   "symbol": "MS4A15",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Membrane spanning 4-domains A15"
+  },
+  {
+   "id": "Q5J8X5",
+   "symbol": "MS4A13",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "Membrane-spanning 4-domains subfamily A member 13"
+  }
+ ]
+}

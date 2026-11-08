@@ -1,0 +1,261 @@
+{
+ "pageInfo": {
+  "resultsPerPage": 100,
+  "current": 1,
+  "total": 1
+ },
+ "results": [
+  {
+   "id": "M0QYN1",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0ACI8RQC2",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8SCP2",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "M0QYN9",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0AB39TY97",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8QSJ6",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8V5H1",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8V5H7",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0AB39TYG4",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Neonatal crystallizable Fc receptor FcRn splice variant 5"
+  },
+  {
+   "id": "A0ACI8QQW4",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8S3S7",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8S4T5",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0ACI8S965",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "P55899",
+   "symbol": "FCGRT",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "M0R220",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0AB39TZ17",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Neonatal crystallizable Fc receptor FcRn splice variant 6"
+  },
+  {
+   "id": "M0QYM4",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "M0R0H0",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "M0R0K7",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Fc gamma receptor and transporter"
+  },
+  {
+   "id": "A0ACI8QRJ8",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0ACI8R223",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8R9A7",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Fc gamma receptor and transporter"
+  },
+  {
+   "id": "A0ACI8RFE1",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "M0R266",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "M0R2T3",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "Fc gamma receptor and transporter"
+  },
+  {
+   "id": "A0ACI8R7N8",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8RCZ7",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0ACI8SF32",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "MHC class I-like antigen recognition-like domain-containing protein"
+  },
+  {
+   "id": "A0ACI8SG44",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8V5F9",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "M0R0A9",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8SAM9",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8V5H3",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0ACI8V5I4",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0AB39TYH5",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  },
+  {
+   "id": "A0AB39TYT1",
+   "symbol": "FCGRT",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "IgG receptor FcRn large subunit p51"
+  }
+ ]
+}

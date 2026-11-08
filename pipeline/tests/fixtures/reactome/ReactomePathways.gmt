@@ -1,0 +1,29 @@
+Activation of C3 and C5	R-HSA-174577	C3	C5	CFB
+Adaptive Immune System	R-HSA-1280218	BTK	C3	CD19	CD79A	CD79B	ITGA4	LYN	MS4A1	SYK
+Antigen activates B Cell Receptor (BCR) leading to generation of second messengers	R-HSA-983695	BTK	CD19	CD79A	CD79B	LYN	MS4A1	SYK
+Class A/1 (Rhodopsin-like receptors)	R-HSA-373076	C3	C5	S1PR1	S1PR5
+Complement cascade	R-HSA-166658	C3	C5	CD19	CFB
+Cytokine Signaling in Immune system	R-HSA-1280215	IL6R	LYN	S1PR1	SYK
+Disease	R-HSA-1643685	BTK	C3	CD19	CD79A	CD79B	IL6R	ITGA4	LYN	S1PR1	SYK
+G alpha (i) signalling events	R-HSA-418594	C3	C5	S1PR5
+GPCR downstream signalling	R-HSA-388396	BTK	C3	C5	S1PR5
+GPCR ligand binding	R-HSA-500792	C3	C5	S1PR1	S1PR5
+Immune System	R-HSA-168256	BTK	C3	C5	CD19	CD79A	CD79B	CFB	IL6R	ITGA4	LYN	MS4A1	S1PR1	SYK
+Infectious disease	R-HSA-5663205	BTK	C3	CD79A	CD79B	IL6R	ITGA4	LYN	S1PR1	SYK
+Innate Immune System	R-HSA-168249	BTK	C3	C5	CD19	CFB	LYN	SYK
+Interleukin-4 and Interleukin-13 signaling	R-HSA-6785807	IL6R	S1PR1
+Lysosphingolipid and LPA receptors	R-HSA-419408	S1PR1	S1PR5
+Metabolism of proteins	R-HSA-392499	C3	CD52	PIGA	PIGB
+Peptide ligand-binding receptors	R-HSA-375276	C3	C5
+Post-translational modification: synthesis of GPI-anchored proteins	R-HSA-163125	CD52	PIGA	PIGB
+Post-translational protein modification	R-HSA-597592	C3	CD52	PIGA	PIGB
+Potential therapeutics for SARS	R-HSA-9679191	BTK	CD79A	CD79B	IL6R	ITGA4	S1PR1	SYK
+Regulation of Complement cascade	R-HSA-977606	C3	C5	CD19	CFB
+Rituximab:MS4A1 (rituximab:CD20) targets B cells for antibody-dependent cellular cytotoxicity by NK cells	R-HSA-9992296	MS4A1	SYK
+SARS-CoV Infections	R-HSA-9679506	BTK	CD79A	CD79B	IL6R	ITGA4	S1PR1	SYK
+Signal Transduction	R-HSA-162582	BTK	C3	C5	CD19	IL6R	LYN	S1PR1	S1PR5	SYK
+Signaling by GPCR	R-HSA-372790	BTK	C3	C5	S1PR1	S1PR5
+Signaling by Interleukins	R-HSA-449147	IL6R	LYN	S1PR1	SYK
+Signaling by the B Cell Receptor (BCR)	R-HSA-983705	BTK	CD19	CD79A	CD79B	LYN	MS4A1	SYK
+Terminal pathway of complement	R-HSA-166665	C5
+Viral Infection Pathways	R-HSA-9824446	BTK	CD79A	CD79B	IL6R	ITGA4	LYN	S1PR1	SYK
