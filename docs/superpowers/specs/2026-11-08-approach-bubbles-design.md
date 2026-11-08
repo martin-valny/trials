@@ -121,6 +121,7 @@ Notes:
   - drugs: the existing cleaned experimental drugs (experimental arms, Drug/Biological);
   - non-drug: the experimental arms' interventions of other types (new extraction in `extras.py`, same arm rule; if a trial has no experimental arm, all its interventions).
   - Placebo, sham, usual care and `exclude_terms` matches are dropped, as for drugs.
+  - Amendment (2026-11-08): the all-interventions fallback applies to approach sorting only, for a trial with arm groups but no EXPERIMENTAL arm as well as for one with no arm groups; `experimental_drugs`, the R18 pool, success, the mechanism union and the layout features are unchanged. A trial with nothing left to sort after the fallback (only placebo, say) is in Unclassified, group "No experimental treatment listed".
 - New fields:
   - `approaches: string[]` (approach keys, sorted; `["unclassified"]` when nothing else applies);
   - `kinds: string[]` (kind keys for no-target and non-drug interventions);

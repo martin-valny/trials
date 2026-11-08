@@ -45,6 +45,9 @@ class StudyExtras:
     mesh_terms: tuple[str, ...]
     condition_labels: tuple[str, ...]
     experimental_interventions: tuple[ExperimentalIntervention, ...] = ()
+    fallback_interventions: tuple[ExperimentalIntervention, ...] = ()
+    """Approach sorting only: every intervention (any type) of a trial whose arms include no
+    EXPERIMENTAL arm (spec 2026-11-08 §6.3). Empty otherwise; never feeds drugs, pool or success."""
 
 
 def empty_extras(nct_id: str) -> StudyExtras:
@@ -140,15 +143,38 @@ def _experimental_interventions(
             else:
                 out.append(ExperimentalIntervention(kind, name, ""))
     if not arm_groups:
-        out = [iv for iv in (_intervention(i) for i in items) if iv is not None]
+        out = _all_interventions(items)
+    return _dedupe_interventions(out)
+
+
+def _all_interventions(items: Sequence[dict[str, Any]]) -> list[ExperimentalIntervention]:
+    return [iv for iv in (_intervention(i) for i in items) if iv is not None]
+
+
+def _dedupe_interventions(
+    ivs: Sequence[ExperimentalIntervention],
+) -> tuple[ExperimentalIntervention, ...]:
     seen: set[str] = set()
     deduped: list[ExperimentalIntervention] = []
-    for iv in out:
+    for iv in ivs:
         key = norm_text(iv.name)
         if key and key not in seen:
             seen.add(key)
             deduped.append(iv)
     return tuple(deduped)
+
+
+def _fallback_interventions(arms_module: dict[str, Any]) -> tuple[ExperimentalIntervention, ...]:
+    """All interventions when there are arm groups but none is EXPERIMENTAL (else empty).
+
+    Used only to sort the trial into approach bubbles; ``experimental_drugs`` is untouched."""
+    arm_groups = arms_module.get("armGroups") or []
+    if not arm_groups or any(
+        isinstance(a, dict) and a.get("type") == "EXPERIMENTAL" for a in arm_groups
+    ):
+        return ()
+    items = [i for i in arms_module.get("interventions") or [] if isinstance(i, dict)]
+    return _dedupe_interventions(_all_interventions(items))
 
 
 def _extras(study: dict[str, Any], cfg: AreaConfig) -> StudyExtras:
@@ -170,6 +196,7 @@ def _extras(study: dict[str, Any], cfg: AreaConfig) -> StudyExtras:
         mesh_terms=tuple(m["term"] for m in meshes if isinstance(m, dict) and m.get("term")),
         condition_labels=tuple(condition_labels(study, cfg)),
         experimental_interventions=_experimental_interventions(arms),
+        fallback_interventions=_fallback_interventions(arms),
     )
 
 

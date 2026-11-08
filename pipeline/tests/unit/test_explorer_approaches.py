@@ -248,3 +248,44 @@ def test_combination_row_with_a_kind_part_is_not_a_collision(
     assert acfg is not None and warnings == []
     assert out["N1"].approaches == ("targeted", "plasma")
     assert out["N1"].kinds == ("immunoglobulin",)
+
+
+def _fallback_study(nct: str, *ivs: tuple[str, str, str]) -> StudyExtras:
+    base = _study(nct)
+    return StudyExtras(
+        **{
+            **{f: getattr(base, f) for f in base.__dataclass_fields__},
+            "fallback_interventions": tuple(ExperimentalIntervention(*i) for i in ivs),
+        }
+    )
+
+
+def test_trial_without_experimental_arm_sorts_its_other_interventions(
+    cfg: AreaConfig, tmp_path: Path
+) -> None:
+    """Approach sorting falls back to all interventions (placebo dropped); the mapping
+    names, which feed the mechanism union, do not."""
+    full = {
+        "F1": _fallback_study(
+            "F1", ("DEVICE", "Wristband", ""), ("DRUG", "Placebo", ""), ("DRUG", "mystery-101", "")
+        ),
+        "F2": _fallback_study("F2", ("DRUG", "Placebo", "")),
+    }
+    c = _cfg(cfg, tmp_path)
+    warnings: list[str] = []
+    out, _ = load_trial_approaches(c, full, {}, warnings)
+    assert warnings == []
+    assert out["F1"].approaches == ("nondrug",)
+    assert out["F1"].unsorted == ("mystery-101",)
+    assert out["F2"] == TrialApproaches(("unclassified",), (), (), ())
+    assert mapping_names(full, {}, c) == {"F1": frozenset(), "F2": frozenset()}
+
+
+def test_drug_index_uses_descriptions_like_the_trials() -> None:
+    acfg = read_approaches(APPROACHES)
+    rule = next(r for r in acfg.rules if not r.types)
+    desc = f"{rule.pattern} therapy. Other."
+    plain = drug_index(["xyz"], {}, acfg)
+    with_desc = drug_index(["xyz"], {}, acfg, descriptions={"xyz": [desc]})
+    assert rule.kind in with_desc["xyz"]["kinds"]
+    assert rule.kind not in plain["xyz"]["kinds"]

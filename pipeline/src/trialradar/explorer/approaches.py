@@ -8,7 +8,7 @@ that collides with a molecular class in use) skips the approach parts with one
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any
 
 from trialradar.approaches.io import (
@@ -36,13 +36,17 @@ EMPTY = TrialApproaches((), (), (), ())
 
 
 def _interventions(
-    study: StudyExtras, aliases: Mapping[str, str], cfg: AreaConfig
+    study: StudyExtras, aliases: Mapping[str, str], cfg: AreaConfig, *, fallback: bool = False
 ) -> Iterator[Intervention]:
     """The study's experimental interventions with cleaned names; placebo, sham and other
     ``exclude_terms`` matches are dropped. A cleaned experimental drug that no intervention
-    carries is added as a Drug, so every drug is sorted."""
+    carries is added as a Drug, so every drug is sorted. With ``fallback`` (approach sorting
+    only), a trial with no experimental arm yields all its interventions instead."""
     seen: set[str] = set()
-    for iv in study.experimental_interventions:
+    source = study.experimental_interventions
+    if fallback and not source and not study.experimental_drugs:
+        source = study.fallback_interventions
+    for iv in source:
         name = clean_drug_name(iv.name, aliases, cfg.explorer.exclude_terms)
         if name is not None and name not in seen:
             seen.add(name)
@@ -79,6 +83,18 @@ def mapping_types(
             elif iv.type in MAPPING_TYPES:
                 types.setdefault(iv.name, iv.type)
     return types
+
+
+def mapping_descriptions(
+    full: Mapping[str, StudyExtras], aliases: Mapping[str, str], cfg: AreaConfig
+) -> dict[str, list[str]]:
+    """Every distinct description each mapping name carries (sorted), so the drug index sorts
+    a name the way each trial that holds it does."""
+    found: dict[str, set[str]] = {}
+    for study in full.values():
+        for iv in _interventions(study, aliases, cfg):
+            found.setdefault(iv.name, set()).add(iv.description)
+    return {name: sorted(d) for name, d in found.items()}
 
 
 def molecular_classes(mappings: Mapping[str, DrugMapping]) -> set[str]:
@@ -118,7 +134,9 @@ def load_trial_approaches(
         warnings.append(f"approaches: {exc}")
         return {nct: EMPTY for nct in full}, None
     out = {
-        nct: trial_approaches(tuple(_interventions(study, aliases, cfg)), mappings, acfg)
+        nct: trial_approaches(
+            tuple(_interventions(study, aliases, cfg, fallback=True)), mappings, acfg
+        )
         for nct, study in full.items()
     }
     return out, acfg
@@ -129,14 +147,18 @@ def drug_index(
     mappings: Mapping[str, DrugMapping],
     acfg: ApproachConfig | None,
     types: Mapping[str, str] | None = None,
+    descriptions: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, dict[str, list[str]]]:
     """``{name: {mechanisms, modalities, kinds, approaches}}``, sorted by name.
 
     The web credits a success to a group only through the drugs that moved on (1b), and
     looks their groups up here. ``types`` gives each name's intervention type for the
-    keyword and fallback rules (default Drug). Without an approach config, ``kinds`` and
+    keyword and fallback rules (default Drug); ``descriptions`` gives the descriptions its
+    trials carry (the keyword rules read each one's first sentence, as in the trial sort, and
+    the groups found are united). Without an approach config, ``kinds`` and
     ``approaches`` are empty."""
     types = types or {}
+    descriptions = descriptions or {}
     kind_keys = acfg.kinds.keys() if acfg is not None else frozenset()
     out: dict[str, dict[str, list[str]]] = {}
     for name in sorted(set(names)):
@@ -151,10 +173,13 @@ def drug_index(
         kinds: list[str] = []
         approaches: list[str] = []
         if acfg is not None:
-            s = sort_intervention(Intervention(types.get(name, "DRUG"), name), mappings, acfg)
-            kinds = sorted(s.kinds)
-            found = {acfg.kinds[k].approach for k in s.kinds}
-            if s.molecular:
+            sorts = [
+                sort_intervention(Intervention(types.get(name, "DRUG"), name, d), mappings, acfg)
+                for d in descriptions.get(name) or [""]
+            ]
+            kinds = sorted({k for s in sorts for k in s.kinds})
+            found = {acfg.kinds[k].approach for k in kinds}
+            if any(s.molecular for s in sorts):
                 found.add("targeted")
             if found - {"unclassified"}:
                 found.discard("unclassified")

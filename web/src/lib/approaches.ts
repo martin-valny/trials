@@ -127,6 +127,8 @@ interface Acc {
   group: string;
   members: ExplorerTrial[];
   won: (t: ExplorerTrial) => boolean;
+  /** false for a row no drug can win (nothing to credit): a succeeded trial there is just completed. */
+  credits?: boolean;
 }
 
 function toKind(a: Acc, minGroup: number, successDefined: boolean): TreeKind {
@@ -137,7 +139,7 @@ function toKind(a: Acc, minGroup: number, successDefined: boolean): TreeKind {
   for (const t of a.members) {
     const won = successDefined && a.won(t);
     if (t.outcome !== "succeeded" || won) outcomes[t.outcome] += 1;
-    else if (successDefined) elsewhere.push(t.nct_id);
+    else if (successDefined && a.credits !== false) elsewhere.push(t.nct_id);
     else outcomes.completed_unknown += 1;
     if (!t.in_pool) continue;
     finished += 1;
@@ -172,8 +174,15 @@ const byCount = (a: { n: number; label: string }, b: { n: number; label: string 
  */
 export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerFile, minGroup: number): TreeGroup[] {
   const accs = new Map<string, Acc>();
-  const add = (key: string, label: string, group: string, t: ExplorerTrial, won: Acc["won"]) => {
-    const a = accs.get(key) ?? { key, label, group, members: [], won };
+  const add = (
+    key: string,
+    label: string,
+    group: string,
+    t: ExplorerTrial,
+    won: Acc["won"],
+    credits = true,
+  ) => {
+    const a = accs.get(key) ?? { key, label, group, members: [], won, credits };
     a.members.push(t);
     accs.set(key, a);
   };
@@ -199,7 +208,7 @@ export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerF
       );
       placed = true;
     }
-    if (!placed) add(unsortedKey(""), NO_INTERVENTION_ROW, NO_INTERVENTION, t, () => false);
+    if (!placed) add(unsortedKey(""), NO_INTERVENTION_ROW, NO_INTERVENTION, t, () => false, false);
   }
   if (unclassified) {
     // Names no Unclassified trial carries: the rest of the backlog, with the trials (elsewhere) that hold them.
@@ -260,6 +269,14 @@ export function mechanismsLink(
       ? "/mechanisms/targeted"
       : `/mechanisms/targeted?${new URLSearchParams({ node: drugNodeId(drug) }).toString()}`;
   }
-  const kind = t.kinds.find((k) => f.kinds[k]?.approach === approach);
+  const unclassified = approach === UNCLASSIFIED;
+  // In Unclassified the "Not yet sorted" rows are the unsorted names (never the type fallbacks)
+  const kind = t.kinds.find(
+    (k) => f.kinds[k]?.approach === approach && !(unclassified && f.kinds[k]?.group === NOT_YET_SORTED),
+  );
+  if (kind === undefined && unclassified) {
+    const key = unsortedKey(t.unsorted[0] ?? "");
+    return `/mechanisms/${approach}?kind=${encodeURIComponent(key)}`;
+  }
   return kind === undefined ? `/mechanisms/${approach}` : `/mechanisms/${approach}?kind=${encodeURIComponent(kind)}`;
 }

@@ -18,6 +18,7 @@ from trialradar.explorer.approaches import (
     approach_meta,
     drug_index,
     load_trial_approaches,
+    mapping_descriptions,
     mapping_names,
     mapping_types,
 )
@@ -194,6 +195,7 @@ def build_explorer(
         inp.mappings,
         inp.approach_cfg,
         mapping_types(full, aliases, cfg),
+        mapping_descriptions(full, aliases, cfg),
     )
     file_level = {"approaches": approach_list, "kinds": kinds, "drug_index": index}
     if len(ids) < _MIN_TRIALS:

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kindTree, railRows, APPROACH_KEYS, isApproachKey, NOT_YET_SORTED_ELSEWHERE } from "../src/lib/approaches";
+import { kindTree, mechanismsLink, railRows, unsortedKey, APPROACH_KEYS, isApproachKey, NOT_YET_SORTED_ELSEWHERE } from "../src/lib/approaches";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
@@ -296,5 +296,37 @@ describe("approach keys", () => {
     expect(APPROACH_KEYS).toHaveLength(7);
     expect(isApproachKey("cell")).toBe(true);
     expect(isApproachKey("bogus")).toBe(false);
+  });
+});
+
+
+describe("unclassified rows that no drug can win", () => {
+  it("shows a succeeded trial in the no-treatment row as completed, not 'via another drug'", () => {
+    const trials = [
+      trial({ nct_id: "A", approaches: ["unclassified"], kinds: [], unsorted: [], outcome: "succeeded", in_pool: true }),
+    ];
+    const tree = kindTree("unclassified", trials, file(trials), 1);
+    const row = tree.flatMap((g) => g.kinds)[0];
+    expect(row.label).toBe("no experimental treatment kept");
+    expect(row.elsewhere).toBe(0);
+    expect(row.outcomes.completed_unknown).toBe(1);
+  });
+});
+
+describe("mechanismsLink for Unclassified trials", () => {
+  const f = file([]);
+  it("links a Not yet sorted trial to its unsorted-name row, never a type fallback", () => {
+    const t = trial({ approaches: ["unclassified"], kinds: ["type:OTHER"], unsorted: ["standard therapy"] });
+    const link = mechanismsLink(t, f);
+    expect(link).toBe(`/mechanisms/unclassified?kind=${encodeURIComponent(unsortedKey("standard therapy"))}`);
+    expect(link).not.toContain("type%3AOTHER");
+  });
+  it("keeps a real kind row such as Not a treatment", () => {
+    const t = trial({ approaches: ["unclassified"], kinds: ["not_a_treatment"] });
+    expect(mechanismsLink(t, f)).toBe("/mechanisms/unclassified?kind=not_a_treatment");
+  });
+  it("links a trial with nothing listed to the no-treatment row", () => {
+    const t = trial({ approaches: ["unclassified"], kinds: [], unsorted: [] });
+    expect(mechanismsLink(t, f)).toBe(`/mechanisms/unclassified?kind=${encodeURIComponent(unsortedKey(""))}`);
   });
 });

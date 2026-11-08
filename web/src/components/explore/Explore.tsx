@@ -345,7 +345,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
         onReset={reset}
       />
       {only !== null ? (
-        <p className="explore-only" role="status" aria-label="Trial list">
+        <p className="explore-only" role="status">
           Only the {onlyN.toLocaleString("en-US")} {onlyN === 1 ? "trial" : "trials"}
           {onlyFrom ? ` of ${onlyFrom}` : " listed"}.{" "}
           <button type="button" className="text-button" onClick={clearOnly}>

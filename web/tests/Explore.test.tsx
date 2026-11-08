@@ -384,9 +384,10 @@ test("?nct= narrows the map to the listed trials until Show all trials", async (
   const [a, b] = explorer.trials;
   renderAt(<Explore />, `/explore?nct=${a.nct_id},${b.nct_id}&from=aHSCT`);
   expect(await screen.findByText(`Showing 2 of ${explorer.trials.length} trials`)).toBeInTheDocument();
-  const note = screen.getByRole("status", { name: "Trial list" });
+  const note = screen.getByText(/^Only the 2 trials/).closest("[role=status]") as HTMLElement;
+  expect(note).not.toHaveAttribute("aria-label");
   expect(note).toHaveTextContent("Only the 2 trials of aHSCT.");
   await userEvent.click(within(note).getByRole("button", { name: "Show all trials" }));
   expect(screen.getByText(`Showing ${explorer.trials.length} of ${explorer.trials.length} trials`)).toBeInTheDocument();
-  expect(screen.queryByRole("status", { name: "Trial list" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/^Only the 2 trials/)).not.toBeInTheDocument();
 });

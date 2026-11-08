@@ -64,6 +64,9 @@ test("methods states the mechanism source, licence, coverage, weight, counting r
   expect(screen.getByRole("link", { name: "CC BY-SA 3.0" })).toBeInTheDocument();
   expect(text()).toMatch(/1,112 of 1,314 drug-bearing trials \(84\.6%\)/);
   expect(text()).toMatch(/201 mechanism classes/);
+  expect(text()).toMatch(/Targeted drugs: 1,062 trials/);
+  expect(text()).toMatch(/Unclassified: 570\./);
+  expect(text()).toMatch(/not yet sorted \(449, of which 13 have no experimental treatment listed\)/);
   expect(text()).toMatch(/weight 1\.0/);
   expect(screen.getByRole("link", { name: /weight research note/ })).toHaveAttribute(
     "href",

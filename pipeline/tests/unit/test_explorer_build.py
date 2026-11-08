@@ -572,3 +572,39 @@ def test_supplement_mechanism_reaches_trial(cfg: AreaConfig, tmp_path: Path) -> 
     assert "vitamin d" in doc["drug_index"]
     assert [t["in_pool"] for t in doc["trials"]] == [t["in_pool"] for t in base["trials"]]
     assert doc["stats"] == base["stats"]
+
+
+def test_no_experimental_arm_fallback_changes_only_the_approaches(
+    cfg: AreaConfig, tmp_path: Path
+) -> None:
+    """Sorting a trial with no experimental arm by all its interventions leaves drugs,
+    the pool, success and the statistic as they were."""
+    import dataclasses
+
+    from trialradar.explorer.extras import ExperimentalIntervention
+
+    c = cfg.model_copy(update={"approaches_dir": APPROACH_FIXTURES})
+    tables, extras, _ = _inputs(c)
+    nct = "NCT90000002"
+    stripped = dict(extras)
+    stripped[nct] = dataclasses.replace(
+        extras[nct],
+        experimental_drugs=(),
+        experimental_interventions=(),
+        fallback_interventions=(),
+    )
+    patched = dict(stripped)
+    patched[nct] = dataclasses.replace(
+        stripped[nct],
+        fallback_interventions=(ExperimentalIntervention("DEVICE", "Wristband", ""),),
+    )
+    base, _ = build_explorer(tables, stripped, c, {}, {}, DAY)
+    doc, _ = build_explorer(tables, patched, c, {}, {}, DAY)
+    b = next(t for t in base["trials"] if t["nct_id"] == nct)
+    row = next(t for t in doc["trials"] if t["nct_id"] == nct)
+    assert b["approaches"] == ["unclassified"]
+    assert row["approaches"] == ["nondrug"]
+    for key in ("drugs", "in_pool", "outcome", "mechanisms", "targets", "modalities"):
+        assert row[key] == b[key]
+    assert doc["stats"] == base["stats"]
+    assert [t["in_pool"] for t in doc["trials"]] == [t["in_pool"] for t in base["trials"]]

@@ -286,3 +286,46 @@ def test_mapping_types() -> None:
     assert MAPPING_TYPES == frozenset(
         {"DRUG", "BIOLOGICAL", "DIETARY_SUPPLEMENT", "GENETIC", "COMBINATION_PRODUCT"}
     )
+
+
+def _no_experimental_arm_study() -> dict:  # type: ignore[type-arg]
+    return make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {"label": "a", "type": "ACTIVE_COMPARATOR", "interventionNames": ["Drug: A"]},
+                {"label": "p", "type": "PLACEBO_COMPARATOR", "interventionNames": ["Drug: P"]},
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "DRUG", "name": "A", "description": "Oral."},
+                {"type": "DEVICE", "name": "D"},
+                {"type": "DRUG", "name": "P"},
+            ],
+        }
+    )
+
+
+def test_no_experimental_arm_falls_back_for_sorting_only(cfg: AreaConfig) -> None:
+    e = _extras([_no_experimental_arm_study()], cfg)["NCT00000001"]
+    assert e.experimental_interventions == ()
+    assert e.experimental_drugs == ()
+    assert e.fallback_interventions == (
+        ExperimentalIntervention("DRUG", "A", "Oral."),
+        ExperimentalIntervention("DEVICE", "D", ""),
+        ExperimentalIntervention("DRUG", "P", ""),
+    )
+
+
+def test_fallback_is_empty_with_an_experimental_arm_or_no_arms(cfg: AreaConfig) -> None:
+    with_arm = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {"label": "a", "type": "EXPERIMENTAL", "interventionNames": ["Drug: A"]}
+            ],
+            "armsInterventionsModule.interventions": [{"type": "DRUG", "name": "A"}],
+        }
+    )
+    no_arms = make_study(
+        **{"armsInterventionsModule.interventions": [{"type": "DRUG", "name": "A"}]}
+    )
+    assert _extras([with_arm], cfg)["NCT00000001"].fallback_interventions == ()
+    assert _extras([no_arms], cfg)["NCT00000001"].fallback_interventions == ()

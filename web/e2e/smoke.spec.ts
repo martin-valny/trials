@@ -376,7 +376,7 @@ test("Mechanisms: Show these trials on the map narrows the map", async ({ page }
   await expect(page).toHaveURL(/#\/explore\?nct=/);
   await expect(page.getByText(new RegExp(`^Showing ${n} of \\d+ trials$`))).toBeVisible();
   await page.getByRole("button", { name: "Show all trials" }).click();
-  await expect(page.getByRole("status", { name: "Trial list" })).toHaveCount(0);
+  await expect(page.locator(".explore-only")).toHaveCount(0);
 });
 
 test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it", async ({ page }) => {

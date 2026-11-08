@@ -163,20 +163,20 @@ export function Methods() {
           cladribine) is a Targeted drug. A drug without one carries a kind (for example aHSCT or
           mesenchymal stem cells) written once in a hand-made table, each with its approach. A
           non-drug intervention is sorted by a reviewed list of whole-word phrases, then by its
-          registry intervention type. Nothing is guessed from how a name ends; a name nothing sorts
+          registry intervention type. A trial with no experimental arm is sorted by all its interventions, placebo and usual care aside (its drugs still do not count in the success share). Nothing is guessed from how a name ends; a name nothing sorts
           is listed as not yet sorted. On the 6 November 2026 snapshot (2,987 trials; a trial counts
           in each approach it is in):
         </p>
         <ul>
-          <li>Targeted drugs: 974 trials. Drugs with a molecular mechanism; these open into the mechanism graph.</li>
-          <li>Cell &amp; transplant: 68. aHSCT, mesenchymal and other cell products.</li>
-          <li>Antibody &amp; plasma: 52. Immunoglobulin, plasma exchange, immunoadsorption, ATG.</li>
+          <li>Targeted drugs: 1,062 trials. Drugs with a molecular mechanism; these open into the mechanism graph.</li>
+          <li>Cell &amp; transplant: 72. aHSCT, mesenchymal and other cell products.</li>
+          <li>Antibody &amp; plasma: 58. Immunoglobulin, plasma exchange, immunoadsorption, ATG.</li>
           <li>Tolerisation: 15. Myelin and AChR peptides, helminths.</li>
-          <li>Broad immunomodulators: 40. A stated effect but no defined target, such as glatiramer.</li>
-          <li>Non-drug care: 1,062. Rehabilitation, devices, behavioural care, diet, procedures.</li>
+          <li>Broad immunomodulators: 52. A stated effect but no defined target, such as glatiramer.</li>
+          <li>Non-drug care: 1,222. Rehabilitation, devices, behavioural care, diet, procedures.</li>
           <li>
-            Unclassified: 831. Trials in no other approach: not a treatment (diagnostics,
-            sampling; 92) or not yet sorted (739, of which 429 have no experimental arm).
+            Unclassified: 570. Trials in no other approach: not a treatment (diagnostics,
+            sampling; 121) or not yet sorted (449, of which 13 have no experimental treatment listed).
           </li>
         </ul>
         <p>
