@@ -6,6 +6,38 @@ Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of s
 
 ## 00. Current state — session 7 (2026-11-08), read this first
 
+**Session 7b: front-door redesign. Martin chose approach B; it is in brainstorming and nothing is built. Read this block first, then the phase 3 state below.**
+- **Why:** this is a portfolio showcase, and a newcomer doesn't know where to start. The front page is a UMAP similarity map: its axes mean nothing, and its one statistical finding is null (p = 0.061). The definition of "succeeded" (the drug advanced to a later phase) is buried. Jargon leaks into the UI, and Unclassified looks like a data-quality failure. Evidence: `docs/superpowers/research/2026-11-08-front-door-research.md`, which has outside research (V/U marked) plus a newcomer audit with file:line refs and a full jargon table.
+- **Reader (Martin, 2026-11-08):** a pharma or biotech R&D researcher or manager sizing up MS/MG for drug-discovery bets. It is not a treating clinician. In the first minute they should see **what's working** (targets and mechanisms whose drugs advanced) and **what's in the pipeline** (running trials by phase). Then they can **explore the data themselves**. Martin also wants **competitive intelligence**: sponsor/company as a first-class dimension ("who is working on FcRn", "Roche's MS pipeline").
+- **Decisions so far (Martin):**
+  - Keep Explore and Mechanisms as separate pages, not merged. Trim the duplicate "By approach" success panel on Explore and strengthen the hand-offs between pages.
+  - Timeline over UMAP as the lead arrangement, with UMAP kept as a secondary view. An animated, staged transition between the two is a later extra.
+  - Martin is big on design: no plain tables.
+  - **Approach B chosen** (over A, "add a lede band to the current pages", and C, "search-first entity pages, too table-like"):
+    - the front page is a **pipeline figure**: rows are target classes (anti-CD20, S1P, BTK, FcRn, complement …), columns are phases plus "advanced", each mark is a trial (running / stopped / advanced), and companies sit on the row;
+    - above it, a headline that states a finding, plus key numbers and entry points;
+    - clicking a row opens a **target page**: a timeline of its trials, the companies, what advanced, what stopped and why (`why_stopped`), and the existing drug → target → pathway chain;
+    - the similarity map and the graph stay under "Explore".
+- **Proposals made in the conversation, not yet confirmed by Martin. Confirm or drop them in the brainstorm:**
+  - A sponsor → parent-company mapping file, hand-kept like `config/mechanisms/overrides.csv`, with academic and non-industry sponsors marked.
+  - A visible "registered clinical trials only" limit, since there is no preclinical or company-pipeline data.
+  - A "still running" mark and a "data as of" line, so recent trials don't read as failures.
+  - Two to four annotations written on the chart, with no forced tour; any annotation must be data-generated so it stays true after daily refreshes.
+  - Plain words throughout: "Advanced to next phase", "Target: CD20 (gene MS4A1)".
+  - Unclassified moves out of the rail into Methods or a footnote.
+  - "Crowded vs open" read off the data: running trials per target vs early successes.
+- **Check before designing:**
+  - "Where successes converge" lists five IL pathways, each at 5/10, 50%. This is probably one shared-receptor drug family counted five times.
+  - Phase per trial for the pipeline columns (phase 1/2 and 2/3 handling).
+  - How to group targets into readable classes; the ChEMBL mechanism class may be enough.
+- **Next steps, in order:**
+  1. A fresh agent runs the brainstorm once over: confirm the proposals above, use the visual companion for mockups of the pipeline figure and the target page, and write the spec at `docs/superpowers/specs/2026-11-08-front-door-pipeline-design.md`.
+  2. Martin approves the spec.
+  3. `writing-plans`.
+  4. Execute as a workflow: Sonnet for well-specified builders; Opus for reviews, UI and the final review.
+
+  The phase 3 open items below still stand. Martin pushes; never push.
+
 **Session 7 — phase 3 (approach bubbles and the mechanism graph) is built, on the same unpushed branch. Task 11 (whole-branch review) has run and its fix wave is applied. Work item B brought the graph back to the spec's size (§7.1): `max_nodes` now caps all nodes (300). The scored design finish review (disposition fix, 8 fixes) is applied. A follow-up review found the cap biased the graph's success shares (counts over the kept drugs only); fixed: nodes now count over every mapped drug (below).**
 - **Where:** committed locally on **`feat/explorer-figure-plate`** (task branches `p3/task*` merged); **not pushed** (org block; Martin pushes). No PR. Plan: `docs/superpowers/plans/2026-11-08-approach-bubbles-and-graph.md`; spec `docs/superpowers/specs/2026-11-08-approach-bubbles-design.md`, which amends `2026-11-06-mechanisms-and-graph-design.md` §6.1 items 3, 4, 7 and §7 (pointer added as its §10 item 17). Martin approved the spec and handed execution over to run unattended.
 - **What was built (Tasks 1–9):**
