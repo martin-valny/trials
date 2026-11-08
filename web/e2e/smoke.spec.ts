@@ -248,7 +248,7 @@ async function stablePixels(page: Page): Promise<number> {
   return now;
 }
 
-test("Mechanism: Select none empties the map; one class alone shows just its trials", async ({ page }) => {
+test("Drug target class: Select none empties the map; one class alone shows just its trials", async ({ page }) => {
   const file = (await (await page.request.get("/data/explorer.json")).json()) as {
     trials: { mechanisms: string[] }[];
   };
@@ -256,11 +256,11 @@ test("Mechanism: Select none empties the map; one class alone shows just its tri
   expect(antiCd20).toBeGreaterThan(0);
   await page.goto("/#/explore");
   await waitForDraw(page);
-  await page.getByRole("button", { name: "Mechanism: all" }).click();
+  await page.getByRole("button", { name: "Drug target class: all" }).click();
   const sheet = page.locator(".popover");
   await sheet.getByRole("button", { name: "Select none" }).click();
   await expect(page.getByText("No trials match these filters.")).toBeVisible();
-  await sheet.getByRole("group", { name: "Mechanism" }).locator("label.check").filter({ hasText: "anti-CD20" }).click();
+  await sheet.getByRole("group", { name: "Drug target class" }).locator("label.check").filter({ hasText: "anti-CD20" }).click();
   await expect(page.getByText(new RegExp(`^Showing ${antiCd20} of ${file.trials.length} trials$`))).toBeVisible();
   await expect(page.getByText("No trials match these filters.")).toHaveCount(0);
 });

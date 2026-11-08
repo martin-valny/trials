@@ -88,9 +88,9 @@ describe("explorer display text", () => {
     expect(phaseLabel(null)).toBe("Not applicable");
   });
   test("outcome labels", () => {
-    expect(outcomeLabel("succeeded")).toBe("Succeeded (drug moved to a later phase)");
+    expect(outcomeLabel("succeeded")).toBe("Advanced to next phase");
     expect(outcomeLabel("stopped")).toBe("Stopped early");
-    expect(outcomeLabel("completed_unknown")).toBe("Completed, outcome unknown");
+    expect(outcomeLabel("completed_unknown")).toBe("Finished, no follow-on");
     expect(outcomeLabel("running")).toBe("Still running");
     expect(outcomeLabel("unknown")).toBe("Status unknown");
   });

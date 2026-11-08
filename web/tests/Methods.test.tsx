@@ -66,7 +66,7 @@ test("methods states the mechanism source, licence, coverage, weight, counting r
   expect(text()).toMatch(/1,112 of 1,314 drug-bearing trials \(84\.6%\)/);
   expect(text()).toMatch(/201 mechanism classes/);
   expect(text()).toMatch(/Targeted drugs: 1,062 trials/);
-  expect(text()).toMatch(/Unclassified: 570\./);
+  expect(text()).toMatch(/Not yet categorised: 570\./);
   expect(text()).toMatch(/not yet sorted \(449, of which 13 have no experimental treatment listed\)/);
   expect(text()).toMatch(/weight 1\.0/);
   expect(screen.getByRole("link", { name: /weight research note/ })).toHaveAttribute(
@@ -115,11 +115,11 @@ test("Methods describes treatments without a molecular target", async () => {
     "Tolerisation",
     "Broad immunomodulators",
     "Non-drug care",
-    "Unclassified",
+    "Not yet categorised",
   ])
     expect(text).toContain(label);
-  expect(text).toMatch(/credited to the drug that moved on/);
-  expect(text).toMatch(/proposed/);
+  expect(text).toMatch(/counted for the drug that advanced/);
+  expect(text).toMatch(/Thought to work by:/);
   // Coverage restated as two numbers.
   expect(text).toMatch(/1,121 of 1,314 drug-bearing trials \(85\.3%\)/);
   expect(text).toMatch(/2,156 of 2,987 trials \(72\.2%\)/);
@@ -150,4 +150,36 @@ test("Methods lists the not-yet-categorised names with counts, grouped, and link
     /^\/explore\?nct=NCT70000000/,
   );
   expect(screen.getByRole("region", { name: "No experimental treatment listed" })).toBeInTheDocument();
+});
+
+test("Methods has the six sections with their ids", async () => {
+  stubFetch({
+    "pipeline.json": {
+      ...readFixture<Record<string, unknown>>("pipeline.json"),
+      unrowed: [
+        { class: "Symptomatic agent", trials: 12, reason: "symptomatic, not a disease target" },
+        { class: "DNA inhibitor", trials: 5, reason: "conditioning chemotherapy" },
+      ],
+    },
+  });
+  const { container } = renderAt(<Methods />, "/methods");
+  await screen.findByRole("heading", { name: "Advanced to next phase, and its time bias" });
+  for (const id of ["advanced", "registry-only", "rows-and-companies", "unrowed", "not-yet-categorised", "map-statistic"])
+    expect(container.querySelector(`#${id}`), id).not.toBeNull();
+
+  const text = (document.body.textContent ?? "").replace(/\s+/g, " ");
+  expect(within(container.querySelector("#advanced")! as HTMLElement).getByText(/can't have advanced yet/)).toBeInTheDocument();
+  expect(within(container.querySelector("#registry-only")! as HTMLElement).getByText(/registered/)).toBeInTheDocument();
+  const rows = container.querySelector("#rows-and-companies") as HTMLElement;
+  for (const path of ["config/pipeline/rows.csv", "config/pipeline/background.csv", "config/sponsors/parents.csv"])
+    expect(rows.textContent).toContain(path);
+  expect(rows.textContent).toContain("NCT00168766");
+  expect(rows.textContent).toContain("NCT00771043");
+  expect(rows.textContent).toMatch(/comparator/);
+  const un = await within(container.querySelector("#unrowed") as HTMLElement).findByText(/Symptomatic agent/);
+  expect(un.closest("li")?.textContent).toMatch(/12 trials/);
+  expect(text).toMatch(/not shown as a row/);
+  const stat = container.querySelector("#map-statistic") as HTMLElement;
+  expect(stat.textContent).toMatch(/p-value/);
+  expect(stat.textContent).toMatch(/10,000 shuffles/);
 });

@@ -80,9 +80,9 @@ export function reasonLabel(reason: string | null): string {
 export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "days"}`;
 
 const OUTCOME_LABELS: Record<Outcome, string> = {
-  succeeded: "Succeeded (drug moved to a later phase)",
+  succeeded: "Advanced to next phase",
   stopped: "Stopped early",
-  completed_unknown: "Completed, outcome unknown",
+  completed_unknown: "Finished, no follow-on",
   running: "Still running",
   unknown: "Status unknown",
 };

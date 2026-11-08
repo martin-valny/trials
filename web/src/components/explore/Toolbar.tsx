@@ -7,6 +7,7 @@ import {
   categorySeries,
   diseaseColor,
   firstLabels,
+  DIMENSION_HINTS,
   filterCounts,
   filtersFor,
   mechanismLabel,
@@ -174,7 +175,7 @@ export function Toolbar(p: ToolbarProps) {
           }}
         />
         <span className="visually-hidden" id="explore-find-hint">
-          Matches NCT number, drug, sponsor or title. Press Enter to open the first match in panel d.
+          Matches NCT number, drug, sponsor or title. Press Enter to open the first match in the trial card below.
         </span>
       </div>
 
@@ -184,7 +185,13 @@ export function Toolbar(p: ToolbarProps) {
         </span>
         <div className="segmented" role="group" aria-label="Colour">
           {MODES.map(([m, label]) => (
-            <button key={m} type="button" aria-pressed={mode === m} onClick={() => p.onMode(m)}>
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              title={m === "mechanism" || m === "modality" ? DIMENSION_HINTS[m] : undefined}
+              onClick={() => p.onMode(m)}
+            >
               {label}
             </button>
           ))}
@@ -219,20 +226,23 @@ export function Toolbar(p: ToolbarProps) {
           onChange={set("outcomes")}
         />
         <MultiSelect
-          label="Treatment"
+          label="Intervention type"
+          hint={DIMENSION_HINTS.treatment}
           options={options.treatment}
           selected={filters.treatmentTypes}
           onChange={set("treatmentTypes")}
         />
         <MultiSelect
-          label="Mechanism"
+          label="Drug target class"
+          hint={DIMENSION_HINTS.mechanism}
           options={options.mechanism}
           selected={filters.mechanisms}
           onChange={set("mechanisms")}
           searchable
         />
         <MultiSelect
-          label="Modality"
+          label="Drug format"
+          hint={DIMENSION_HINTS.modality}
           options={options.modality}
           selected={filters.modalities}
           onChange={set("modalities")}

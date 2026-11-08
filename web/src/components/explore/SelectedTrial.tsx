@@ -110,7 +110,7 @@ export function SelectedTrial({
       <section id={SELECTED_ID} className="legend-v selected" aria-label="Selected trial" aria-live="polite">
         {trial === null ? (
           <p className="selected-empty">
-            Click a dot in <b>a</b>, or search and press Enter, to read a trial here.
+            Click a dot on the map, or search and press Enter, to read a trial here.
           </p>
         ) : (
           <>

@@ -120,7 +120,7 @@ test('kind panel lists trials with /trial links and "Show these trials on the ma
   const panel = screen.getByRole("complementary", { name: /aHSCT/ });
   const nct = f.trials[0].nct_id;
   expect(within(panel).getByRole("link", { name: nct })).toHaveAttribute("href", `/trial/${nct}`);
-  expect(within(panel).getByText(/^proposed$/)).toBeInTheDocument();
+  expect(within(panel).getByText("Thought to work by:")).toBeInTheDocument();
   expect(within(panel).getByRole("link", { name: "source" })).toHaveAttribute("href", f.kinds.ahsct.source_url);
   await userEvent.click(within(panel).getByRole("link", { name: "Show these trials on the map" }));
   expect(where()).toBe(`/explore?nct=${nct}&from=aHSCT`);
@@ -302,7 +302,7 @@ test("a kind's strip and panel read a win credited to another drug as such, neve
     />,
   );
   const row = screen.getByRole("button", { name: /^aHSCT/ });
-  expect(row).toHaveTextContent("2 succeeded via another drug, 1 completed");
+  expect(row).toHaveTextContent("2 advanced, through another drug; 1 finished, no follow-on");
   const red = outcomeColor("succeeded", LIGHT_PALETTE);
   for (const seg of row.querySelectorAll<HTMLElement>(".strip-seg")) expect(seg.style.background).not.toBe(red);
   unmount();
@@ -327,9 +327,9 @@ test("a kind's strip and panel read a win credited to another drug as such, neve
     </MemoryRouter>,
   );
   const panel = screen.getByRole("complementary");
-  expect(panel).toHaveTextContent("3 trials: 2 succeeded via another drug, 1 completed.");
-  expect(panel).toHaveTextContent("3 in the success pool, 0 succeeded");
-  expect(within(panel).getByText(/Succeeded via cyclophosphamide/)).toBeInTheDocument();
+  expect(panel).toHaveTextContent("3 trials: 2 advanced, through another drug; 1 finished, no follow-on.");
+  expect(panel).toHaveTextContent("3 finished trials that count, 0 advanced");
+  expect(within(panel).getByText(/Advanced, through cyclophosphamide/)).toBeInTheDocument();
 });
 
 test("Non-drug care's strip key has no Succeeded entry", async () => {
@@ -338,8 +338,8 @@ test("Non-drug care's strip key has no Succeeded entry", async () => {
   stubFetch({ "explorer.json": f });
   renderPage("/approaches/nondrug");
   const key = await screen.findByRole("list", { name: "Outcome strip key" });
-  expect(key).not.toHaveTextContent("Succeeded");
-  expect(key).toHaveTextContent("Completed");
+  expect(key).not.toHaveTextContent("Advanced to next phase");
+  expect(key).toHaveTextContent("Finished, no follow-on");
 });
 
 test("the rail footnote says '1 trial' for one", async () => {

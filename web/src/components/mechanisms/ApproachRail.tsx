@@ -23,7 +23,7 @@ function SuccessLine({ row }: { row: RailRow }) {
       </span>
       <span className="rail-share">
         {row.rate !== null
-          ? `${pct(row.rate)} succeeded`
+          ? `${pct(row.rate)} advanced`
           : row.finished > 0
             ? `too few to tell (${fmt(row.succeeded)}/${fmt(row.finished)})`
             : "none finished yet"}
@@ -74,7 +74,7 @@ export function ApproachRail({
         ))}
       </ul>
       <p className="panel-note rail-note">
-        Bars: share of finished trials that could succeed that did, credited to the drug that moved on. Under {minGroup}{" "}
+        Bars: how often the drug advanced to the next phase, counted for the drug that advanced. Under {minGroup}{" "}
         finished trials, too few to tell.
       </p>
       {uncategorised && uncategorised.n > 0 ? (

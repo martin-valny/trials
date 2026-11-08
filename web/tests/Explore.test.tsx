@@ -321,7 +321,7 @@ test("the map controls toolbar comes before the canvas", async () => {
   expect(follows(bar, canvas)).toBe(true);
   expect(within(bar).getByLabelText("Find a trial")).toBeInTheDocument();
   expect(within(bar).getByRole("group", { name: "Colour" })).toBeInTheDocument();
-  for (const name of ["Disease: all", "Phase: all", "Outcome: all", "Treatment: all", "Years: all"]) {
+  for (const name of ["Disease: all", "Phase: all", "Outcome: all", "Intervention type: all", "Years: all"]) {
     expect(within(bar).getByRole("button", { name })).toBeInTheDocument();
   }
   const withResults = explorer.trials.filter((t) => t.has_results).length;

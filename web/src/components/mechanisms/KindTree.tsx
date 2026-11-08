@@ -14,15 +14,15 @@ export const trialsWord = (n: number): string => `${fmt(n)} ${n === 1 ? "trial" 
 export const STRIP_ORDER: Outcome[] = ["succeeded", "stopped", "completed_unknown", "running", "unknown"];
 
 const STRIP_WORDS: Record<Outcome, string> = {
-  succeeded: "succeeded",
+  succeeded: "advanced to next phase",
   stopped: "stopped",
-  completed_unknown: "completed",
+  completed_unknown: "finished, no follow-on",
   running: "running",
   unknown: "status unknown",
 };
 
 /** What a succeeded trial whose win is credited to a drug outside the kind (1b) reads as. */
-export const ELSEWHERE_WORDS = "succeeded via another drug";
+export const ELSEWHERE_WORDS = "advanced, through another drug";
 
 /**
  * "1 succeeded, 1 stopped, 2 succeeded via another drug, 3 running": the strip read out, in strip
@@ -32,7 +32,7 @@ export const outcomeWords = (outcomes: Record<Outcome, number>, elsewhere = 0): 
   STRIP_ORDER.flatMap((o) => {
     const own = outcomes[o] > 0 ? [`${fmt(outcomes[o])} ${STRIP_WORDS[o]}`] : [];
     return o === "completed_unknown" && elsewhere > 0 ? [`${fmt(elsewhere)} ${ELSEWHERE_WORDS}`, ...own] : own;
-  }).join(", ");
+  }).join("; ");
 
 /**
  * A kind's trials by outcome: a 6px square-ended bar whose length is the kind's share of the largest
@@ -81,14 +81,14 @@ export function OutcomeStrip({
   );
 }
 
-/** "Proposed paracrine immunomodulation" -> "paracrine immunomodulation": the line is marked "proposed" instead. */
+/** "Proposed paracrine immunomodulation" -> "paracrine immunomodulation": the line is marked "Thought to work by:" instead. */
 const withoutProposed = (text: string): string => text.replace(/^proposed\s+/i, "");
 
-/** A rationale line: marked "proposed", with its source as a quiet link. */
+/** A rationale line: marked "Thought to work by:", with its source as a quiet link. */
 export function Rationale({ text, url }: { text: string; url: string | null }) {
   return (
     <p className="rationale">
-      <span className="rationale-tag">proposed</span> {withoutProposed(text)}
+      <span className="rationale-tag">Thought to work by:</span> {withoutProposed(text)}
       {url ? (
         <>
           {" "}
@@ -108,7 +108,7 @@ function Share({ kind, defined }: { kind: TreeKind; defined: boolean }) {
     <span className="kind-share">
       {kind.rate !== null ? pct(kind.rate) : <span className="kind-few">too few to tell</span>}
       <span className="visually-hidden">
-        {` (${fmt(kind.succeeded)} of ${fmt(kind.finished)} finished trials that could succeed)`}
+        {` (${fmt(kind.succeeded)} of ${fmt(kind.finished)} finished trials that count)`}
       </span>
     </span>
   );

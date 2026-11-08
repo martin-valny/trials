@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { kindTree } from "../lib/approaches";
 import { mapLink } from "./mechanisms/SidePanel";
-import { loadExplorer, loadMeta } from "../data";
-import type { ExplorerFile, Meta } from "../types";
+import { loadExplorer, loadMeta, loadPipeline } from "../data";
+import type { ExplorerFile, Meta, PipelineFile } from "../types";
 
 const REPO = "https://github.com/martin-valny/trials/blob/main/";
 
@@ -45,6 +45,7 @@ function NotYetGroup({ group, kinds }: { group: string; kinds: { key: string; la
 export function Methods() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [file, setFile] = useState<ExplorerFile | null>(null);
+  const [pipeline, setPipeline] = useState<PipelineFile | null>(null);
   const method = file?.method ?? null;
 
   useEffect(() => {
@@ -56,6 +57,9 @@ export function Methods() {
     loadExplorer()
       .then((f) => live && setFile(f ?? null))
       .catch(() => undefined);
+    loadPipeline()
+      .then((p) => live && setPipeline(p ?? null))
+      .catch(() => undefined);
     return () => {
       live = false;
     };
@@ -64,7 +68,7 @@ export function Methods() {
   const { hash } = useLocation();
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView?.();
-  }, [hash, meta]);
+  }, [hash, meta, file, pipeline]);
 
   return (
     <article>
@@ -95,6 +99,127 @@ export function Methods() {
         recorded when a tracked field differs after normalising text (case, whitespace, sponsor and
         intervention name aliases). Cosmetic edits do not create rows.
       </p>
+
+      <section id="advanced" aria-labelledby="advanced-h">
+        <h2 id="advanced-h">Advanced to next phase, and its time bias</h2>
+        <p>
+          A trial &ldquo;advanced to next phase&rdquo; when the drug it tested was later tested in a
+          higher phase, in the same disease, in a trial that was not withdrawn. The exact rule is
+          under &ldquo;What counts as success&rdquo; below. Advancing is not approval, and it does not
+          show the earlier trial met its endpoint.
+        </p>
+        <p>
+          The measure leans against recent trials: a trial that finished recently can&apos;t have advanced yet,
+          because the next phase takes years to register. The most recent years therefore show fewer
+          advances than they will eventually have, and the figure marks a trial as still running
+          or finished, no follow-on rather than as a failure.
+        </p>
+      </section>
+
+      <section id="registry-only" aria-labelledby="registry-only-h">
+        <h2 id="registry-only-h">Registered trials only</h2>
+        <p>
+          Everything here comes from trials registered on ClinicalTrials.gov. A drug can be in
+          development without a registered trial in these diseases, or be tested in a registry we do
+          not read (for example in China, the EU or Japan), and neither shows up. A drug that
+          advanced only in such a trial is shown as not having advanced. Read the Pipeline as the
+          registered record, not as a complete list of what companies are doing.
+        </p>
+      </section>
+
+      <section id="rows-and-companies" aria-labelledby="rows-and-companies-h">
+        <h2 id="rows-and-companies-h">How rows and companies are assigned</h2>
+        <p>
+          Each Pipeline row is a target class. For every drug trial in Phase 1 to Phase 4 (trials with
+          no phase are skipped), the experimental drugs are taken; drugs in the background list are
+          dropped unless that would leave nothing; each remaining drug goes to the row that names it,
+          or else to the row that holds its mechanism class. A combination of two targeted drugs sits
+          in both rows, and each placement remembers the drug that put it there. Headline totals count
+          a trial once.
+        </p>
+        <p>
+          Companies are grouped under a parent: the registry&apos;s sponsor names are normalised for case,
+          punctuation and legal suffix, then matched against a hand-kept list, so &ldquo;Novartis
+          Pharmaceuticals&rdquo; and &ldquo;Novartis&rdquo; are one company. The files, all hand-kept and
+          read by the daily run:
+        </p>
+        <ul>
+          <li>
+            <a href={`${REPO}config/pipeline/rows.csv`}>config/pipeline/rows.csv</a>: the rows, with their
+            classes and drugs.
+          </li>
+          <li>
+            <a href={`${REPO}config/pipeline/background.csv`}>config/pipeline/background.csv</a>: drugs that
+            never put a trial in a row when it has another experimental drug (conditioning chemotherapy,
+            steroids given alongside).
+          </li>
+          <li>
+            <a href={`${REPO}config/pipeline/unrowed.csv`}>config/pipeline/unrowed.csv</a>: classes that are
+            deliberately not a row (below).
+          </li>
+          <li>
+            <a href={`${REPO}config/sponsors/parents.csv`}>config/sponsors/parents.csv</a>: which parent a
+            sponsor belongs to.
+          </li>
+          <li>
+            <a href={`${REPO}config/stop_reasons.csv`}>config/stop_reasons.csv</a>: how a free-text reason
+            for stopping is grouped.
+          </li>
+        </ul>
+        <h3>Known limit: comparator drugs</h3>
+        <p>
+          Some trials list a comparator or background therapy inside an experimental arm (for example
+          &ldquo;interferon or glatiramer&rdquo; in a switch study). The background list catches the
+          spellings seen so far, so a trial of a studied drug against interferon-&beta;, glatiramer or
+          a corticosteroid sits in the studied drug&apos;s row only. Two trials still sit in two rows,
+          because one intervention name holds both drugs. They count in each row and once in the
+          headline totals:
+        </p>
+        <ul>
+          <li>
+            <a href="https://clinicaltrials.gov/study/NCT00168766">NCT00168766</a>: &ldquo;interferon-beta-1a
+            plus methylprednisolone&rdquo; (Interferon-&beta; and Glucocorticoids).
+          </li>
+          <li>
+            <a href="https://clinicaltrials.gov/study/NCT00771043">NCT00771043</a>: &ldquo;tysabri and
+            avonex&rdquo; (&alpha;4-integrin and Interferon-&beta;).
+          </li>
+        </ul>
+        <p>
+          A trial whose only experimental drug is a listed background drug still defines its row. A trial
+          of a background drug plus a drug that maps to no row has no mark.
+        </p>
+      </section>
+
+      <section id="unrowed" aria-labelledby="unrowed-h">
+        <h2 id="unrowed-h">Drug classes not shown as a row</h2>
+        {pipeline ? (
+          <>
+            <p>
+              {pipeline.counts.targeted_not_rowed.toLocaleString("en-US")} of{" "}
+              {pipeline.counts.targeted.toLocaleString("en-US")} targeted-drug trials are in no row.
+              The classes below are deliberately not shown as a row; other trials with no row are
+              counted in the &ldquo;not grouped&rdquo; figure on the Pipeline.
+            </p>
+            {pipeline.unrowed.length ? (
+              <ul>
+                {pipeline.unrowed.map((u) => (
+                  <li key={u.class}>
+                    {u.class}{" "}
+                    <span className="side-muted">
+                      {u.trials.toLocaleString("en-US")} {u.trials === 1 ? "trial" : "trials"}: {u.reason}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No class is left out on purpose in this run.</p>
+            )}
+          </>
+        ) : (
+          <p>The list is unavailable right now.</p>
+        )}
+      </section>
 
       <section id="map" aria-labelledby="map-h">
         <h2 id="map-h">How the map is made</h2>
@@ -155,7 +280,7 @@ export function Methods() {
         </p>
         <p>
           A trial can carry several mechanisms or modalities. It counts in each group it touches:
-          in the Mechanism and Modality filters, in their counts, and in panel b&apos;s groups. On
+          in the Drug target class and Drug format filters, in their counts, and in panel b&apos;s groups. On
           the map such a trial is drawn as a hollow ring, not given one class&apos;s colour. Panel
           b shows a percentage for a group only from 10 finished trials; below that it shows no
           percentage, only an outline bar, the counts (for example 1/5) and &ldquo;too few to
@@ -199,7 +324,7 @@ export function Methods() {
           mesenchymal stem cells) written once in a hand-made table, each with its approach. A
           non-drug intervention is sorted by a reviewed list of whole-word phrases, then by its
           registry intervention type. A trial with no experimental arm is sorted by all its interventions, placebo and usual care aside (its drugs still do not count in the success share). Nothing is guessed from how a name ends; a name nothing sorts
-          is listed as not yet sorted. On the 6 November 2026 snapshot (2,987 trials; a trial counts
+          is listed as not yet categorised. On the 6 November 2026 snapshot (2,987 trials; a trial counts
           in each approach it is in):
         </p>
         <ul>
@@ -210,24 +335,24 @@ export function Methods() {
           <li>Broad immunomodulators: 52. A stated effect but no defined target, such as glatiramer.</li>
           <li>Non-drug care: 1,222. Rehabilitation, devices, behavioural care, diet, procedures.</li>
           <li>
-            Unclassified: 570. Trials in no other approach: not a treatment (diagnostics,
+            Not yet categorised: 570. Trials in no other approach: not a treatment (diagnostics,
             sampling; 121) or not yet sorted (449, of which 13 have no experimental treatment listed).
           </li>
         </ul>
         <p>
           Coverage, as two numbers: every drug is sorted (molecular, a kind, or not a drug) for
           1,121 of 1,314 drug-bearing trials (85.3%), and 2,156 of 2,987 trials (72.2%) are in an
-          approach other than Unclassified.
+          approach other than Not yet categorised.
         </p>
         <p>
           Each kind carries a one-line rationale with a source (MeSH, NCI Thesaurus, a review or a
-          label). It is marked proposed: it says why the treatment might work, not a mechanism, and
+          label). It is marked &ldquo;Thought to work by:&rdquo;: it says why the treatment might work, not a mechanism, and
           it is never drawn as a molecular target or pathway.
         </p>
         <p>
           Success keeps its definition (below), so non-drug trials are never in the pool. When a
-          trial tested several treatments, it counts in every group it touches, but its success is
-          credited to the drug that moved on: an aHSCT trial that succeeded because its
+          trial tested several treatments, it counts in every group it touches, but its advance is
+          counted for the drug that advanced: an aHSCT trial that succeeded because its
           cyclophosphamide moved to a later phase counts as a success for alkylating agents and
           Targeted drugs, not for Cell &amp; transplant. Panel b&apos;s By mechanism, By modality and By
           approach views all follow this rule; By disease keeps the per-disease rule.
@@ -337,7 +462,8 @@ export function Methods() {
         </ul>
         <p>Start dates given only to the month are compared as if on the first day of that month.</p>
 
-        <h3>Do successes cluster?</h3>
+        <section id="map-statistic" aria-labelledby="map-statistic-h">
+        <h3 id="map-statistic-h">Do successes cluster?</h3>
         <p>
           The comparison uses only finished trials that could succeed: completed, stopped or
           succeeded trials in Early Phase 1 to Phase 2/3 with at least one drug in an experimental
@@ -363,6 +489,7 @@ export function Methods() {
           p = 0.061): no more than chance. Had the mechanism block been included, the same snapshot
           would give 0.71 (p = 0.94).
         </p>
+        </section>
       </section>
 
       <h2>Limitations</h2>

@@ -404,13 +404,20 @@ export function phasesOf(counts: Map<string, number>): string[] {
   return [...counts.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
 
+/** One line under each renamed Explore dimension, saying what it splits trials by. */
+export const DIMENSION_HINTS: Record<"treatment" | "mechanism" | "modality", string> = {
+  treatment: "What kind of intervention: drug, device, behavioural, procedure and so on.",
+  mechanism: "The class of molecular target the drug acts on, such as anti-CD20.",
+  modality: "What the drug is made as: small molecule, antibody, cell therapy and so on.",
+};
+
 /** The colour modes, with their names as shown. */
 export const MODES: [ColorMode, string][] = [
   ["outcome", "Outcome"],
   ["phase", "Phase"],
   ["disease", "Disease"],
-  ["mechanism", "Mechanism"],
-  ["modality", "Modality"],
+  ["mechanism", "Drug target class"],
+  ["modality", "Drug format"],
   ["approach", "Approach"],
 ];
 
@@ -771,23 +778,13 @@ export function inApproachOrder(rows: SuccessGroup[], approaches: readonly { key
   return [...rows].sort((a, b) => rank(a.group) - rank(b.group) || a.group.localeCompare(b.group));
 }
 
-/** "p = 0.058" or "p < 0.001", with non-breaking spaces so the clause never wraps. */
-const pClause = (p: number): string => {
-  const f = formatP(p);
-  return (f.startsWith("<") ? `p ${f}` : `p = ${f}`).replace(/ /g, "\u00a0");
-};
-
+/** The map's one-line verdict. The p-value and the shuffled range live in Methods (map-statistic). */
 export function liftSentence(s: ExplorerStats): string {
   if (s.verdict === "insufficient") return "Too few successes in this area to measure clustering yet.";
-  if (s.verdict === "chance") {
-    const p = s.p_value === null ? "" : ` (${pClause(s.p_value)})`;
-    return `Trials that succeeded cluster no more than chance would${p}.`;
-  }
-  const [lo, hi] = s.baseline_range ?? [NaN, NaN];
-  const p = s.p_value === null ? "" : `; ${pClause(s.p_value)}`;
+  if (s.verdict === "chance") return "Successful trials aren't concentrated in one part of the map (p-value in Methods).";
   return (
-    `Trials that succeeded have neighbours that succeed ${two(s.lift ?? NaN)}× as often as the average ` +
-    `finished trial (shuffled labels: ${two(lo)}–${two(hi)}×${p}).`
+    `Trials that advanced have neighbours that advanced ${two(s.lift ?? NaN)}× as often as the average ` +
+    `finished trial (p-value in Methods).`
   );
 }
 

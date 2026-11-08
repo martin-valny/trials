@@ -183,10 +183,10 @@ function Filtersbar({
 /** The strip's key, under the canvas heading: what each colour in an outcome strip means. */
 function StripKey({ palette, successDefined }: { palette: Palette; successDefined: boolean }) {
   const words: Record<Outcome, string> = {
-    succeeded: "Succeeded",
+    succeeded: "Advanced to next phase",
     stopped: "Stopped early",
-    completed_unknown: "Completed",
-    running: "Running",
+    completed_unknown: "Finished, no follow-on",
+    running: "Still running",
     unknown: "Status unknown",
   };
   return (
@@ -343,7 +343,7 @@ function Plate({
               {" · "}
               {fmt(n)} {n === 1 ? "trial" : "trials"}
               {row && row.successDefined && row.finished > 0
-                ? ` · ${fmt(row.finished)} in the success pool, ${fmt(row.succeeded)} succeeded`
+                ? ` · ${fmt(row.finished)} finished trials that count, ${fmt(row.succeeded)} advanced`
                 : ""}
             </span>
           </h2>
@@ -389,8 +389,8 @@ function Plate({
               <StripKey palette={palette} successDefined={row?.successDefined ?? true} />
               {tree.some((g) => g.kinds.some((k) => k.elsewhere > 0)) ? (
                 <p className="panel-note">
-                  A trial that succeeded because a drug outside the row moved on is drawn grey and read as
-                  &ldquo;succeeded via another drug&rdquo;: the success counts for that drug&rsquo;s group.
+                  A trial that advanced because a drug outside the row moved on is drawn grey and read as
+                  &ldquo;advanced, through another drug&rdquo;: it is counted for that drug&rsquo;s group.
                 </p>
               ) : null}
               <KindTree
@@ -403,7 +403,7 @@ function Plate({
               />
               {approach === "unclassified" ? (
                 <p className="panel-note">
-                  Not yet sorted: names not in the drug mapping or the keyword rules, by trial count. Each is a mapping
+                  Not yet categorised: names not in the drug mapping or the keyword rules, by trial count. Each is a mapping
                   still to decide. Names carried only by trials in other approaches (an unmapped drug beside a mapped
                   one) are listed last, with those trials.
                 </p>
@@ -465,8 +465,8 @@ function GraphKey({ palette, topShare }: { palette: Palette; topShare: number })
     <ul className="key-list graph-key" aria-label="Graph key">
       <li>{shape(circle, "none")}Drug</li>
       <li>{shape(square, "none")}Target</li>
-      <li>{shape(diamond, "none")}Reactome pathway</li>
-      <li>{shape(diamond, "none", undefined, true)}GO term</li>
+      <li>{shape(diamond, "none")}Biological pathway</li>
+      <li>{shape(diamond, "none", undefined, true)}Pathway (other source)</li>
       <li>{shape(diamond, "none", "2 1.5")}Curated</li>
       <li>
         <span
@@ -476,8 +476,7 @@ function GraphKey({ palette, topShare }: { palette: Palette; topShare: number })
         />
         Success share, 0 to {Math.round(topShare * 100)}%
       </li>
-      <li>{shape(circle, "none")}Hollow: too few to tell</li>
-      <li>Size: trials</li>
+      <li>Size = number of trials</li>
     </ul>
   );
 }
@@ -528,6 +527,7 @@ function GraphView({
 
   // Phone: the top-level pathways carry numerals at rest, named in a key under the canvas.
   const phone = useMediaQuery("(max-width: 640px)");
+  const coarse = useMediaQuery("(pointer: coarse)");
   const keyed = useMemo(() => (graph && phone ? restLabels(graph) : []), [graph, phone]);
   const caption = graph ? cutCaption(graph) : null;
   const missing = graph && focus !== null ? droppedDrug(graph, focus) : null;
@@ -589,8 +589,8 @@ function GraphView({
       {caption ? <p className="panel-note graph-cut">{caption}</p> : null}
       <p className="panel-note graph-note">
         {narrowed
-          ? `Full ink: the nodes reached by the ${trialsWord(reached)} shown; succeeded paths in red, credited to the drug that moved on.`
-          : "Hover a node to light its neighbours; click to follow its chain from drug to pathway. Filters light up the paths their trials take."}{" "}
+          ? `Full ink: the nodes reached by the ${trialsWord(reached)} shown; paths of trials that advanced in red, counted for the drug that advanced.`
+          : `${coarse ? "Tap a node to light its neighbours and follow" : "Hover a node to light its neighbours; click to follow"} its chain from drug to pathway. Filters light up the paths their trials take.`}{" "}
         Pathways from Reactome release {graph.reactome_release}.
       </p>
       {converge.length ? (

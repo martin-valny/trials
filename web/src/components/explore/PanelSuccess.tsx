@@ -66,7 +66,7 @@ export function PanelSuccess({
     <section className="panel panel-b" aria-labelledby="panel-b-h">
       <h2 className="panel-h" id="panel-b-h">
         <span className="panel-l">b</span>
-        Share that succeeded, of finished trials that could succeed
+        How often the drug advanced to the next phase
       </h2>
       <p className="panel-note">Finished Early Phase 1–Phase 2/3 trials with an experimental drug.</p>
       <div className="panel-switch">
@@ -156,7 +156,7 @@ export function PanelSuccess({
         By mechanism, above.
       </p>
       <p className="panel-note">
-        Succeeded = drug moved to a later phase. <a href="#/methods#map">How this is measured</a>
+        Advanced = the drug moved on to a later phase. <a href="#/methods#map-statistic">How this is measured</a>
       </p>
     </section>
   );

@@ -39,12 +39,12 @@ const ready = async () => {
 
 test("success panel shows lift sentence and definition link", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(within(b).getByText(liftSentence(explorer.stats))).toBeInTheDocument();
-  expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
+  expect(within(b).getByText(/Advanced = the drug moved on to a later phase\./)).toBeInTheDocument();
   expect(within(b).getByRole("link", { name: "How this is measured" })).toHaveAttribute(
     "href",
-    "#/methods#map",
+    "#/methods#map-statistic",
   );
   // One bar per by_condition row, labelled with its text.
   for (const row of explorer.stats.by_condition) {
@@ -126,9 +126,9 @@ test("the colour key names each outcome in words and is not a control", async ()
   await ready();
   const key = screen.getByRole("list", { name: "Colour key: Outcome" });
   const labels = [
-    "Succeeded (drug moved to a later phase)",
+    "Advanced to next phase",
     "Stopped early",
-    "Completed, outcome unknown",
+    "Finished, no follow-on",
     "Still running",
     "Status unknown",
   ];
@@ -159,13 +159,13 @@ test("enter with an empty query selects nothing", async () => {
   const box = await ready();
   await userEvent.type(box, "{Enter}");
   const d = screen.getByRole("region", { name: "Selected trial" });
-  expect(within(d).getByText(/Click a dot in/)).toBeInTheDocument();
+  expect(within(d).getByText(/Click a dot on the map/)).toBeInTheDocument();
   expect(loadTrial).not.toHaveBeenCalled();
 });
 
 test("panel b shows succeeded/finished per row and outlines rows with fewer than 10 finished", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   const rows = within(b).getAllByRole("listitem");
   expect(rows).toHaveLength(explorer.stats.by_condition.length);
   explorer.stats.by_condition.forEach((row, i) => {
@@ -235,17 +235,17 @@ const withStats = (o: Partial<ExplorerFile["stats"]>): ExplorerFile => ({
 test("panel b says how many successes the statistic rests on, and how many were short of neighbours", async () => {
   stubFetch({ "explorer.json": withStats({ n_averaged: 40, n_short: 3 }) });
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(
     within(b).getByText("Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours."),
   ).toBeInTheDocument();
-  expect(within(b).getByText("Trials that succeeded cluster no more than chance would (p = 0.058).")).toBeInTheDocument();
+  expect(within(b).getByText("Successful trials aren't concentrated in one part of the map (p-value in Methods).")).toBeInTheDocument();
 });
 
 test("panel b omits the short-neighbour clause when none were short", async () => {
   stubFetch({ "explorer.json": withStats({ n_averaged: 66, n_short: 0 }) });
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(within(b).getByText("Based on 66 trials that succeeded.")).toBeInTheDocument();
   // The statistic asks about similar trials; mechanisms are panel b's By mechanism view.
   expect(within(b).getByText(/Similar = same disease, treatment type, molecule and population\./)).toBeInTheDocument();
@@ -253,7 +253,7 @@ test("panel b omits the short-neighbour clause when none were short", async () =
 
 test("panel b has no basis note when the statistic was not computed", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(within(b).queryByText(/^Based on/)).not.toBeInTheDocument();
 });
 
@@ -324,7 +324,7 @@ test("in Disease mode the Disease dropdown shows a swatch only for conditions so
 
 test("success panel switches between disease, modality and mechanism", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   const group = within(b).getByRole("group", { name: "Group by" });
   const buttons = within(group).getAllByRole("button").map((x) => x.textContent);
   expect(buttons).toEqual(["By disease", "By modality", "By mechanism"]);
@@ -345,7 +345,7 @@ test("success panel switches between disease, modality and mechanism", async () 
   expect(row.querySelector(".bar-n")!.textContent).toMatch(/^—/);
   expect(row.textContent).not.toMatch(/%/);
   expect(within(b).getByText(/Outlined: fewer than 10 finished trials\./)).toBeInTheDocument();
-  expect(within(b).getByText(/Succeeded = drug moved to a later phase\./)).toBeInTheDocument();
+  expect(within(b).getByText(/Advanced = the drug moved on to a later phase\./)).toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By modality" }));
   // The note follows the grouping; modality rows use the shown casing.
   expect(within(b).getByText("Trials with several modalities count in each.")).toBeInTheDocument();
@@ -365,14 +365,14 @@ test("Mechanism and Modality dropdowns follow Treatment, with 'none' last", asyn
     .map((b) => b.getAttribute("aria-expanded") !== null && b.getAttribute("aria-label"))
     .filter(Boolean);
   const at = (n: string) => names.findIndex((x) => typeof x === "string" && x.startsWith(n));
-  expect(at("Treatment:")).toBeGreaterThanOrEqual(0);
-  expect(at("Mechanism:")).toBe(at("Treatment:") + 1);
-  expect(at("Modality:")).toBe(at("Treatment:") + 2);
+  expect(at("Intervention type:")).toBeGreaterThanOrEqual(0);
+  expect(at("Drug target class:")).toBe(at("Intervention type:") + 1);
+  expect(at("Drug format:")).toBe(at("Intervention type:") + 2);
 
-  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Drug target class: all" }));
   // Searchable, rows by trial count, the "none" row last.
-  expect(screen.getByRole("searchbox", { name: "Filter Mechanism" })).toBeInTheDocument();
-  const rows = within(screen.getByRole("group", { name: "Mechanism" })).getAllByRole("checkbox");
+  expect(screen.getByRole("searchbox", { name: "Filter Drug target class" })).toBeInTheDocument();
+  const rows = within(screen.getByRole("group", { name: "Drug target class" })).getAllByRole("checkbox");
   expect(rows.map((r) => r.closest("label")!.textContent)).toEqual([
     `anti-CD20 ${withMech("anti-CD20")}`,
     `NRF2 activator ${withMech("NRF2 activator")}`,
@@ -380,8 +380,8 @@ test("Mechanism and Modality dropdowns follow Treatment, with 'none' last", asyn
   ]);
   await userEvent.keyboard("{Escape}");
 
-  await userEvent.click(screen.getByRole("button", { name: "Modality: all" }));
-  const mods = within(screen.getByRole("group", { name: "Modality" })).getAllByRole("checkbox");
+  await userEvent.click(screen.getByRole("button", { name: "Drug format: all" }));
+  const mods = within(screen.getByRole("group", { name: "Drug format" })).getAllByRole("checkbox");
   expect(mods.map((r) => r.closest("label")!.querySelector(".check-label")!.textContent)).toEqual([
     "Small molecule",
     "Antibody",
@@ -391,7 +391,7 @@ test("Mechanism and Modality dropdowns follow Treatment, with 'none' last", asyn
 
 test("Mechanism: Select none empties the map; one class alone shows just its trials", async () => {
   await ready();
-  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Drug target class: all" }));
   await userEvent.click(screen.getByRole("button", { name: "Select none" }));
   expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("checkbox", { name: `anti-CD20 ${withMech("anti-CD20")}` }));
@@ -403,23 +403,23 @@ test("Mechanism: Select none empties the map; one class alone shows just its tri
 
 test("Mechanism and Modality colour modes have their own key", async () => {
   await ready();
-  await userEvent.click(screen.getByRole("button", { name: "Mechanism" }));
-  expect(screen.getByRole("button", { name: "Mechanism" })).toHaveAttribute("aria-pressed", "true");
-  const key = screen.getByRole("list", { name: "Colour key: Mechanism" });
+  await userEvent.click(screen.getByRole("button", { name: "Drug target class" }));
+  expect(screen.getByRole("button", { name: "Drug target class" })).toHaveAttribute("aria-pressed", "true");
+  const key = screen.getByRole("list", { name: "Colour key: Drug target class" });
   expect(within(key).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
     "anti-CD20",
     "NRF2 activator",
     "No known mechanism",
   ]);
-  await userEvent.click(screen.getByRole("button", { name: "Modality" }));
-  const mk = screen.getByRole("list", { name: "Colour key: Modality" });
+  await userEvent.click(screen.getByRole("button", { name: "Drug format" }));
+  const mk = screen.getByRole("list", { name: "Colour key: Drug format" });
   expect(within(mk).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
     "Small molecule",
     "Antibody",
     "No known modality",
   ]);
   // The dropdown rows carry the same swatches.
-  await userEvent.click(screen.getByRole("button", { name: "Modality: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Drug format: all" }));
   expect(document.querySelectorAll(".popover .check .swatch")).toHaveLength(3);
 });
 
@@ -462,15 +462,15 @@ test("a class shown only on multi-class trials gets no swatch; the 'none' key sw
   const trials = explorer.trials.map((t, i) => (i === 6 ? { ...t, mechanisms: ["anti-CD20", "BTK inhibitor"] } : t));
   stubFetch({ "explorer.json": { ...explorer, trials } });
   await ready();
-  await userEvent.click(screen.getByRole("button", { name: "Mechanism" }));
-  await userEvent.click(screen.getByRole("button", { name: "Mechanism: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Drug target class" }));
+  await userEvent.click(screen.getByRole("button", { name: "Drug target class: all" }));
   const rows = [...document.querySelectorAll<HTMLElement>(".popover .check")];
   const swatchOf = (label: string) =>
     rows.find((r) => r.querySelector(".check-label")!.textContent === label)!.querySelector(".swatch");
   expect(swatchOf("anti-CD20")).not.toBeNull();
   expect(swatchOf("BTK inhibitor")).toBeNull();
   expect(swatchOf("No known mechanism")).not.toBeNull();
-  const key = screen.getByRole("list", { name: "Colour key: Mechanism" });
+  const key = screen.getByRole("list", { name: "Colour key: Drug target class" });
   const none = within(key).getByText("No known mechanism").querySelector(".swatch")!;
   expect(none).toHaveClass("none");
   // Shape, not shade: "more than one" is a ring in the key, as on the map.
@@ -504,7 +504,7 @@ test("Approach filter: select none, then Cell & transplant shows only cell trial
     .map((b) => b.getAttribute("aria-expanded") !== null && b.getAttribute("aria-label"))
     .filter(Boolean);
   const at = (n: string) => names.findIndex((x) => typeof x === "string" && x.startsWith(n));
-  expect(at("Approach:")).toBe(at("Modality:") + 1);
+  expect(at("Approach:")).toBe(at("Drug format:") + 1);
   await userEvent.click(screen.getByRole("button", { name: "Approach: all" }));
   const rows = within(screen.getByRole("group", { name: "Approach" })).getAllByRole("checkbox");
   // In the vocabulary's order, only approaches some trial is in.
@@ -544,7 +544,7 @@ test("hover card and panel d show approach and kind", async () => {
 
 test("map has no By approach panel and no Play control", async () => {
   await ready();
-  const b = screen.getByRole("region", { name: /Share that succeeded, of finished trials that could succeed/ });
+  const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(within(b).queryByRole("button", { name: "By approach" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Play|Pause|rotation/ })).not.toBeInTheDocument();
 });

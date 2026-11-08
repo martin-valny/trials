@@ -94,7 +94,7 @@ function kindOutcome(t: ExplorerTrial, kind: TreeKind, successDefined: boolean):
   if (t.outcome !== "succeeded") return outcomeLabel(t.outcome);
   if (!successDefined) return outcomeLabel("completed_unknown");
   if (!kind.elsewhereTrials.includes(t.nct_id)) return outcomeLabel(t.outcome);
-  return t.succeeded_by.length > 0 ? `Succeeded via ${t.succeeded_by.join(", ")}` : "Succeeded via another drug";
+  return t.succeeded_by.length > 0 ? `Advanced, through ${t.succeeded_by.join(", ")}` : "Advanced, through another drug";
 }
 
 /**
@@ -130,7 +130,7 @@ export function SidePanel({
         {successDefined && kind.finished > 0 ? (
           <>
             {" "}
-            {fmt(kind.finished)} in the success pool, {fmt(kind.succeeded)} succeeded
+            {fmt(kind.finished)} finished trials that count, {fmt(kind.succeeded)} advanced
             {kind.rate === null ? " (too few to tell)" : ""}.
           </>
         ) : null}
@@ -155,7 +155,6 @@ export function SidePanel({
 }
 
 const KIND_WORD: Record<GraphNode["kind"], string> = { drug: "Drug", target: "Target", pathway: "Pathway" };
-const actionWord = (a: string): string => a.toLowerCase().replace(/_/g, " ");
 
 /** Node links as buttons: each focuses that node on the graph (and opens its panel). */
 function NodeLinks({ nodes, onFocus, notes }: { nodes: GraphNode[]; onFocus(id: string): void; notes?: Map<string, string> }) {
@@ -225,9 +224,11 @@ export function NodePanel({
   const facts: [string, ReactNode][] = [];
   if (node.kind === "drug") {
     const mech = drugIndex[node.label]?.mechanisms ?? [];
-    if (mech.length) facts.push(["Mechanism", mech.join(", ")]);
-    const actions = new Map(out.filter((e) => e.action).map((e) => [e.target, actionWord(e.action!)]));
-    facts.push(["Acts on", <NodeLinks key="t" nodes={nodesOf(out.map((e) => e.target))} onFocus={onFocus} notes={actions} />]);
+    if (mech.length) facts.push(["Drug target class", mech.join(", ")]);
+    const targets = nodesOf(out.map((e) => e.target));
+    // A gene target reads "Target: MS4A1 (gene)"; a molecular class has no gene, so no note.
+    const genes = new Map(targets.filter((n) => !isClassNode(n)).map((n) => [n.id, "gene"]));
+    facts.push(["Target", <NodeLinks key="t" nodes={targets} onFocus={onFocus} notes={genes} />]);
   } else if (node.kind === "target") {
     facts.push(["Acted on by", <NodeLinks key="d" nodes={nodesOf(into.map((e) => e.source))} onFocus={onFocus} />]);
     if (isClassNode(node)) {
@@ -299,12 +300,12 @@ export function NodePanel({
         )}{" "}
         {node.finished > 0 ? (
           <>
-            Success pool{narrowed ? " (all trials)" : ""}: {fmt(node.finished)} finished, {fmt(node.succeeded)} credited
-            with a success
+            Finished trials that count{narrowed ? " (all trials)" : ""}: {fmt(node.finished)}, {fmt(node.succeeded)} counted
+            as advanced
             {share === null ? " (too few to tell)" : ` (${Math.round(share * 100)}%)`}.
           </>
         ) : (
-          "None in the success pool yet."
+          "No finished trials that count yet."
         )}
       </p>
       {trials.length ? (

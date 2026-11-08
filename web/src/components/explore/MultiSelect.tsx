@@ -46,6 +46,8 @@ export function Dropdown(props: {
   /** True once it hides something: the button goes from quiet (hairline, muted value) to ink. */
   narrowed: boolean;
   title?: string;
+  /** One line under the popover heading saying what the filter splits trials by. */
+  hint?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -107,6 +109,7 @@ export function Dropdown(props: {
         aria-controls={id}
         data-narrowed={props.narrowed}
         aria-label={`${props.label}: ${props.value}`}
+        title={props.hint}
         onClick={() => setOpen((o) => !o)}
       >
         {/* At rest only the name shows; the value joins it once the filter narrows. Screen readers
@@ -131,6 +134,7 @@ export function Dropdown(props: {
               Done
             </button>
           </div>
+          {props.hint ? <p className="popover-hint">{props.hint}</p> : null}
           {props.children}
         </div>
       ) : null}
@@ -158,11 +162,13 @@ export function MultiSelect(props: {
   selected: ReadonlySet<string>;
   onChange(next: Set<string>): void;
   searchable?: boolean;
+  hint?: string;
 }) {
   const { label, options, selected, onChange } = props;
   return (
     <Dropdown
       className="multiselect"
+      hint={props.hint}
       label={label}
       // Only values offered as rows count: a set may hold a value no row shows (an unlisted NONE).
       value={filterSummary(options.filter((o) => selected.has(o.value)).length, options.length)}
