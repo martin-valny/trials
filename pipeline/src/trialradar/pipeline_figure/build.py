@@ -1,0 +1,180 @@
+"""Build ``pipeline.json``: the front-door Pipeline figure's one data file.
+
+Spec §6. Pure: the explorer document, the trial table and the hand-kept config in, one
+JSON-ready dict out. The web app reads nothing else on the front page.
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+from collections.abc import Mapping, Sequence
+from datetime import date
+from typing import Any
+
+import polars as pl
+
+from trialradar.config import AreaConfig
+from trialradar.pipeline_figure.io import FigureConfig, norm_sponsor
+from trialradar.pipeline_figure.rules import (
+    COLUMN,
+    mark_state,
+    parent_of,
+    placements,
+    reason_group,
+    span,
+    sponsor_display,
+    unlisted_classes,
+)
+
+TITLE_MAX = 110
+WHY_MAX = 300
+UNLISTED_SPONSOR_MIN = 3
+_NOT_GIVEN = "Not given"
+
+
+def _codes(labels: Sequence[str], by_label: Mapping[str, str]) -> list[str]:
+    return [by_label[label] for label in labels if label in by_label]
+
+
+def _join(items: Sequence[tuple[str, int]]) -> str:
+    return ", ".join(f"{name} ({n})" for name, n in items)
+
+
+def build_pipeline_doc(
+    explorer: Mapping[str, Any],
+    trial: pl.DataFrame,
+    cfg: AreaConfig,
+    fig: FigureConfig,
+    day: date,
+    warnings: list[str],
+) -> dict[str, Any]:
+    by_label = {c.label: c.code for c in cfg.conditions if c.code}
+    diseases = [{"code": c.code, "label": c.label} for c in cfg.conditions if c.code]
+    table: dict[str, dict[str, Any]] = {r["nct_id"]: r for r in trial.iter_rows(named=True)}
+    drug_index: Mapping[str, Mapping[str, Any]] = explorer.get("drug_index", {})
+    drug_mechanisms = {d: list(v.get("mechanisms", ())) for d, v in drug_index.items()}
+    explorer_trials: list[Mapping[str, Any]] = list(explorer["trials"])
+
+    marks: dict[str, list[dict[str, Any]]] = {r.id: [] for r in fig.rows}
+    trial_docs: dict[str, dict[str, Any]] = {}
+    raw_sponsor: dict[str, str] = {}  # nct -> raw lead sponsor (or "Not given")
+    targeted = 0
+    for t in explorer_trials:
+        nct = t["nct_id"]
+        if "targeted" in t.get("approaches", ()):
+            targeted += 1
+        row = table.get(nct) or {}
+        phases = list(row.get("phases") or ())
+        columns = [COLUMN[p] for p in phases if p in COLUMN]
+        if not columns:
+            continue
+        placed = placements(list(t.get("drugs", ())), drug_mechanisms, fig)
+        if not placed:
+            continue
+        sponsor = (t.get("lead_sponsor") or "").strip() or _NOT_GIVEN
+        raw_sponsor[nct] = sponsor
+        succeeded_by = list(t.get("succeeded_by", ()))
+        for row_id, drug in placed.items():
+            state, via = mark_state(t["outcome"], drug, succeeded_by)
+            marks[row_id].append(
+                {
+                    "n": nct,
+                    "c": max(columns),
+                    "span": span(phases),
+                    "s": state,
+                    "via": via,
+                    "si": _codes(t.get("succeeded_in", ()), by_label),
+                    "y": t.get("start_year"),
+                    "y2": t.get("end_year"),
+                    "est": bool(t.get("end_estimated", False)),
+                    "dz": _codes(t.get("condition_labels", ()), by_label),
+                    "drug": drug,
+                    "sp": sponsor,  # replaced by an index below
+                }
+            )
+        entry: dict[str, Any] = {"t": (t.get("title") or "")[:TITLE_MAX]}
+        if t["outcome"] == "stopped":
+            why = row.get("why_stopped")
+            entry["why"] = why[:WHY_MAX] if why else None
+            entry["r"] = reason_group(why, fig.reasons)
+        trial_docs[nct] = entry
+
+    marked = set(trial_docs)
+    class_of_raw: dict[str, str | None] = {}
+    for nct in sorted(marked):
+        class_of_raw.setdefault(raw_sponsor[nct], (table.get(nct) or {}).get("sponsor_class"))
+    sponsors: list[dict[str, Any]] = []
+    index: dict[str, int] = {}
+    for raw in sorted(class_of_raw):
+        parent = parent_of(None if raw == _NOT_GIVEN else raw, class_of_raw[raw], fig.parents)
+        index[raw] = len(sponsors)
+        sponsors.append({"raw": raw, "parent": parent.parent, "kind": parent.kind})
+
+    for row_marks in marks.values():
+        for m in row_marks:
+            m["sp"] = index[m["sp"]]
+        row_marks.sort(key=lambda m: (m["y"] is None, m["y"] or 0, m["n"]))
+
+    unlisted = unlisted_classes(explorer_trials, drug_mechanisms, fig)
+    if unlisted:
+        warnings.append(f"pipeline_unlisted_classes: {_join(unlisted)}")
+    per_sponsor: dict[str, set[str]] = defaultdict(set)
+    first_raw: dict[str, str] = {}
+    for nct in sorted(marked):
+        raw = raw_sponsor[nct]
+        if raw == _NOT_GIVEN:
+            continue
+        display = norm_sponsor(sponsor_display(raw))
+        if norm_sponsor(raw) in fig.parents or display in fig.parents:
+            continue
+        if sponsors[index[raw]]["kind"] != "industry":
+            continue
+        first_raw.setdefault(display, raw)
+        per_sponsor[display].add(nct)
+    unlisted_sponsors = sorted(
+        ((first_raw[k], len(v)) for k, v in per_sponsor.items() if len(v) >= UNLISTED_SPONSOR_MIN),
+        key=lambda rn: (-rn[1], rn[0]),
+    )
+    if unlisted_sponsors:
+        warnings.append(f"pipeline_unlisted_sponsors: {_join(unlisted_sponsors)}")
+
+    unrowed_counts: dict[str, set[str]] = defaultdict(set)
+    for t in explorer_trials:
+        if t["nct_id"] in marked or "targeted" not in t.get("approaches", ()):
+            continue
+        for d in t.get("drugs", ()):
+            for cls in drug_mechanisms.get(d, ()):
+                if cls in fig.unrowed:
+                    unrowed_counts[cls].add(t["nct_id"])
+
+    return {
+        "generated_for": day.isoformat(),
+        "diseases": diseases,
+        "counts": {
+            "trials": len(explorer_trials),
+            "targeted": targeted,
+            "in_rows": len(marked),
+            "targeted_not_rowed": targeted - len(marked),
+        },
+        "families": [{"id": f.id, "label": f.label, "order": f.order} for f in fig.families],
+        "rows": [
+            {
+                "id": r.id,
+                "label": r.label,
+                "sub": r.sub,
+                "family": r.family,
+                "order": r.order,
+                "gene": r.gene,
+                "blurb": r.blurb,
+                "related": list(r.related),
+                "marks": marks[r.id],
+            }
+            for r in fig.rows
+        ],
+        "sponsors": sponsors,
+        "trials": trial_docs,
+        "unrowed": [
+            {"class": c, "trials": len(n), "reason": fig.unrowed[c]}
+            for c, n in sorted(unrowed_counts.items(), key=lambda cn: (-len(cn[1]), cn[0]))
+        ],
+    }

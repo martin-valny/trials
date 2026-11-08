@@ -525,3 +525,17 @@ def test_mechanisms_json_written_and_removed(tmp_path: Path, cfg: AreaConfig) ->
     export(*args, explorer=doc, mechanisms=graph)
     export(*args, mechanisms=graph)  # no map: no graph either
     assert not (tmp_path / "mechanisms.json").exists()
+
+
+def test_export_writes_and_removes_pipeline_json(tmp_path: Path, cfg: AreaConfig) -> None:
+    """pipeline.json is present exactly when this export has a figure (and a map)."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    fig = {"generated_for": DAY.isoformat(), "rows": []}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, explorer=doc, pipeline=fig)
+    assert json.loads((tmp_path / "pipeline.json").read_text(encoding="utf-8")) == fig
+    export(*args, explorer=doc)
+    assert not (tmp_path / "pipeline.json").exists()
+    export(*args, explorer=doc, pipeline=fig)
+    export(*args, pipeline=fig)  # no map: no figure either
+    assert not (tmp_path / "pipeline.json").exists()

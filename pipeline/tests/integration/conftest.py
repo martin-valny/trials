@@ -124,6 +124,7 @@ class Env:
             update={
                 "mechanisms_dir": fixtures / "mechanisms",
                 "approaches_dir": fixtures / "approaches",
+                "sponsors_dir": fixtures / "sponsors",
             }
         )
         self.store_root = root / "data"

@@ -407,6 +407,7 @@ def test_each_stage_logs_one_json_line(
         "store",
         "explorer",
         "mechanism_graph",
+        "pipeline_figure",
         "export",
         "explorer_coords",
         "run_log",
@@ -724,3 +725,26 @@ def test_corrupt_coords_warn_and_fall_back(
     explorer = next(ln for ln in lines if ln["stage"] == "explorer")
     assert any("coords" in w for w in explorer["warnings"])
     assert ADDED in _coords(env)
+
+
+def test_run_writes_pipeline_json(env: Env, cfg: AreaConfig) -> None:
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    doc = json.loads((env.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == "2026-03-01"
+    assert doc["counts"]["trials"] == len(
+        json.loads((env.site_dir / "explorer.json").read_text())["trials"]
+    )
+
+
+def test_missing_pipeline_config_warns_and_writes_no_figure(
+    tmp_path: Path, cfg: AreaConfig
+) -> None:
+    """R19: no config/pipeline means one warning, no pipeline.json, a successful run."""
+    broken = Env(tmp_path, cfg.model_copy(update={"pipeline_dir": tmp_path / "missing"}))
+    broken.site_dir.mkdir()
+    (broken.site_dir / "pipeline.json").write_text("{}", encoding="utf-8")  # stale
+    result = broken.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("pipeline_figure:") for w in result.warnings)
+    assert (broken.site_dir / "explorer.json").exists()
+    assert not (broken.site_dir / "pipeline.json").exists()

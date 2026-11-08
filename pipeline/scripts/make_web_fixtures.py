@@ -48,6 +48,7 @@ def main(out_dir: Path) -> None:
         update={
             "mechanisms_dir": fixtures / "mechanisms",
             "approaches_dir": fixtures / "approaches",
+            "sponsors_dir": fixtures / "sponsors",
         }
     )
     with tempfile.TemporaryDirectory() as tmp:

@@ -101,7 +101,7 @@ def mark_state(
 ) -> tuple[MarkState, str | None]:
     """The 1b state of one trial in one row, and the crediting drug if it advanced elsewhere."""
     if outcome == "succeeded":
-        if drug in succeeded_by:
+        if drug.casefold() in {d.casefold() for d in succeeded_by}:
             return "adv", None
         return "fin", (min(succeeded_by) if succeeded_by else None)
     return _PLAIN_STATE.get(outcome, "unk"), None
@@ -160,6 +160,8 @@ def unlisted_classes(
     for t in trials:
         year = t.get("start_year")
         if "targeted" not in t.get("approaches", ()) or year is None or year < since:
+            continue
+        if t.get("phase") == "NA":  # a trial without a drug phase never gets a mark
             continue
         drugs: list[str] = list(t.get("drugs", ()))
         kept = [d for d in drugs if d.casefold() not in cfg.background] or drugs

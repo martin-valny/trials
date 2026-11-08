@@ -161,3 +161,13 @@ def test_unlisted_classes(cfg: FigureConfig) -> None:
     )
     cfg2 = replace(cfg, background=cfg.background | {"e"})
     assert unlisted_classes(trials, mech, cfg2) == [("new class", 3)]
+
+
+def test_unlisted_classes_skips_phase_na(cfg: FigureConfig) -> None:
+    na = {**_t(2020, ["a"]), "phase": "NA"}
+    assert unlisted_classes([na] * 5, {"a": ["new class"]}, cfg) == []
+
+
+def test_mark_state_is_case_insensitive() -> None:
+    assert mark_state("succeeded", "Ocrelizumab", ["ocrelizumab"]) == ("adv", None)
+    assert mark_state("succeeded", "ocrelizumab", ["KYV-101"]) == ("fin", "KYV-101")

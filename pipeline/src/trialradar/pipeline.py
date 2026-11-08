@@ -40,6 +40,8 @@ from trialradar.explorer.extras import StudyExtras, empty_extras, extract_extras
 from trialradar.explorer.graph import load_graph
 from trialradar.export import export
 from trialradar.normalize import normalize
+from trialradar.pipeline_figure.build import build_pipeline_doc
+from trialradar.pipeline_figure.io import read_figure_config
 from trialradar.relevance import filter_relevant
 from trialradar.snapshot import (
     list_snapshots,
@@ -200,6 +202,33 @@ def _mechanism_graph(
     except Exception as exc:  # noqa: BLE001 - the graph never fails the daily run
         return None, [f"mechanism_graph: {_describe(exc)}"]
     return graph, []
+
+
+def _pipeline_figure(
+    explorer: dict[str, Any] | None,
+    tables: Tables,
+    cfg: AreaConfig,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The front-door Pipeline figure (``pipeline.json``) for a built map, plus its warnings.
+
+    Optional (R19): a missing or invalid config file, or any failure, gives one
+    ``pipeline_figure:`` warning and no figure; the run continues. No map, no figure (the
+    map's own warning already says why). Unlisted classes and sponsors are warnings too."""
+    if explorer is None:
+        return None, []
+    extra = {"day": day.isoformat()} if day is not None else {}
+    warnings: list[str] = []
+    try:
+        with _stage("pipeline_figure", **extra) as info:
+            fig = read_figure_config(cfg.pipeline_dir, cfg.sponsors_dir, cfg.stop_reasons)
+            for_day = day or date.fromisoformat(explorer["generated_for"])
+            doc = build_pipeline_doc(explorer, tables.trial, cfg, fig, for_day, warnings)
+            info["rows"] = len(doc["trials"])
+    except Exception as exc:  # noqa: BLE001 - the figure never fails the daily run
+        return None, [f"pipeline_figure: {_describe(exc)}"]
+    return doc, warnings
 
 
 def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
@@ -363,6 +392,8 @@ def run(
         warnings += explorer_warnings
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
         warnings += graph_warnings
+        figure, figure_warnings = _pipeline_figure(explorer, tables, cfg)
+        warnings += figure_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -382,6 +413,7 @@ def run(
                 extras=extras,
                 explorer=explorer,
                 mechanisms=graph,
+                pipeline=figure,
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
@@ -526,7 +558,8 @@ def rebuild(
             tables, extras, cfg, aliases, dict, day, log_day=True
         )
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
-        explorer_warnings = [*explorer_warnings, *graph_warnings]
+        figure, figure_warnings = _pipeline_figure(explorer, tables, cfg, day=day)
+        explorer_warnings = [*explorer_warnings, *graph_warnings, *figure_warnings]
         if explorer_warnings:
             pending["warnings"] = json.dumps(
                 [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
@@ -543,6 +576,7 @@ def rebuild(
                 extras=extras,
                 explorer=explorer,
                 mechanisms=graph,
+                pipeline=figure,
             )
             info["rows"] = tables.trial.height
         if coords is not None:
