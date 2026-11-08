@@ -82,13 +82,18 @@ export function downstream(g: GraphFile, ids: Iterable<string>): Set<string> {
   );
 }
 
-/** Nodes reached by the trials' drugs: each drug testing one of them, and its chain downstream. */
+/**
+ * Nodes reached by the trials' drugs: each drug testing one of them, and its chain downstream. A
+ * target or pathway reached by one of them only through a drug the cap left out (its ``extra_trials``)
+ * lights too, with its chain downstream.
+ */
 export function litByTrials(g: GraphFile, ncts: Set<string>): Set<string> {
   if (ncts.size === 0) return new Set();
-  const drugs = g.nodes.filter((n) => n.kind === "drug" && (n.trials ?? []).some((t) => ncts.has(t)));
+  const hit = (ts: string[] | undefined) => (ts ?? []).some((t) => ncts.has(t));
+  const starts = g.nodes.filter((n) => (n.kind === "drug" ? hit(n.trials) : hit(n.extra_trials)));
   return downstream(
     g,
-    drugs.map((n) => n.id),
+    starts.map((n) => n.id),
   );
 }
 
@@ -184,13 +189,18 @@ export function findMatches(g: GraphFile, q: string, limit = 8): Match[] {
     .map((r) => r.m);
 }
 
-/** The trials of every drug that reaches the node (the node itself, for a drug), sorted. */
+/**
+ * Every trial reaching the node, sorted: the trials of each drawn drug that reaches it (the node itself,
+ * for a drug) plus the node's ``extra_trials``, those reaching it only through drugs the cap left out.
+ */
 export function trialsOf(g: GraphFile, id: string): string[] {
   const a = adjacency(g);
   if (!a.ids.has(id)) return [];
   const up = walk([id], a.up);
   const out = new Set<string>();
   for (const n of g.nodes) if (n.kind === "drug" && up.has(n.id)) for (const t of n.trials ?? []) out.add(t);
+  const own = g.nodes.find((n) => n.id === id);
+  for (const t of own?.extra_trials ?? []) out.add(t);
   return [...out].sort();
 }
 

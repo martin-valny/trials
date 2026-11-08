@@ -100,6 +100,32 @@ test("trialsOf collects the trials of every drug that reaches a node", () => {
   expect(trialsOf(G, "class:DNA inhibitor")).toEqual(["NCT04"]);
 });
 
+test("trialsOf adds the trials that reach the node only through drugs the cap left out", () => {
+  const g: GraphFile = {
+    ...G,
+    nodes: G.nodes.map((n) =>
+      n.id === "target:MS4A1"
+        ? { ...n, extra_trials: ["NCT09"] }
+        : n.id === "R-MID"
+          ? { ...n, extra_trials: ["NCT03", "NCT09"] }
+          : n,
+    ),
+  };
+  expect(trialsOf(g, "target:MS4A1")).toEqual(["NCT01", "NCT02", "NCT09"]);
+  expect(trialsOf(g, "R-MID")).toEqual(["NCT01", "NCT02", "NCT03", "NCT09"]);
+  // R-TOP lists its own extras only (the file gives each node its full set)
+  expect(trialsOf(g, "R-TOP")).toEqual(["NCT01", "NCT02"]);
+  expect(trialsOf(g, "drug:ocrelizumab")).toEqual(["NCT01", "NCT02"]);
+});
+
+test("litByTrials lights a node reached by a trial of a drug the cap left out, and its chain downstream", () => {
+  const g: GraphFile = {
+    ...G,
+    nodes: G.nodes.map((n) => (n.id === "target:MS4A1" ? { ...n, extra_trials: ["NCT09"] } : n)),
+  };
+  expect(litByTrials(g, new Set(["NCT09"]))).toEqual(new Set(["target:MS4A1", "R-A", "R-MID", "R-TOP"]));
+});
+
 test("nodeShare null under minGroup", () => {
   const byId = new Map(G.nodes.map((n) => [n.id, n]));
   expect(nodeShare(byId.get("R-A")!, 10)).toBeCloseTo(0.25);

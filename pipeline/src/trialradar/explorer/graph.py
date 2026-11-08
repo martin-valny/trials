@@ -17,6 +17,12 @@ amended by 2026-11-08 §6.4).
   the cap less the pathway reserve (``pathway_share``). A target is kept when a kept drug acts
   on it; pathways are pruned into what is left. ``cut`` records what was left out, so the page
   can say so and still find a dropped drug's trials.
+- The cap changes what is drawn, never what a node counts: a kept target or pathway counts the
+  trials of every mapped drug that reaches it, drawn or not. The cap keeps every drug credited
+  with a success and drops low-trial drugs that have none, so counting only the drawn drugs
+  would drop failed pool trials from the denominator and push every share up. A target or
+  pathway node lists, as ``extra_trials``, the trials that reach it only through drugs that are
+  not drawn (omitted when there are none), so the page can list all of a node's trials.
 - Positions come from a seeded Fruchterman–Reingold layout of the structure alone (never the
   outcomes), normalised to [-1, 1].
 """
@@ -194,6 +200,7 @@ def _layout(
 def _counts(
     trials: set[str], drugs: set[str], rows: Mapping[str, Mapping[str, Any]]
 ) -> dict[str, Any]:
+    """The counts of a node reached by ``trials``, whose drugs (1b credit) are ``drugs``."""
     pool = [rows[t] for t in trials if rows[t].get("in_pool")]
     return {
         "n": len(trials),
@@ -275,6 +282,8 @@ def build_graph(
         acts, n_of, credited & set(acts), cfg.max_nodes - reserve
     )
     dropped = sorted(set(acts) - set(chosen), key=lambda d: (-n_of[d], d))
+    # every mapped drug, drawn or not: the counts run over these (never biased by the cap)
+    all_acts, all_genes = acts, genes
     acts = {d: acts[d] for d in sorted(chosen)}
     genes = {
         tid.split(":", 1)[1] for tids in acts.values() for tid in tids if tid.startswith("target:")
@@ -285,13 +294,19 @@ def build_graph(
 
     target_trials: dict[str, set[str]] = defaultdict(set)
     target_drugs: dict[str, set[str]] = defaultdict(set)
-    for d, tids in acts.items():
+    for d, tids in all_acts.items():
         for tid in tids:
             target_trials[tid] |= drug_trials[d]
             target_drugs[tid].add(d)
+    # pruning ranks pathways by the trials of the drawn drugs, so the drawn structure is the
+    # drawn drugs' own; only the counts below run over every mapped drug
+    drawn_trials: dict[str, set[str]] = defaultdict(set)
+    for d, tids in acts.items():
+        for tid in tids:
+            drawn_trials[tid] |= drug_trials[d]
     top = {p for p in universe if refs[p].source == "reactome" and not parents.get(p)}
     pre_n = {
-        p: len(set().union(*(target_trials[target_id(g)] for g in reach_targets[p])))
+        p: len(set().union(*(drawn_trials[target_id(g)] for g in reach_targets[p])))
         for p in universe
     }
     single_ok = {p: refs[p].source == "reactome" and p not in top for p in universe}
@@ -325,15 +340,22 @@ def build_graph(
             edges.append({"source": pid, "target": p, "kind": "parent"})
     edges += _shares_genes(pathways, kept, cfg)
 
-    # node counts on the final structure
+    # node counts: each kept pathway over every mapped gene reaching it (its own lowest
+    # pathways or a descendant of it, pruned or not)
     path_trials: dict[str, set[str]] = defaultdict(set)
     path_drugs: dict[str, set[str]] = defaultdict(set)
-    for g, chosen in in_pathway.items():
+    for g in sorted(all_genes):
         tid = target_id(g)
-        for pid in chosen:
-            for p in {pid} | _ancestors(pid, parents):
+        for pid in (p for p in pathways.targets.get(g, ()) if p in refs):
+            for p in ({pid} | _ancestors(pid, parents)) & kept:
                 path_trials[p] |= target_trials[tid]
                 path_drugs[p] |= target_drugs[tid]
+
+    def extra(trials: set[str], drugs: set[str]) -> dict[str, Any]:
+        """The trials reaching a node only through drugs that are not drawn."""
+        drawn = set().union(*(drug_trials[d] for d in drugs if d in acts))
+        rest = sorted(trials - drawn)
+        return {"extra_trials": rest} if rest else {}
 
     nodes: dict[str, dict[str, Any]] = {}
     for d in acts:
@@ -344,10 +366,11 @@ def build_graph(
         node["trials"] = sorted(drug_trials[d])
         node.update(_counts(drug_trials[d], {d}, rows))
         nodes[node["id"]] = node
-    for tid in sorted(target_trials):
+    for tid in sorted({tid for tids in acts.values() for tid in tids}):
         label = tid.split(":", 1)[1]
         node = {"id": tid, "kind": "target", "label": label}
         node.update(_counts(target_trials[tid], target_drugs[tid], rows))
+        node.update(extra(target_trials[tid], target_drugs[tid]))
         nodes[tid] = node
     for pid in sorted(kept):
         ref = refs[pid]
@@ -361,6 +384,7 @@ def build_graph(
         if ref.source == "curated" and pathways.urls.get(pid):
             node["source_url"] = pathways.urls[pid]
         node.update(_counts(path_trials[pid], path_drugs[pid], rows))
+        node.update(extra(path_trials[pid], path_drugs[pid]))
         nodes[pid] = node
 
     order = sorted(nodes)

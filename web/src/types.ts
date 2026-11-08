@@ -231,7 +231,12 @@ export interface GraphNode {
   y: number;
   /** Drug nodes only: the trials testing the drug. */
   trials?: string[];
-  /** Every trial reaching the node. */
+  /**
+   * Targets and pathways only: the trials reaching the node only through drugs the node cap left out
+   * (absent when there are none). The counts below include them, so the cap never biases a share.
+   */
+  extra_trials?: string[];
+  /** Every trial reaching the node, from every mapped drug (drawn or not). */
   n: number;
   /** Pool trials reaching the node. */
   finished: number;

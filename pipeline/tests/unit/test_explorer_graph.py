@@ -445,15 +445,72 @@ def test_pathway_share_reserves_room() -> None:
     assert g["method"]["pathway_share"] == 0.5
 
 
-def test_counts_over_kept_drugs() -> None:
-    """A kept target counts only the trials of kept drugs (the drawn structure)."""
-    trials = [*TRIALS, _trial("NCT08", ["efgartigimod", "ocrelizumab"])]
-    cfg = CFG.model_copy(update={"max_nodes": 4, "pathway_share": 0.0})
-    g = _build(trials, cfg=cfg)
+def test_counts_over_all_mapped_drugs() -> None:
+    """The cap draws only the kept structure, but a kept target or pathway counts the trials of
+    every mapped drug that reaches it, drawn or not. The cap always keeps the drugs credited
+    with a success and drops low-trial drugs without one, so counting only the kept drugs would
+    drop failed pool trials from the denominator and push every share up."""
+    mappings = {
+        **MAPPINGS,
+        "rituximab": _drug("rituximab", ["anti-CD20"], ["MS4A1"], ["INHIBITOR"]),
+    }
+    index = {**INDEX, "rituximab": TARGETED}
+    trials = [
+        *TRIALS,
+        _trial("NCT09", ["rituximab"], outcome="stopped", in_pool=True),
+        _trial("NCT10", ["efgartigimod", "ocrelizumab"]),
+    ]
+    # 5 for drugs and targets: the two credited drugs (4 nodes) fit, the 1-trial tier does not
+    cfg = CFG.model_copy(update={"max_nodes": 9, "pathway_share": 0.5})
+    g = build_graph(_doc(trials, index), mappings, PATHWAYS, cfg, SEED)
     nodes = _nodes(g)
-    assert set(_kinds(g)["drug"]) == {"drug:ocrelizumab", "drug:fingolimod"}
+    kinds = _kinds(g)
+    assert kinds["drug"] == {"drug:ocrelizumab", "drug:fingolimod"}
+    assert kinds["target"] == {"target:MS4A1", "target:S1PR1"}
+    assert "drug:rituximab" not in nodes and "target:CD19" not in nodes
+    assert "R-HSA-B" not in nodes and "target:FCGRT" not in nodes
+    # drawn drugs keep their own trials
     assert nodes["drug:ocrelizumab"]["n"] == 3
-    assert "drug:efgartigimod" not in nodes and "target:FCGRT" not in nodes
+    # MS4A1: ocrelizumab (NCT01, NCT02, NCT10) and the dropped rituximab (NCT09, failed)
+    ms4a1 = nodes["target:MS4A1"]
+    assert (ms4a1["n"], ms4a1["finished"], ms4a1["succeeded"], ms4a1["stopped"]) == (4, 3, 1, 1)
+    assert ms4a1["extra_trials"] == ["NCT09"]
+    # MID and TOP1 also reach the dropped inebilizumab through CD19, whose own pathway
+    # (R-HSA-B) is not drawn (NCT03, failed)
+    for pid in ("R-HSA-MID", "R-HSA-TOP1"):
+        node = nodes[pid]
+        assert (node["n"], node["finished"], node["succeeded"]) == (5, 4, 1), pid
+        assert node["extra_trials"] == ["NCT03", "NCT09"], pid
+    a = nodes["R-HSA-A"]  # MS4A1 only
+    assert (a["n"], a["finished"], a["succeeded"]) == (4, 3, 1)
+    # nothing left out reaches fingolimod's chain
+    assert "extra_trials" not in nodes["target:S1PR1"]
+    assert "extra_trials" not in nodes["R-HSA-TOP2"]
+    assert "extra_trials" not in nodes["drug:ocrelizumab"]
+
+
+def test_pruning_ranks_by_drawn_drugs() -> None:
+    """The drawn structure is the drawn drugs' own: pathways are pruned by the trials of the
+    drawn drugs, so a drug the cap left out moves no node; it only adds to the counts."""
+    mappings = {
+        **MAPPINGS,
+        "rituximab": _drug("rituximab", ["anti-CD20"], ["MS4A1"], ["INHIBITOR"]),
+        "siponimod": _drug("siponimod", ["S1P receptor modulator"], ["S1PR1"], ["MODULATOR"]),
+    }
+    index = {**INDEX, "rituximab": TARGETED, "siponimod": TARGETED}
+    base = [*TRIALS, _trial("NCT10", ["ocrelizumab"])]
+    extra = [*(_trial(f"NCT1{i}", ["siponimod"], outcome="stopped", in_pool=True) for i in "123")]
+    # 4 for drugs and targets (the credited drugs), 4 of the 5 reachable pathways
+    cfg = CFG.model_copy(update={"max_nodes": 8, "pathway_share": 0.5})
+    a = build_graph(_doc(base, index), mappings, PATHWAYS, cfg, SEED)
+    b = build_graph(_doc([*base, *extra], index), mappings, PATHWAYS, cfg, SEED)
+    assert set(_nodes(a)) == set(_nodes(b))
+    assert "R-HSA-A" in _nodes(b) and "R-HSA-C" not in _nodes(b)  # A: 3 drawn trials, C: 1
+    assert "drug:siponimod" not in _nodes(b)
+    s1pr1 = _nodes(b)["target:S1PR1"]
+    assert (s1pr1["n"], s1pr1["finished"], s1pr1["succeeded"]) == (4, 4, 1)
+    assert s1pr1["extra_trials"] == ["NCT11", "NCT12", "NCT13"]
+    assert _nodes(b)["R-HSA-TOP2"]["extra_trials"] == ["NCT11", "NCT12", "NCT13"]
 
 
 def test_no_cut_when_everything_fits() -> None:
