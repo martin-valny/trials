@@ -1,0 +1,106 @@
+pattern,types,kind
+autologous hematopoietic stem cell,,ahsct
+autologous haematopoietic stem cell,,ahsct
+hematopoietic stem cell transplantation,,ahsct
+haematopoietic stem cell transplantation,,ahsct
+hematopoietic stem cell transplant,,ahsct
+haematopoietic stem cell transplant,,ahsct
+peripheral blood stem cell transplantation,,ahsct
+ahsct,,ahsct
+hsct,,ahsct
+mesenchymal stem cell,,msc
+mesenchymal stem cells,,msc
+mesenchymal stromal cells,,msc
+tolerogenic dendritic cells,,tolerogenic_dc
+plasma exchange,,plasma_exchange
+therapeutic plasma exchange,,plasma_exchange
+plasmapheresis,,plasma_exchange
+plex,,plasma_exchange
+immunoadsorption,,immunoadsorption
+immunoadsorption apheresis,,immunoadsorption
+exercise,,exercise
+aerobic training,,exercise
+resistance training,,exercise
+strength training,,exercise
+endurance training,,exercise
+interval training,,exercise
+hiit,,exercise
+treadmill,,exercise
+pilates,,exercise
+yoga,,exercise
+nordic walking,,exercise
+physical activity,BEHAVIORAL;OTHER,exercise
+physiotherapy,,physiotherapy
+physical therapy,,physiotherapy
+balance training,,physiotherapy
+gait training,,physiotherapy
+pelvic floor,,physiotherapy
+cognitive rehabilitation,,cognitive_rehab
+cognitive training,,cognitive_rehab
+cognitive remediation,,cognitive_rehab
+memory training,,cognitive_rehab
+memory retraining,,cognitive_rehab
+speed of processing training,,cognitive_rehab
+cognitive behavioral therapy,,cbt
+cognitive behavioural therapy,,cbt
+cognitive-behavioral therapy,,cbt
+cbt,,cbt
+cbt-i,,cbt
+mindfulness,,mindfulness
+mbct,,mindfulness
+meditation,,mindfulness
+patient education,,education
+health education,,education
+education,BEHAVIORAL;OTHER,education
+self-management,BEHAVIORAL;OTHER,education
+transcranial magnetic stimulation,,tms
+tms,,tms
+rtms,,tms
+theta burst,,tms
+transcranial direct current stimulation,,tdcs
+tdcs,,tdcs
+wearable,,wearable
+fitbit,,wearable
+transcutaneous electrical nerve stimulation,,peripheral_stimulation
+tens,DEVICE,peripheral_stimulation
+functional electrical stimulation,,peripheral_stimulation
+neuromuscular electrical stimulation,,peripheral_stimulation
+nmes,,peripheral_stimulation
+tibial nerve stimulation,,peripheral_stimulation
+vagus nerve stimulation,,peripheral_stimulation
+electrical muscle stimulation,,peripheral_stimulation
+deep brain stimulation,,deep_brain_stimulation
+virtual reality,,virtual_reality
+exoskeleton,,robotics
+lokomat,,robotics
+anklebot,,robotics
+robot-assisted,,robotics
+robotic,,robotics
+diet,,diet
+ketogenic,,diet
+fasting,,diet
+caloric restriction,,diet
+calorie restriction,,diet
+thymectomy,,thymectomy
+liberation therapy,,venous_angioplasty
+venous angioplasty,,venous_angioplasty
+ccsvi,,venous_angioplasty
+focused ultrasound,,focused_ultrasound
+mrgfus,,focused_ultrasound
+fecal microbiota transplantation,,fmt
+faecal microbiota transplantation,,fmt
+intermittent hypoxia,,intermittent_hypoxia
+magnetic resonance imaging,OTHER;DIAGNOSTIC_TEST;DEVICE;PROCEDURE,not_a_treatment
+mri,OTHER;DIAGNOSTIC_TEST;DEVICE;PROCEDURE,not_a_treatment
+blood sample,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+blood samples,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+blood withdrawal,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+blood draw,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+biospecimen collection,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+lumbar puncture,OTHER;DIAGNOSTIC_TEST;PROCEDURE,not_a_treatment
+clinical assessment,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+neuropsychological evaluation,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+psychological evaluation,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+cognitive evaluation,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+questionnaire,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+questionnaires,OTHER;DIAGNOSTIC_TEST,not_a_treatment

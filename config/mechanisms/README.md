@@ -34,12 +34,34 @@ Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
 
 ## Current state
 
-First real run: 2026-11-06 snapshot, ChEMBL_37. 909 distinct drug names; ChEMBL maps 247,
-`overrides.csv` adds 199 `manual` rows (name variants, brands, codes, combinations split
-into named components, CAR-T with the target in its name) and 50 `not_a_drug` rows
-(sampling, imaging tracers/contrast, treatment-strategy labels). 63.8% of drug-bearing
-trials have all their drugs resolved (target 80%). Open questions and suggested
-corrections: `docs/superpowers/research/2026-11-06-mechanism-review-sheet.md`.
+First real run: 2026-11-06 snapshot, ChEMBL_37. 909 distinct drug names; ChEMBL maps 247.
+
+**2026-11-08: the reviewed mapping-gaps proposals are applied.** The high- and
+medium-confidence rows of `docs/superpowers/research/2026-11-07-proposed-overrides.csv`
+(Martin, 2026-11-08) are in `overrides.csv`, with three changes:
+
+- **Vaccines are `not_a_drug`.** In these trials a vaccine is given to test the immune
+  response under a treatment, not as the treatment, so every `vaccine` row and every COVID
+  vaccine (BNT162b2, mRNA-1273, Ad26.COV2.S and their variants, including the two names
+  ChEMBL maps) is `not_a_drug`, with its reason in `source`.
+- **Products without a molecular target carry a kind key** in `mechanism_class` (`msc`,
+  `immunoglobulin`, `ahsct`, `atg`, `glatiramer`, `myelin_peptide` and so on), with empty
+  `targets`. Kind keys are defined in `config/approaches/kinds.csv`, which places them in
+  their approach (Cell & transplant, Antibody & plasma, Tolerisation, Broad
+  immunomodulators). They never appear as mechanisms. A combination keeps its molecular
+  part (`DNA inhibitor;atg`). The myelin peptides' `MBP` target was removed: MBP is the
+  tolerising antigen, not a drug target. MuSK CAAR-T is molecular, with target `MUSK`.
+- **Low-confidence rows stay unmapped** (cannabis products, helminths, NeuroVax and a few
+  codes).
+
+`overrides.csv` now holds 447 rows: 355 `manual` and 92 `not_a_drug`. Every drug resolved for **1,112 of 1,314 drug-bearing trials (84.6%)**,
+up from 838 (63.8%); `not_a_drug` counts as resolved. Open questions:
+`docs/superpowers/research/2026-11-06-mechanism-review-sheet.md` and the mapping-gaps
+report (`docs/superpowers/research/2026-11-07-mapping-gaps-report.md`).
+
+A drug row with a molecular class but no gene target (cladribine `DNA inhibitor`,
+cemdisiran `Complement C5 mRNA silencer`) is still molecular and goes to Targeted drugs;
+only kind keys leave it. See `config/approaches/README.md`.
 
 ## Re-running
 
