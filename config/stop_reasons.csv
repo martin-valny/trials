@@ -1,6 +1,6 @@
 pattern,group
 covid|coronavirus|pandemic|sars-cov,COVID-19
-business|strategic|strategy|portfolio|commercial|company decision|prioriti[sz]|corporate|merger|acquisition|discontinu(ed|ation) of development|research plans|development of another|halt development|no longer (relevant|needed|required)|sufficient data,Business or strategy
+business|strategic|strategy|portfolio|commercial|company decision|prioriti[sz]|corporate|merger|acquisition|discontinu(ed|ation) of development|research plans|development of another|halt development|no longer (relevant|needed|required)|(?<!in)sufficient data,Business or strategy
 slow (recruit|enrol)|low (recruit|enrol|accrual)|poor (recruit|enrol)|recruit|enrol|accrual|lack of participants|insufficient (number|patients|participants)|no participants|no patients,Slow enrolment
 safety|adverse|toxicit|death|liver|hepat|tolerab|benefit.?risk|harm,Safety
 efficacy|futil|lack of effect|no benefit|interim analysis|did not meet|failed to|ineffective|primary endpoint|statistical significance|did not achieve|measure appropriate,Efficacy or futility

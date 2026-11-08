@@ -61,8 +61,9 @@ def build_pipeline_doc(
     targeted = 0
     for t in explorer_trials:
         nct = t["nct_id"]
-        if "targeted" in t.get("approaches", ()):
-            targeted += 1
+        if "targeted" not in t.get("approaches", ()):
+            continue  # spec §6.2: only Targeted trials get marks
+        targeted += 1
         row = table.get(nct) or {}
         phases = list(row.get("phases") or ())
         columns = [COLUMN[p] for p in phases if p in COLUMN]

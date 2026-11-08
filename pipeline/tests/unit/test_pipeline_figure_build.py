@@ -223,3 +223,15 @@ def test_build_warns_unlisted_industry_sponsor(cfg: AreaConfig, fig: FigureConfi
     table = _table([(t["nct_id"], ["PHASE2"], None, "INDUSTRY") for t in trials])
     _, warnings = _build(cfg, fig, trials, table)
     assert warnings == ["pipeline_unlisted_sponsors: Newco Inc (3)"]
+
+
+def test_build_non_targeted_trial_gets_no_mark(cfg: AreaConfig, fig: FigureConfig) -> None:
+    trials = [
+        _t("NCT00000001", ["ocrelizumab"]),
+        _t("NCT00000002", ["ocrelizumab"], approaches=["nondrug"]),
+    ]
+    table = _table([(t["nct_id"], ["PHASE3"], None, "OTHER") for t in trials])
+    doc, _ = _build(cfg, fig, trials, table)
+    assert [m["n"] for m in doc["rows"][0]["marks"]] == ["NCT00000001"]
+    assert "NCT00000002" not in doc["trials"]
+    assert doc["counts"] == {"trials": 2, "targeted": 1, "in_rows": 1, "targeted_not_rowed": 0}

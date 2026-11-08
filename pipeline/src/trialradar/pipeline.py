@@ -391,10 +391,10 @@ def run(
             tables, extras, cfg, aliases, store.load_explorer_coords, day
         )
         warnings += explorer_warnings
-        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
-        warnings += graph_warnings
         figure, figure_warnings = _pipeline_figure(explorer, tables, cfg)
         warnings += figure_warnings
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
+        warnings += graph_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -558,9 +558,9 @@ def rebuild(
         explorer, coords, explorer_warnings = _explorer(
             tables, extras, cfg, aliases, dict, day, log_day=True
         )
-        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
         figure, figure_warnings = _pipeline_figure(explorer, tables, cfg, day=day)
-        explorer_warnings = [*explorer_warnings, *graph_warnings, *figure_warnings]
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
+        explorer_warnings = [*explorer_warnings, *figure_warnings, *graph_warnings]
         if explorer_warnings:
             pending["warnings"] = json.dumps(
                 [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
