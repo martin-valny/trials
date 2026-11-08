@@ -1,26 +1,44 @@
 :root {
   --bg: #fff; --fg: #1a1d21; --muted: #5a6370; --line: #d9dde3; --accent: #0b5cad;
   --ok: #1d6b3a; --warn-bg: #fff3cd; --warn-fg: #6b4e00; --card: #f6f8fa;
+  /* Pipeline marks: running (blue), stopped, finished, unknown; the family band ink; the live dot. */
+  --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb; --fam: #8796a3; --live: #2f9e6b; --brand-dot: #c8102e;
   color-scheme: light;
 }
 /* The theme is a choice (System, Light, Dark) resolved onto <html data-theme> before first paint. */
 :root[data-theme="dark"] {
   --bg: #14171a; --fg: #e8eaed; --muted: #9aa3ad; --line: #2e343b; --accent: #6cb0f5;
   --ok: #6fcf97; --warn-bg: #3d3200; --warn-fg: #ffd866; --card: #1b1f23;
+  --run: #8da3d6; --stop: #eceae4; --fin: #50575f; --unk: #6a7178; --fam: #6c7f93; --live: #4fbf8b; --brand-dot: #ff8a3d;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 "Hanken Grotesk", system-ui, sans-serif; }
 a { color: var(--accent); }
 main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
-.site-header { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center;
+.site-header { position: relative; display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center;
   padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
-.brand { font-weight: 800; font-size: 17px; letter-spacing: -.01em; text-decoration: none; color: var(--fg); }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; letter-spacing: -.01em; text-decoration: none; color: var(--fg); }
+.brand svg { display: block; }
+.brand-dot { fill: var(--brand-dot); }
 /* Brand left, nav right; the freshness badge sits between them (DOM order stays brand, nav, badge). */
 .site-header nav { order: 2; margin-left: auto; display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
 .site-header .badge { order: 1; }
 .site-header nav a { color: var(--muted); text-decoration: none; }
-.site-header nav a[aria-current="page"] { color: var(--fg); font-weight: 700; }
+.site-header nav a[aria-current="page"], .site-header nav .nav-explore.on > button { color: var(--fg); font-weight: 700; }
+.site-header nav a:hover, .nav-explore > button:hover { color: var(--fg); }
+/* Explore is a disclosure: a button that opens a two-link menu. */
+.nav-explore { position: relative; }
+.nav-explore > button { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: .3rem; }
+.nav-explore > button::after { content: ""; border: 3.5px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+.nav-explore ul { position: absolute; z-index: 40; right: 0; top: calc(100% + .6rem); margin: 0; padding: .35rem; list-style: none; min-width: 11rem;
+  background: var(--bg); border: 1px solid var(--fg); border-radius: .6rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); }
+.nav-explore li a { display: block; padding: .4rem .65rem; border-radius: .4rem; color: var(--fg); }
+.nav-explore li a:hover, .nav-explore li a:focus-visible { background: var(--card); }
+.nav-menu-btn { display: none; order: 2; margin-left: auto; border: 0; background: none; font-size: 22px; line-height: 1; padding: 0 .25rem; color: var(--fg); cursor: pointer; }
+.nav-sheet { position: absolute; z-index: 45; left: 0; right: 0; top: 100%; display: flex; flex-direction: column; padding: .25rem 1rem .5rem; background: var(--bg); border-bottom: 1px solid var(--fg); box-shadow: 0 12px 24px rgba(0, 0, 0, .12); }
+.nav-sheet a { padding: .65rem 0; font-size: 1rem; border-bottom: 1px solid var(--line); }
+.nav-sheet .sub { padding-left: 1rem; font-size: .9rem; }
 /* Theme: a setting, not a destination. Set off from the nav by a hairline, in the nav's type,
    with a 9px key that reads like the plate's legend swatches: empty light, solid dark, half system. */
 .theme-switch { order: 3; display: inline-flex; align-items: center; gap: .45rem;
@@ -36,7 +54,8 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
    the date muted. */
 .badge { font-size: 12px; line-height: 1.45; color: var(--muted); font-variant-numeric: tabular-nums; }
 .badge.ok { color: var(--muted); }
-.badge.stale strong { color: var(--fg); font-weight: 700; }
+.badge.ok::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--live); margin-right: 6px; vertical-align: 1px; }
+.badge.stale { color: var(--fg); }
 .muted { color: var(--muted); font-size: .85rem; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .tabs { display: flex; gap: .5rem; margin: 1rem 0; }
@@ -59,7 +78,9 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
   .theme-switch-k { display: none; }
 }
 @media (max-width: 640px) {
-  .site-header nav { gap: .25rem 1rem; }
+  .site-header { gap: .5rem .75rem; }
+  .nav-menu-btn { display: inline-block; }
+  .site-header .badge { order: 5; flex-basis: 100%; }
   /* On a phone the switch shares the brand's row, right-aligned; no rule to hang off a line start. */
   .site-header .theme-switch { order: 0; margin-left: auto; padding-left: 0; border-left: 0; }
   table.changes thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

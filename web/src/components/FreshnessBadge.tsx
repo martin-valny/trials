@@ -25,21 +25,21 @@ export function FreshnessBadge({ now }: { now?: Date }) {
   if (!meta.last_success_at) return <span className="badge warn">Freshness unknown</span>;
   const updated = `Last updated ${meta.last_success_at.replace("T", " ").replace(/:\d\d(\.\d+)?Z$/, " UTC")}`;
   const registry = meta.data_timestamp ? ` · registry data as of ${meta.data_timestamp.replace("T", " ")}` : "";
+  // One quiet header note: the registry date (or the last update when the registry date is missing);
+  // full times on hover. A stale refresh adds how old the data is, still no coloured pill.
+  const asOf = meta.data_timestamp ?? meta.last_success_at;
+  const date = `Registry data from ${dayMonthYear(asOf)}`;
   if (isStale(meta.last_success_at, now ?? new Date())) {
-    // One quiet header note, never a coloured pill: the warning in ink, the date muted; full times on hover.
-    const date = meta.data_timestamp
-      ? `registry as of ${dayMonthYear(meta.data_timestamp)}`
-      : `last updated ${dayMonthYear(meta.last_success_at)}`;
+    const days = Math.max(0, Math.floor(((now ?? new Date()).getTime() - Date.parse(`${asOf.slice(0, 10)}T00:00:00Z`)) / 86_400_000));
     return (
       <span className="badge stale" title={`${updated}${registry}`}>
-        <strong>Data may be stale.</strong> {date}
+        {date}, {days} {days === 1 ? "day" : "days"} old
       </span>
     );
   }
   return (
-    <span className="badge ok">
-      {updated}
-      {registry}
+    <span className="badge ok" title={`${updated}${registry}`}>
+      {date}
     </span>
   );
 }

@@ -1,9 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/** Clicks a main-nav link; on a phone the nav is a menu button, so open it first. */
+async function navTo(page: Page, name: string) {
+  const nav = page.getByRole("navigation", { name: "Main" });
+  const menu = nav.getByRole("button", { name: "Menu" });
+  if (await menu.isVisible()) await menu.click();
+  await nav.getByRole("link", { name, exact: true }).click();
+}
+
 test("feed -> trial -> methods", async ({ page }) => {
   await page.goto("/");
-  await expect(page).toHaveURL(/#\/explore$/);
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Changes" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("targeted-drug trials");
+  await navTo(page, "Changes");
   await expect(page).toHaveURL(/#\/changes$/);
   const firstRow = page.locator("table.changes tbody tr").first();
   await expect(firstRow).toBeVisible();
@@ -14,7 +22,7 @@ test("feed -> trial -> methods", async ({ page }) => {
   await expect(page).toHaveURL(new RegExp(`#/trial/${nct}$`));
   await expect(page.getByRole("heading", { level: 1 })).toContainText(nct);
 
-  await page.getByRole("link", { name: "Methods" }).click();
+  await navTo(page, "Methods");
   await expect(page.getByRole("heading", { name: "Methods", level: 1 })).toBeVisible();
 });
 
@@ -28,7 +36,7 @@ test("trials list opens a trial", async ({ page }) => {
 });
 
 test("no horizontal scroll", async ({ page }) => {
-  for (const route of ["#/explore", "#/mechanisms/cell", "#/changes", "#/trials", "#/methods"]) {
+  for (const route of ["#/", "#/explore", "#/approaches/cell", "#/changes", "#/trials", "#/methods"]) {
     await page.goto("/" + route);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(
@@ -339,12 +347,12 @@ test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }
     await route.fulfill({ response: res, json: f });
   });
   await page.goto("/");
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Mechanisms" }).click();
-  await expect(page).toHaveURL(/#\/mechanisms\/targeted$/);
+  await navTo(page, "Approaches");
+  await expect(page).toHaveURL(/#\/approaches\/targeted$/);
   const rail = page.getByRole("navigation", { name: /Approaches/ });
   const chip = rail.getByRole("button", { name: /^Cell & transplant/ });
   await chip.click();
-  await expect(page).toHaveURL(/#\/mechanisms\/cell$/);
+  await expect(page).toHaveURL(/#\/approaches\/cell$/);
   await expect(chip).toHaveAttribute("aria-pressed", "true");
   const kind = page.getByRole("button", { name: /^aHSCT/ });
   await kind.click();
@@ -366,7 +374,7 @@ test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }
 });
 
 test("Mechanisms: Show these trials on the map narrows the map", async ({ page }) => {
-  await page.goto("/#/mechanisms/nondrug");
+  await page.goto("/#/approaches/nondrug");
   const kind = page.locator(".kind-row").first();
   await kind.click();
   const panel = page.getByRole("complementary");
@@ -382,7 +390,7 @@ test("Mechanisms: Show these trials on the map narrows the map", async ({ page }
 test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/#/mechanisms/targeted");
+  await page.goto("/#/approaches/targeted");
   const canvas = page.getByRole("img", { name: /^Mechanism graph of \d+ drugs/ });
   await expect(canvas).toBeVisible();
   // The graph has painted marks (the plate is transparent, so any opaque pixel is a mark).
@@ -405,14 +413,14 @@ test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it",
   const x = PAD + ((drug.x + 1) / 2) * (box.width - 2 * PAD);
   const y = PAD + ((1 - drug.y) / 2) * (box.height - 2 * PAD);
   await canvas.click({ position: { x, y } });
-  await expect(page).toHaveURL(/#\/mechanisms\/targeted\?node=drug%3Aexample\+drug$/);
+  await expect(page).toHaveURL(/#\/approaches\/targeted\?node=drug%3Aexample\+drug$/);
   const panel = page.getByRole("complementary", { name: /example drug/ });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("button", { name: "MS4A1" })).toBeVisible();
   await expect(panel.getByRole("link", { name: NCT }).first()).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(panel).toHaveCount(0);
-  await expect(page).toHaveURL(/#\/mechanisms\/targeted$/);
+  await expect(page).toHaveURL(/#\/approaches\/targeted$/);
   // The search box focuses a node too.
   await page.getByRole("combobox", { name: "Find a drug, target or pathway" }).fill("NFE2");
   await page.getByRole("option", { name: /NFE2L2/ }).first().click();
@@ -436,7 +444,7 @@ test("Mechanisms: a drug the node cap left out is found, explained and handed to
     };
     await route.fulfill({ json: g });
   });
-  await page.goto("/#/mechanisms/targeted");
+  await page.goto("/#/approaches/targeted");
   await expect(page.getByRole("img", { name: /^Mechanism graph of 2 drugs/ })).toBeVisible();
   await expect(
     page.getByText("Showing 2 of 3 drugs: every drug credited with a success and those in 4 or more trials."),
