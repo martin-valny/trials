@@ -204,7 +204,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       <footer className="foot">
         <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
         {ncts.length > 0 && (
-          <Link to={trialsLink(ncts, row.label, disease)}>List these {n(ncts.length)} trials →</Link>
+          <Link to={trialsLink(ncts, row.label, disease)}>List {ncts.length === 1 ? "this trial" : `these ${n(ncts.length)} trials`} →</Link>
         )}
       </footer>
 

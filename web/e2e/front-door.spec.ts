@@ -40,7 +40,7 @@ test("the nav has no Explore", async ({ page }) => {
 test("phone: By year has no horizontal scroll", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/#/?view=year");
-  await expect(page.locator(".plate, .pipeline, main").first()).toBeVisible();
+  await expect(page.locator(".pstrip.by-year").first()).toBeVisible();
   const over = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(over).toBe(false);
 });

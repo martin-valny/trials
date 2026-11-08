@@ -185,7 +185,8 @@ test("By year: notes follow the thresholds and never crash on the fixture", asyn
   const { container } = renderPage("/?view=year");
   await screen.findByRole("heading", { level: 1 });
   const kickers = [...container.querySelectorAll(".note .nk")].map((e) => e.textContent);
-  kickers.forEach((k) => expect(["Rising", "Fading", "Longest run"]).toContain(k));
+  expect(kickers).toEqual(["Rising"]);
+  expect(container.querySelector(".note")!.textContent).toMatch(/Rising\d+ of \d+ trials started since \d{4}\./);
 });
 
 test("By year with an empty disease shows the calm empty state", async () => {

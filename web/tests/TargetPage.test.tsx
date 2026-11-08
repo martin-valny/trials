@@ -231,3 +231,14 @@ test("the timeline axis starts at the five-year mark before the earliest start, 
   expect(axisStart([{ y: 1994 }])).toBe(2000);
   expect(axisStart([{ y: null }])).toBe(2000);
 });
+
+test("List these trials link is singular for a one-trial row", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks = [p.rows[0]!.marks[0]!];
+  });
+  stubFetch({ "pipeline.json": f });
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  expect(screen.getByRole("link", { name: "List this trial →" })).toBeInTheDocument();
+  expect(screen.queryByText(/List these 1 trials/)).not.toBeInTheDocument();
+});

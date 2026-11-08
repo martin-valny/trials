@@ -231,8 +231,8 @@ export function Methods() {
       <section id="map" aria-labelledby="map-h">
         <h2 id="map-h">How the map is made</h2>
         <p>
-          The Explore map places each trial as a point. Nothing here uses AI; it is all computed
-          from registry data.
+          The <Link to="/explore">similarity map</Link> (experimental) places each trial as a point.
+          Nothing here uses AI; it is all computed from registry data.
         </p>
 
         <h3>What decides where a trial sits</h3>

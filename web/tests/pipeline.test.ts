@@ -507,15 +507,13 @@ describe("year binning and By year notes", () => {
     const short = Array.from({ length: 20 }, (_, i) => mark({ y: 2012 + (i % 10), s: "run" }));
     expect(notes([row("a", short)]).has("a")).toBe(false);
   });
-  it("distinct rows, max 4, none under company lens, marginNotes delegates", () => {
+  it("one row per rule, none under company lens, marginNotes delegates", () => {
     const rows = ["a", "b", "c", "d", "e"].map((id) => row(id, [...many(5, { y: 2025 })]));
     expect(notes(rows).size).toBe(1); // only one Rising note: one row per rule
-    const r = row("z", [...many(15, { y: 2005 }), ...many(2, { y: 2020, s: "run" })]);
     const lens: FigureState = { ...YEAR, company: "X" };
     expect(yearNotes(rowViews(file(rows), YEAR, 2026), lens, 2026).size).toBe(0);
     const v = rowViews(file(rows), YEAR, 2026);
     expect(marginNotes(v, YEAR, 2026)).toEqual(yearNotes(v, YEAR, 2026));
-    expect(r).toBeTruthy();
   });
 });
 

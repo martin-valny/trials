@@ -229,7 +229,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .m35.unk { border-width: 1px; }
 .m4.cb::before, .m35.cb::before { display: none; }
 .grid { position: relative; --tail: calc(var(--stat) + var(--note)); }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .grid.by-year .colhead:not(.first) { padding-left: 4px; padding-right: 0; white-space: nowrap; }
 .grid.by-year .cell { border-left: 0; padding: 10px 4px; gap: 2px; flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; }
 .grid.by-year .cell[data-tick] { border-left: 1px dotted var(--rule); }
