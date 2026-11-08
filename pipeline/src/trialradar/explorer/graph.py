@@ -290,6 +290,8 @@ def build_graph(
             "source": ref.source,
             "top_level": pid in top,
         }
+        if ref.source == "curated" and pathways.urls.get(pid):
+            node["source_url"] = pathways.urls[pid]
         node.update(_counts(path_trials[pid], path_drugs[pid], rows))
         nodes[pid] = node
 

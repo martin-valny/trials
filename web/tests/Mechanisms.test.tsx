@@ -160,6 +160,19 @@ test("panel d links to /mechanisms/<approach>", () => {
   );
 });
 
+test("panel d links a targeted trial to its drug in the graph", () => {
+  const t = base.trials.find((x) => x.drugs.includes("dimethyl fumarate"))!;
+  render(
+    <MemoryRouter>
+      <SelectedTrial trial={t} names={base} />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole("link", { name: "Show in mechanism graph" })).toHaveAttribute(
+    "href",
+    "#/mechanisms/targeted?node=drug%3Adimethyl+fumarate",
+  );
+});
+
 test("a long group shows its first 20 rows until Show more", async () => {
   const { KindTree } = await import("../src/components/mechanisms/KindTree");
   const { LIGHT_PALETTE } = await import("../src/lib/explorer");

@@ -44,7 +44,42 @@
 .strip-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 1.45; }
 .canvas-empty { padding: 56px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; }
 .canvas-empty p { margin: 0; font-weight: 700; }
-.graph-slot { min-height: 18rem; display: grid; place-items: center; border-top: 1px solid var(--rule); }
+
+/* --- Panel b, Targeted drugs: the graph -------------------------------------------------------------- */
+/* Key and search share one line over the frame; the canvas is the figure, bounded by hairlines only. */
+.graph-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.graph-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 18px; }
+.graph-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 1.45; flex: 1 1 28rem; min-width: 0; }
+.key-shape { flex: none; color: var(--ink); overflow: visible; }
+.share-ramp { display: inline-block; width: 28px; height: 8px; flex: none; }
+.graph-search { flex: none; }
+.graph-search input { width: 15rem; }
+.graph-matches {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; list-style: none; margin: 0; padding: 4px 0;
+  min-width: 100%; max-width: min(24rem, calc(100vw - 32px));
+  background: var(--plate); color: var(--ink); border: 1px solid var(--rule); border-top-color: var(--ink);
+  font-size: 13px; line-height: 1.35;
+}
+.graph-matches li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 12px; cursor: pointer; }
+.graph-matches li[aria-selected="true"], .graph-matches li:hover { background: var(--pale); }
+.match-label { min-width: 0; overflow-wrap: anywhere; }
+.match-kind { flex: none; font-size: 11px; color: var(--muted); }
+.graph-frame { position: relative; height: clamp(22rem, 64vh, 42rem); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.graph-frame.skeleton-block { border: 0; }
+.graph-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; color: var(--ink); }
+.graph-canvas:focus { outline: none; }
+.graph-canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.graph-fallback { margin: 0; padding: 24px 0; font-size: 13px; }
+.graph-note { max-width: 84ch; }
+
+/* Where successes converge: a short ranked list under the figure, set as a table of contents. */
+.converge { max-width: 40rem; }
+.converge-h { margin: 6px 0 4px; font-size: 13px; font-weight: 700; line-height: 1.3; }
+.converge-list { margin: 0; padding: 0 0 0 1.4em; font-size: 13px; line-height: 1.4; }
+.converge-list li { padding: 3px 0; }
+.converge-list li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.converge-n { margin-left: 8px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mechanisms .text-button.node-link { font-size: inherit; text-align: left; }
 
 /* The tree: group headings over indented kind rows, set in the figure's type scale. */
 .tree { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; }
@@ -98,6 +133,14 @@
 .side-trials li { padding: 6px 0; border-top: 1px solid var(--rule); }
 .side-nct { font-weight: 800; font-variant-numeric: tabular-nums; }
 .side-outcome { color: var(--muted); }
+.side-muted { color: var(--muted); font-size: 12px; }
+.side-facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; }
+.side-facts > div { display: contents; }
+.side-facts dt { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.side-facts dd { margin: 0; overflow-wrap: anywhere; }
+.side-sources { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.side-sources:empty { display: none; }
+.mechanisms .side-panel .side-more { align-self: flex-start; margin-top: 4px; }
 
 /* --- Narrow screens -------------------------------------------------------------------------------- */
 @media (max-width: 900px) {
@@ -130,6 +173,10 @@
   .mech-plate { padding: 10px 16px 32px; }
   .rail-rows { margin: 8px -16px 0; padding: 2px 16px 4px; scroll-padding: 0 16px; }
   .side-panel { padding-left: 16px; padding-right: 16px; }
+  .graph-frame { height: 24rem; }
+  .graph-bar { flex-direction: column-reverse; align-items: stretch; }
+  .graph-search input { width: 100%; }
+  .graph-matches { left: 0; right: auto; }
   .tree-kinds { padding-left: 10px; }
   /* Label, count and share on one line; the strip runs the full width beneath them. */
   .mechanisms .tree .kind-row {

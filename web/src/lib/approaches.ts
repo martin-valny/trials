@@ -1,5 +1,6 @@
 import type { DrugInfo, ExplorerFile, ExplorerTrial, Outcome } from "../types";
 import { APPROACH_SERIES, OUTCOMES, UNCLASSIFIED, wonIn } from "./explorer";
+import { drugNodeId } from "./graph";
 
 /** The seven approach keys, in the vocabulary's order (the URL's /mechanisms/:approach). */
 export const APPROACH_KEYS: readonly string[] = [...APPROACH_SERIES, UNCLASSIFIED];
@@ -208,11 +209,21 @@ export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerF
 
 /**
  * Where panel d's "Show in mechanism graph" leads: the trial's first approach (Targeted drugs when it
- * has a molecular class), opened on its kind there when it has one; null without approaches.
+ * has a molecular class). On Targeted drugs it focuses the trial's first targeted drug in the graph
+ * (``?node=drug:<name>``); elsewhere it opens the trial's kind there. Null without approaches.
  */
-export function mechanismsLink(t: ExplorerTrial, f: Pick<ExplorerFile, "kinds">): string | null {
+export function mechanismsLink(
+  t: ExplorerTrial,
+  f: Pick<ExplorerFile, "kinds"> & Partial<Pick<ExplorerFile, "drug_index">>,
+): string | null {
   const approach = t.approaches[0];
   if (approach === undefined) return null;
+  if (approach === "targeted") {
+    const drug = t.drugs.find((d) => f.drug_index?.[d]?.approaches.includes("targeted"));
+    return drug === undefined
+      ? "/mechanisms/targeted"
+      : `/mechanisms/targeted?${new URLSearchParams({ node: drugNodeId(drug) }).toString()}`;
+  }
   const kind = t.kinds.find((k) => f.kinds[k]?.approach === approach);
   return kind === undefined ? `/mechanisms/${approach}` : `/mechanisms/${approach}?kind=${encodeURIComponent(kind)}`;
 }

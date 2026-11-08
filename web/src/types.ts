@@ -222,6 +222,10 @@ export interface GraphNode {
   source?: "reactome" | "go" | "curated";
   /** Pathways only: a top-level pathway (no parent kept). */
   top_level?: boolean;
+  /** Curated pathways only: the reference the node rests on. */
+  source_url?: string;
+  /** Drug nodes only: the ChEMBL molecule id, when the drug has one. */
+  chembl_id?: string;
   /** Seeded layout position, normalised to [-1, 1]. */
   x: number;
   y: number;

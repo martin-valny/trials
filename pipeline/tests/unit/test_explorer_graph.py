@@ -277,6 +277,26 @@ def test_go_target_marked() -> None:
     assert edge["kind"] == "in_pathway" and edge["source_db"] == "go"
 
 
+def test_curated_node_carries_source_url() -> None:
+    """A curated pathway node links to its source; Reactome and GO nodes carry no url."""
+    pathways = Pathways(
+        release=PATHWAYS.release,
+        targets={**PATHWAYS.targets, "S1PR1": ("curated:egress",)},
+        pathways={
+            **PATHWAYS.pathways,
+            "curated:egress": _ref("curated:egress", "lymphocyte egress", source="curated"),
+        },
+        overlaps=PATHWAYS.overlaps,
+        urls={"curated:egress": "https://example.org/fingolimod"},
+    )
+    g = build_graph(_doc(TRIALS), MAPPINGS, pathways, CFG, SEED)
+    nodes = _nodes(g)
+    assert nodes["curated:egress"]["source"] == "curated"
+    assert nodes["curated:egress"]["source_url"] == "https://example.org/fingolimod"
+    assert "source_url" not in nodes["GO:0002416"]
+    assert "source_url" not in nodes["R-HSA-A"]
+
+
 def test_no_target_kinds_never_in_graph() -> None:
     """An ``msc`` trial (a kind, not a molecular drug) adds no node."""
     base = _build()

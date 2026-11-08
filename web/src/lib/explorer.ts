@@ -298,7 +298,7 @@ export function approachColor(approaches: string[], palette: Palette): string {
 }
 
 /** The names the hover card and panel d use for approaches and kinds. */
-export type ApproachNames = Pick<ExplorerFile, "approaches" | "kinds">;
+export type ApproachNames = Pick<ExplorerFile, "approaches" | "kinds"> & Partial<Pick<ExplorerFile, "drug_index">>;
 
 /**
  * Each of a trial's approaches with its kinds in brackets: "Targeted drugs; Non-drug care (other

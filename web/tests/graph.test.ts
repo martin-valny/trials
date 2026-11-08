@@ -1,0 +1,136 @@
+import { expect, test } from "vitest";
+import {
+  chain,
+  convergence,
+  litByTrials,
+  neighbours,
+  nodeShare,
+  shareColor,
+  sourceLink,
+  trialsOf,
+  winningDrugs,
+} from "../src/lib/graph";
+import { LIGHT_PALETTE } from "../src/lib/explorer";
+import type { ExplorerTrial, GraphEdge, GraphFile, GraphNode } from "../src/types";
+
+const node = (id: string, kind: GraphNode["kind"], extra: Partial<GraphNode> = {}): GraphNode => ({
+  id,
+  kind,
+  label: id.replace(/^\w+:/, ""),
+  x: 0,
+  y: 0,
+  n: 1,
+  finished: 0,
+  succeeded: 0,
+  stopped: 0,
+  running: 0,
+  conditions: [],
+  ...extra,
+});
+const edge = (source: string, target: string, kind: GraphEdge["kind"]): GraphEdge => ({ source, target, kind });
+
+/**
+ * Two drugs on two targets. MS4A1 sits in R-A under R-MID under the top-level R-TOP; S1PR1 sits in R-C
+ * under the top-level R-TOP2; R-A and R-C share genes; cladribine acts on a class node with no pathway.
+ */
+const G: GraphFile = {
+  generated_for: "2026-11-08",
+  reactome_release: "98",
+  method: { max_nodes: 250, overlap_floor: 0.3, overlap_top_k: 3, seed: 42 },
+  nodes: [
+    node("drug:ocrelizumab", "drug", { trials: ["NCT01", "NCT02"], n: 2, finished: 12, succeeded: 3 }),
+    node("drug:fingolimod", "drug", { trials: ["NCT02", "NCT03"], n: 2 }),
+    node("drug:cladribine", "drug", { trials: ["NCT04"] }),
+    node("target:MS4A1", "target", { n: 2 }),
+    node("target:S1PR1", "target", { n: 2 }),
+    node("class:DNA inhibitor", "target"),
+    node("R-A", "pathway", { source: "reactome", top_level: false, finished: 12, succeeded: 3 }),
+    node("R-MID", "pathway", { source: "reactome", top_level: false, finished: 12, succeeded: 2 }),
+    node("R-TOP", "pathway", { source: "reactome", top_level: true, finished: 20, succeeded: 10 }),
+    node("R-C", "pathway", { source: "reactome", top_level: false, finished: 4, succeeded: 4 }),
+    node("R-TOP2", "pathway", { source: "reactome", top_level: true, finished: 4, succeeded: 4 }),
+  ],
+  edges: [
+    edge("drug:ocrelizumab", "target:MS4A1", "acts_on"),
+    edge("drug:fingolimod", "target:S1PR1", "acts_on"),
+    edge("drug:cladribine", "class:DNA inhibitor", "acts_on"),
+    edge("target:MS4A1", "R-A", "in_pathway"),
+    edge("target:S1PR1", "R-C", "in_pathway"),
+    edge("R-A", "R-MID", "parent"),
+    edge("R-MID", "R-TOP", "parent"),
+    edge("R-C", "R-TOP2", "parent"),
+    edge("R-A", "R-C", "shares_genes"),
+  ],
+};
+
+test("neighbours are one hop over any edge kind, with the node itself", () => {
+  expect(neighbours(G, "R-A")).toEqual(new Set(["R-A", "target:MS4A1", "R-MID", "R-C"]));
+  expect(neighbours(G, "unknown")).toEqual(new Set());
+});
+
+test("chain from a drug reaches its targets, pathways and ancestors but not shares_genes neighbours", () => {
+  expect(chain(G, "drug:ocrelizumab")).toEqual(
+    new Set(["drug:ocrelizumab", "target:MS4A1", "R-A", "R-MID", "R-TOP"]),
+  );
+  expect(chain(G, "drug:ocrelizumab").has("R-C")).toBe(false);
+});
+
+test("chain from a pathway reaches every target and drug below it and its ancestors, not its siblings", () => {
+  expect(chain(G, "R-MID")).toEqual(new Set(["R-MID", "R-TOP", "R-A", "target:MS4A1", "drug:ocrelizumab"]));
+  // The shared target S1PR1 is not lit from MS4A1's side: no downstream after going up.
+  expect(chain(G, "target:MS4A1").has("drug:fingolimod")).toBe(false);
+});
+
+test("litByTrials", () => {
+  expect(litByTrials(G, new Set(["NCT03"]))).toEqual(new Set(["drug:fingolimod", "target:S1PR1", "R-C", "R-TOP2"]));
+  // NCT02 tests both drugs: both chains light.
+  expect(litByTrials(G, new Set(["NCT02"])).size).toBe(9);
+  expect(litByTrials(G, new Set())).toEqual(new Set());
+});
+
+test("trialsOf collects the trials of every drug that reaches a node", () => {
+  expect(trialsOf(G, "R-TOP")).toEqual(["NCT01", "NCT02"]);
+  expect(trialsOf(G, "drug:fingolimod")).toEqual(["NCT02", "NCT03"]);
+  expect(trialsOf(G, "class:DNA inhibitor")).toEqual(["NCT04"]);
+});
+
+test("nodeShare null under minGroup", () => {
+  const byId = new Map(G.nodes.map((n) => [n.id, n]));
+  expect(nodeShare(byId.get("R-A")!, 10)).toBeCloseTo(0.25);
+  expect(nodeShare(byId.get("R-C")!, 10)).toBeNull();
+  expect(nodeShare(byId.get("target:MS4A1")!, 0)).toBeNull(); // none finished
+});
+
+test("convergence skips top-level pathways", () => {
+  const ranked = convergence(G, new Set(["NCT01", "NCT02", "NCT03"]), 10).map((n) => n.id);
+  // R-TOP (50%) is the best share but is top-level; R-C is under min_group.
+  expect(ranked).toEqual(["R-A", "R-MID"]);
+  expect(convergence(G, new Set(["NCT03"]), 10)).toEqual([]);
+});
+
+test("winningDrugs credits only the drugs that moved on (1b)", () => {
+  const t = (outcome: ExplorerTrial["outcome"], succeeded_by: string[]) => ({ outcome, succeeded_by }) as ExplorerTrial;
+  expect(winningDrugs([t("succeeded", ["fingolimod"]), t("stopped", ["ocrelizumab"])])).toEqual(
+    new Set(["drug:fingolimod"]),
+  );
+});
+
+test("sourceLink names Reactome, GO and curated sources", () => {
+  expect(sourceLink(node("R-HSA-1", "pathway", { source: "reactome" }))).toEqual({
+    label: "Reactome",
+    url: "https://reactome.org/content/detail/R-HSA-1",
+  });
+  expect(sourceLink(node("GO:0002416", "pathway", { source: "go" }))).toEqual({
+    label: "Gene Ontology",
+    url: "https://www.ebi.ac.uk/QuickGO/term/GO:0002416",
+  });
+  expect(
+    sourceLink(node("curated:x", "pathway", { source: "curated", source_url: "https://example.org/x" })),
+  ).toEqual({ label: "curated", url: "https://example.org/x" });
+  expect(sourceLink(node("target:MS4A1", "target"))).toBeNull();
+});
+
+test("shareColor runs from the pale ground (noClass) to the success red", () => {
+  expect(shareColor(0, 0.5, LIGHT_PALETTE)).toBe(LIGHT_PALETTE.noClass);
+  expect(shareColor(0.5, 0.5, LIGHT_PALETTE).toLowerCase()).toBe(LIGHT_PALETTE.succeeded.toLowerCase());
+});

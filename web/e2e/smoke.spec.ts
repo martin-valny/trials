@@ -378,3 +378,44 @@ test("Mechanisms: Show these trials on the map narrows the map", async ({ page }
   await page.getByRole("button", { name: "Show all trials" }).click();
   await expect(page.getByRole("status", { name: "Trial list" })).toHaveCount(0);
 });
+
+test("Mechanisms: the Targeted drugs graph focuses a node and Escape clears it", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/#/mechanisms/targeted");
+  const canvas = page.getByRole("img", { name: /^Mechanism graph of \d+ drugs/ });
+  await expect(canvas).toBeVisible();
+  // The graph has painted marks (the plate is transparent, so any opaque pixel is a mark).
+  await expect
+    .poll(() =>
+      canvas.evaluate((el) => {
+        const c = el as HTMLCanvasElement;
+        const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] !== 0) n++;
+        return n > 50;
+      }),
+    )
+    .toBe(true);
+  // Click the drug node where the layout puts it (GraphCanvas.placeNode: a 28px pad, y up).
+  const graph = await page.evaluate(async () => (await fetch("data/mechanisms.json")).json());
+  const drug = graph.nodes.find((n: { id: string }) => n.id === "drug:example drug");
+  const box = (await canvas.boundingBox())!;
+  const PAD = 28;
+  const x = PAD + ((drug.x + 1) / 2) * (box.width - 2 * PAD);
+  const y = PAD + ((1 - drug.y) / 2) * (box.height - 2 * PAD);
+  await canvas.click({ position: { x, y } });
+  await expect(page).toHaveURL(/#\/mechanisms\/targeted\?node=drug%3Aexample\+drug$/);
+  const panel = page.getByRole("complementary", { name: /example drug/ });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("button", { name: "MS4A1" })).toBeVisible();
+  await expect(panel.getByRole("link", { name: NCT }).first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/mechanisms\/targeted$/);
+  // The search box focuses a node too.
+  await page.getByRole("combobox", { name: "Find a drug, target or pathway" }).fill("NFE2");
+  await page.getByRole("option", { name: /NFE2L2/ }).first().click();
+  await expect(page.getByRole("complementary", { name: /NFE2L2/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});

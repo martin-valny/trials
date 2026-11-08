@@ -1,20 +1,95 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { TreeKind } from "../../lib/approaches";
 import { outcomeLabel } from "../../lib/format";
-import type { ExplorerTrial } from "../../types";
+import { chemblLink, isClassNode, nodeShare, sourceLink } from "../../lib/graph";
+import type { DrugInfo, ExplorerTrial, GraphFile, GraphNode, Outcome } from "../../types";
 import { outcomeWords, Rationale, trialsWord } from "./KindTree";
 
 const fmt = (n: number): string => n.toLocaleString("en-US");
+/** Trials listed before "Show all": a pathway near the top can reach hundreds. */
+const TRIAL_ROWS = 40;
 
 /** The map, narrowed to these trials (Explore's ``?nct=`` list), with where they came from. */
 export const mapLink = (ncts: string[], from: string): string =>
   `/explore?${new URLSearchParams({ nct: ncts.join(","), from }).toString()}`;
 
 /**
+ * Panel c's frame: "c title" with Close, beside the canvas on wide screens and a bottom sheet on narrow
+ * ones. It takes focus when ``focusKey`` changes; Escape or Close calls ``onClose``.
+ */
+function PanelFrame({
+  title,
+  focusKey,
+  onClose,
+  children,
+}: {
+  title: string;
+  focusKey: string;
+  onClose(): void;
+  children: ReactNode;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+  }, [focusKey]);
+
+  return (
+    <aside
+      className="side-panel"
+      id="side-panel"
+      aria-labelledby="side-h"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <div className="side-head">
+        <h2 className="panel-h" id="side-h" ref={heading} tabIndex={-1}>
+          <span className="panel-l">c</span>
+          {title}
+        </h2>
+        <button type="button" className="text-button side-close" onClick={onClose}>
+          Close<span className="visually-hidden"> {title}</span>
+        </button>
+      </div>
+      {children}
+    </aside>
+  );
+}
+
+/** Every trial with a link to its page, the first ``TRIAL_ROWS`` until "Show all". */
+function TrialList({ trials }: { trials: ExplorerTrial[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? trials : trials.slice(0, TRIAL_ROWS);
+  return (
+    <>
+      <ul className="side-trials">
+        {shown.map((t) => (
+          <li key={t.nct_id}>
+            <Link to={`/trial/${t.nct_id}`} className="side-nct">
+              {t.nct_id}
+            </Link>{" "}
+            <span className="side-title">{t.title}</span>
+            <span className="side-outcome"> · {outcomeLabel(t.outcome)}</span>
+          </li>
+        ))}
+      </ul>
+      {shown.length < trials.length ? (
+        <button type="button" className="text-button side-more" onClick={() => setAll(true)}>
+          Show all {fmt(trials.length)} trials
+        </button>
+      ) : null}
+    </>
+  );
+}
+
+/**
  * Panel c: one kind's trials. Its rationale (marked proposed, with its source), its counts, "Show these
- * trials on the map", and every trial with a link to its page. Beside the canvas on wide screens, a
- * bottom sheet on narrow ones. Escape or Close hands focus back to the row that opened it.
+ * trials on the map", and every trial with a link to its page. Escape or Close hands focus back to the
+ * row that opened it.
  */
 export function SidePanel({
   kind,
@@ -34,32 +109,8 @@ export function SidePanel({
   successDefined: boolean;
   onClose(): void;
 }) {
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus({ preventScroll: true });
-  }, [kind.key]);
-
   return (
-    <aside
-      className="side-panel"
-      id="side-panel"
-      aria-labelledby="side-h"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
-    >
-      <div className="side-head">
-        <h2 className="panel-h" id="side-h" ref={heading} tabIndex={-1}>
-          <span className="panel-l">c</span>
-          {kind.label}
-        </h2>
-        <button type="button" className="text-button side-close" onClick={onClose}>
-          Close<span className="visually-hidden"> {kind.label}</span>
-        </button>
-      </div>
+    <PanelFrame title={kind.label} focusKey={kind.key} onClose={onClose}>
       <p className="side-meta">
         {approach} › {group}
       </p>
@@ -88,6 +139,160 @@ export function SidePanel({
           </li>
         ))}
       </ul>
-    </aside>
+    </PanelFrame>
+  );
+}
+
+const KIND_WORD: Record<GraphNode["kind"], string> = { drug: "Drug", target: "Target", pathway: "Pathway" };
+const actionWord = (a: string): string => a.toLowerCase().replace(/_/g, " ");
+
+/** Node links as buttons: each focuses that node on the graph (and opens its panel). */
+function NodeLinks({ nodes, onFocus, notes }: { nodes: GraphNode[]; onFocus(id: string): void; notes?: Map<string, string> }) {
+  return (
+    <>
+      {nodes.map((n, i) => (
+        <span key={n.id}>
+          {i > 0 ? ", " : null}
+          <button type="button" className="text-button node-link" onClick={() => onFocus(n.id)}>
+            {n.label}
+          </button>
+          {notes?.get(n.id) ? <span className="side-muted"> ({notes.get(n.id)})</span> : null}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Panel c for the graph: one node's facts (mechanism, targets or pathways, the source with its link,
+ * ChEMBL for a drug), its trials by outcome among those shown, its pool share, "Show these trials on
+ * the map" and the trials themselves.
+ */
+export function NodePanel({
+  graph,
+  node,
+  trials,
+  drugIndex,
+  minGroup,
+  narrowed,
+  onFocus,
+  onClose,
+}: {
+  graph: GraphFile;
+  node: GraphNode;
+  /** The node's trials that pass the filters. */
+  trials: ExplorerTrial[];
+  drugIndex: Record<string, DrugInfo>;
+  minGroup: number;
+  narrowed: boolean;
+  onFocus(id: string): void;
+  onClose(): void;
+}) {
+  const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
+  const out = graph.edges.filter((e) => e.source === node.id && e.kind !== "shares_genes");
+  const into = graph.edges.filter((e) => e.target === node.id && e.kind !== "shares_genes");
+  const nodesOf = (ids: string[]) =>
+    ids
+      .map((id) => byId.get(id))
+      .filter((n): n is GraphNode => n !== undefined)
+      .sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
+
+  const outcomes = useMemo(() => {
+    const o: Record<Outcome, number> = { succeeded: 0, stopped: 0, completed_unknown: 0, running: 0, unknown: 0 };
+    for (const t of trials) o[t.outcome]++;
+    return o;
+  }, [trials]);
+  const share = nodeShare(node, minGroup);
+  const source = sourceLink(node);
+
+  const facts: [string, ReactNode][] = [];
+  if (node.kind === "drug") {
+    const mech = drugIndex[node.label]?.mechanisms ?? [];
+    if (mech.length) facts.push(["Mechanism", mech.join(", ")]);
+    const actions = new Map(out.filter((e) => e.action).map((e) => [e.target, actionWord(e.action!)]));
+    facts.push(["Acts on", <NodeLinks key="t" nodes={nodesOf(out.map((e) => e.target))} onFocus={onFocus} notes={actions} />]);
+  } else if (node.kind === "target") {
+    facts.push(["Acted on by", <NodeLinks key="d" nodes={nodesOf(into.map((e) => e.source))} onFocus={onFocus} />]);
+    if (isClassNode(node)) {
+      facts.push(["Pathways", "no pathway: a molecular class with no gene target"]);
+    } else if (out.length === 0) {
+      facts.push(["Pathways", "no pathway kept for this target"]);
+    } else {
+      facts.push(["Pathways", <NodeLinks key="p" nodes={nodesOf(out.map((e) => e.target))} onFocus={onFocus} />]);
+    }
+  } else {
+    const parents = out.filter((e) => e.kind === "parent").map((e) => e.target);
+    const children = into.filter((e) => e.kind === "parent").map((e) => e.source);
+    const targets = into.filter((e) => e.kind === "in_pathway").map((e) => e.source);
+    if (parents.length) facts.push(["Part of", <NodeLinks key="up" nodes={nodesOf(parents)} onFocus={onFocus} />]);
+    if (children.length) facts.push(["Contains", <NodeLinks key="down" nodes={nodesOf(children)} onFocus={onFocus} />]);
+    if (targets.length) facts.push(["Targets", <NodeLinks key="tg" nodes={nodesOf(targets)} onFocus={onFocus} />]);
+  }
+
+  return (
+    <PanelFrame title={node.label} focusKey={node.id} onClose={onClose}>
+      <p className="side-meta">
+        Targeted drugs › {KIND_WORD[node.kind]}
+        {source ? <> · {source.label === "curated" ? <b>curated</b> : source.label}</> : null}
+      </p>
+      {facts.length ? (
+        <dl className="side-facts">
+          {facts.map(([k, v]) => (
+            <div key={k}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {node.top_level ? (
+        <p className="side-muted">
+          A top-level pathway: drawn for orientation, never counted where successes converge.
+        </p>
+      ) : null}
+      <p className="side-sources">
+        {source?.url ? (
+          <a href={source.url} target="_blank" rel="noreferrer">
+            {source.label === "curated" ? "Curated source" : `${source.label} ${node.id}`}
+          </a>
+        ) : null}
+        {node.kind === "drug" && node.chembl_id ? (
+          <a href={chemblLink(node.chembl_id)} target="_blank" rel="noreferrer">
+            ChEMBL {node.chembl_id}
+          </a>
+        ) : null}
+      </p>
+      <p className="side-counts">
+        {trials.length === 0 ? (
+          narrowed ? (
+            "No trials shown under these filters."
+          ) : (
+            "No trials."
+          )
+        ) : (
+          <>
+            {trialsWord(trials.length)}
+            {narrowed ? " shown" : ""}: {outcomeWords(outcomes)}.
+          </>
+        )}{" "}
+        {node.finished > 0 ? (
+          <>
+            Success pool{narrowed ? " (all trials)" : ""}: {fmt(node.finished)} finished, {fmt(node.succeeded)} credited
+            with a success
+            {share === null ? " (too few to tell)" : ` (${Math.round(share * 100)}%)`}.
+          </>
+        ) : (
+          "None in the success pool yet."
+        )}
+      </p>
+      {trials.length ? (
+        <>
+          <p className="side-map">
+            <Link to={mapLink(trials.map((t) => t.nct_id), node.label)}>Show these trials on the map</Link>
+          </p>
+          <TrialList key={node.id} trials={trials} />
+        </>
+      ) : null}
+    </PanelFrame>
   );
 }

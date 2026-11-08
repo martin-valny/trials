@@ -162,6 +162,7 @@ def test_curated_replaces_go(tmp_path: Path) -> None:
     assert p.pathways["curated:lymphocyte-depletion"] == PathwayRef(
         "curated:lymphocyte-depletion", "lymphocyte depletion", (), 0, "curated"
     )
+    assert p.urls == {"curated:lymphocyte-depletion": "https://example.org/lemtrada"}
     assert p.targets["FCGRT"] == ("GO:0002416",)
     assert p.pathways["GO:0002416"].source == "go"
     assert p.pathways["GO:0002416"].parents == ()

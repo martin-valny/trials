@@ -22,7 +22,7 @@ import json
 import re
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, get_args
 from urllib.parse import quote
@@ -54,6 +54,7 @@ class Pathways:
     targets: dict[str, tuple[str, ...]]  # gene symbol -> lowest-level pathway ids
     pathways: dict[str, PathwayRef]
     overlaps: tuple[tuple[str, str, float], ...]  # reactome only, jaccard >= floor
+    urls: dict[str, str] = field(default_factory=dict)  # curated id -> source_url
 
 
 # --- Reactome ----------------------------------------------------------------------------
@@ -453,9 +454,9 @@ def read_go_fallback(path: Path) -> dict[str, tuple[str, str]]:
     return out
 
 
-def read_curated(path: Path) -> dict[str, tuple[tuple[str, str], ...]]:
-    """``curated_pathways.csv`` → gene → ((curated id, label), ...). A missing file is empty."""
-    out: dict[str, list[tuple[str, str]]] = {}
+def _read_curated_rows(path: Path) -> dict[str, list[tuple[str, str, str]]]:
+    """``curated_pathways.csv`` → gene → [(curated id, label, source_url), ...]."""
+    out: dict[str, list[tuple[str, str, str]]] = {}
     for n, row in enumerate(_csv_rows(path, CURATED_COLUMNS), start=2):
         where = f"{path.name} line {n}"
         gene, label, url = row["target"], row["node_label"], row["source_url"]
@@ -464,10 +465,18 @@ def read_curated(path: Path) -> dict[str, tuple[tuple[str, str], ...]]:
         if not url.startswith(("https://", "http://")):
             raise ValueError(f"{where}: source_url is required")
         node = (curated_id(label), label)
-        if node in out.get(gene, []):
+        if node in [(cid, lab) for cid, lab, _url in out.get(gene, [])]:
             raise ValueError(f"{where}: duplicate row for {gene!r}")
-        out.setdefault(gene, []).append(node)
-    return {g: tuple(v) for g, v in out.items()}
+        out.setdefault(gene, []).append((*node, url))
+    return out
+
+
+def read_curated(path: Path) -> dict[str, tuple[tuple[str, str], ...]]:
+    """``curated_pathways.csv`` → gene → ((curated id, label), ...). A missing file is empty."""
+    return {
+        g: tuple((cid, label) for cid, label, _url in rows)
+        for g, rows in _read_curated_rows(path).items()
+    }
 
 
 def read_pathways(dir: Path) -> Pathways:
@@ -483,15 +492,18 @@ def read_pathways(dir: Path) -> Pathways:
     for gene, (go_id, name) in read_go_fallback(dir / GO_FILE).items():
         targets[gene] = (go_id,)
         pathways[go_id] = PathwayRef(go_id, name, (), 0, "go")
-    for gene, nodes in read_curated(dir / CURATED_FILE).items():
-        targets[gene] = tuple(cid for cid, _label in nodes)
-        for cid, label in nodes:
+    urls: dict[str, str] = {}
+    for gene, rows in _read_curated_rows(dir / CURATED_FILE).items():
+        targets[gene] = tuple(cid for cid, _label, _url in rows)
+        for cid, label, url in rows:
             pathways[cid] = PathwayRef(cid, label, (), 0, "curated")
+            urls.setdefault(cid, url)
     return Pathways(
         release=base.release,
         targets=dict(sorted(targets.items())),
         pathways=dict(sorted(pathways.items())),
         overlaps=base.overlaps,
+        urls=dict(sorted(urls.items())),
     )
 
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { loadExplorer, loadMeta } from "../../data";
+import { loadExplorer, loadGraph, loadMeta } from "../../data";
 import { isApproachKey, kindTree, railRows, UNSORTED_ROW_PREFIX } from "../../lib/approaches";
+import { convergence, downstream, litByTrials, nodeShare, trialsOf, winningDrugs } from "../../lib/graph";
 import {
   allFilters,
   DARK_PALETTE,
@@ -17,11 +18,12 @@ import {
 } from "../../lib/explorer";
 import { outcomeLabel } from "../../lib/format";
 import { useTheme } from "../../lib/theme";
-import type { ExplorerFile, ExplorerTrial, Meta, Outcome } from "../../types";
+import type { ExplorerFile, ExplorerTrial, GraphFile, Meta, Outcome } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
 import { ApproachRail } from "./ApproachRail";
-import { KindTree, STRIP_ORDER } from "./KindTree";
-import { SidePanel } from "./SidePanel";
+import { GraphCanvas, GraphSearch } from "./GraphCanvas";
+import { KindTree, STRIP_ORDER, trialsWord } from "./KindTree";
+import { NodePanel, SidePanel } from "./SidePanel";
 import "../explore/explore.css";
 import "./mechanisms.css";
 
@@ -33,6 +35,9 @@ type State =
   | { state: "missing" }
   | { state: "error" }
   | { state: "ready"; file: ExplorerFile; meta: Meta | null };
+
+/** mechanisms.json: undefined while loading, null when missing or unreadable (the graph waits for an update). */
+type GraphState = GraphFile | null | undefined;
 
 function Title() {
   return (
@@ -47,6 +52,7 @@ function Title() {
 export function MechanismsPage() {
   const { approach } = useParams();
   const [s, setS] = useState<State>({ state: "loading" });
+  const [graph, setGraph] = useState<GraphState>(undefined);
 
   useEffect(() => {
     let alive = true;
@@ -55,6 +61,10 @@ export function MechanismsPage() {
         if (alive) setS(file ? { state: "ready", file, meta } : { state: "missing" });
       })
       .catch(() => alive && setS({ state: "error" }));
+    // The graph loads on its own: a missing or broken file leaves the rest of the page working (R19).
+    loadGraph()
+      .then((g) => alive && setGraph(g && Array.isArray(g.nodes) && Array.isArray(g.edges) ? g : null))
+      .catch(() => alive && setGraph(null));
     return () => {
       alive = false;
     };
@@ -87,7 +97,7 @@ export function MechanismsPage() {
       </div>
     );
   }
-  return <Plate file={s.file} meta={s.meta} approach={approach} />;
+  return <Plate file={s.file} meta={s.meta} approach={approach} graph={graph} />;
 }
 
 /** The two filters this page shares with the map: Disease and Outcome. */
@@ -181,12 +191,23 @@ function StripKey({ palette }: { palette: Palette }) {
   );
 }
 
-function Plate({ file, meta, approach }: { file: ExplorerFile; meta: Meta | null; approach: string }) {
+function Plate({
+  file,
+  meta,
+  approach,
+  graph,
+}: {
+  file: ExplorerFile;
+  meta: Meta | null;
+  approach: string;
+  graph: GraphState;
+}) {
   const dark = useTheme().theme === "dark";
   const palette = dark ? DARK_PALETTE : LIGHT_PALETTE;
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const kindKey = params.get("kind");
+  const nodeKey = params.get("node");
   const [filters, setFilters] = useState<Filters>(() => allFilters(file));
   const bounds = useMemo(() => yearBounds(file.trials), [file]);
   const minGroup = file.method.min_group;
@@ -232,12 +253,29 @@ function Plate({ file, meta, approach }: { file: ExplorerFile; meta: Meta | null
   };
   const reset = () => setFilters(allFilters(file));
 
+  // The graph's focused node (?node=), if the graph has it.
+  const graphNode =
+    approach === DEFAULT_APPROACH && graph && nodeKey !== null ? (graph.nodes.find((x) => x.id === nodeKey) ?? null) : null;
+  const focusNode = (id: string | null) => setParams(id === null ? {} : { node: id }, { replace: true });
+  const closeNode = () => {
+    focusNode(null);
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(".graph-canvas")?.focus({ preventScroll: true }));
+  };
+  const nodeTrials = useMemo(() => {
+    if (!graph || !graphNode) return [];
+    const shownIds = new Set(shown.map((t) => t.nct_id));
+    return trialsOf(graph, graphNode.id)
+      .filter((nct) => shownIds.has(nct))
+      .map((nct) => byNct.get(nct))
+      .filter((t): t is ExplorerTrial => t !== undefined);
+  }, [graph, graphNode, shown, byNct]);
+
   const label = row?.label ?? approach;
   const n = row?.n ?? 0;
   const narrowed = !pristine;
 
   return (
-    <div className={selected ? "explore mechanisms has-panel" : "explore mechanisms"}>
+    <div className={selected || graphNode ? "explore mechanisms has-panel" : "explore mechanisms"}>
       <Title />
       <Filtersbar
         file={file}
@@ -278,10 +316,15 @@ function Plate({ file, meta, approach }: { file: ExplorerFile; meta: Meta | null
               ) : null}
             </div>
           ) : approach === DEFAULT_APPROACH ? (
-            // Task 9 draws the drug -> target -> pathway graph here (GraphCanvas).
-            <div className="graph-slot" data-graph-slot="">
-              <p className="panel-note">The drug → target → pathway graph for these {fmt(n)} trials is drawn here.</p>
-            </div>
+            <GraphView
+              graph={graph}
+              shown={shown}
+              narrowed={narrowed}
+              minGroup={minGroup}
+              palette={palette}
+              focus={graphNode?.id ?? null}
+              onFocus={focusNode}
+            />
           ) : (
             <>
               <StripKey palette={palette} />
@@ -302,6 +345,18 @@ function Plate({ file, meta, approach }: { file: ExplorerFile; meta: Meta | null
             </>
           )}
         </section>
+        {graph && graphNode ? (
+          <NodePanel
+            graph={graph}
+            node={graphNode}
+            trials={nodeTrials}
+            drugIndex={file.drug_index}
+            minGroup={minGroup}
+            narrowed={narrowed}
+            onFocus={focusNode}
+            onClose={closeNode}
+          />
+        ) : null}
         {selected ? (
           <SidePanel
             kind={selected.kind}
@@ -322,6 +377,141 @@ function Plate({ file, meta, approach }: { file: ExplorerFile; meta: Meta | null
           />
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** The graph's key: what shape, fill, ring and line mean. One line, wrapping, nothing to press. */
+function GraphKey({ palette, topShare }: { palette: Palette; topShare: number }) {
+  const s = 10;
+  const shape = (d: string, fill: string, dash?: string, inner?: boolean) => (
+    <svg width={s + 2} height={s + 2} viewBox={`-1 -1 ${s + 2} ${s + 2}`} aria-hidden="true" className="key-shape">
+      <path d={d} fill={fill} stroke="currentColor" strokeWidth="1" strokeDasharray={dash} />
+      {inner ? <path d="M5 2.5 L7.5 5 L5 7.5 L2.5 5 Z" fill="none" stroke="currentColor" strokeWidth="1" /> : null}
+    </svg>
+  );
+  const circle = "M10 5 A5 5 0 1 1 0 5 A5 5 0 1 1 10 5 Z";
+  const square = "M0.5 0.5 H9.5 V9.5 H0.5 Z";
+  const diamond = "M5 0 L10 5 L5 10 L0 5 Z";
+  return (
+    <ul className="key-list graph-key" aria-label="Graph key">
+      <li>{shape(circle, "none")}Drug</li>
+      <li>{shape(square, "none")}Target</li>
+      <li>{shape(diamond, "none")}Reactome pathway</li>
+      <li>{shape(diamond, "none", undefined, true)}GO term</li>
+      <li>{shape(diamond, "none", "2 1.5")}Curated</li>
+      <li>
+        <span
+          className="share-ramp"
+          style={{ background: `linear-gradient(90deg, ${palette.noClass}, ${palette.succeeded})` }}
+          aria-hidden="true"
+        />
+        Success share, 0 to {Math.round(topShare * 100)}%
+      </li>
+      <li>{shape(circle, "none")}Hollow: too few to tell</li>
+      <li>Size: trials</li>
+    </ul>
+  );
+}
+
+/**
+ * Panel b for Targeted drugs: the key, the search box, the graph, a note on what the filters light,
+ * and where successes converge among the trials shown.
+ */
+function GraphView({
+  graph,
+  shown,
+  narrowed,
+  minGroup,
+  palette,
+  focus,
+  onFocus,
+}: {
+  graph: GraphState;
+  shown: ExplorerTrial[];
+  narrowed: boolean;
+  minGroup: number;
+  palette: Palette;
+  focus: string | null;
+  onFocus(id: string | null): void;
+}) {
+  const ncts = useMemo(() => new Set(shown.map((t) => t.nct_id)), [shown]);
+  const lit = useMemo(() => (graph && narrowed ? litByTrials(graph, ncts) : null), [graph, narrowed, ncts]);
+  const red = useMemo(
+    () => (graph && narrowed ? downstream(graph, winningDrugs(shown)) : new Set<string>()),
+    [graph, narrowed, shown],
+  );
+  const topShare = useMemo(
+    () => (graph ? Math.max(0, ...graph.nodes.map((n) => nodeShare(n, minGroup) ?? 0)) : 0),
+    [graph, minGroup],
+  );
+  const converge = useMemo(() => (graph ? convergence(graph, ncts, minGroup).slice(0, 5) : []), [graph, ncts, minGroup]);
+  const reached = useMemo(() => {
+    if (!graph) return 0;
+    const drugTrials = new Set(graph.nodes.flatMap((n) => (n.kind === "drug" ? (n.trials ?? []) : [])));
+    return shown.filter((t) => drugTrials.has(t.nct_id)).length;
+  }, [graph, shown]);
+
+  if (graph === undefined) {
+    return (
+      <div className="graph-frame skeleton-block" aria-busy="true">
+        <p className="visually-hidden" role="status">
+          Loading the graph…
+        </p>
+      </div>
+    );
+  }
+  if (graph === null || graph.nodes.length === 0) {
+    return (
+      <div className="canvas-empty" role="status">
+        <p>The graph appears after the next update.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="graph-view">
+      <div className="graph-bar">
+        <GraphKey palette={palette} topShare={topShare} />
+        <GraphSearch graph={graph} onSelect={onFocus} />
+      </div>
+      <div className="graph-frame">
+        <GraphCanvas
+          graph={graph}
+          focus={focus}
+          onFocus={onFocus}
+          lit={lit}
+          red={red}
+          minGroup={minGroup}
+          palette={palette}
+          topShare={topShare}
+        />
+      </div>
+      <p className="panel-note graph-note">
+        {narrowed
+          ? `Full ink: the nodes reached by the ${trialsWord(reached)} shown; succeeded paths in red, credited to the drug that moved on.`
+          : "Hover a node to light its neighbours; click to follow its chain from drug to pathway. Filters light up the paths their trials take."}{" "}
+        Reactome {graph.reactome_release}.
+      </p>
+      {converge.length ? (
+        <section className="converge" aria-labelledby="converge-h">
+          <h3 className="converge-h" id="converge-h">
+            Where successes converge
+          </h3>
+          <ol className="converge-list">
+            {converge.map((n) => (
+              <li key={n.id}>
+                <button type="button" className="text-button node-link" onClick={() => onFocus(n.id)}>
+                  {n.label}
+                </button>
+                <span className="converge-n">
+                  {fmt(n.succeeded)} of {fmt(n.finished)} · {Math.round((nodeShare(n, minGroup) ?? 0) * 100)}%
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="side-muted">Below the top-level pathways, success share in the pool (all trials).</p>
+        </section>
+      ) : null}
     </div>
   );
 }
