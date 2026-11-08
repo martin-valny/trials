@@ -171,6 +171,8 @@ test("By year: the switch sets view=year and draws start-year bins from 2000", a
   expect(where()).toContain("view=year");
   const cols = [...container.querySelectorAll(".grid-head [data-col]")].map((e) => e.textContent);
   expect(cols[0]).toBe("≤2001");
+  const ticks = [...container.querySelectorAll(".grid-head [data-tick]")].map((e) => e.textContent);
+  expect(ticks).toEqual(["≤2001", "2005", "2010", "2015", "2020", "2025"]);
   expect(cols.length).toBeGreaterThan(10);
   // the disease control stays, and every trial lands in a bin
   expect(screen.getByRole("group", { name: "Disease" })).toBeInTheDocument();
@@ -201,7 +203,7 @@ test("By year on a phone uses 3-year bins", async () => {
     await screen.findByRole("heading", { level: 1 });
     const labels = [...container.querySelectorAll(".pcol span")].map((e) => e.textContent);
     expect(labels[0]).toBe("≤2002");
-    expect(labels).toContain("2015");
+    expect(labels.filter(Boolean)).toEqual(["≤2002", "2005", "2010", "2015", "2020", "2025"]);
     expect(container.querySelector(".strip .cell[data-cell='1']")).not.toBeNull();
   } finally {
     vi.unstubAllGlobals();

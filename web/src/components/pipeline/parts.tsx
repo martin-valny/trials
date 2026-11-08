@@ -17,13 +17,21 @@ export interface Col {
   short: string;
   sub: string;
   /** By year: this bin carries a label (every fifth year, and the first bin). */
-  tick?: boolean;
+  tick?: string;
 }
 
 /** The figure's columns: four phases, or the diseases in the order pipeline.json lists them. */
 export function columnsFor(f: PipelineFile, view: FigureState["view"], bins: YearBin[] = []): Col[] {
   if (view === "phase") return PHASE_COLS;
-  if (view === "year") return bins.map((b, i) => ({ key: i, label: b.label, short: i === 0 || b.start % 5 === 0 ? b.label : "", sub: "", tick: i === 0 || b.start % 5 === 0 }));
+  if (view === "year") {
+    const width = bins.length > 1 ? bins[1]!.start - bins[0]!.start : 2;
+    // The first bin keeps its "≤" label; any other bin that contains a multiple of 5 is labelled with it.
+    return bins.map((b, i) => {
+      const m = Math.ceil(b.start / 5) * 5;
+      const tick = i === 0 ? b.label : m < b.start + width ? String(m) : undefined;
+      return { key: i, label: b.label, short: tick ?? "", sub: "", ...(tick ? { tick } : {}) };
+    });
+  }
   return f.diseases.map((d) => ({ key: d.code, label: d.code, short: phoneCode(d.code), sub: d.label === d.code ? "" : d.label }));
 }
 

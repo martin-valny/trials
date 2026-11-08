@@ -124,7 +124,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
             <div className="colhead first">Target</div>
             {cols.map((c) => (
               <div key={c.key} className="colhead" data-col={c.key} data-tick={c.tick ? "" : undefined}>
-                {year ? (c.tick ? c.label : <span className="sr-only">{c.label}</span>) : c.label}
+                {year ? (c.tick ?? <span className="sr-only">{c.label}</span>) : c.label}
                 {c.sub && <small>{c.sub}</small>}
               </div>
             ))}
