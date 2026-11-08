@@ -288,3 +288,85 @@ export interface GraphFile {
   nodes: GraphNode[];
   edges: GraphEdge[];
 }
+
+// pipeline.json (the pipeline figure, spec 2026-11-08 §6.4). Marks omit default-valued keys.
+export type MarkState = "adv" | "run" | "stop" | "fin" | "unk";
+export type SponsorKind = "industry" | "academic" | "government" | "other";
+
+export interface PipelineMark {
+  /** NCT id. */
+  n: string;
+  /** Phase column: 1, 2, 3 or 4 (approved use). */
+  c: number;
+  /** Absent: the trial spans one phase. */
+  span?: "1/2" | "2/3";
+  s: MarkState;
+  y: number | null;
+  y2: number | null;
+  /** Absent: the end year is not an estimate. */
+  est?: boolean;
+  /** Disease codes. */
+  dz: string[];
+  drug: string;
+  /** Index into PipelineFile.sponsors. */
+  sp: number;
+  /** Disease codes where this placement advanced (R21). Absent: none. */
+  si?: string[];
+  /** Absent: this placement's own drug carried the trial. Else the drug that advanced. */
+  via?: string;
+}
+
+export interface PipelineRow {
+  id: string;
+  label: string;
+  sub: string;
+  family: string;
+  order: number;
+  gene: string | null;
+  blurb?: string;
+  related: string[];
+  marks: PipelineMark[];
+}
+
+export interface PipelineFamily {
+  id: string;
+  label: string;
+  order: number;
+}
+
+export interface PipelineSponsor {
+  raw: string;
+  parent: string;
+  kind: SponsorKind;
+}
+
+export interface PipelineTrialInfo {
+  /** Title, at most 80 characters. */
+  t: string;
+  /** Registry's why-stopped text (stopped trials only). */
+  why?: string | null;
+  /** Stop-reason group (stopped trials only). */
+  r?: string;
+}
+
+export interface PipelineDisease {
+  code: string;
+  label: string;
+}
+
+export interface PipelineUnrowed {
+  class: string;
+  trials: number;
+  reason: string;
+}
+
+export interface PipelineFile {
+  generated_for: string;
+  counts: { trials: number; targeted: number; in_rows: number; targeted_not_rowed: number };
+  diseases: PipelineDisease[];
+  families: PipelineFamily[];
+  rows: PipelineRow[];
+  sponsors: PipelineSponsor[];
+  trials: Record<string, PipelineTrialInfo>;
+  unrowed: PipelineUnrowed[];
+}
