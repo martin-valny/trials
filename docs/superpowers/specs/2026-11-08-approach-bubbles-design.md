@@ -114,7 +114,7 @@ Notes:
   - every `approach` is one of the seven keys;
   - no `kinds.csv` key collides with a molecular class actually used by a row that has targets.
   - On failure: an `approaches:` run warning, the approach parts are skipped, and the run continues (R19).
-- The mapping-gaps proposals' no-target rows (glatiramer, IVIG/SCIG, MSC, aHSCT, ATG, vaccines, tolerisation, helminths, biotin, lipoic acid, gold nanocrystals) are applied with their `mechanism_class` changed to the matching kind key. Molecular proposals are applied unchanged.
+- The mapping-gaps proposals' no-target rows (glatiramer, IVIG/SCIG, MSC, aHSCT, ATG, tolerisation, helminths, biotin, lipoic acid, gold nanocrystals) are applied with their `mechanism_class` changed to the matching kind key. Molecular proposals are applied unchanged.
 
 ### 6.3 Per trial (`explorer.json`)
 - Which interventions count:
