@@ -1,0 +1,9 @@
+pattern,types,kind
+autologous hematopoietic stem cell,,ahsct
+ahsct,,ahsct
+plasma exchange,,plasma_exchange
+plasmapheresis,,plasma_exchange
+exercise,,exercise
+aerobic training,,exercise
+tms,,tms
+transcranial magnetic,DEVICE;PROCEDURE,tms
