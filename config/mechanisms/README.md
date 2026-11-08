@@ -13,6 +13,51 @@ Drug names are matched lower-case (casefolded) in both CSVs, so `Vitamin D` in
 | `overrides.csv` | Same columns plus an optional `source` column (why the row exists; ignored by the pipeline). A row here replaces that drug's `drugs.csv` row entirely. Use it to fix a mapping, add a drug ChEMBL does not know (`manual`), or mark a non-drug (`not_a_drug`). | By hand. **`overrides.csv` is hand-written and always wins.** The script never touches it. |
 | `target_labels.csv` | `key,label`: short labels for targets. The key is a ChEMBL target id, a gene symbol, or gene symbols `;`-joined in sorted order (e.g. `S1PR1;S1PR2;S1PR3;S1PR4;S1PR5`). Unlabelled targets fall back to the ChEMBL target name, with a trailing " family" dropped. | By hand |
 
+Pathway files (phase 3, the mechanism graph):
+
+| File | What it is | Who writes it |
+|---|---|---|
+| `pathways.json` | `{reactome_release, targets: {gene: [pathway_id]}, pathways: {id: {name, parents, genes, source}}, overlaps: [[id_a, id_b, jaccard]]}`. Each target gene's lowest-level Reactome pathways, all their ancestors, and shared-gene overlaps between kept pathways. | `pipeline/scripts/map_pathways.py` (regenerated; do not hand-edit) |
+| `go_fallback.csv` | `target,go_id,go_name`: one Gene Ontology biological-process term for a target with no Reactome pathway, or only an uninformative one. Reviewable; delete a row to drop it. | `map_pathways.py` |
+| `curated_pathways.csv` | `target,node_label,note,source_url`: hand-picked links neither source covers well (CD52 → "lymphocyte depletion" for alemtuzumab). A curated row replaces GO and Reactome for that target; its node id is `curated:<slug of node_label>`. `source_url` is required. | By hand. The script never touches it. |
+
+## How a target gets its pathways
+
+1. **Human proteins only.** A target must be the exact symbol of a reviewed (Swiss-Prot)
+   human protein in QuickGO. Bacterial and viral targets (`rplA`, influenza `M`) get no
+   pathway, even though Reactome's gene sets name a viral `M` protein.
+2. **Reactome.** From the GMT gene sets (gene symbols per pathway, every level): the
+   lowest-level pathways that list the gene, plus all their ancestors. Excluded with
+   everything below them: "Disease" (`R-HSA-1643685`), "Drug ADME" (`R-HSA-9748784`) and the
+   drug-action pathways inside normal branches ("Rituximab:MS4A1 targets B cells ...",
+   "Drug-mediated inhibition of ..."; the list is `EXCLUDE_ROOTS` in the script), which
+   would make the graph circular. Overlaps: the Jaccard index of two kept pathways' gene
+   sets, when neither is the other's ancestor, above a floor the script raises until
+   `pathways.json` is under 1 MB.
+3. **Gene Ontology** (QuickGO) for a target with no Reactome pathway, or only uninformative
+   ones (`UNINFORMATIVE` in the script, starting with CD52: only GPI-anchor biosynthesis):
+   from its manually reviewed (non-IEA), positive biological-process annotations, the most
+   specific term (not an ancestor of another of its terms, then the deepest, then the most
+   annotations). GO nodes have no parent and no shared-gene links.
+4. **Curated** rows replace both. The graph marks every node and edge with its `source`.
+
+Current state (2026-11-08): Reactome release **98**, 783 pathways kept, 9,902 overlaps at
+floor 0.15 (754 KB). Of 464 target symbols, 402 are human proteins: Reactome 387, GO 13,
+curated 1 (CD52), none 1 (GPRC5D); 62 are bacterial or viral.
+
+Re-run (needs network; on this Mac set `SSL_CERT_FILE`, see below):
+
+```sh
+cd pipeline
+uv run python scripts/map_pathways.py      # reads drugs.csv + overrides.csv here
+```
+
+Options: `--mappings`, `--out` (both default `config/mechanisms`), `--cache` (default
+`pipeline/.cache/reactome`, not committed; the Reactome files are cached per release, the
+QuickGO responses by URL), `--max-bytes`, and `--record DIR`, which saves the QuickGO
+responses trimmed to the fields used (how `pipeline/tests/fixtures/quickgo/` was made). It
+prints the target counts by source and the targets with no pathway.
+
 ## How a drug is mapped
 
 1. Exact, casefolded match of the drug name against the ChEMBL `pref_name` or any synonym
@@ -89,6 +134,19 @@ roots and point `SSL_CERT_FILE` at them:
 `security find-certificate -a -p /Library/Keychains/System.keychain /System/Library/Keychains/SystemRootCertificates.keychain > /tmp/ca.pem`.
 
 ## Source and licence
+
+Pathways: [Reactome](https://reactome.org/) release **98** (per
+`https://reactome.org/ContentService/data/database/version`), downloaded 2026-11-08 from
+`https://reactome.org/download/current/`, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); `pathways.json` is derived from
+it. Cite: Milacic M. et al., *The Reactome Pathway Knowledgebase 2024*, Nucleic Acids Res.
+2024;52(D1):D672–D678. Gene Ontology terms and annotations via
+[QuickGO](https://www.ebi.ac.uk/QuickGO/), retrieved 2026-11-08; GO is licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (`go_fallback.csv`). Cite: The
+Gene Ontology Consortium, *The Gene Ontology knowledgebase in 2023*, Genetics
+2023;224(1):iyad031. `curated_pathways.csv` is hand-written; each row names its source.
+
+Drug mechanisms:
 
 Data from [ChEMBL](https://www.ebi.ac.uk/chembl/), release **ChEMBL_37** (released
 2026-05-01, per `https://www.ebi.ac.uk/chembl/api/data/status.json`), retrieved 2026-11-06.
