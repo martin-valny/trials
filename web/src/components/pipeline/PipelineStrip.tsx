@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { MarginNote } from "../../lib/pipeline";
 import { cellMarks, rowAccessibleName } from "../../lib/pipeline";
 import { Link } from "react-router-dom";
@@ -6,13 +7,22 @@ import { RowCompanies, rowHref, type Col, type Draw, type Item } from "./parts";
 interface Props {
   items: Item[];
   cols: Col[];
+  tracks?: string | undefined;
   notes: Map<string, MarginNote>;
   draw: Draw;
 }
 
 /** The phone arrangement (<= 640px): a sticky column header, then each row as label plus a strip of cells. */
-export function PipelineStrip({ items, cols, notes, draw }: Props) {
-  const style = { "--n": cols.length } as React.CSSProperties;
+export function PipelineStrip({ items: all, cols, tracks, notes, draw }: Props) {
+  // With a company lens a phone shows only the rows the company is in; the rest sit behind a toggle
+  // (the desktop figure fades them to 45% instead; faded rows are unreadable at this size).
+  const [others, setOthers] = useState(false);
+  const missing = (it: Item): boolean => it.t === "row" && !it.v.hasCompany;
+  const hide = draw.lens !== null && !others;
+  const kept = hide ? all.filter((it) => !missing(it)) : all;
+  const items = kept.filter((it, i) => it.t !== "past" || kept.slice(i + 1).some((x) => x.t === "row"));
+  const hidden = draw.lens !== null ? all.filter(missing).length : 0;
+  const style = { "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}) } as React.CSSProperties;
   return (
     <div className="pstrip" style={style}>
       <div className="pcol" aria-hidden="true">
@@ -55,6 +65,11 @@ export function PipelineStrip({ items, cols, notes, draw }: Props) {
           </div>
         );
       })}
+      {hidden > 0 && (
+        <button type="button" className="other-rows" aria-expanded={others} onClick={() => setOthers((o) => !o)}>
+          {others ? "Hide the other rows" : `Show ${hidden} other ${hidden === 1 ? "row" : "rows"}`}
+        </button>
+      )}
     </div>
   );
 }

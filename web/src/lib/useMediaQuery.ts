@@ -17,3 +17,6 @@ export function useMediaQuery(query: string): boolean {
     () => false,
   );
 }
+
+/** True at phone width (the CSS breakpoint at 640px); false where matchMedia is missing (tests). */
+export const usePhone = (): boolean => useMediaQuery("(max-width: 640px)");

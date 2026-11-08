@@ -39,9 +39,6 @@ export interface PlateCanvasProps {
   numbered?: boolean;
   selected: string | null;
   onSelect: (nct: string | null) => void;
-  reducedMotion: boolean;
-  /** Turn the map slowly; reduced motion overrides it. The spin also pauses while a dot is hovered. */
-  spinning: boolean;
   /** The trial under a mouse or pen pointer, at the pointer in canvas CSS px; null when it leaves. Never on touch. */
   onHover?: (h: PlateHover | null) => void;
   /** Ring drawn around the selected and hovered dot; defaults to the canvas's CSS colour. */
@@ -66,7 +63,6 @@ export interface PlateHover {
   r: number;
 }
 
-const SPIN = 0.0022; // radians per frame, as in the approved plate
 const TILT = 0.32;
 const ZOOM = 0.94; // share of the panel the still view's trimmed box fills (see restFit)
 const DRAG = 0.008; // radians per dragged pixel
@@ -425,9 +421,7 @@ export function PlateCanvas({ ref, ...props }: PlateCanvasProps) {
         const i = live.current.trials.findIndex((t) => t.nct_id === hover);
         if (i < 0 || !live.current.mask[i]) setHover(null);
       }
-      const turning = live.current.spinning && !live.current.reducedMotion && gesture === "none" && hover === null;
-      if (turning) angle += SPIN;
-      if (turning || dirty.current) {
+      if (dirty.current) {
         dirty.current = false;
         draw();
       }

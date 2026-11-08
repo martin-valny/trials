@@ -30,7 +30,7 @@ export function FigureControls({ state, diseases, companies, onChange }: Props) 
         ))}
       </div>
       {state.view === "phase" && (
-        <div className="seg seg-scroll" role="group" aria-label="Disease">
+        <div className="seg seg-scroll seg-dz" role="group" aria-label="Disease">
           <button type="button" className={state.disease === null ? "on" : ""} aria-pressed={state.disease === null} onClick={() => set({ disease: null })}>
             All diseases
           </button>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { COMPANIES_ON_TARGET, markState, targetCompanies } from "../../lib/pipeline";
+import { COMPANIES_ON_TARGET, DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, targetCompanies } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark } from "../../types";
 import { Mark } from "../pipeline/Mark";
 
@@ -24,8 +24,8 @@ export function TargetCompanies({ file, marks, disease, onOpen }: Props) {
       {shown.map((c) => (
         <div className="co" key={c.parent}>
           <div className="co-nm">
-            {c.parent === OTHER ? c.parent : <Link to={`/?${new URLSearchParams({ company: c.parent }).toString()}`}>{c.parent}</Link>}
-            <small>{c.drugs.slice(0, DRUGS_SHOWN).join(", ")}</small>
+            {c.parent === OTHER ? c.parent : <Link to={`/?${figureSearch({ ...DEFAULT_FIGURE_STATE, company: c.parent, disease })}`}>{c.parent}</Link>}
+            <small>{[...new Map(c.drugs.map((d) => [normKey(d), d])).values()].slice(0, DRUGS_SHOWN).join(", ")}</small>
           </div>
           <div className="co-bar">
             {c.marks.map((m) => (
@@ -33,7 +33,7 @@ export function TargetCompanies({ file, marks, disease, onOpen }: Props) {
             ))}
           </div>
           <div className="co-n">
-            <b>{c.marks.length}</b> · {c.run} run
+            <b>{c.marks.length}</b> · {c.run} running
           </div>
         </div>
       ))}

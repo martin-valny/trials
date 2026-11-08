@@ -18,7 +18,7 @@ import {
   type FigureState,
 } from "../src/lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark, PipelineRow } from "../src/types";
-import { columnsFor } from "../src/components/pipeline/parts";
+import { columnsFor, columnTracks } from "../src/components/pipeline/parts";
 import { readFixture } from "./helpers";
 
 const DEFAULT: FigureState = { disease: null, company: null, sort: "run", view: "phase" };
@@ -431,5 +431,21 @@ describe("columnsFor", () => {
     const cols = columnsFor(g, "disease");
     expect(cols.map((c) => c.key)).toEqual(["ZED", "ALPHA1", "MS"]);
     expect(cols.map((c) => c.short)).toEqual(["ZED", "ALP", "MS"]);
+  });
+});
+
+describe("columnTracks", () => {
+  const frs = (tracks: string): number[] => [...tracks.matchAll(/, ([\d.]+)fr/g)].map((m) => Number(m[1]));
+  it("is undefined by phase and weights the disease columns by the square root of their trials", () => {
+    const g = file([row("a", [...many(16, { dz: ["MS"] }), ...many(4, { dz: ["MG"] })])]);
+    const cols = columnsFor(g, "disease");
+    expect(columnTracks(g, cols, "phase")).toBeUndefined();
+    const fr = frs(columnTracks(g, cols, "disease")!);
+    expect(fr).toEqual([2.2, 1.1]); // 2.2 * sqrt(4 / 16)
+  });
+  it("never shrinks a column below the floor", () => {
+    const g = file([row("a", [...many(100, { dz: ["MS"] }), ...many(1, { dz: ["MG"] })])]);
+    const fr = frs(columnTracks(g, columnsFor(g, "disease"), "disease")!);
+    expect(fr).toEqual([2.2, 0.7]);
   });
 });

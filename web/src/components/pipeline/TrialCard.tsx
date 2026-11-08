@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { markState, MARK_LABEL } from "../../lib/pipeline";
+import { markState, MARK_LABEL, withDisease } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark } from "../../types";
 
 interface Props {
@@ -89,7 +89,7 @@ export function TrialCard({ nct, file, rowId, disease = null, onClose, variant, 
       {state === "stop" && info?.why && <blockquote className="tc-why">{info.why}</blockquote>}
       <div className="tc-actions">
         <Link to={`/trial/${nct}`}>Open trial page</Link>
-        <Link to={`/explore?nct=${encodeURIComponent(nct)}&from=${encodeURIComponent(label)}`}>Show on map</Link>
+        <Link to={withDisease(`/explore?nct=${encodeURIComponent(nct)}&from=${encodeURIComponent(label)}`, disease)}>Show on map</Link>
         <a href={`https://clinicaltrials.gov/study/${nct}`} target="_blank" rel="noreferrer">
           ClinicalTrials.gov ↗
         </a>

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   cellMarks,
@@ -12,7 +12,7 @@ import {
 } from "../../lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { Mark } from "./Mark";
-import { columnsFor, layout, RowCompanies, rowHref, type Draw } from "./parts";
+import { columnsFor, columnTracks, layout, RowCompanies, rowHref, type Draw } from "./parts";
 import { PipelineStrip } from "./PipelineStrip";
 import { phaseText, TrialCard } from "./TrialCard";
 
@@ -48,6 +48,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
   const lens = state.company === null ? null : normKey(state.company);
   const cols = columnsFor(file, state.view);
   const items = layout(file, views, state);
+  const tracks = useMemo(() => columnTracks(file, cols, state.view), [file, cols, state.view]);
   const maxRun = Math.max(1, ...views.map((v) => v.run));
 
   const at = (el: Element) => {
@@ -97,9 +98,9 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
   return (
     <div className={`fig${lens ? " lensed" : ""}`} ref={box}>
       {phone ? (
-        <PipelineStrip items={items} cols={cols} notes={notes} draw={draw} />
+        <PipelineStrip key={lens ?? ""} items={items} cols={cols} tracks={tracks} notes={notes} draw={draw} />
       ) : (
-        <div className="grid" style={{ "--n": cols.length } as React.CSSProperties}>
+        <div className="grid" style={{ "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}) } as React.CSSProperties}>
           <div className="grid-head">
             <div className="colhead first">Target</div>
             {cols.map((c) => (

@@ -45,9 +45,7 @@ test("row -> target page -> trials on the map -> arrival banner", async ({ page 
   await expect(banner).toHaveCount(0);
 });
 
-test("target page -> mechanism graph -> Back to CD20", async ({ page }, info) => {
-  // On a phone the section's graph link is hidden by design (target.css), so this flow is desktop-only.
-  test.skip(info.project.name !== "desktop", "the graph link is hidden at phone width");
+test("target page -> mechanism graph -> Back to CD20", async ({ page }) => {
   await page.goto("/#/target/cd20");
   await page.getByRole("link", { name: "Open in the mechanism graph →" }).click();
   await expect(page).toHaveURL(/#\/approaches\/targeted\?node=target:MS4A1&from=cd20/);

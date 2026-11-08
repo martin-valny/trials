@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState } from "../../lib/pipeline";
+import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, withDisease } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
-import { usePhone, usePipeline } from "../pipeline/PipelinePage";
+import { usePhone } from "../../lib/useMediaQuery";
+import { usePipeline } from "../pipeline/PipelinePage";
 import { TrialCard } from "../pipeline/TrialCard";
 import "../pipeline/pipeline.css";
 import "./target.css";
@@ -177,7 +178,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
             <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
           </section>
           <section className="sec two" aria-label="Companies and stops">
-            <div aria-labelledby="pb">
+            <div role="group" aria-labelledby="pb">
               <div className="sec-h">
                 <span className="ltr" aria-hidden="true">b</span>
                 <h2 id="pb">Who is working on {row.label}</h2>
@@ -185,7 +186,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               </div>
               <TargetCompanies file={file} marks={marks} disease={disease} onOpen={onOpen} />
             </div>
-            <div aria-labelledby="pc">
+            <div role="group" aria-labelledby="pc">
               <div className="sec-h">
                 <span className="ltr" aria-hidden="true">c</span>
                 <h2 id="pc">What stopped, and why</h2>
@@ -195,7 +196,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
             </div>
           </section>
           <section className="sec" aria-label="How it works">
-            <TargetChain file={file} row={row} marks={marks} />
+            <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} />
           </section>
         </>
       )}
@@ -203,7 +204,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       <footer className="foot">
         <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
         {ncts.length > 0 && (
-          <Link to={`/explore?nct=${ncts.join(",")}&from=${encodeURIComponent(row.label)}`}>Show these {n(ncts.length)} trials on the map →</Link>
+          <Link to={withDisease(`/explore?nct=${ncts.join(",")}&from=${encodeURIComponent(row.label)}`, disease)}>Show these {n(ncts.length)} trials on the map →</Link>
         )}
       </footer>
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { loadExplorer, loadGraph, loadMeta } from "../../data";
-import { isApproachKey, kindTree, railRows, UNSORTED_ROW_PREFIX, uncategorised } from "../../lib/approaches";
+import { isApproachKey, kindTree, railRows, uncategorised } from "../../lib/approaches";
 import { rowForGene } from "../../lib/pipeline";
 import { useDiseaseParam, usePipelineFile } from "../../lib/useDisease";
 import { UNCLASSIFIED } from "../../lib/explorer";
@@ -355,7 +355,7 @@ function Plate({
                   {" · "}
                 </>
               ) : null}
-              Targeted drugs are on the Pipeline, grouped by target. <Link to={`/${search}`}>Open the pipeline →</Link>
+              Targeted drugs are on the Pipeline, grouped by target. <Link className="nw" to={`/${search}`}>Open the pipeline →</Link>
             </p>
           ) : null}
           {row && !row.successDefined ? (
@@ -401,13 +401,6 @@ function Plate({
                 rationales={rationaleOf}
                 onSelect={openKind}
               />
-              {approach === "unclassified" ? (
-                <p className="panel-note">
-                  Not yet categorised: names not in the drug mapping or the keyword rules, by trial count. Each is a mapping
-                  still to decide. Names carried only by trials in other approaches (an unmapped drug beside a mapped
-                  one) are listed last, with those trials.
-                </p>
-              ) : null}
             </>
           )}
         </section>
@@ -432,11 +425,7 @@ function Plate({
             group={selected.group.group}
             approach={label}
             rationale={
-              selected.kind.key.startsWith(UNSORTED_ROW_PREFIX)
-                ? null
-                : selected.group.rationale
-                  ? { text: selected.group.rationale, url: selected.group.source_url }
-                  : rationaleOf(selected.kind.key)
+              selected.group.rationale ? { text: selected.group.rationale, url: selected.group.source_url } : rationaleOf(selected.kind.key)
             }
             trials={selected.kind.trials
               .map((nct) => byNct.get(nct))

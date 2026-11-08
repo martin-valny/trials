@@ -24,6 +24,24 @@ export function columnsFor(f: PipelineFile, view: FigureState["view"]): Col[] {
   return f.diseases.map((d) => ({ key: d.code, label: d.code, short: phoneCode(d.code), sub: d.label === d.code ? "" : d.label }));
 }
 
+const WEIGHT_MAX = 2.2;
+const WEIGHT_MIN = 0.7;
+
+/**
+ * CSS grid tracks for the figure's columns. By phase they are equal; By disease they are weighted by
+ * the square root of each disease's trial count (with a floor), so a crowded column gets room and a
+ * near-empty one stays readable. Undefined means the stylesheet's equal columns.
+ */
+export function columnTracks(f: PipelineFile, cols: Col[], view: FigureState["view"]): string | undefined {
+  if (view !== "disease") return undefined;
+  const count = new Map<string, number>();
+  for (const r of f.rows) for (const m of r.marks) for (const d of m.dz) count.set(d, (count.get(d) ?? 0) + 1);
+  const top = Math.max(1, ...cols.map((c) => count.get(String(c.key)) ?? 0));
+  return cols
+    .map((c) => `minmax(0, ${Math.max(WEIGHT_MIN, WEIGHT_MAX * Math.sqrt((count.get(String(c.key)) ?? 0) / top)).toFixed(2)}fr)`)
+    .join(" ");
+}
+
 export type Item = { t: "fam"; label: string } | { t: "past" } | { t: "row"; v: RowView; hist: boolean };
 
 /** Rows in drawing order: family bands (when the sort groups them), then the "mostly historical" tail. */

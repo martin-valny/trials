@@ -5,6 +5,7 @@ import { Explore } from "../src/components/explore/Explore";
 import { SelectedTrial } from "../src/components/explore/SelectedTrial";
 import { MechanismsPage } from "../src/components/mechanisms/MechanismsPage";
 import { PipelinePage } from "../src/components/pipeline/PipelinePage";
+import { Methods } from "../src/components/Methods";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { TrialDetail } from "../src/components/TrialDetail";
 import type { ExplorerFile } from "../src/types";
@@ -194,4 +195,24 @@ test("the graph note says Tap on a touch screen", async () => {
   );
   expect(await screen.findByText(/Tap a node to light its neighbours/)).toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/Hover a node/);
+});
+
+test("Methods, with its not-yet-categorised lists, uses no old wording", async () => {
+  const f = structuredClone(base);
+  const mk = (i: number, extra: Partial<ExplorerFile["trials"][number]>): ExplorerFile["trials"][number] => ({
+    ...f.trials[0]!,
+    nct_id: `NCT7000${i}`,
+    approaches: [],
+    kinds: [],
+    unsorted: [],
+    ...extra,
+  });
+  const trials = [...f.trials, mk(1, { unsorted: ["mystery drug"] }), mk(2, { approaches: ["cell"], unsorted: ["other mystery"] })];
+  stubFetch({ "explorer.json": { ...f, trials } });
+  renderAt(<Methods />, "/methods#not-yet-categorised");
+  await screen.findByRole("region", { name: "Names not yet categorised" });
+  expect(screen.getByRole("region", { name: /in trials of other approaches/ })).toBeInTheDocument();
+  // Methods keeps its own statistical wording (quoting what the map says), so only the retired
+  // "sorted" names are checked on this page.
+  expect(document.body.textContent).not.toMatch(/not yet sorted|unsorted names|Unclassified/i);
 });

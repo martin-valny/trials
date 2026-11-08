@@ -1,9 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { PipelinePage } from "../src/components/pipeline/PipelinePage";
-import { stubFetch } from "./helpers";
+import type { PipelineFile } from "../src/types";
+import { readFixture, stubFetch } from "./helpers";
 
 function Where() {
   const loc = useLocation();
@@ -129,4 +130,35 @@ test("every row has an accessible name", async () => {
     const link = within(r as HTMLElement).getByRole("link");
     expect(link.getAttribute("aria-label")).toMatch(/: \d+ trials, \d+ running, \d+ advanced, \d+ stopped\. Open target page\.$/);
   });
+});
+
+/** The fixture with a second row that only Example Pharma is in, so the Acme Biotech lens misses it. */
+function withOtherRow(): PipelineFile {
+  const f = readFixture<PipelineFile>("pipeline.json");
+  const m = f.rows[0]!.marks[1]!;
+  f.rows.find((r) => r.id === "cd19")!.marks.push({ ...m, n: "NCT90000555" });
+  return f;
+}
+
+test("on a phone the company lens hides the rows without the company behind a toggle", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch({ "pipeline.json": withOtherRow() });
+    const { container } = renderPage("/?company=Acme%20Biotech");
+    const toggle = await screen.findByRole("button", { name: /^Show \d+ other rows?$/ });
+    expect(container.querySelectorAll(".prow.miss")).toHaveLength(0);
+    await userEvent.click(toggle);
+    expect(container.querySelectorAll(".prow.miss").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Hide the other rows" })).toHaveAttribute("aria-expanded", "true");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("on desktop the lens fades the other rows and offers no toggle", async () => {
+  stubFetch({ "pipeline.json": withOtherRow() });
+  const { container } = renderPage("/?company=Acme%20Biotech");
+  await screen.findByRole("button", { name: "Clear company lens" });
+  expect(container.querySelectorAll(".row.miss").length).toBeGreaterThan(0);
+  expect(screen.queryByRole("button", { name: /other rows?$/ })).not.toBeInTheDocument();
 });

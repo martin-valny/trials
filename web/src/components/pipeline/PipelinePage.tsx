@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadPipeline } from "../../data";
 import {
@@ -12,27 +12,12 @@ import {
   type FigureState,
   type Headline,
 } from "../../lib/pipeline";
+import { usePhone } from "../../lib/useMediaQuery";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { FigureControls } from "./FigureControls";
 import { Mark } from "./Mark";
 import { PipelineFigure } from "./PipelineFigure";
 import "./pipeline.css";
-
-const PHONE = "(max-width: 640px)";
-
-/** True at phone width; false where matchMedia is missing (tests, old engines). */
-export function usePhone(): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      if (typeof matchMedia !== "function") return () => undefined;
-      const q = matchMedia(PHONE);
-      q.addEventListener("change", cb);
-      return () => q.removeEventListener("change", cb);
-    },
-    () => typeof matchMedia === "function" && matchMedia(PHONE).matches,
-    () => false,
-  );
-}
 
 export type Load = { s: "loading" } | { s: "missing" } | { s: "ready"; file: PipelineFile };
 
@@ -104,7 +89,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
         <Source text={sourceLine(file, views)} />
       </p>
       <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change} />
-      <div className="legend" aria-label="Legend">
+      <div className="legend" role="group" aria-label="Legend">
         {LEGEND.map((s) => (
           <span key={s}>
             <Mark m={{ ...dummy, s, n: "" }} state={s} />

@@ -11,6 +11,13 @@ interface Props {
   onOpen: (nct: string, el: Element) => void;
 }
 
+/** A bullet beside a reason: the two-phase span glyph would read as a stray tick there. */
+const plain = (m: PipelineMark): PipelineMark => {
+  const c = { ...m };
+  delete c.span;
+  return c;
+};
+
 /** Panel c: why trials stopped, in the registry's own words. */
 export function TargetStops({ file, label, marks, onOpen }: Props) {
   const [all, setAll] = useState(false);
@@ -30,7 +37,7 @@ export function TargetStops({ file, label, marks, onOpen }: Props) {
       )}
       {shown.map((m) => (
         <div className="stop-card" key={m.n + m.drug}>
-          <Mark m={m} state="stop" />
+          <Mark m={plain(m)} state="stop" />
           <div>
             <button type="button" className="q" onClick={(e) => onOpen(m.n, e.currentTarget)}>
               {file.trials[m.n]?.why || "No reason given"}

@@ -12,7 +12,7 @@ interface Props {
   onOpen: (nct: string, el: Element) => void;
 }
 
-const Y0 = 2000;
+const Y0_MIN = 2000;
 const Y_CAP = 2032;
 /** The drawn width of a year-long span's last year (a trial ending in 2026 runs to the end of 2026). */
 const END_PAD = 0.6;
@@ -44,6 +44,12 @@ function useWidth(ref: React.RefObject<HTMLElement | null>): number {
     return () => ro.disconnect();
   }, [ref]);
   return w;
+}
+
+/** First year of the axis: the five-year mark before the earliest start, never before 2000. */
+export function axisStart(marks: readonly { y: number | null }[]): number {
+  const starts = marks.filter((m) => m.y !== null).map((m) => m.y!);
+  return starts.length === 0 ? Y0_MIN : Math.max(Y0_MIN, Math.floor((Math.min(...starts) - 1) / 5) * 5);
 }
 
 interface Placed {
@@ -86,28 +92,30 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
     for (const m of marks) if (m.y !== null && m.est && m.y2 !== null) end = Math.max(end, m.y2);
     return Math.min(Y_CAP, end + 1);
   }, [marks, asof]);
+  /** The axis starts at the five-year mark before the earliest start (never before 2000). */
+  const y0 = useMemo(() => axisStart(marks), [marks]);
   const undated = marks.filter((m) => m.y === null).length;
 
-  const L = narrow ? 0 : 150;
+  const L = narrow ? 14 : 150; // a phone insets the plot so the first tick label is not clipped
   const R = 12;
   const W = width;
-  const X = (y: number) => L + ((Math.min(Math.max(y, Y0), y1) - Y0) / (y1 - Y0)) * (W - L - R);
+  const X = (y: number) => L + ((Math.min(Math.max(y, y0), y1) - y0) / (y1 - y0)) * (W - L - R);
   const th = narrow ? 5 : 7;
   const dot = narrow ? 2.4 : 3;
 
   const laid: { name: string; marks: PipelineMark[]; placed: Placed[]; y: number; h: number }[] = [];
-  let y = 26;
+  let y = narrow ? 34 : 26; // the year axis has its own row above the first lane on a phone
   for (const lane of lanes) {
     const { placed, tracks } = pack(lane.marks);
     const h = Math.max(tracks * th + 10, narrow ? 12 : 36);
-    laid.push({ ...lane, placed, y: y + (narrow ? 10 : 0), h });
+    laid.push({ ...lane, placed, y: y + (narrow ? 12 : 0), h });
     y += h + (narrow ? 24 : 18);
   }
   const bottom = y;
   const H = bottom + 22;
   const nowX = X(asof);
   const ticks: number[] = [];
-  for (let t = Y0; t <= y1; t += 5) ticks.push(t);
+  for (let t = y0; t <= y1; t += 5) ticks.push(t);
 
   const hover = (m: PipelineMark) => (e: React.MouseEvent) => {
     const b = box.current!.getBoundingClientRect();
@@ -122,7 +130,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           {ticks.map((t) => (
             <g key={t}>
               <line x1={X(t)} x2={X(t)} y1={18} y2={bottom - 6} stroke="var(--rule)" />
-              <text x={X(t)} y={11} fontSize="10.5" fill="var(--muted)" textAnchor="middle">
+              <text x={X(t)} y={11} fontSize="10.5" fill="var(--muted)" textAnchor={X(t) < 16 ? "start" : X(t) > W - 18 ? "end" : "middle"}>
                 {t}
               </text>
             </g>
@@ -130,7 +138,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           {laid.map((lane) => (
             <g key={lane.name}>
               {narrow ? (
-                <text x={0} y={lane.y - 6} fontSize="11.5" fontWeight="700" fill="var(--ink)">
+                <text x={0} y={lane.y - 6} fontSize="11.5" fontWeight="700" fill="var(--ink)" stroke="var(--plate)" strokeWidth="3" paintOrder="stroke">
                   {lane.name} <tspan fontWeight="400" fill="var(--muted)">{lane.marks.length}</tspan>
                 </text>
               ) : (
@@ -205,7 +213,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           </div>
         )}
       </div>
-      <div className="tl-legend" aria-label="Legend">
+      <div className="tl-legend" role="group" aria-label="Legend">
         <span>
           <svg width="22" height="8" aria-hidden="true">
             <line x1="1" x2="16" y1="4" y2="4" stroke="var(--red)" strokeWidth="3" strokeLinecap="round" />

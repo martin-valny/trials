@@ -37,6 +37,11 @@
 /* Non-drug care: a dash where the bar would be, and the words "success not defined". */
 .rail-dash { flex: none; width: 12px; height: 1px; background: var(--muted); }
 .rail-note { margin-top: 10px; }
+/* The footnote under the bars needs air above it (it was pulled up by .panel-note + .panel-note). */
+.panel-note.rail-note + .panel-note.rail-uncategorised { margin-top: 14px; }
+/* The Targeted lede runs the panel's width, and its link never splits across lines. */
+.panel-note.graph-lede { max-width: none; }
+.graph-lede .nw { white-space: nowrap; }
 
 /* --- Panel b: the canvas --------------------------------------------------------------------------- */
 .mech-canvas { min-width: 0; display: flex; flex-direction: column; gap: 8px; }

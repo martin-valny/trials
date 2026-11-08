@@ -89,8 +89,6 @@ const renderCanvas = (
       anchors={anchors}
       selected={null}
       onSelect={onSelect}
-      reducedMotion={false}
-      spinning={true}
     />,
   );
   return { visible, color, emphasis, hollow, onSelect };
@@ -108,7 +106,13 @@ test("visibility, colour, emphasis and ring shape are computed once per change, 
   const calls = [visible, color, emphasis, hollow].map((f) => f.mock.calls.length);
   expect(calls.every((c) => c > 0)).toBe(true);
   const drawn = arcs;
-  for (let i = 0; i < 5; i++) step();
+  // Turning the map by a drag redraws it every frame without any filter or colour change.
+  const canvas = screen.getByRole("img");
+  fireEvent.pointerDown(canvas, { clientX: 100, clientY: 100, pointerId: 1, button: 0, pointerType: "mouse" });
+  for (let i = 1; i <= 5; i++) {
+    fireEvent.pointerMove(canvas, { clientX: 100 + i * 12, clientY: 100, pointerId: 1, pointerType: "mouse" });
+    step();
+  }
   expect(arcs).toBeGreaterThan(drawn); // frames really drew
   expect([visible, color, emphasis, hollow].map((f) => f.mock.calls.length)).toEqual(calls);
 });
@@ -257,8 +261,6 @@ const renderStill = () =>
       color={() => "#111"}
       selected={null}
       onSelect={() => undefined}
-      reducedMotion={true}
-      spinning={true}
     />,
   );
 
@@ -324,8 +326,6 @@ test("a still map draws once and then stays still", () => {
       color={() => "#111"}
       selected={null}
       onSelect={() => undefined}
-      reducedMotion={false}
-      spinning={false}
     />,
   );
   step();
@@ -350,8 +350,6 @@ const renderHoverable = () => {
       color={(t) => (t.nct_id === first ? "#0f0" : "#111")}
       selected={null}
       onSelect={() => undefined}
-      reducedMotion={false}
-      spinning={false}
       onHover={onHover}
     />
   );
@@ -383,32 +381,6 @@ test("touch never opens the hover card", () => {
   expect(onHover).not.toHaveBeenCalled();
 });
 
-test("the spin pauses while a dot is hovered", () => {
-  vi.spyOn(HTMLCanvasElement.prototype, "getBoundingClientRect").mockReturnValue({
-    left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400, x: 0, y: 0, toJSON: () => ({}),
-  } as DOMRect);
-  render(
-    <PlateCanvas
-      trials={trials}
-      visible={() => true}
-      color={() => "#111"}
-      selected={null}
-      onSelect={() => undefined}
-      reducedMotion={false}
-      spinning={true}
-      onHover={() => undefined}
-    />,
-  );
-  step();
-  const dot = marks[marks.length - 1];
-  fireEvent.pointerMove(screen.getByRole("img"), { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
-  step(); // redraws once for the hover ring
-  const drawn = clears;
-  step();
-  step();
-  expect(clears).toBe(drawn);
-});
-
 test("a hovered trial that the filters hide is no longer hovered", () => {
   const { onHover, dot, first, canvas } = renderHoverable();
   fireEvent.pointerMove(canvas, { clientX: dot.x, clientY: dot.y, pointerType: "mouse" });
@@ -435,8 +407,6 @@ const renderZoomable = (extra: Partial<React.ComponentProps<typeof PlateCanvas>>
       color={(t) => (t.nct_id === first ? "#0f0" : "#111")}
       selected={null}
       onSelect={() => undefined}
-      reducedMotion={false}
-      spinning={false}
       onHover={onHover}
       onZoomChange={onZoomChange}
       {...extra}
@@ -576,8 +546,6 @@ test("numbered (phone): each anchor carries its numeral, not its name", () => {
       numbered
       selected={null}
       onSelect={() => undefined}
-      reducedMotion={true}
-      spinning={false}
     />,
   );
   step();

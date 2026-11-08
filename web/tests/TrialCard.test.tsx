@@ -36,3 +36,12 @@ test("a combination trial shows which drug advanced", () => {
   expect(screen.queryByText(/Sponsor decision/)).not.toBeInTheDocument();
   expect(screen.getByRole("dialog")).toHaveClass("sheet");
 });
+
+test("Show on map carries the disease when one is set", () => {
+  render(
+    <MemoryRouter>
+      <TrialCard nct="NCT90000001" file={file()} rowId="cd20" disease="MS" onClose={vi.fn()} variant="popover" />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole("link", { name: "Show on map" })).toHaveAttribute("href", "/explore?nct=NCT90000001&from=CD20&disease=MS");
+});

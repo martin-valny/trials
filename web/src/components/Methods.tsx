@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { kindTree } from "../lib/approaches";
+import { kindTree, NOT_YET_SORTED, NOT_YET_SORTED_ELSEWHERE } from "../lib/approaches";
 import { mapLink } from "./mechanisms/SidePanel";
 import { loadExplorer, loadMeta, loadPipeline } from "../data";
 import type { ExplorerFile, Meta, PipelineFile } from "../types";
@@ -13,8 +13,15 @@ const pc = (v: number | undefined, fallback: number): string => `${Math.round(10
 /** Rows shown per group before "Show all". */
 const LIST_ROWS = 10;
 
+/** The data names these groups "Not yet sorted"; the app says "not yet categorised" (spec section 8). */
+const GROUP_LABEL: Record<string, string> = {
+  [NOT_YET_SORTED]: "Names not yet categorised",
+  [NOT_YET_SORTED_ELSEWHERE]: "Names not yet categorised, in trials of other approaches",
+};
+
 /** One group of the not-yet-categorised list: names with trial counts, long ones behind a toggle. */
-function NotYetGroup({ group, kinds }: { group: string; kinds: { key: string; label: string; n: number; trials: string[] }[] }) {
+function NotYetGroup({ group: raw, kinds }: { group: string; kinds: { key: string; label: string; n: number; trials: string[] }[] }) {
+  const group = GROUP_LABEL[raw] ?? raw;
   const [all, setAll] = useState(false);
   const shown = all ? kinds : kinds.slice(0, LIST_ROWS);
   const ncts = [...new Set(kinds.flatMap((k) => k.trials))];
@@ -36,7 +43,7 @@ function NotYetGroup({ group, kinds }: { group: string; kinds: { key: string; la
         </button>
       ) : null}
       <p>
-        <Link to={mapLink(ncts, `Not yet categorised: ${group}`)}>Show these trials on the map</Link>
+        <Link to={mapLink(ncts, group === GROUP_LABEL[raw] ? group : `Not yet categorised: ${group}`)}>Show these trials on the map</Link>
       </p>
     </section>
   );
@@ -336,7 +343,7 @@ export function Methods() {
           <li>Non-drug care: 1,222. Rehabilitation, devices, behavioural care, diet, procedures.</li>
           <li>
             Not yet categorised: 570. Trials in no other approach: not a treatment (diagnostics,
-            sampling; 121) or not yet sorted (449, of which 13 have no experimental treatment listed).
+            sampling; 121) or names not yet categorised (449, of which 13 have no experimental treatment listed).
           </li>
         </ul>
         <p>
@@ -370,7 +377,7 @@ export function Methods() {
         </p>
         <ul>
           <li>
-            Unsorted names: a drug or intervention name that is not in the drug mapping, the kind
+            Names not yet categorised: a drug or intervention name that is not in the drug mapping, the kind
             table or the keyword rules. Each is a mapping still to decide, so none is guessed from
             how it ends.
           </li>

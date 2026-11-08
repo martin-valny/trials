@@ -44,6 +44,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .seg button { border: 0; background: none; color: var(--muted); font-size: 12.5px; padding: 5px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
 .seg button:hover { color: var(--ink); }
 .seg button.on { background: var(--ink); color: var(--plate); }
+/* Only the arrangement switch is ink-filled; the disease selection is quieter: tinted, with an ink underline. */
+.seg-dz button.on { background: var(--pale); color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 999px 999px 4px 4px; }
 .find { position: relative; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; min-width: 240px; color: var(--muted); font-size: 12.5px; }
 .find input { border: 0; background: none; outline: none; font: inherit; color: var(--ink); width: 100%; }
 .find:focus-within { border-color: var(--ink); }
@@ -81,7 +83,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .fig-body { animation: pfade .16s ease-out; }
 @keyframes pfade { from { opacity: 0; } to { opacity: 1; } }
 .grid { --lab: 200px; --stat: 116px; --note: 210px; }
-.grid-head, .row { display: grid; grid-template-columns: var(--lab) repeat(var(--n), minmax(0, 1fr)) var(--stat) var(--note); }
+.grid-head, .row { display: grid; grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat) var(--note); }
 .colhead { font-size: 11.5px; font-weight: 700; color: var(--muted); padding: 10px 12px 8px; border-bottom: 1px solid var(--ink); letter-spacing: .02em; }
 .colhead.first { padding-left: 0; }
 .colhead small { font-weight: 400; display: block; font-size: 11px; letter-spacing: 0; }
@@ -97,8 +99,9 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .lab .sub { font-size: 11.5px; color: var(--muted); }
 .cos { font-size: 11.5px; margin-top: 4px; line-height: 1.35; }
 .cos .more { color: var(--muted); }
-.co-link { position: relative; z-index: 2; border: 0; background: none; padding: 0; cursor: pointer; border-bottom: 1px dotted var(--muted); }
-.co-link:hover { border-bottom-color: var(--ink); }
+/* A company name reads as a text link that wraps with its sentence: inline, left-aligned, one dotted underline. */
+.co-link { position: relative; z-index: 2; display: inline; border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.co-link:hover { text-decoration-color: var(--ink); }
 .cell { display: flex; flex-wrap: wrap; gap: 3px; align-content: flex-start; border-left: 1px dotted var(--rule); z-index: 2; pointer-events: none; }
 .cell .m { pointer-events: auto; }
 .nodot { width: 4px; height: 4px; border-radius: 50%; background: var(--fin); margin: 22px auto 0; opacity: .8; pointer-events: auto; position: relative; }
@@ -165,9 +168,9 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 @media (max-width: 1099px) {
   .lede, .controls, .legend, .fig, .source, .foot { padding-left: 24px; padding-right: 24px; }
   .grid { --lab: 168px; --stat: 100px; }
-  .grid-head { grid-template-columns: var(--lab) repeat(var(--n), minmax(0, 1fr)) var(--stat); }
+  .grid-head { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
   .grid-head .colhead:last-child { display: none; }
-  .row { grid-template-columns: var(--lab) repeat(var(--n), minmax(0, 1fr)) var(--stat); }
+  .row { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
   /* The margin note drops under the row, beside nothing: it keeps its red kicker and leader. */
   .row > .note, .row > .note-empty { grid-column: 1 / -1; grid-row: 2; min-height: 0; padding-top: 0; padding-bottom: 10px; }
   .row > .note-empty { display: none; }
@@ -179,7 +182,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 
 /* Phone */
 .pstrip { position: relative; }
-.pcol { display: grid; grid-template-columns: repeat(var(--n), 1fr); font-size: 10.5px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 0; position: sticky; top: 0; background: var(--plate); z-index: 3; }
+.pcol { display: grid; grid-template-columns: var(--cols, repeat(var(--n), minmax(0, 1fr))); font-size: 10.5px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 0; position: sticky; top: 0; background: var(--plate); z-index: 3; }
 .pcol span { padding-left: 4px; }
 .prow { position: relative; padding: 12px 0; border-bottom: 1px solid var(--rule); }
 .prow .top { display: flex; align-items: baseline; gap: 8px; }
@@ -187,10 +190,10 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .prow .top .sub { font-size: 11px; color: var(--muted); }
 .prow .top .rn { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .prow .top .rn b { color: var(--run); font-weight: 600; font-size: 13px; }
-.prow .strip { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 8px; }
+.prow .strip { display: grid; grid-template-columns: var(--cols, repeat(var(--n), minmax(0, 1fr))); margin-top: 8px; }
 .prow .strip .cell { gap: 2.5px; padding: 0 4px; min-height: 14px; }
 .prow .cos { font-size: 11.5px; color: var(--muted); margin-top: 6px; position: relative; z-index: 2; pointer-events: none; }
-.prow .cos .co-link { pointer-events: auto; color: var(--muted); border-bottom: 0; }
+.prow .cos .co-link { pointer-events: auto; color: var(--muted); }
 .prow .pn { font-size: 11.5px; margin-top: 6px; position: relative; pointer-events: none; }
 .prow .pn b { color: var(--red); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; margin-right: 4px; }
 .prow .top, .prow .strip { position: relative; pointer-events: none; }
@@ -213,3 +216,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
   .plate-empty { margin-left: 18px; margin-right: 18px; }
   .trial-card.sheet { font-size: 13.5px; }
 }
+
+.other-rows { display: block; width: 100%; margin: 14px 0 4px; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.other-rows:hover { border-color: var(--ink); }

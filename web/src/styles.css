@@ -42,7 +42,7 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 /* Theme: a setting, not a destination. Set off from the nav by a hairline, in the nav's type,
    with a 9px key that reads like the plate's legend swatches: empty light, solid dark, half system. */
 .theme-switch { order: 3; display: inline-flex; align-items: center; gap: .45rem;
-  padding: .1rem 0 .1rem 1.5rem; border: 0; border-left: 1px solid var(--line); background: none;
+  padding: .15rem .75rem; border: 1px solid var(--line); border-radius: 999px; background: none;
   font: inherit; font-size: .875rem; line-height: 1.5; color: var(--fg); cursor: pointer; }
 .theme-switch-k { color: var(--muted); transition: color .15s; }
 .theme-switch:hover .theme-switch-k { color: var(--fg); }
@@ -80,9 +80,14 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
 @media (max-width: 640px) {
   .site-header { gap: .5rem .75rem; }
   .nav-menu-btn { display: inline-block; }
-  .site-header .badge { order: 5; flex-basis: 100%; }
-  /* On a phone the switch shares the brand's row, right-aligned; no rule to hang off a line start. */
-  .site-header .theme-switch { order: 0; margin-left: auto; padding-left: 0; border-left: 0; }
+  /* On a phone the registry line moves into the menu, and the theme control is an icon beside it. */
+  .site-header > .badge { display: none; }
+  .site-header .theme-switch { order: 1; margin-left: auto; width: 36px; height: 36px; justify-content: center; padding: 0; }
+  .site-header .theme-switch-v { display: none; }
+  .theme-switch-key { width: 14px; height: 14px; }
+  .site-header nav { margin-left: 0; }
+  .nav-menu-btn { margin-left: 0; width: 36px; height: 36px; padding: 0; }
+  .nav-sheet-fresh { padding: .65rem 0 .25rem; }
   table.changes thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   table.changes, table.changes tbody, table.changes tr, table.changes td, table.changes caption { display: block; width: 100%; }
   table.changes tr { border: 1px solid var(--line); border-radius: .5rem; background: var(--card); margin-bottom: .75rem; padding: .25rem 0; }

@@ -67,7 +67,7 @@ test("methods states the mechanism source, licence, coverage, weight, counting r
   expect(text()).toMatch(/201 mechanism classes/);
   expect(text()).toMatch(/Targeted drugs: 1,062 trials/);
   expect(text()).toMatch(/Not yet categorised: 570\./);
-  expect(text()).toMatch(/not yet sorted \(449, of which 13 have no experimental treatment listed\)/);
+  expect(text()).toMatch(/names not yet categorised \(449, of which 13 have no experimental treatment listed\)/);
   expect(text()).toMatch(/weight 1\.0/);
   expect(screen.getByRole("link", { name: /weight research note/ })).toHaveAttribute(
     "href",
@@ -140,7 +140,7 @@ test("Methods lists the not-yet-categorised names with counts, grouped, and link
   const trials = [...f.trials, ...names.map((n, i) => mk(i, { unsorted: [n] })), mk(20, { unsorted: ["mystery drug 0"] }), mk(21, {})];
   stubFetch({ "explorer.json": { ...f, trials } });
   renderAt(<Methods />, "/methods#not-yet-categorised");
-  const group = await screen.findByRole("region", { name: "Not yet sorted" });
+  const group = await screen.findByRole("region", { name: "Names not yet categorised" });
   const rows = within(group).getAllByRole("listitem");
   expect(rows).toHaveLength(10);
   expect(rows[0]).toHaveTextContent("mystery drug 0 2 trials");

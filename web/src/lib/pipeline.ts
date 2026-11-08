@@ -143,6 +143,12 @@ export function figureSearch(s: FigureState): string {
   return q.toString();
 }
 
+/** A link target that carries the disease filter along (spec §5, G7); unchanged when no disease is set. */
+export function withDisease(path: string, disease: string | null): string {
+  if (!disease) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}disease=${encodeURIComponent(disease)}`;
+}
+
 // ---------------------------------------------------------------- rows
 
 export interface CompanyCount {

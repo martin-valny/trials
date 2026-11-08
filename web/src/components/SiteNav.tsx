@@ -1,19 +1,7 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-
-const PHONE = "(max-width: 640px)";
-function usePhone(): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      if (typeof matchMedia !== "function") return () => undefined;
-      const q = matchMedia(PHONE);
-      q.addEventListener("change", cb);
-      return () => q.removeEventListener("change", cb);
-    },
-    () => typeof matchMedia === "function" && matchMedia(PHONE).matches,
-    () => false,
-  );
-}
+import { usePhone } from "../lib/useMediaQuery";
+import { FreshnessBadge } from "./FreshnessBadge";
 
 export function Brand() {
   return (
@@ -65,6 +53,9 @@ export function SiteNav() {
             <NavLink to="/changes">Changes</NavLink>
             <NavLink to="/trials">Trials</NavLink>
             <NavLink to="/methods">Methods</NavLink>
+            <div className="nav-sheet-fresh">
+              <FreshnessBadge />
+            </div>
           </div>
         )}
       </nav>

@@ -192,7 +192,6 @@ export function Explore() {
 
 function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
   const dark = useTheme().theme === "dark";
-  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   const pipeline = usePipelineFile();
   // A touch screen has no hover, so the caption does not offer one.
   const coarse = useMediaQuery("(pointer: coarse)");
@@ -352,8 +351,6 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
               numbered={phone}
               selected={selected}
               onSelect={setSelected}
-              reducedMotion={reducedMotion}
-              spinning={false}
               onHover={setHover}
               ringColor={palette.stopped}
               onZoomChange={onZoomChange}

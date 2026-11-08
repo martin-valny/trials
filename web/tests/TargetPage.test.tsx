@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
+import { axisStart } from "../src/components/target/TargetTimeline";
 import type { PipelineFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
@@ -183,4 +184,50 @@ test("a trial marked twice in a row is counted once, with no duplicate keys", as
   expect(container.querySelectorAll('svg [data-n="NCT90000002"]').length).toBe(1);
   expect(err.mock.calls.filter((c) => String(c[0]).includes("same key"))).toHaveLength(0);
   err.mockRestore();
+});
+
+test("with a disease set, every outgoing link carries it", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.related = ["cd19"];
+  });
+  stubFetch({ "pipeline.json": f });
+  renderPage("/target/cd20?disease=MS");
+  await screen.findByRole("heading", { level: 1 });
+  const graph = await screen.findByRole("link", { name: /Open in the mechanism graph/ });
+  expect(graph.getAttribute("href")).toBe("/approaches/targeted?node=target:MS4A1&from=cd20&disease=MS");
+  expect(screen.getByRole("link", { name: /Show these \d+ trials on the map/ }).getAttribute("href")).toMatch(/&disease=MS$/);
+  const company = within(screen.getByText("Who is working on CD20").closest("div")!.parentElement!).getAllByRole("link")[0]!;
+  expect(company.getAttribute("href")).toMatch(/^\/\?.*disease=MS/);
+  expect(company.getAttribute("href")).toMatch(/company=/);
+  expect(screen.getByRole("link", { name: "CD19" }).getAttribute("href")).toBe("/target/cd19?disease=MS");
+});
+
+test("without a disease the links stay as they were", async () => {
+  stubFetch();
+  renderPage();
+  const graph = await screen.findByRole("link", { name: /Open in the mechanism graph/ });
+  expect(graph.getAttribute("href")).not.toContain("disease");
+  expect(screen.getByRole("link", { name: /Show these \d+ trials on the map/ }).getAttribute("href")).not.toContain("disease");
+});
+
+test("on a phone the graph link sits under the chain, not in the hidden section caption", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch();
+    const { container } = renderPage();
+    const link = await screen.findByRole("link", { name: /Open in the mechanism graph/ });
+    expect(link.closest(".sec-h")).toBeNull();
+    expect(link.closest("p")).toHaveClass("chain-graph");
+    expect(container.querySelectorAll("a").length).toBeGreaterThan(0);
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("the timeline axis starts at the five-year mark before the earliest start, never before 2000", () => {
+  expect(axisStart([{ y: 2018 }, { y: 2021 }, { y: null }])).toBe(2015);
+  expect(axisStart([{ y: 2020 }])).toBe(2015);
+  expect(axisStart([{ y: 2021 }])).toBe(2020);
+  expect(axisStart([{ y: 1994 }])).toBe(2000);
+  expect(axisStart([{ y: null }])).toBe(2000);
 });

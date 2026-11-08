@@ -34,7 +34,6 @@ export function AppRoutes() {
           <Route path="/target/:slug" element={<TargetPage />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/mechanisms/*" element={<MechanismsRedirect />} />
-          <Route path="/mechanisms" element={<MechanismsRedirect />} />
           <Route path="/approaches" element={<Navigate to="/approaches/targeted" replace />} />
           <Route path="/approaches/:approach" element={<MechanismsPage />} />
           <Route path="/changes" element={<ChangesFeed />} />
