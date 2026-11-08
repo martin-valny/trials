@@ -77,7 +77,7 @@ export function layout(f: PipelineFile, views: RowView[], s: FigureState): Item[
   return items;
 }
 
-export type MarkSize = 8 | 6 | 4 | 3.5;
+export type MarkSize = 8 | 6;
 
 export interface Draw {
   state: FigureState;

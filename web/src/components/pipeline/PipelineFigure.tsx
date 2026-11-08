@@ -156,7 +156,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                   const ms = sortCell(cellMarks(v, c.key, state, bins));
                   return (
                     <div key={c.key} className="cell" data-cell={c.key} data-tick={c.tick ? "" : undefined}>
-                      {ms.map((m) => mark(m, v.row.id, c.key, year ? 4 : 8))}
+                      {ms.map((m) => mark(m, v.row.id, c.key, 8))}
                       {ms.length === 0 && state.view === "disease" && (
                         <span
                           className="nodot"

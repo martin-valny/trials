@@ -56,7 +56,7 @@ export function PipelineStrip({ items: all, cols, tracks, bins, asOf, sortCell, 
             <div className="strip">
               {cols.map((c) => (
                 <div key={c.key} className="cell" data-cell={c.key}>
-                  {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, year ? 3.5 : 6))}
+                  {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, 6))}
                 </div>
               ))}
             </div>

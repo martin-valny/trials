@@ -221,13 +221,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .other-rows:hover { border-color: var(--ink); }
 
 /* By year: equal-width start-year bins, marks stacked bottom-up, a hairline at the data snapshot. */
-.m4 { width: 4px; height: 4px; }
-.m4.run { border-width: 1.1px; }
-.m4.unk { border-width: 1px; }
-.m35 { width: 3.5px; height: 3.5px; }
-.m35.run { border-width: 1px; }
-.m35.unk { border-width: 1px; }
-.m4.cb::before, .m35.cb::before { display: none; }
 .grid { position: relative; --tail: calc(var(--stat) + var(--note)); }
 .grid.by-year .colhead:not(.first) { padding-left: 4px; padding-right: 0; white-space: nowrap; }
 .grid.by-year .cell { border-left: 0; padding: 10px 4px; gap: 2px; flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; }

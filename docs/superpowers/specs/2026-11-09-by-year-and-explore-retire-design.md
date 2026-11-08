@@ -17,7 +17,7 @@ Martin, on the shipped front door (2026-11-09): the trial map (UMAP) doesn't mak
 
 ## By year: what the visitor sees
 - **Columns:** start years from **2000** to the current year; **2-year bins on desktop and tablet, 3-year bins on phone** (≤ 640px). Header ticks every 5 years. Trials starting before 2000 go in the first bin, which is labelled "≤2001" (or "≤2002" on phone); trials with no start year are not drawn, and the source line says how many.
-- **Cells:** one mark per placement (same mark styles as the figure), stacked bottom-up in the bin, ordered advanced → running → stopped → finished → unknown; marks 4px desktop, 3.5px phone. The "data as of" rule is a vertical ink hairline at the snapshot date across every row.
+- **Cells:** one mark per placement (same mark styles as the figure), stacked bottom-up in the bin, ordered advanced → running → stopped → finished → unknown; marks the same size as the other arrangements (8px desktop, 6px phone), cells wrapping onto more lines where a bin is dense. The "data as of" rule is a vertical ink hairline at the snapshot date across every row.
 - **Notes (data-written, this arrangement only, replacing the By phase rules):** in order, each on a distinct row, max 4, hidden under the company lens:
   1. **Rising:** highest share of trials started in the last 5 years (min 5 trials, ≥ 60%): "{r} of {n} trials started since {year}."
   2. **Fading:** row with ≤ 1 running and the most trials started before 2012 (min 15): "{k} trials before 2012; {run} running now."
