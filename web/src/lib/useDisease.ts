@@ -1,6 +1,6 @@
 // The Disease filter's URL hand-off for the pages with a multi-select (the map and the graph, spec §5):
 // one ``?disease=<code>`` arrives preselected; it is written back only while exactly one disease is chosen.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SetURLSearchParams } from "react-router-dom";
 import { loadPipeline } from "../data";
 import type { PipelineFile } from "../types";
@@ -42,17 +42,23 @@ export function useDiseaseParam(
   setFilters: (f: Filters) => void,
   all: ReadonlySet<string>,
 ): string | null {
-  const [arrived, setArrived] = useState(false);
   const code = useMemo(() => singleDiseaseCode(pipeline, filters.conditions, all), [pipeline, filters.conditions, all]);
   const wanted = params.get("disease");
-  // Once pipeline.json is in, preselect (state adjusted while rendering, so the first paint after it is right).
-  if (pipeline !== undefined && !arrived) {
-    const label = pipeline?.diseases.find((d) => d.code === wanted)?.label;
-    if (label && all.has(label)) setFilters({ ...filters, conditions: new Set([label]) });
-    setArrived(true);
-  }
+  // The code last put in step: arriving with one, or changing it in the address, preselects; a change the
+  // filters make themselves is written back to the query.
+  const applied = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    if (!arrived || !pipeline || code === wanted) return;
+    if (pipeline === undefined) return;
+    if (applied.current !== wanted) {
+      applied.current = wanted;
+      const label = pipeline?.diseases.find((d) => d.code === wanted)?.label;
+      if (label && all.has(label)) {
+        if (code !== wanted) setFilters({ ...filters, conditions: new Set([label]) });
+        return;
+      }
+    }
+    if (!pipeline || code === wanted) return;
+    applied.current = code;
     setParams(
       (p) => {
         const next = new URLSearchParams(p);
@@ -62,6 +68,6 @@ export function useDiseaseParam(
       },
       { replace: true },
     );
-  }, [arrived, code, wanted, pipeline, setParams]);
+  }, [pipeline, wanted, code, all, filters, setFilters, setParams]);
   return code;
 }

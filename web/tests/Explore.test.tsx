@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
 import { HoverCard } from "../src/components/explore/HoverCard";
 import type { ExplorerFile, Meta } from "../src/types";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
 function Where() {
@@ -114,6 +114,34 @@ test("?disease=MG preselects MG on the map and keeps it in the query", async () 
     "/explore?disease=MG",
   );
   await screen.findByRole("img", { name: /3D map of/ });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Disease: 1 of 6" })).toBeInTheDocument());
+  expect(screen.getByTestId("where")).toHaveTextContent("/explore?disease=MG");
+});
+
+test("changing ?disease while the map is open re-preselects", async () => {
+  withCanvas();
+  const f = structuredClone(explorer);
+  f.trials[0] = { ...f.trials[0], condition_labels: ["Myasthenia gravis"] };
+  stubFetch({ "explorer.json": f });
+  function Go() {
+    const nav = useNavigate();
+    return (
+      <button type="button" onClick={() => nav("/explore?disease=MG")}>
+        go MG
+      </button>
+    );
+  }
+  renderAt(
+    <>
+      <Explore />
+      <Go />
+      <Where />
+    </>,
+    "/explore",
+  );
+  await screen.findByRole("img", { name: /3D map of/ });
+  expect(screen.getByRole("button", { name: "Disease: all" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "go MG" }));
   await waitFor(() => expect(screen.getByRole("button", { name: "Disease: 1 of 6" })).toBeInTheDocument());
   expect(screen.getByTestId("where")).toHaveTextContent("/explore?disease=MG");
 });

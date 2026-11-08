@@ -79,7 +79,7 @@ export function ApproachRail({
       </p>
       {uncategorised && uncategorised.n > 0 ? (
         <p className="panel-note rail-note rail-uncategorised">
-          {fmt(uncategorised.n)} trials not yet categorised ({fmt(uncategorised.u)} unsorted names, {fmt(uncategorised.d)}{" "}
+          {fmt(uncategorised.n)} {uncategorised.n === 1 ? "trial" : "trials"} not yet categorised ({fmt(uncategorised.u)} unsorted names, {fmt(uncategorised.d)}{" "}
           diagnostic or not a treatment). <Link to="/methods#not-yet-categorised">How we sort →</Link>
         </p>
       ) : null}

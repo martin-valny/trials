@@ -1,7 +1,8 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 import { Methods } from "../src/components/Methods";
-import type { Meta } from "../src/types";
+import type { ExplorerFile, ExplorerTrial, Meta } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
 test("methods lists conditions from meta and limitations", async () => {
@@ -123,4 +124,30 @@ test("Methods describes treatments without a molecular target", async () => {
   expect(text).toMatch(/1,121 of 1,314 drug-bearing trials \(85\.3%\)/);
   expect(text).toMatch(/2,156 of 2,987 trials \(72\.2%\)/);
   expect(text).toMatch(/Sorensen/);
+});
+
+test("Methods lists the not-yet-categorised names with counts, grouped, and links each group to the map", async () => {
+  const f = readFixture<ExplorerFile>("explorer.json");
+  const mk = (i: number, extra: Partial<ExplorerTrial>): ExplorerTrial => ({
+    ...f.trials[0]!,
+    nct_id: `NCT7000000${i}`,
+    approaches: ["unclassified"],
+    kinds: [],
+    unsorted: [],
+    ...extra,
+  });
+  const names = Array.from({ length: 12 }, (_, i) => `mystery drug ${i}`);
+  const trials = [...f.trials, ...names.map((n, i) => mk(i, { unsorted: [n] })), mk(20, { unsorted: ["mystery drug 0"] }), mk(21, {})];
+  stubFetch({ "explorer.json": { ...f, trials } });
+  renderAt(<Methods />, "/methods#not-yet-categorised");
+  const group = await screen.findByRole("region", { name: "Not yet sorted" });
+  const rows = within(group).getAllByRole("listitem");
+  expect(rows).toHaveLength(10);
+  expect(rows[0]).toHaveTextContent("mystery drug 0 2 trials");
+  await userEvent.click(within(group).getByRole("button", { name: /^Show all \d+$/ }));
+  expect(within(group).getAllByRole("listitem").length).toBeGreaterThanOrEqual(12);
+  expect(within(group).getByRole("link", { name: "Show these trials on the map" }).getAttribute("href")).toMatch(
+    /^\/explore\?nct=NCT70000000/,
+  );
+  expect(screen.getByRole("region", { name: "No experimental treatment listed" })).toBeInTheDocument();
 });

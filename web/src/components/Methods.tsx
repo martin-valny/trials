@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { kindTree } from "../lib/approaches";
+import { mapLink } from "./mechanisms/SidePanel";
 import { loadExplorer, loadMeta } from "../data";
 import type { ExplorerFile, Meta } from "../types";
 
@@ -8,9 +10,42 @@ const REPO = "https://github.com/martin-valny/trials/blob/main/";
 /** A share from the exported cluster config as a whole percentage, or the default when absent. */
 const pc = (v: number | undefined, fallback: number): string => `${Math.round(100 * (v ?? fallback))}%`;
 
+/** Rows shown per group before "Show all". */
+const LIST_ROWS = 10;
+
+/** One group of the not-yet-categorised list: names with trial counts, long ones behind a toggle. */
+function NotYetGroup({ group, kinds }: { group: string; kinds: { key: string; label: string; n: number; trials: string[] }[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? kinds : kinds.slice(0, LIST_ROWS);
+  const ncts = [...new Set(kinds.flatMap((k) => k.trials))];
+  return (
+    <section aria-label={group}>
+      <h4>
+        {group} <span className="side-muted">({ncts.length} {ncts.length === 1 ? "trial" : "trials"})</span>
+      </h4>
+      <ul>
+        {shown.map((k) => (
+          <li key={k.key}>
+            {k.label} <span className="side-muted">{k.n} {k.n === 1 ? "trial" : "trials"}</span>
+          </li>
+        ))}
+      </ul>
+      {kinds.length > LIST_ROWS ? (
+        <button type="button" className="text-button" aria-expanded={all} onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `Show all ${kinds.length}`}
+        </button>
+      ) : null}
+      <p>
+        <Link to={mapLink(ncts, `Not yet categorised: ${group}`)}>Show these trials on the map</Link>
+      </p>
+    </section>
+  );
+}
+
 export function Methods() {
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [method, setMethod] = useState<ExplorerFile["method"] | null>(null);
+  const [file, setFile] = useState<ExplorerFile | null>(null);
+  const method = file?.method ?? null;
 
   useEffect(() => {
     let live = true;
@@ -19,7 +54,7 @@ export function Methods() {
       .catch(() => undefined);
     // Only for the cluster parameters the map was built with; the page reads fine without them.
     loadExplorer()
-      .then((f) => live && setMethod(f?.method ?? null))
+      .then((f) => live && setFile(f ?? null))
       .catch(() => undefined);
     return () => {
       live = false;
@@ -219,6 +254,11 @@ export function Methods() {
             with no experimental treatment listed (placebo or usual care only).
           </li>
         </ul>
+        {file
+          ? kindTree("unclassified", file.trials, file, file.method.min_group).map((g) => (
+              <NotYetGroup key={g.group} group={g.group} kinds={g.kinds} />
+            ))
+          : null}
         <p>
           How we sort is above: a drug with a molecular mechanism is Targeted, a drug without one
           carries a kind, and a non-drug intervention is sorted by a reviewed list of phrases, then

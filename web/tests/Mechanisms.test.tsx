@@ -341,3 +341,13 @@ test("Non-drug care's strip key has no Succeeded entry", async () => {
   expect(key).not.toHaveTextContent("Succeeded");
   expect(key).toHaveTextContent("Completed");
 });
+
+test("the rail footnote says '1 trial' for one", async () => {
+  const f = structuredClone(base);
+  for (const t of f.trials) t.approaches = t.approaches.filter((a) => a !== "unclassified");
+  f.trials[0] = { ...f.trials[0], approaches: ["unclassified"], unsorted: ["x"] };
+  stubFetch({ "explorer.json": f });
+  renderPage("/approaches/targeted");
+  await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
+  expect(within(rail()).getByText(/not yet categorised/).textContent).toMatch(/^1 trial not yet categorised \(1 unsorted names, 0 /);
+});
