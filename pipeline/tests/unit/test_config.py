@@ -152,3 +152,31 @@ def test_explorer_rejects_negative_weight(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ConfigError):
         load_config(path)
+
+
+def test_condition_code_optional_and_not_blank(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data["conditions"][1].pop("code", None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    assert load_config(path).conditions[1].code is None
+    data["conditions"][1]["code"] = "  "
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError):
+        load_config(path)
+
+
+def test_area_yaml_codes(cfg: AreaConfig) -> None:
+    assert [c.code for c in cfg.conditions] == ["MS", "NMOSD", "MOGAD", "MG", "CIDP", "AE"]
+
+
+def test_pipeline_paths_resolve_relative(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    for key in ("pipeline_dir", "sponsors_dir", "stop_reasons"):
+        data.pop(key, None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    cfg = load_config(path)
+    assert cfg.pipeline_dir == (tmp_path / "pipeline").resolve()
+    assert cfg.sponsors_dir == (tmp_path / "sponsors").resolve()
+    assert cfg.stop_reasons == (tmp_path / "stop_reasons.csv").resolve()

@@ -46,6 +46,14 @@ class ConditionSpec(_Strict):
     label: str
     synonyms: list[str] = Field(min_length=1)
     short: str | None = None  # an abbreviation for cluster names on the map
+    code: str | None = None  # the short disease code on the pipeline figure (MS, MG, ...)
+
+    @field_validator("code")
+    @classmethod
+    def _code_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("condition code must not be blank")
+        return value
 
     @field_validator("short")
     @classmethod
@@ -175,6 +183,9 @@ class AreaConfig(_Strict):
     aliases_dir: Path
     mechanisms_dir: Path = Path("mechanisms")
     approaches_dir: Path = Path("approaches")
+    pipeline_dir: Path = Path("pipeline")
+    sponsors_dir: Path = Path("sponsors")
+    stop_reasons: Path = Path("stop_reasons.csv")
     explorer: ExplorerConfig = ExplorerConfig()
 
     @field_validator("tracked_fields")
@@ -191,8 +202,8 @@ class AreaConfig(_Strict):
 
 
 def load_config(path: Path) -> AreaConfig:
-    """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir`` and ``approaches_dir``
-    resolve relative to the file."""
+    """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir``, ``approaches_dir``,
+    ``pipeline_dir``, ``sponsors_dir`` and ``stop_reasons`` resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -208,5 +219,8 @@ def load_config(path: Path) -> AreaConfig:
             "aliases_dir": (path.parent / cfg.aliases_dir).resolve(),
             "mechanisms_dir": (path.parent / cfg.mechanisms_dir).resolve(),
             "approaches_dir": (path.parent / cfg.approaches_dir).resolve(),
+            "pipeline_dir": (path.parent / cfg.pipeline_dir).resolve(),
+            "sponsors_dir": (path.parent / cfg.sponsors_dir).resolve(),
+            "stop_reasons": (path.parent / cfg.stop_reasons).resolve(),
         }
     )
