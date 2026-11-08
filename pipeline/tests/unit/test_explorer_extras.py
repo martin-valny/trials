@@ -4,7 +4,13 @@ import pytest
 from conftest import make_study
 
 from trialradar.config import AreaConfig
-from trialradar.explorer.extras import StudyExtras, extract_extras, parse_age_years
+from trialradar.explorer.extras import (
+    MAPPING_TYPES,
+    ExperimentalIntervention,
+    StudyExtras,
+    extract_extras,
+    parse_age_years,
+)
 
 
 def _extras(studies: list[dict], cfg: AreaConfig) -> dict[str, StudyExtras]:  # type: ignore[type-arg]
@@ -150,3 +156,133 @@ def test_malformed_derived_section_falls_back(cfg: AreaConfig) -> None:
     extras, warnings = extract_extras([bad], cfg)
     assert extras["NCT00000001"].mesh_terms == ()
     assert len(warnings) == 1
+
+
+def test_experimental_interventions_include_non_drug_types(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {
+                    "label": "a",
+                    "type": "EXPERIMENTAL",
+                    "interventionNames": ["Behavioral: Exercise", "Drug: Ocrelizumab"],
+                },
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "BEHAVIORAL", "name": "Exercise", "description": "Aerobic training."},
+                {"type": "DRUG", "name": "Ocrelizumab", "description": "600 mg IV."},
+            ],
+        }
+    )
+    e = _extras([study], cfg)["NCT00000001"]
+    assert e.experimental_interventions == (
+        ExperimentalIntervention("BEHAVIORAL", "Exercise", "Aerobic training."),
+        ExperimentalIntervention("DRUG", "Ocrelizumab", "600 mg IV."),
+    )
+
+
+def test_experimental_interventions_type_from_prefix_when_no_item_matches(
+    cfg: AreaConfig,
+) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {
+                    "label": "a",
+                    "type": "EXPERIMENTAL",
+                    "interventionNames": [
+                        "Dietary Supplement: Vitamin D",
+                        "Other: standard therapy",
+                        "Drug: Ocrelizumab",
+                        "Drug: Ocrelizumab",
+                        "Arm label",
+                    ],
+                },
+            ],
+            "armsInterventionsModule.interventions": [],
+        }
+    )
+    e = _extras([study], cfg)["NCT00000001"]
+    assert e.experimental_interventions == (
+        ExperimentalIntervention("DIETARY_SUPPLEMENT", "Vitamin D", ""),
+        ExperimentalIntervention("OTHER", "standard therapy", ""),
+        ExperimentalIntervention("DRUG", "Ocrelizumab", ""),
+        ExperimentalIntervention("", "Arm label", ""),
+    )
+
+
+def test_experimental_interventions_prefer_the_item_of_the_prefix_type(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {"label": "a", "type": "EXPERIMENTAL", "interventionNames": ["Biological: X"]},
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "DRUG", "name": "X", "description": "pill"},
+                {"type": "BIOLOGICAL", "name": "X", "description": "infusion"},
+            ],
+        }
+    )
+    assert _extras([study], cfg)["NCT00000001"].experimental_interventions == (
+        ExperimentalIntervention("BIOLOGICAL", "X", "infusion"),
+    )
+
+
+def test_experimental_interventions_skip_comparator_arms(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {"label": "a", "type": "EXPERIMENTAL", "interventionNames": ["Drug: A"]},
+                {"label": "p", "type": "PLACEBO_COMPARATOR", "interventionNames": ["Drug: P"]},
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "DRUG", "name": "A"},
+                {"type": "DRUG", "name": "P"},
+            ],
+        }
+    )
+    names = [i.name for i in _extras([study], cfg)["NCT00000001"].experimental_interventions]
+    assert names == ["A"]
+
+
+def test_experimental_interventions_without_arms(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.interventions": [
+                {"type": "DRUG", "name": "A", "description": "Oral."},
+                {"type": "DEVICE", "name": "D"},
+                {"type": "DRUG", "name": " "},
+            ]
+        }
+    )
+    assert _extras([study], cfg)["NCT00000001"].experimental_interventions == (
+        ExperimentalIntervention("DRUG", "A", "Oral."),
+        ExperimentalIntervention("DEVICE", "D", ""),
+    )
+
+
+def test_experimental_drugs_unchanged(cfg: AreaConfig) -> None:
+    study = make_study(
+        **{
+            "armsInterventionsModule.armGroups": [
+                {
+                    "label": "a",
+                    "type": "EXPERIMENTAL",
+                    "interventionNames": ["Dietary Supplement: Vitamin D", "Drug: A"],
+                },
+            ],
+            "armsInterventionsModule.interventions": [
+                {"type": "DIETARY_SUPPLEMENT", "name": "Vitamin D"},
+                {"type": "DRUG", "name": "A"},
+            ],
+        }
+    )
+    e = _extras([study], cfg)["NCT00000001"]
+    assert e.experimental_drugs == ("A",)
+    assert [i.type for i in e.experimental_interventions] == ["DIETARY_SUPPLEMENT", "DRUG"]
+
+
+def test_mapping_types() -> None:
+    assert MAPPING_TYPES == frozenset(
+        {"DRUG", "BIOLOGICAL", "DIETARY_SUPPLEMENT", "GENETIC", "COMBINATION_PRODUCT"}
+    )
