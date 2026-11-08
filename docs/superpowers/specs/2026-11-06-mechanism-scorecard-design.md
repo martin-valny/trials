@@ -1,6 +1,6 @@
 # Mechanism × disease scorecard — design
 
-Status: approved by Martin · 2026-11-06. Builds on `2026-11-06-mechanisms-and-graph-design.md` (the "mechanisms spec"): it needs that spec's phase 2 mapping (`config/mechanisms/*`, per-trial `mechanisms`/`targets`/`modalities`). Research behind it: `docs/superpowers/research/2026-11-06-insight-ideas.md`. Visual rules: `DESIGN.md`.
+Status: approved by Martin · 2026-11-06. **Amended 2026-11-08: largely superseded by `2026-11-08-front-door-pipeline-design.md` §13.** The landscape grid becomes the pipeline figure's "By disease" arrangement; the separate `/scorecard` page and raw-class rows are dropped; approvals per disease move to a round 2; Open Targets genetics is dropped; stop reasons use the shared `config/stop_reasons.csv`. R21 (§5.4, built) stands. Do not execute the old plan's Tasks 2+. Builds on `2026-11-06-mechanisms-and-graph-design.md` (the "mechanisms spec"): it needs that spec's phase 2 mapping (`config/mechanisms/*`, per-trial `mechanisms`/`targets`/`modalities`). Research behind it: `docs/superpowers/research/2026-11-06-insight-ideas.md`. Visual rules: `DESIGN.md`.
 
 ## 1. Intent
 
@@ -144,3 +144,7 @@ Signals from record history: text drift between versions, "zombie" trials (impro
 
 ## 10. Left to the builder
 Grid sorting details and the long-tail cut; outcome mark design within `DESIGN.md`; exact stop-reason keywords (with the test examples); Open Targets access route (GraphQL vs Parquet); how the ChEMBL indication terms map to labels beyond the area's condition terms.
+
+## 11. Amendment (2026-11-08)
+
+See `2026-11-08-front-door-pipeline-design.md` §13. Kept: R21 (§5.4), the anti-goals, the ChEMBL indications source (§5.1, re-keyed by pipeline row) for round 2. Superseded: §5.2 file location and categories (shared `config/stop_reasons.csv`), §5.3 `scorecard.json`, §6 page, genetics (§5.1 `genetics.csv`, dropped).

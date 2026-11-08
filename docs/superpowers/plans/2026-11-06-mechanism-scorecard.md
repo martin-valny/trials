@@ -1,5 +1,7 @@
 # Mechanism × Disease Scorecard Implementation Plan
 
+> **Superseded 2026-11-08** by `docs/superpowers/specs/2026-11-08-front-door-pipeline-design.md` §13. Task 1 (R21) is done; do not execute Tasks 2+.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A `/scorecard` page that shows, for every mechanism class × disease, how its trials went (phases, outcomes, stop reasons, disease-specific success, approval, genetics, crowding), with every number linked to its trials; plus the disease-specific success rule (R21) applied site-wide.

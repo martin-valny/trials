@@ -26,6 +26,7 @@ Then they explore the data themselves.
 - G5. Target pages: timeline by drug, companies, what stopped and why, the mechanism chain.
 - G6. Plain words across the whole app (§9), not only the new pages.
 - G7. Clear two-way hand-offs between Pipeline, target pages, map, graph and Approaches, with the disease filter in the URL.
+- G9. The figure has a second arrangement, **By disease** (the mechanism × disease scorecard's landscape grid, folded in; §13).
 - G8. The front page loads fast: it fetches only `pipeline.json` (target ≤ 200 KB raw) and `meta.json`.
 
 **Non-goals (this round)**
@@ -33,7 +34,8 @@ Then they explore the data themselves.
 - A timeline arrangement on the similarity map (Martin's earlier decision, dropped this round on 2026-11-08: the target page carries the timeline where it means something). Named follow-up.
 - An animated transition between map arrangements.
 - Any data source beyond ClinicalTrials.gov.
-- New investment in the similarity map beyond the trims in §8.3.
+- New investment in the similarity map beyond the trims in §7.5.
+- Scorecard round 2 (§13): approvals per disease (ChEMBL), target-page panel e "By disease", success rate per row × disease. Open Targets genetics is dropped (a link out at most).
 
 **Anti-goals (a failure even if it technically works)**
 - Plain tables. Martin is big on design; the figure is marks, not a grid of numbers.
@@ -120,7 +122,7 @@ Known limit, stated in Methods: some trials list standard-of-care comparators in
 - **Dates:** `start_year`, `end_year`, `end_estimated` (exist in `explorer.json`).
 - **Diseases:** short codes from `condition_labels`.
 - **Sponsor:** raw string, `parent`, `kind`.
-- **Stop reason** (stopped trials only): `why_stopped` text (registry, verbatim, max 300 chars) and a `reason` group from `config/pipeline/stop_reasons.csv` (`pattern, group`, ordered, first match wins). Groups: Business or strategy · Slow enrolment · Safety · Efficacy or futility · Funding · COVID-19 · Sponsor or investigator decision · Other · Not given. **Target: "Other" ≤ 15% of stopped trials with a reason** on the snapshot; if the rules can't get there, the target page shows the quotes without the group chips (the builder reports which). In the comp, "Other" was the largest CD20 group, which is the failure to avoid.
+- **Stop reason** (stopped trials only): `why_stopped` text (registry, verbatim, max 300 chars) and a `reason` group from **`config/stop_reasons.csv`** (`pattern, group`, ordered, first match wins). This one file is shared with the scorecard (it replaces the scorecard spec's planned `config/stop_reasons.yaml`). Groups: Business or strategy · Slow enrolment · Safety · Efficacy or futility · Funding · COVID-19 · Sponsor or investigator decision · Other · Not given. **Target: "Other" ≤ 15% of stopped trials with a reason** on the snapshot; if the rules can't get there, the target page shows the quotes without the group chips (the builder reports which). In the comp, "Other" was the largest CD20 group, which is the failure to avoid.
 
 ### 6.4 `pipeline.json` (site JSON contract, new)
 
@@ -173,7 +175,7 @@ The comp is normative for layout, type, spacing, marks and tone. Below is what i
 - Key numbers: running (blue), advanced to a later phase (red), companies with a running trial (ink). All follow disease and lens.
 - Source line (12px, muted): "{in_rows} of {trials} trials test a targeted drug in one of these {rows} classes; {not_rowed} more targeted-drug trials sit in smaller classes (Methods); the rest are care, cell transplant, plasma treatments and others (see all → `/approaches`). ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials." The "not grouped" targeted trials are reported in Methods with the `unrowed` list.
 
-**Controls.** Disease segmented control (All diseases · MS · MG · NMOSD · CIDP · MOGAD · AE; on phone it scrolls horizontally). Company lens: a search field with suggestions from parent names (industry first, then others), plus clicking any company name on a row; active lens shows as a dark chip with ✕. Sort: most running (default) · most advanced · newest activity (trials started in the last 5 years) · A–Z. All three in the URL.
+**Controls.** Arrangement switch **By phase | By disease** (§7.1a; in the URL as `view=disease`). Disease segmented control (hidden in the By disease arrangement, where diseases are the columns) (All diseases · MS · MG · NMOSD · CIDP · MOGAD · AE; on phone it scrolls horizontally). Company lens: a search field with suggestions from parent names (industry first, then others), plus clicking any company name on a row; active lens shows as a dark chip with ✕. Sort: most running (default) · most advanced · newest activity (trials started in the last 5 years) · A–Z. All three in the URL.
 
 **Legend.** Advanced to next phase (red filled) · Still running (blue ring) · Stopped (ink filled) · Finished, no follow-on (pale filled) · Status unknown (grey dashed ring). Desktop also: "One mark per trial, oldest first · ⟜ spans two phases".
 
@@ -193,6 +195,15 @@ Notes recompute with disease and lens; with the lens on, notes are hidden (the l
 **Footer line.** "'Advanced' means the drug has a later-phase trial on the registry. It does not mean the drug worked or was approved." Links: Methods · Trial map · Mechanism graph.
 
 **Phone (≤ 640px).** As the comp: stacked lede, three key numbers in a row, sticky phase header (Ph 1 · Ph 2 · Ph 3 · Approved), each row as label + sub + "{n} running" on one line, a four-column mark strip (6px marks), top 3 company names, and its note inline under the row. Tap a row → target page; tap a mark → trial card as a bottom sheet. No hover-only information.
+
+### 7.1a By disease arrangement (the scorecard's landscape grid)
+
+Same rows, families, marks, company lens, sort, margin-note rules and "Mostly historical" divider as By phase; only the columns change: **MS · MG · NMOSD · CIDP · MOGAD · AE**. A trial with several disease labels appears in each of its columns (the legend says "a trial in several diseases appears in each"); headline and key numbers still count distinct trials. Advanced follows R21 per column: a placement is red in a column only if that disease is in its `succeeded_in`.
+- **Empty cell:** a single quiet dot (pale, 4px) centred in the cell, tooltip "No registered trial of {row} in {disease}". Never labelled "open" or "opportunity" (anti-goal).
+- The Running column on the right stays (all diseases). The margin notes add one rule for this arrangement only, ahead of the others: **Spreading:** the row with the most diseases holding a running trial, min 3: "Running in {k} diseases: {list}." (FcRn today.)
+- On the snapshot about 12 of 22 rows span several diseases (FcRn MG 37 / CIDP 8 / NMOSD 2; CD19 CAR-T MS 18 / MG 13; C5 MG 18 / NMOSD 10; IL-6R NMOSD 9, none in MS). About 9 legacy rows are MS-only and read as a column of marks plus five quiet dots; most sit under "Mostly historical", which is accepted.
+- Phone: the six disease columns replace the four phase columns in the strip (header: MS · MG · NMO · CIDP · MOG · AE).
+- Switching arrangement may cross-fade (≤ 180ms, off under reduced motion). The staged mark-moving transition is a later extra.
 
 ### 7.2 Target page (`/target/:slug`)
 
@@ -270,10 +281,10 @@ Methods gains: what "advanced" means and its time bias (recent trials can't have
 ## 10. Delivery
 
 Order (each step leaves the app working):
-1. Config files + `pipeline_figure` stage + `pipeline.json` + fixtures.
+1. Config files (including the shared `config/stop_reasons.csv`) + `pipeline_figure` stage + `pipeline.json` + fixtures.
 2. Web: data loader and the figure (desktop, phone, both themes), routes and nav.
 3. Target page and trial card.
-4. Company lens and URL state.
+4. Company lens, the By disease arrangement, and URL state.
 5. Hand-offs: Approaches rename and redirects, graph links and back link, map trims and links, convergence fix.
 6. Plain-words sweep and Methods.
 7. Reviews (whole-branch code review, then the design finish review against the comp on real data), fixes, then DESIGN.md, design.json, README and HANDOFF.
@@ -299,3 +310,12 @@ Execution as a workflow: Sonnet for well-specified builders; Opus for reviews, U
 ## 12. Left to the builder
 
 Exact JSON key names; component structure and file layout; how the lens search suggests names; the exact row/family seed beyond §6.5 within §6.1's coverage rule; stop-reason patterns; the convergence collapse's label wording; skeleton details; the precise breakpoint behaviour between 640 and 1100px (the comp shows 1280 and 375; the grid must not scroll horizontally at any width, so the notes column moves under the row below ~1100px).
+
+## 13. Relationship to the mechanism × disease scorecard (2026-11-06 spec)
+
+Martin approved the scorecard on 2026-11-06, before the front door existed; only its Task 1 (R21) is built. Built as written it would duplicate this page (rows × diseases, stop reasons, crowding), use raw ChEMBL classes (inheriting the conditioning-chemo and naming-split problems in §6.1) and disagree with the Pipeline's numbers. Martin's decision on 2026-11-08 (option A, revised after a value check):
+
+- **This round:** the scorecard's landscape grid becomes the By disease arrangement (§7.1a); rows come from `rows.csv` for both; one stop-reason file (`config/stop_reasons.csv`); R21 everywhere (already built).
+- **Round 2 (separate spec/plan):** ChEMBL approvals per row × disease (`indications.csv` from the scorecard spec §5.1, keyed by row rather than raw class), shown as a small "approved" marker in By disease cells and in a new target-page panel e "By disease" with how far each disease got and the success rate where ≥ 10 finished trials. Panel e is **not** built this round: without approvals it would repeat the disease chips and timeline, and only 11 of 132 row × disease cells reach 10 finished trials.
+- **Dropped:** Open Targets genetics. The most successful targets here deplete cells (CD20, CD19, CD52) and have no genetic association with MS, so "no genetic association" next to CD20 would mislead this reader. At most a "View on Open Targets ↗" link on the target page (round 2).
+- **Superseded:** the scorecard spec's separate `/scorecard` page (§6) and its raw-class rows; its plan `docs/superpowers/plans/2026-11-06-mechanism-scorecard.md` Tasks 2+ are not to be executed. The scorecard spec carries a pointer to this section.
