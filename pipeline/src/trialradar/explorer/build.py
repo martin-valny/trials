@@ -11,22 +11,36 @@ from typing import Any
 import numpy as np
 import polars as pl
 
+from trialradar.approaches.io import ApproachConfig
+from trialradar.approaches.sort import TrialApproaches
 from trialradar.config import AreaConfig
+from trialradar.explorer.approaches import (
+    approach_meta,
+    drug_index,
+    load_trial_approaches,
+    mapping_names,
+    mapping_types,
+)
 from trialradar.explorer.clusters import build_clusters
 from trialradar.explorer.drugs import clean_drug_name
 from trialradar.explorer.extras import StudyExtras, empty_extras
 from trialradar.explorer.features import build_features
 from trialradar.explorer.layout import align, embed
-from trialradar.explorer.mechanisms import TrialMechanisms, load_trial_mechanisms
+from trialradar.explorer.mechanisms import (
+    TrialMechanisms,
+    mechanisms_from,
+    read_mappings_or_warn,
+)
 from trialradar.explorer.outcomes import (
     Outcome,
     TrialDrugs,
     in_pool,
     outcomes_from_success,
-    success_labels,
+    success,
     top_phase,
 )
 from trialradar.explorer.stats import LiftResult, neighbourhood_lift
+from trialradar.mechanisms.io import DrugMapping
 from trialradar.store import COORDS_SCHEMA
 from trialradar.tables import Tables
 
@@ -84,6 +98,11 @@ class ExplorerInputs:
     drugs: TrialDrugs
     mechs: dict[str, TrialMechanisms]
     types: dict[str, frozenset[str]]
+    # names looked up in the drug mapping: drugs plus supplement/genetic/combination names
+    names: TrialDrugs
+    mappings: dict[str, DrugMapping]
+    approaches: dict[str, TrialApproaches]
+    approach_cfg: ApproachConfig | None
 
 
 def explorer_inputs(
@@ -96,8 +115,23 @@ def explorer_inputs(
     ids = sorted(tables.trial["nct_id"].to_list())
     full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
     drugs = _trial_drugs(ids, full, aliases, cfg)
-    mechs = load_trial_mechanisms(cfg, drugs, warnings)
-    return ExplorerInputs(ids, full, drugs, mechs, _intervention_types(tables))
+    extra = mapping_names(full, aliases, cfg)
+    names = {nct: drugs[nct] | extra[nct] for nct in ids}
+    mappings = read_mappings_or_warn(cfg, warnings)
+    approaches, acfg = load_trial_approaches(cfg, full, aliases, warnings, mappings or {})
+    kind_keys = frozenset(acfg.kinds) if acfg is not None else frozenset()
+    mechs = mechanisms_from(mappings, drugs, warnings, names, kind_keys)
+    return ExplorerInputs(
+        ids,
+        full,
+        drugs,
+        mechs,
+        _intervention_types(tables),
+        names,
+        mappings or {},
+        approaches,
+        acfg,
+    )
 
 
 def feature_weights(cfg: AreaConfig) -> dict[str, float]:
@@ -125,7 +159,8 @@ def build_explorer(
     inp = explorer_inputs(tables, extras, cfg, aliases, warnings)
     ids, full, drugs, mechs, types = inp.ids, inp.full, inp.drugs, inp.mechs, inp.types
     labels = {n: frozenset(full[n].condition_labels) for n in ids}
-    succeeded_in = success_labels(tables.trial, drugs, labels)
+    # R21 labels, and the drugs that moved on (1b: groups are credited only through them)
+    succeeded_in, succeeded_by = success(tables.trial, drugs, labels)
     outcomes: dict[str, Outcome] = outcomes_from_success(tables.trial, succeeded_in)
     pool = [in_pool(trial_rows[n]["phases"] or [], outcomes[n], bool(drugs[n])) for n in ids]
     succeeded = [outcomes[n] == "succeeded" for n in ids]
@@ -153,6 +188,14 @@ def build_explorer(
         # HDBSCAN parameters and naming thresholds for the named clusters, so Methods can state them
         "clusters": ex.clusters.model_dump(),
     }
+    approach_list, kinds = approach_meta(inp.approach_cfg)
+    index = drug_index(
+        {d for n in ids for d in inp.names[n]},
+        inp.mappings,
+        inp.approach_cfg,
+        mapping_types(full, aliases, cfg),
+    )
+    file_level = {"approaches": approach_list, "kinds": kinds, "drug_index": index}
     if len(ids) < _MIN_TRIALS:
         n_pool, n_succ = sum(pool), sum(s for s, p in zip(succeeded, pool, strict=True) if p)
         rate = n_succ / n_pool if n_pool else None
@@ -163,6 +206,7 @@ def build_explorer(
             "stats": _stats(result, by_condition),
             "clusters": [],
             "trials": [],
+            **file_level,
         }
         return doc, pl.DataFrame(schema=COORDS_SCHEMA)
 
@@ -186,7 +230,7 @@ def build_explorer(
 
     trials: list[dict[str, Any]] = []
     for i, nct in enumerate(ids):
-        r, x = trial_rows[nct], full[nct]
+        r, x, ap = trial_rows[nct], full[nct], inp.approaches[nct]
         start: date | None = r["start_date"]
         if r["primary_completion_date"] is not None:
             end: date | None = r["primary_completion_date"]
@@ -216,6 +260,10 @@ def build_explorer(
                 "end_estimated": end is not None and end_type == "ESTIMATED",
                 "succeeded_in": sorted(succeeded_in[nct]),
                 "in_pool": pool[i],
+                "approaches": list(ap.approaches),
+                "kinds": list(ap.kinds),
+                "unsorted": list(ap.unsorted),
+                "succeeded_by": sorted(succeeded_by[nct]),
             }
         )
     shorts = {c.label: c.short for c in cfg.conditions if c.short}
@@ -228,6 +276,7 @@ def build_explorer(
         "stats": _stats(result, by_condition),
         "clusters": clusters,
         "trials": trials,
+        **file_level,
     }
     frame = pl.DataFrame(
         {"nct_id": ids, "x": coords[:, 0], "y": coords[:, 1], "z": coords[:, 2]},

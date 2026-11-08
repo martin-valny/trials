@@ -9,6 +9,7 @@ from trialradar.explorer.outcomes import (
     can_succeed,
     in_pool,
     label_outcomes,
+    success_drugs,
     success_labels,
     top_phase,
 )
@@ -315,3 +316,47 @@ def test_unlabelled_trial_never_succeeds() -> None:
     )
     out = label_outcomes(t, {"A": _fs("x"), "B": _fs("x")}, {"A": _fs(), "B": _fs("MS")})
     assert out["A"] == "completed_unknown"
+
+
+def test_succeeded_by_lists_only_progressing_drugs() -> None:
+    """1b: an aHSCT + cyclophosphamide trial that succeeded because cyclophosphamide moved
+    on credits cyclophosphamide only; ``success_labels`` is unchanged."""
+    t = _trial(
+        [
+            ("T", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("U", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+        ]
+    )
+    drugs = {"T": _fs("ahsct-x", "cyclophosphamide"), "U": _fs("cyclophosphamide")}
+    labels = _labels(t, "MS")
+    assert success_drugs(t, drugs, labels)["T"] == _fs("cyclophosphamide")
+    assert success_drugs(t, drugs, labels)["U"] == _fs()
+    assert success_labels(t, drugs, labels) == {"T": _fs("MS"), "U": _fs()}
+
+
+def test_success_drugs_need_the_same_label() -> None:
+    """A drug that progressed only in another disease is not credited (R21)."""
+    t = _trial(
+        [
+            ("T", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("U", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+            ("W", ["PHASE3"], "RECRUITING", date(2019, 1, 1)),
+        ]
+    )
+    drugs = {"T": _fs("a", "b"), "U": _fs("a"), "W": _fs("b")}
+    labels = {"T": _fs("MS", "MG"), "U": _fs("MS"), "W": _fs("CIDP")}
+    assert success_drugs(t, drugs, labels)["T"] == _fs("a")
+
+
+def test_success_drugs_credit_every_progressing_drug() -> None:
+    t = _trial(
+        [
+            ("T", ["PHASE2"], "COMPLETED", date(2015, 1, 1)),
+            ("U", ["PHASE3"], "RECRUITING", date(2018, 1, 1)),
+            ("W", ["PHASE3"], "RECRUITING", date(2019, 1, 1)),
+        ]
+    )
+    drugs = {"T": _fs("a", "b"), "U": _fs("a"), "W": _fs("b")}
+    labels = {"T": _fs("MS", "MG"), "U": _fs("MS"), "W": _fs("MG")}
+    assert success_drugs(t, drugs, labels)["T"] == _fs("a", "b")
+    assert success_labels(t, drugs, labels)["T"] == _fs("MS", "MG")

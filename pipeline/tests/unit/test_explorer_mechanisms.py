@@ -102,3 +102,43 @@ def test_joined_modalities_are_split_per_trial(tmp_path: Path) -> None:
     )
     out = trial_mechanisms({"N1": frozenset({"combo", "mab"})}, read_mappings(tmp_path))
     assert out["N1"].modalities == ("antibody", "protein", "small molecule")
+
+
+def test_mechanisms_exclude_kind_keys() -> None:
+    """A no-target row whose class is a kind key (``msc``) adds no mechanism class; its
+    modality still counts."""
+    maps = {
+        "msc": _m("msc", "manual", mechanism_class=("msc",), modality="cell therapy"),
+        "combo": _m("combo", "manual", mechanism_class=("DNA inhibitor", "atg")),
+    }
+    kinds = frozenset({"msc", "atg"})
+    out = trial_mechanisms(
+        {"N1": frozenset({"msc"}), "N2": frozenset({"combo"})}, maps, kind_keys=kinds
+    )
+    assert out["N1"] == TrialMechanisms((), (), ("cell therapy",))
+    assert out["N2"].mechanisms == ("DNA inhibitor",)
+
+
+def test_kind_keys_reach_load_trial_mechanisms(cfg: AreaConfig, tmp_path: Path) -> None:
+    (tmp_path / "drugs.csv").write_text(
+        "drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets\n"
+        "msc,manual,,cell therapy,msc,,,\n",
+        encoding="utf-8",
+    )
+    cfg = cfg.model_copy(update={"mechanisms_dir": tmp_path})
+    out = load_trial_mechanisms(cfg, {"N1": frozenset({"msc"})}, [], kind_keys=frozenset({"msc"}))
+    assert out["N1"].mechanisms == ()
+
+
+def test_unmapped_warning_counts_drugs_only_not_extra_names(cfg: AreaConfig) -> None:
+    """Supplement names reach the mapping but an unmapped one is not a drug warning."""
+    cfg = cfg.model_copy(update={"mechanisms_dir": FIXTURES})
+    warnings: list[str] = []
+    out = load_trial_mechanisms(
+        cfg,
+        {"N1": frozenset({"dimethyl fumarate"})},
+        warnings,
+        names={"N1": frozenset({"dimethyl fumarate", "some supplement"})},
+    )
+    assert warnings == []
+    assert out["N1"].mechanisms == ("NRF2 activator",)

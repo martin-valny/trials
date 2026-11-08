@@ -62,6 +62,21 @@ def success_labels(
     Trial T succeeded in label L iff L is one of T's labels and some drug d of T has a later
     trial U (started after T, higher phase, not withdrawn, L among U's labels), and d had no
     trial V of PHASE3 or later that started before T with L among V's labels."""
+    return success(trial, drugs, labels)[0]
+
+
+def success_drugs(
+    trial: pl.DataFrame, drugs: TrialDrugs, labels: TrialLabels
+) -> dict[str, frozenset[str]]:
+    """For each trial: the drugs that progressed under R21 in any of its labels (option 1b:
+    a group is credited with a success only through these drugs). Empty when not succeeded."""
+    return success(trial, drugs, labels)[1]
+
+
+def success(
+    trial: pl.DataFrame, drugs: TrialDrugs, labels: TrialLabels
+) -> tuple[dict[str, frozenset[str]], dict[str, frozenset[str]]]:
+    """:func:`success_labels` and :func:`success_drugs` from one pass."""
     rows = trial.select("nct_id", "phases", "overall_status", "start_date").iter_rows()
     infos: list[tuple[str, int | None, bool, str | None, date | None]] = []
     # drug -> (rank, start, status, labels) of every dated, ranked trial with that drug
@@ -76,28 +91,31 @@ def success_labels(
             for drug in drugs.get(nct_id, frozenset()):
                 index[drug].append((rank, start, status, mine))
 
-    out: dict[str, frozenset[str]] = {}
+    won_labels: dict[str, frozenset[str]] = {}
+    won_drugs: dict[str, frozenset[str]] = {}
     for nct_id, rank, eligible, status, start in infos:
         if status != "COMPLETED" or rank is None or not eligible or start is None:
-            out[nct_id] = frozenset()
+            won_labels[nct_id] = won_drugs[nct_id] = frozenset()
             continue
-        out[nct_id] = _success_labels(
+        won_labels[nct_id], won_drugs[nct_id] = _success(
             rank, start, drugs.get(nct_id, frozenset()), labels.get(nct_id, frozenset()), index
         )
-    return out
+    return won_labels, won_drugs
 
 
-def _success_labels(
+def _success(
     rank: int,
     start: date,
     my_drugs: frozenset[str],
     my_labels: frozenset[str],
     index: dict[str, list[_Entry]],
-) -> frozenset[str]:
+) -> tuple[frozenset[str], frozenset[str]]:
+    """The labels this trial succeeded in, and the drugs that progressed in any of them."""
     won: set[str] = set()
+    winners: set[str] = set()
     for drug in my_drugs:
         entries = index.get(drug, [])
-        for label in my_labels - won:
+        for label in my_labels:
             # Planner's call: the late-phase block is per label ("already late in this disease").
             if any(r >= _LATE_RANK and s < start and label in ls for r, s, _, ls in entries):
                 continue
@@ -106,7 +124,8 @@ def _success_labels(
                 for r, s, st, ls in entries
             ):
                 won.add(label)
-    return frozenset(won)
+                winners.add(drug)
+    return frozenset(won), frozenset(winners)
 
 
 def label_outcomes(

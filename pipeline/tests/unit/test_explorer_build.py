@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -18,7 +19,16 @@ from trialradar.relevance import filter_relevant
 from trialradar.tables import Tables
 
 DAY = date(2026, 3, 1)
-TOP_KEYS = {"generated_for", "method", "stats", "clusters", "trials"}
+TOP_KEYS = {
+    "generated_for",
+    "method",
+    "stats",
+    "clusters",
+    "trials",
+    "approaches",
+    "kinds",
+    "drug_index",
+}
 METHOD_KEYS = {
     "algorithm",
     "dims",
@@ -65,6 +75,10 @@ TRIAL_KEYS = {
     "succeeded_in",
     "in_pool",
     "cluster",
+    "approaches",
+    "kinds",
+    "unsorted",
+    "succeeded_by",
 }
 OUTCOMES = {"succeeded", "stopped", "completed_unknown", "running", "unknown"}
 
@@ -179,6 +193,7 @@ def test_fewer_than_four_trials_is_insufficient(cfg: AreaConfig) -> None:
     assert doc["trials"] == []
     assert doc["clusters"] == []
     assert doc["stats"]["verdict"] == "insufficient"
+    assert set(doc) == TOP_KEYS
     assert doc["stats"]["lift"] is None
     assert doc["stats"]["baseline_range"] is None
     assert coords.height == 0
@@ -431,3 +446,129 @@ def test_statistic_is_unchanged_when_only_mechanism_data_changes(cfg: AreaConfig
     assert any(t["mechanisms"] for t in doc_a["trials"])
     assert not any(t["mechanisms"] for t in doc_b["trials"])
     assert doc_a["stats"] == doc_b["stats"]
+
+
+APPROACH_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "approaches"
+MECH_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "mechanisms"
+
+
+def test_explorer_trial_has_approach_fields(cfg: AreaConfig) -> None:
+    from trialradar.approaches.io import APPROACH_LABELS, APPROACHES
+
+    c = cfg.model_copy(
+        update={"mechanisms_dir": MECH_FIXTURES, "approaches_dir": APPROACH_FIXTURES}
+    )
+    tables, extras, _ = _inputs(c)
+    warnings: list[str] = []
+    doc, _ = build_explorer(tables, extras, c, {}, {}, DAY, warnings=warnings)
+    assert not any(w.startswith("approaches:") for w in warnings)
+    assert doc["approaches"] == [{"key": k, "label": APPROACH_LABELS[k]} for k in APPROACHES]
+    assert set(doc["kinds"]["msc"]) == {"approach", "group", "label", "rationale", "source_url"}
+    assert doc["kinds"]["msc"]["approach"] == "cell"
+    keys = {a["key"] for a in doc["approaches"]}
+    for t in doc["trials"]:
+        assert t["approaches"], t["nct_id"]  # Unclassified counts
+        assert set(t["approaches"]) <= keys
+        assert t["approaches"] == [a for a in APPROACHES if a in t["approaches"]]
+        assert set(t["kinds"]) <= set(doc["kinds"])
+        for f in ("kinds", "unsorted", "succeeded_by"):
+            assert t[f] == sorted(t[f])
+        assert set(t["succeeded_by"]) <= set(t["drugs"])
+        assert bool(t["succeeded_by"]) == (t["outcome"] == "succeeded")
+        assert not set(t["mechanisms"]) & set(doc["kinds"])
+    row = next(t for t in doc["trials"] if t["nct_id"] == "NCT90000001")
+    assert row["approaches"] == ["targeted"]  # example drug is anti-CD20 in the fixture
+    json.dumps(doc, allow_nan=False)
+
+
+def test_drug_index_covers_trial_drugs(cfg: AreaConfig) -> None:
+    c = cfg.model_copy(
+        update={"mechanisms_dir": MECH_FIXTURES, "approaches_dir": APPROACH_FIXTURES}
+    )
+    tables, extras, _ = _inputs(c)
+    doc, _ = build_explorer(tables, extras, c, {}, {}, DAY)
+    idx = doc["drug_index"]
+    names = {d for t in doc["trials"] for d in t["drugs"]}
+    assert names and names <= set(idx)
+    for entry in idx.values():
+        assert set(entry) == {"mechanisms", "modalities", "kinds", "approaches"}
+    assert idx["example drug"]["mechanisms"] == ["anti-CD20"]
+    assert idx["example drug"]["approaches"] == ["targeted"]
+
+
+def test_missing_approach_files_degrade(cfg: AreaConfig, tmp_path: Path) -> None:
+    """Review focus 4: the map builds, approaches empty, one ``approaches:`` warning."""
+    c = cfg.model_copy(update={"mechanisms_dir": MECH_FIXTURES, "approaches_dir": tmp_path})
+    tables, extras, _ = _inputs(c)
+    warnings: list[str] = []
+    doc, _ = build_explorer(tables, extras, c, {}, {}, DAY, warnings=warnings)
+    assert doc["trials"]
+    for t in doc["trials"]:
+        assert t["approaches"] == [] and t["kinds"] == [] and t["unsorted"] == []
+    assert doc["approaches"] == [] and doc["kinds"] == {}
+    assert [w for w in warnings if w.startswith("approaches:")] == [
+        next(w for w in warnings if w.startswith("approaches:"))
+    ]
+    # the mechanism data still works without the approach files
+    row = next(t for t in doc["trials"] if t["nct_id"] == "NCT90000001")
+    assert row["mechanisms"] == ["anti-CD20"]
+
+
+def test_collision_degrades(cfg: AreaConfig, tmp_path: Path) -> None:
+    import shutil
+
+    approaches = tmp_path / "approaches"
+    shutil.copytree(APPROACH_FIXTURES, approaches)
+    mech = tmp_path / "mechanisms"
+    mech.mkdir()
+    (mech / "drugs.csv").write_text(
+        "drug,status,chembl_id,modality,mechanism_class,mechanism,action_type,targets\n"
+        "example drug,manual,,antibody,msc,,,MS4A1\n",
+        encoding="utf-8",
+    )
+    c = cfg.model_copy(update={"mechanisms_dir": mech, "approaches_dir": approaches})
+    tables, extras, _ = _inputs(c)
+    warnings: list[str] = []
+    doc, _ = build_explorer(tables, extras, c, {}, {}, DAY, warnings=warnings)
+    assert sum(w.startswith("approaches:") for w in warnings) == 1
+    assert all(t["approaches"] == [] and t["kinds"] == [] for t in doc["trials"])
+    assert doc["approaches"] == [] and doc["kinds"] == {}
+
+
+def test_supplement_mechanism_reaches_trial(cfg: AreaConfig, tmp_path: Path) -> None:
+    """A vitamin D supplement mapped to VDR reaches ``mechanisms``/``targets`` but never
+    ``drugs`` or the pool."""
+    import dataclasses
+
+    from trialradar.explorer.extras import ExperimentalIntervention
+
+    mech = tmp_path / "mechanisms"
+    mech.mkdir()
+    (mech / "drugs.csv").write_text(
+        (MECH_FIXTURES / "drugs.csv").read_text(encoding="utf-8")
+        + "vitamin d,manual,,small molecule,VDR agonist,,AGONIST,VDR\n",
+        encoding="utf-8",
+    )
+    (mech / "overrides.csv").write_text(
+        (MECH_FIXTURES / "overrides.csv").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    c = cfg.model_copy(update={"mechanisms_dir": mech, "approaches_dir": APPROACH_FIXTURES})
+    tables, extras, _ = _inputs(c)
+    base, _ = build_explorer(tables, extras, c, {}, {}, DAY)
+    nct = "NCT90000002"
+    patched = dict(extras)
+    patched[nct] = dataclasses.replace(
+        extras[nct],
+        experimental_interventions=(
+            *extras[nct].experimental_interventions,
+            ExperimentalIntervention("DIETARY_SUPPLEMENT", "Vitamin D", ""),
+        ),
+    )
+    doc, _ = build_explorer(tables, patched, c, {}, {}, DAY)
+    row = next(t for t in doc["trials"] if t["nct_id"] == nct)
+    assert "VDR agonist" in row["mechanisms"]
+    assert "VDR" in row["targets"]
+    assert "vitamin d" not in row["drugs"]
+    assert "vitamin d" in doc["drug_index"]
+    assert [t["in_pool"] for t in doc["trials"]] == [t["in_pool"] for t in base["trials"]]
+    assert doc["stats"] == base["stats"]

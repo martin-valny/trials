@@ -104,3 +104,27 @@ psychological evaluation,OTHER;DIAGNOSTIC_TEST,not_a_treatment
 cognitive evaluation,OTHER;DIAGNOSTIC_TEST,not_a_treatment
 questionnaire,OTHER;DIAGNOSTIC_TEST,not_a_treatment
 questionnaires,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+exercises,,exercise
+inspiratory muscle training,,exercise
+respiratory muscle training,,exercise
+dance,BEHAVIORAL;OTHER,exercise
+dancing,BEHAVIORAL;OTHER,exercise
+task-oriented training,,physiotherapy
+telerehabilitation,,physiotherapy
+vestibular rehabilitation,,physiotherapy
+standard rehabilitation,,physiotherapy
+traditional rehabilitation,,physiotherapy
+classic rehabilitation,,physiotherapy
+physical rehabilitation,,physiotherapy
+trunk rehabilitation,,physiotherapy
+occupational therapy,,physiotherapy
+hydrotherapy,,physiotherapy
+spinal manipulation,,physiotherapy
+acceptance and commitment therapy,,cbt
+helminth,,helminth
+trichuris suis,,helminth
+hookworm,,helminth
+neuropsychological assessment,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+neuropsychological tests,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+neuropsychological testing,OTHER;DIAGNOSTIC_TEST,not_a_treatment
+clinical examination,OTHER;DIAGNOSTIC_TEST,not_a_treatment

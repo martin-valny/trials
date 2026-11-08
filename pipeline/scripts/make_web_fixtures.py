@@ -43,7 +43,13 @@ def _with_second_sponsor(studies: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def main(out_dir: Path) -> None:
     cfg = load_config(REPO_ROOT / "config" / "area.yaml")
-    cfg = cfg.model_copy(update={"mechanisms_dir": PIPELINE / "tests" / "fixtures" / "mechanisms"})
+    fixtures = PIPELINE / "tests" / "fixtures"
+    cfg = cfg.model_copy(
+        update={
+            "mechanisms_dir": fixtures / "mechanisms",
+            "approaches_dir": fixtures / "approaches",
+        }
+    )
     with tempfile.TemporaryDirectory() as tmp:
         env = ic.Env(Path(tmp), cfg)
         r1 = env.run(ic.FakeClient(TS1, _with_second_sponsor(ic.day1_studies(cfg))), D1)
