@@ -49,7 +49,11 @@ def build_pipeline_doc(
     warnings: list[str],
 ) -> dict[str, Any]:
     by_label = {c.label: c.code for c in cfg.conditions if c.code}
-    diseases = [{"code": c.code, "label": c.label} for c in cfg.conditions if c.code]
+    coded = [c for c in cfg.conditions if c.code]
+    coded.sort(
+        key=lambda c: (c.figure_order is None, c.figure_order or 0)
+    )  # stable: ties keep config order
+    diseases = [{"code": c.code, "label": c.label} for c in coded]
     table: dict[str, dict[str, Any]] = {r["nct_id"]: r for r in trial.iter_rows(named=True)}
     drug_index: Mapping[str, Mapping[str, Any]] = explorer.get("drug_index", {})
     drug_mechanisms = {d: list(v.get("mechanisms", ())) for d, v in drug_index.items()}
@@ -69,12 +73,12 @@ def build_pipeline_doc(
         columns = [COLUMN[p] for p in phases if p in COLUMN]
         if not columns:
             continue
-        placed = placements(list(t.get("drugs", ())), drug_mechanisms, fig)
+        succeeded_by = list(t.get("succeeded_by", ()))
+        placed = placements(list(t.get("drugs", ())), drug_mechanisms, fig, succeeded_by)
         if not placed:
             continue
         sponsor = (t.get("lead_sponsor") or "").strip() or _NOT_GIVEN
         raw_sponsor[nct] = sponsor
-        succeeded_by = list(t.get("succeeded_by", ()))
         for row_id, drug in placed.items():
             state, via = mark_state(t["outcome"], drug, succeeded_by)
             mark: dict[str, Any] = {

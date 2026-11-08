@@ -80,7 +80,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
   const year = Number(file.generated_for.slice(0, 4)) || new Date().getFullYear();
   const views = useMemo(() => rowViews(file, state, year), [file, state, year]);
   const head = useMemo(() => headline(file, views, state), [file, views, state]);
-  const notes = useMemo(() => marginNotes(views, state, year), [views, state, year]);
+  const notes = useMemo(() => marginNotes(views, state, year, file.diseases.map((d) => d.code)), [views, state, year, file.diseases]);
   const companies = useMemo(() => companyOptions(file), [file]);
   const empty = views.length === 0 || (state.company !== null && head.kind === "none");
   const disease = file.diseases.find((d) => d.code === state.disease);

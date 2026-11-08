@@ -4,21 +4,27 @@ conditions:
     synonyms: ["multiple sclerosis", "relapsing remitting multiple sclerosis"]
     short: MS
     code: MS
+    figure_order: 1
   - label: NMOSD
     synonyms: ["neuromyelitis optica", "NMOSD"]
     code: NMOSD
+    figure_order: 3
   - label: MOGAD
     synonyms: ["MOG antibody disease", "MOGAD", "myelin oligodendrocyte glycoprotein"]
     code: MOGAD
+    figure_order: 5
   - label: Myasthenia gravis
     synonyms: ["myasthenia gravis"]
     code: MG
+    figure_order: 2
   - label: CIDP
     synonyms: ["chronic inflammatory demyelinating polyneuropathy", "CIDP"]
     code: CIDP
+    figure_order: 4
   - label: Autoimmune encephalitis
     synonyms: ["autoimmune encephalitis", "anti-NMDA receptor encephalitis", "limbic encephalitis"]
     code: AE
+    figure_order: 6
 study_type: INTERVENTIONAL
 phases: [EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, NA]
 tracked_fields:

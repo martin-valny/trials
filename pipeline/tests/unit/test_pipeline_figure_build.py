@@ -142,7 +142,7 @@ def test_build_pipeline_doc_shapes(cfg: AreaConfig, fig: FigureConfig) -> None:
     assert set(doc) == KEYS
     assert doc["generated_for"] == "2026-11-08"
     assert doc["diseases"][0] == {"code": "MS", "label": "Multiple sclerosis"}
-    assert [d["code"] for d in doc["diseases"]] == ["MS", "NMOSD", "MOGAD", "MG", "CIDP", "AE"]
+    assert [d["code"] for d in doc["diseases"]] == ["MS", "MG", "NMOSD", "CIDP", "MOGAD", "AE"]
     assert doc["families"] == [{"id": "fam", "label": "Fam", "order": 1}]
     assert doc["counts"] == {"trials": 5, "targeted": 4, "in_rows": 3, "targeted_not_rowed": 1}
     rows = {r["id"]: r for r in doc["rows"]}

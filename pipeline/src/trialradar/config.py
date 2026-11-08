@@ -47,6 +47,9 @@ class ConditionSpec(_Strict):
     synonyms: list[str] = Field(min_length=1)
     short: str | None = None  # an abbreviation for cluster names on the map
     code: str | None = None  # the short disease code on the pipeline figure (MS, MG, ...)
+    figure_order: int | None = (
+        None  # position on the figure (1 first); unset sorts after, by config order
+    )
 
     @field_validator("code")
     @classmethod

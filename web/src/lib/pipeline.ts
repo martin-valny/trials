@@ -21,9 +21,6 @@ const SPREADING_MIN = 3;
 /** Largest share "Other" may take of the stop reasons before the group chips are hidden. */
 const OTHER_MAX_SHARE = 0.15;
 
-/** Column order for the By disease arrangement; also the order diseases are listed in a note. */
-const DISEASE_ORDER = ["MS", "MG", "NMOSD", "CIDP", "MOGAD", "AE"];
-
 export const MARK_LABEL: Record<MarkState, string> = {
   adv: "Advanced to next phase",
   run: "Still running",
@@ -343,7 +340,12 @@ export interface MarginNote {
 }
 
 /** At most MAX_NOTES data-generated notes, one per row, none with the company lens (spec §7.1). */
-export function marginNotes(views: RowView[], s: FigureState, thisYear: number): Map<string, MarginNote> {
+export function marginNotes(
+  views: RowView[],
+  s: FigureState,
+  thisYear: number,
+  diseaseOrder: readonly string[] = [],
+): Map<string, MarginNote> {
   const notes = new Map<string, MarginNote>();
   if (s.company !== null) return notes;
   const since = thisYear - NEWEST_YEARS + 1;
@@ -351,7 +353,7 @@ export function marginNotes(views: RowView[], s: FigureState, thisYear: number):
   const runningDiseases = (v: RowView): string[] => {
     const set = new Set<string>();
     for (const m of v.marks) if (markState(m, s.disease) === "run") m.dz.forEach((d) => set.add(d));
-    const rank = (d: string): number => (DISEASE_ORDER.includes(d) ? DISEASE_ORDER.indexOf(d) : DISEASE_ORDER.length);
+    const rank = (d: string): number => (diseaseOrder.includes(d) ? diseaseOrder.indexOf(d) : diseaseOrder.length);
     return [...set].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   };
 
@@ -378,7 +380,10 @@ export function marginNotes(views: RowView[], s: FigureState, thisYear: number):
       on: true,
       score: (v) => v.run,
       min: MOST_CROWDED_MIN,
-      text: (v) => `${n(v.run)} trials running, from ${v.runningCompanies} ${plural(v.runningCompanies, "company", "companies")} plus academic groups.`,
+      text: (v) =>
+        v.runningCompanies === 0
+          ? `${n(v.run)} trials running, all from academic groups or other sponsors.`
+          : `${n(v.run)} trials running, from ${v.runningCompanies} ${plural(v.runningCompanies, "company", "companies")} plus academic groups.`,
     },
     {
       kicker: "Newest wave",
@@ -533,11 +538,10 @@ export function stopSummary(
 
 /** The row a gene belongs to (the first in figure order when several share it, e.g. CD19 and CD19 CAR-T); null if none. */
 export function rowForGene(f: PipelineFile, gene: string): PipelineRow | null {
-  const rows = f.rows.filter((r) => r.gene === gene);
-  return rows.reduce<PipelineRow | null>((best, r) => (best === null || r.order < best.order ? r : best), null);
+  return f.rows.find((r) => r.gene === gene) ?? null; // f.rows is already in figure order
 }
 
 /** Every row the trial sits in, in figure order (a combination trial can sit in two). */
 export function rowsForTrial(f: PipelineFile, nct: string): PipelineRow[] {
-  return f.rows.filter((r) => r.marks.some((m) => m.n === nct)).sort((a, b) => a.order - b.order);
+  return f.rows.filter((r) => r.marks.some((m) => m.n === nct));
 }

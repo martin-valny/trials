@@ -79,20 +79,31 @@ def placements(
     drugs: Sequence[str],
     drug_mechanisms: Mapping[str, Sequence[str]],
     cfg: FigureConfig,
+    succeeded_by: Sequence[str] = (),
 ) -> dict[str, str]:
-    """Row id -> the drug that put the trial there (first drug wins per row)."""
+    """Row id -> the drug that put the trial there.
+
+    The first drug wins per row, except that a drug in ``succeeded_by`` is preferred, so a
+    row whose own drug advanced is never drawn as "advanced through" another drug (1b).
+    """
+    credited = {d.casefold() for d in succeeded_by}
     kept = [d for d in drugs if d.casefold() not in cfg.background] or list(drugs)
     by_class, by_drug = _class_row(cfg), _drug_row(cfg)
     out: dict[str, str] = {}
+
+    def put(row: str, drug: str) -> None:
+        if row not in out or (drug.casefold() in credited and out[row].casefold() not in credited):
+            out[row] = drug
+
     for drug in kept:
         row = by_drug.get(drug.casefold())
         if row is not None:
-            out.setdefault(row, drug)
+            put(row, drug)
             continue
         for cls in _classes_of(drug, drug_mechanisms):
             row = by_class.get(cls)
             if row is not None:
-                out.setdefault(row, drug)
+                put(row, drug)
     return out
 
 

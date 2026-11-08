@@ -98,6 +98,15 @@ def test_mark_state_1b() -> None:
     assert mark_state("weird", "x", []) == ("unk", None)
 
 
+def test_placements_prefers_the_credited_drug_in_a_shared_row(cfg: FigureConfig) -> None:
+    mech = {**MECH, "ocrelizumab sc": ["anti-CD20"]}
+    drugs = ["ocrelizumab", "ocrelizumab sc"]
+    got = placements(drugs, mech, cfg, ["ocrelizumab sc"])
+    assert got == {"cd20": "ocrelizumab sc"}
+    assert mark_state("succeeded", got["cd20"], ["ocrelizumab sc"]) == ("adv", None)
+    assert placements(drugs, mech, cfg) == {"cd20": "ocrelizumab"}  # no credit: first wins
+
+
 def test_mark_state_succeeded_without_crediting_drug() -> None:
     assert mark_state("succeeded", "x", []) == ("fin", None)
 

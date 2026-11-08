@@ -8,8 +8,8 @@ const PHASE_COLS = [
   { key: 3, label: "Phase 3", short: "Ph 3", sub: "incl. 2/3" },
   { key: 4, label: "Approved use", short: "Approved", sub: "phase 4" },
 ];
-const DISEASE_ORDER = ["MS", "MG", "NMOSD", "CIDP", "MOGAD", "AE"];
-const PHONE_CODE: Record<string, string> = { NMOSD: "NMO", MOGAD: "MOG" };
+/** A long code shortens to its first three letters on a phone (NMOSD reads NMO). */
+const phoneCode = (code: string): string => (code.length > 4 ? code.slice(0, 3) : code);
 
 export interface Col {
   key: number | string;
@@ -18,13 +18,10 @@ export interface Col {
   sub: string;
 }
 
-/** The figure's columns: four phases, or the diseases in their fixed order (any extra code last). */
+/** The figure's columns: four phases, or the diseases in the order pipeline.json lists them. */
 export function columnsFor(f: PipelineFile, view: FigureState["view"]): Col[] {
   if (view === "phase") return PHASE_COLS;
-  const rank = (c: string) => (DISEASE_ORDER.includes(c) ? DISEASE_ORDER.indexOf(c) : DISEASE_ORDER.length);
-  return [...f.diseases]
-    .sort((a, b) => rank(a.code) - rank(b.code))
-    .map((d) => ({ key: d.code, label: d.code, short: PHONE_CODE[d.code] ?? d.code, sub: d.label === d.code ? "" : d.label }));
+  return f.diseases.map((d) => ({ key: d.code, label: d.code, short: phoneCode(d.code), sub: d.label === d.code ? "" : d.label }));
 }
 
 export type Item = { t: "fam"; label: string } | { t: "past" } | { t: "row"; v: RowView; hist: boolean };

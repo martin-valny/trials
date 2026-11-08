@@ -18,6 +18,7 @@ import {
   type FigureState,
 } from "../src/lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark, PipelineRow } from "../src/types";
+import { columnsFor } from "../src/components/pipeline/parts";
 import { readFixture } from "./helpers";
 
 const DEFAULT: FigureState = { disease: null, company: null, sort: "run", view: "phase" };
@@ -266,6 +267,12 @@ describe("marginNotes", () => {
     expect(n.get("adv")?.text).toBe("3 trials advanced to a later phase.");
     expect(n.get("stopped")?.text).toBe("6 stopped; 4 of them by Novartis. Reasons on the target page.");
   });
+  it("never prints 0 companies", () => {
+    const g = file([row("a", many(5, { s: "run", sp: 4 }))]); // academic sponsor only
+    expect(marginNotes(rowViews(g, DEFAULT, 2026), DEFAULT, 2026).get("a")?.text).toBe(
+      "5 trials running, all from academic groups or other sponsors.",
+    );
+  });
   it("respects minimums and the cap", () => {
     const g = file([row("a", many(4, { s: "run" })), row("b", many(2, { s: "adv" })), row("c", many(4, { s: "stop" }))]);
     expect(marginNotes(rowViews(g, DEFAULT, 2026), DEFAULT, 2026).size).toBe(0);
@@ -283,7 +290,7 @@ describe("marginNotes", () => {
       row("a", [mark({ s: "run", dz: ["MS"] }), mark({ s: "run", dz: ["MG"] }), mark({ s: "run", dz: ["NMOSD", "MS"] })]),
     ]);
     const d = { ...DEFAULT, view: "disease" as const };
-    expect(marginNotes(rowViews(g, d, 2026), d, 2026).get("a")).toEqual({
+    expect(marginNotes(rowViews(g, d, 2026), d, 2026, ["MS", "MG", "NMOSD"]).get("a")).toEqual({
       kicker: "Spreading",
       text: "Running in 3 diseases: MS, MG, NMOSD.",
     });
@@ -392,10 +399,17 @@ describe("hand-offs", () => {
   const f = readFixture<PipelineFile>("pipeline.json");
   it("rowForGene finds the row for a gene, the first in figure order when several share it", () => {
     expect(rowForGene(f, "MS4A1")?.id).toBe("cd20");
-    const both = f.rows.filter((r) => r.gene === "CD19").sort((a, b) => a.order - b.order);
-    expect(both).toHaveLength(2);
-    expect(rowForGene(f, "CD19")?.id).toBe(both[0]!.id);
+    // row.order is the order inside a family: CD19 CAR-T has order 1 but sits in a later family
+    expect(f.rows.filter((r) => r.gene === "CD19").map((r) => r.id)).toEqual(["cd19", "cd19-car-t"]);
+    expect(rowForGene(f, "CD19")?.id).toBe("cd19");
     expect(rowForGene(f, "NOPE")).toBeNull();
+  });
+  it("rowsForTrial follows figure order, not the order within a family", () => {
+    const two = structuredClone(f);
+    const m = mark({ n: "NCT00000555" });
+    two.rows.find((r) => r.id === "cd19-car-t")!.marks.push(m);
+    two.rows.find((r) => r.id === "cd19")!.marks.push({ ...m });
+    expect(rowsForTrial(two, m.n).map((r) => r.id)).toEqual(["cd19", "cd19-car-t"]);
   });
   it("rowsForTrial lists every row a trial sits in", () => {
     const two = structuredClone(f);
@@ -403,5 +417,19 @@ describe("hand-offs", () => {
     two.rows[1]!.marks.push({ ...m });
     expect(rowsForTrial(two, m.n).map((r) => r.id)).toEqual([two.rows[0]!.id, two.rows[1]!.id]);
     expect(rowsForTrial(f, "NCT00000000")).toEqual([]);
+  });
+});
+
+describe("columnsFor", () => {
+  it("follows pipeline.json's disease order and shortens long codes for phones", () => {
+    const g = file([row("a", [])]);
+    g.diseases = [
+      { code: "ZED", label: "Zed disease" },
+      { code: "ALPHA1", label: "Alpha" },
+      { code: "MS", label: "MS" },
+    ];
+    const cols = columnsFor(g, "disease");
+    expect(cols.map((c) => c.key)).toEqual(["ZED", "ALPHA1", "MS"]);
+    expect(cols.map((c) => c.short)).toEqual(["ZED", "ALP", "MS"]);
   });
 });
