@@ -213,12 +213,15 @@ def export(
     *,
     extras: Mapping[str, StudyExtras] | None = None,
     explorer: dict[str, Any] | None = None,
+    mechanisms: dict[str, Any] | None = None,
 ) -> None:
     """Write the site JSON views for ``day`` into ``out_dir``.
 
     ``extras`` add the registry summary, eligibility and results flag to the trial
     files (null/false when absent); ``explorer`` is written as ``explorer.json``, and
-    without it a previous ``explorer.json`` is removed (the site then shows no map)."""
+    without it a previous ``explorer.json`` is removed (the site then shows no map).
+    ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
+    only together with a map."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -249,4 +252,9 @@ def export(
     else:
         # No map this time: never leave an old map over the new trials.
         (out_dir / "explorer.json").unlink(missing_ok=True)
+    if explorer is not None and mechanisms is not None:
+        _write_json(out_dir / "mechanisms.json", mechanisms)
+    else:
+        # No graph this time: the page says it appears after the next update.
+        (out_dir / "mechanisms.json").unlink(missing_ok=True)
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

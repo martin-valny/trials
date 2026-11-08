@@ -105,6 +105,20 @@ class ClusterConfig(_Strict):
     drug_share: float = Field(default=0.15, ge=0, le=1)
 
 
+class GraphConfig(_Strict):
+    """The mechanism graph (``mechanisms.json``): pruning, shared-gene links and layout.
+
+    ``max_nodes`` caps the **pathway** nodes. Drug and target nodes are never pruned, so every
+    targeted trial stays reachable; pathways are pruned toward the cap (single-target leaves
+    first, then the leaves reached by the fewest trials). The layout seed is
+    ``ExplorerConfig.seed``."""
+
+    max_nodes: int = Field(default=250, ge=0)
+    overlap_floor: float = Field(default=0.3, gt=0, le=1)
+    overlap_top_k: int = Field(default=3, ge=0)
+    layout_iterations: int = Field(default=300, ge=1)
+
+
 _Block = Literal["disease", "treatment_type", "molecule", "mechanism", "population"]
 
 
@@ -119,6 +133,7 @@ class ExplorerConfig(_Strict):
     min_successes: int = 30
     min_group: int = 10
     clusters: ClusterConfig = ClusterConfig()
+    graph: GraphConfig = GraphConfig()
 
     @field_validator("min_group")
     @classmethod

@@ -406,6 +406,7 @@ def test_each_stage_logs_one_json_line(
         "diff",
         "store",
         "explorer",
+        "mechanism_graph",
         "export",
         "explorer_coords",
         "run_log",

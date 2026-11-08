@@ -34,8 +34,10 @@ from trialradar import quality
 from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovClient
 from trialradar.diff import diff
+from trialradar.explorer.approaches import mapping_names
 from trialradar.explorer.build import build_explorer
-from trialradar.explorer.extras import StudyExtras, extract_extras
+from trialradar.explorer.extras import StudyExtras, empty_extras, extract_extras
+from trialradar.explorer.graph import load_graph
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.relevance import filter_relevant
@@ -172,6 +174,34 @@ def _explorer(
     return doc, coords, warnings
 
 
+def _mechanism_graph(
+    explorer: dict[str, Any] | None,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    aliases: Aliases,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The mechanism graph (``mechanisms.json``) for a built map, plus its warnings.
+
+    Optional (R19): missing or invalid mapping or pathway files, or any failure, give one
+    ``mechanism_graph:`` warning and no graph; the run continues. No map, no graph (the map's
+    own warning already says why)."""
+    if explorer is None:
+        return None, []
+    extra = {"day": day.isoformat()} if day is not None else {}
+    try:
+        with _stage("mechanism_graph", **extra) as info:
+            ids = [t["nct_id"] for t in explorer["trials"]]
+            full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
+            names = mapping_names(full, aliases.intervention, cfg)
+            graph = load_graph(explorer, cfg, names)
+            info["rows"] = len(graph["nodes"])
+    except Exception as exc:  # noqa: BLE001 - the graph never fails the daily run
+        return None, [f"mechanism_graph: {_describe(exc)}"]
+    return graph, []
+
+
 def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
     with _stage("explorer_coords", **extra) as info:
         store.save_explorer_coords(coords)
@@ -272,7 +302,7 @@ def run(
     Stage order: rewind check -> version check (skip if unchanged) -> fetch ->
     staged snapshot -> schema check -> relevance filter -> normalize -> previous
     state -> quality gate -> diff -> store -> promote snapshot -> explorer ->
-    export -> save explorer coords -> success run_log row.
+    mechanism graph -> export -> save explorer coords -> success run_log row.
     """
     clock = now or _utcnow
     started_at, t0 = clock(), time.monotonic()
@@ -331,6 +361,8 @@ def run(
             tables, extras, cfg, aliases, store.load_explorer_coords, day
         )
         warnings += explorer_warnings
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
+        warnings += graph_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -341,7 +373,15 @@ def run(
             # next run with an unchanged timestamp is NOT skipped (no success row).
             log = pl.concat([store.run_log(), pl.DataFrame([row], schema=RUN_LOG_SCHEMA)])
             export(
-                tables, store.changes(), log, cfg, day, site_dir, extras=extras, explorer=explorer
+                tables,
+                store.changes(),
+                log,
+                cfg,
+                day,
+                site_dir,
+                extras=extras,
+                explorer=explorer,
+                mechanisms=graph,
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
@@ -485,6 +525,8 @@ def rebuild(
         explorer, coords, explorer_warnings = _explorer(
             tables, extras, cfg, aliases, dict, day, log_day=True
         )
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
+        explorer_warnings = [*explorer_warnings, *graph_warnings]
         if explorer_warnings:
             pending["warnings"] = json.dumps(
                 [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
@@ -500,6 +542,7 @@ def rebuild(
                 site_dir,
                 extras=extras,
                 explorer=explorer,
+                mechanisms=graph,
             )
             info["rows"] = tables.trial.height
         if coords is not None:

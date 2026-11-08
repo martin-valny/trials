@@ -178,6 +178,14 @@ def without_coords(site: Path) -> dict[str, Any]:
     return doc
 
 
+def without_graph_coords(site: Path) -> dict[str, Any]:
+    """``site/mechanisms.json`` with each node's x/y removed (see ``without_coords``)."""
+    doc: dict[str, Any] = json.loads((site / "mechanisms.json").read_text(encoding="utf-8"))
+    for n in doc["nodes"]:
+        del n["x"], n["y"]
+    return doc
+
+
 @pytest.fixture
 def env(tmp_path: Path, cfg: AreaConfig) -> Env:
     return Env(tmp_path, cfg)

@@ -511,3 +511,17 @@ def test_export_without_explorer_removes_a_stale_map(tmp_path: Path, cfg: AreaCo
     assert (tmp_path / "explorer.json").exists()
     export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
     assert not (tmp_path / "explorer.json").exists()
+
+
+def test_mechanisms_json_written_and_removed(tmp_path: Path, cfg: AreaConfig) -> None:
+    """mechanisms.json is present exactly when this export has a graph (and a map)."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    graph = {"generated_for": DAY.isoformat(), "nodes": [], "edges": []}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, explorer=doc, mechanisms=graph)
+    assert json.loads((tmp_path / "mechanisms.json").read_text(encoding="utf-8")) == graph
+    export(*args, explorer=doc)
+    assert not (tmp_path / "mechanisms.json").exists()
+    export(*args, explorer=doc, mechanisms=graph)
+    export(*args, mechanisms=graph)  # no map: no graph either
+    assert not (tmp_path / "mechanisms.json").exists()
