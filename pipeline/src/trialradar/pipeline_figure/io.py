@@ -90,6 +90,11 @@ class FigureConfig:
     reasons: tuple[ReasonRule, ...]
 
 
+def slugify(label: str) -> str:
+    """Lowercase, runs of non-alphanumerics become one ``-``, trimmed."""
+    return re.sub(r"[^a-z0-9]+", "-", label.casefold()).strip("-")
+
+
 def norm_sponsor(raw: str) -> str:
     """Casefold, collapse whitespace, strip trailing punctuation."""
     return " ".join(raw.casefold().split()).rstrip(_TRAILING_PUNCT)
@@ -164,7 +169,7 @@ def _read_rows(path: Path) -> tuple[tuple[Family, ...], tuple[FigureRow, ...]]:
             id=rid,
             label=r["label"],
             sub=r["sub"],
-            family=r["family"],
+            family=slugify(r["family"]),
             order=_int(name, line, r, "row_order"),
             classes=classes,
             drugs=drugs,
@@ -178,7 +183,7 @@ def _read_rows(path: Path) -> tuple[tuple[Family, ...], tuple[FigureRow, ...]]:
             if rel not in seen_ids:
                 raise ValueError(f"{name}:{line}: {row.id}: related {rel!r} is not a row_id")
     families = tuple(
-        Family(id=label, label=label, order=order)
+        Family(id=slugify(label), label=label, order=order)
         for label, order in sorted(family_orders.items(), key=lambda kv: (kv[1], kv[0]))
     )
     rows = tuple(row for _, row, _ in sorted(parsed, key=lambda p: (p[2], p[1].order, p[0])))

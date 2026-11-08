@@ -37,6 +37,10 @@ def test_reads_committed_config() -> None:
     assert len(cfg.rows) >= 22
     assert [f.order for f in cfg.families] == list(range(1, 10))
     assert cfg.rows[0].id == "cd20"
+    assert cfg.families[0].id == "b-cell-depletion"
+    assert cfg.families[0].label == "B-cell depletion"
+    assert cfg.rows[0].family == "b-cell-depletion"
+    assert cfg.families[1].id == "igg-and-complement"
     assert "fludarabine" in cfg.background
     assert cfg.parents[norm_sponsor("Genentech, Inc.")].parent == "Roche"
     assert cfg.parents[norm_sponsor("Novartis Pharmaceuticals")].parent == "Novartis"
