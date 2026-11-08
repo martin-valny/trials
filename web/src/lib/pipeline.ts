@@ -29,11 +29,11 @@ export const MARK_LABEL: Record<MarkState, string> = {
   unk: "Status unknown",
 };
 
-export type Arrangement = "phase" | "disease";
+export type Arrangement = "phase" | "disease" | "year";
 export type SortKey = "run" | "adv" | "new" | "az";
 
 const SORTS: readonly SortKey[] = ["run", "adv", "new", "az"];
-const VIEWS: readonly Arrangement[] = ["phase", "disease"];
+const VIEWS: readonly Arrangement[] = ["phase", "disease", "year"];
 
 export interface FigureState {
   disease: string | null;
@@ -247,12 +247,45 @@ export function rowViews(f: PipelineFile, s: FigureState, thisYear: number): Row
   return [...views.filter((v) => v.hasCompany), ...views.filter((v) => !v.hasCompany)];
 }
 
+// ---------------------------------------------------------------- years
+
+export const YEAR_START = 2000;
+
+export interface YearBin {
+  start: number;
+  label: string;
+}
+
+/** Bins from YEAR_START to thisYear; the first collects every earlier start and is labelled "≤" its last year. */
+export function yearBins(thisYear: number, width: 2 | 3): YearBin[] {
+  const bins: YearBin[] = [{ start: YEAR_START, label: `≤${YEAR_START + width - 1}` }];
+  for (let y = YEAR_START + width; y <= thisYear; y += width) bins.push({ start: y, label: String(y) });
+  return bins;
+}
+
+/** Index of the bin a start year falls in (pre-2000 and later years clamp); null when undated. */
+export function binOf(year: number | null | undefined, bins: YearBin[]): number | null {
+  if (year === null || year === undefined) return null;
+  let i = 0;
+  for (let k = 0; k < bins.length; k++) if (year >= bins[k]!.start) i = k;
+  return i;
+}
+
+/** Distinct trials in the views with no start year (for the source line). */
+export function undatedCount(views: RowView[]): number {
+  const set = new Set<string>();
+  for (const v of views) for (const m of v.marks) if (m.y === null) set.add(m.n);
+  return set.size;
+}
+
 /** A cell's marks, oldest first (undated last). The page draws each with markState(m, disease-or-column). */
-export function cellMarks(v: RowView, column: number | string, s: FigureState): PipelineMark[] {
+export function cellMarks(v: RowView, column: number | string, s: FigureState, bins?: YearBin[]): PipelineMark[] {
   const hit =
-    s.view === "phase"
-      ? v.marks.filter((m) => m.c === column)
-      : v.marks.filter((m) => typeof column === "string" && m.dz.includes(column));
+    s.view === "year"
+      ? v.marks.filter((m) => bins !== undefined && binOf(m.y, bins) === column)
+      : s.view === "phase"
+        ? v.marks.filter((m) => m.c === column)
+        : v.marks.filter((m) => typeof column === "string" && m.dz.includes(column));
   return [...hit].sort((a, b) => (a.y ?? Infinity) - (b.y ?? Infinity));
 }
 
@@ -354,6 +387,7 @@ export function marginNotes(
 ): Map<string, MarginNote> {
   const notes = new Map<string, MarginNote>();
   if (s.company !== null) return notes;
+  if (s.view === "year") return yearNotes(views, s, thisYear);
   const since = thisYear - NEWEST_YEARS + 1;
 
   const runningDiseases = (v: RowView): string[] => {
@@ -416,6 +450,59 @@ export function marginNotes(
 
   for (const rule of rules) {
     if (!rule.on || notes.size >= MAX_NOTES) continue;
+    let best: RowView | null = null;
+    let bestScore = 0;
+    for (const v of views) {
+      if (notes.has(v.row.id)) continue;
+      const sc = rule.score(v);
+      if (sc >= rule.min && sc > bestScore) {
+        best = v;
+        bestScore = sc;
+      }
+    }
+    if (best) notes.set(best.row.id, { kicker: rule.kicker, text: rule.text(best) });
+  }
+  return notes;
+}
+
+const FADING_BEFORE = 2012;
+const FADING_MIN_TRIALS = 15;
+const LONGEST_MIN_DATED = 20;
+const LONGEST_MIN_SPAN = 15;
+
+/** By year notes: Rising, Fading, Longest run; one per row, at most MAX_NOTES, none under the company lens. */
+export function yearNotes(views: RowView[], s: FigureState, thisYear: number): Map<string, MarginNote> {
+  const notes = new Map<string, MarginNote>();
+  if (s.company !== null) return notes;
+  const since = thisYear - NEWEST_YEARS + 1;
+  const dated = (v: RowView): number[] => v.marks.flatMap((m) => (m.y === null ? [] : [m.y]));
+  const before = (v: RowView): number => dated(v).filter((y) => y < FADING_BEFORE).length;
+  const span = (v: RowView): number => {
+    const ys = dated(v);
+    return ys.length >= LONGEST_MIN_DATED ? Math.max(...ys) - Math.min(...ys) : 0;
+  };
+  const rules: { kicker: string; score: (v: RowView) => number; min: number; text: (v: RowView) => string }[] = [
+    {
+      kicker: "Rising",
+      score: (v) => (v.total >= NEWEST_MIN_TRIALS && v.recent / v.total >= NEWEST_MIN_SHARE ? v.recent / v.total : 0),
+      min: NEWEST_MIN_SHARE,
+      text: (v) => `${n(v.recent)} of ${n(v.total)} trials started since ${since}.`,
+    },
+    {
+      kicker: "Fading",
+      score: (v) => (v.run <= HISTORICAL_MAX_RUNNING && v.total >= FADING_MIN_TRIALS && before(v) > v.total / 2 ? before(v) : 0),
+      min: 1,
+      text: (v) => `${n(before(v))} trials before ${FADING_BEFORE}; ${n(v.run)} running now.`,
+    },
+    {
+      kicker: "Longest run",
+      score: span,
+      min: LONGEST_MIN_SPAN,
+      text: (v) => `Trials every few years since ${Math.min(...dated(v))}.`,
+    },
+  ];
+  for (const rule of rules) {
+    if (notes.size >= MAX_NOTES) break;
     let best: RowView | null = null;
     let bestScore = 0;
     for (const v of views) {

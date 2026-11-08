@@ -15,6 +15,10 @@ import {
   stopSummary,
   targetCompanies,
   cellMarks,
+  yearBins,
+  binOf,
+  yearNotes,
+  undatedCount,
   type FigureState,
 } from "../src/lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark, PipelineRow } from "../src/types";
@@ -447,5 +451,69 @@ describe("columnTracks", () => {
     const g = file([row("a", [...many(100, { dz: ["MS"] }), ...many(1, { dz: ["MG"] })])]);
     const fr = frs(columnTracks(g, columnsFor(g, "disease"), "disease")!);
     expect(fr).toEqual([2.2, 0.7]);
+  });
+});
+
+describe("year binning and By year notes", () => {
+  const YEAR: FigureState = { ...DEFAULT, view: "year" };
+  it("yearBins: 2-year and 3-year bins from 2000", () => {
+    const b2 = yearBins(2026, 2);
+    expect(b2[0]).toEqual({ start: 2000, label: "≤2001" });
+    expect(b2[1]).toEqual({ start: 2002, label: "2002" });
+    expect(b2[b2.length - 1]!.start).toBe(2026);
+    expect(yearBins(2026, 3)[0]!.label).toBe("≤2002");
+  });
+  it("yearBins puts pre-2000 starts in the first bin", () => {
+    const bins = yearBins(2026, 2);
+    expect(binOf(1994, bins)).toBe(0);
+    expect(binOf(2001, bins)).toBe(0);
+    expect(binOf(2002, bins)).toBe(1);
+    expect(binOf(2026, bins)).toBe(bins.length - 1);
+    expect(binOf(null, bins)).toBeNull();
+    expect(binOf(undefined, bins)).toBeNull();
+  });
+  it("view=year round-trips", () => {
+    const s = parseFigureState(new URLSearchParams("view=year"), null);
+    expect(s.view).toBe("year");
+    expect(figureSearch(s)).toBe("view=year");
+  });
+  it("cellMarks by year bin, oldest first", () => {
+    const bins = yearBins(2026, 2);
+    const v = rowViews(file([row("a", [mark({ y: 1990 }), mark({ y: 2003 }), mark({ y: 2002 }), mark({ y: null })])]), YEAR, 2026)[0]!;
+    expect(cellMarks(v, 0, YEAR, bins).map((m) => m.y)).toEqual([1990]);
+    expect(cellMarks(v, 1, YEAR, bins).map((m) => m.y)).toEqual([2002, 2003]);
+  });
+  it("undatedCount counts distinct trials without a start year", () => {
+    const dup = mark({ y: null });
+    const v = rowViews(file([row("a", [dup, mark({ y: 2020 })]), row("b", [dup, mark({ y: null })])]), YEAR, 2026);
+    expect(undatedCount(v)).toBe(2);
+  });
+  const notes = (rows: PipelineRow[], s = YEAR) => yearNotes(rowViews(file(rows), s, 2026), s, 2026);
+  it("Rising", () => {
+    const r = notes([row("a", [...many(4, { y: 2024 }), mark({ y: 2005 })]), row("b", [...many(2, { y: 2024 }), ...many(3, { y: 2010 })])]);
+    expect(r.get("a")).toEqual({ kicker: "Rising", text: "4 of 5 trials started since 2022." });
+    expect(r.has("b")).toBe(false);
+  });
+  it("Fading", () => {
+    const old = [...many(15, { y: 2005, s: "fin" }), mark({ y: 2018, s: "run" })];
+    expect(notes([row("a", old)]).get("a")).toEqual({ kicker: "Fading", text: "15 trials before 2012; 1 running now." });
+    expect(notes([row("a", [...many(14, { y: 2005 })])]).has("a")).toBe(false);
+    expect(notes([row("a", [...many(15, { y: 2005 }), ...many(2, { y: 2020, s: "run" })])]).has("a")).toBe(false);
+  });
+  it("Longest run", () => {
+    const ys = Array.from({ length: 20 }, (_, i) => 2003 + (i % 8) * 3).map((y) => mark({ y, s: "run" }));
+    expect(notes([row("a", ys)]).get("a")).toEqual({ kicker: "Longest run", text: "Trials every few years since 2003." });
+    const short = Array.from({ length: 20 }, (_, i) => mark({ y: 2012 + (i % 10), s: "run" }));
+    expect(notes([row("a", short)]).has("a")).toBe(false);
+  });
+  it("distinct rows, max 4, none under company lens, marginNotes delegates", () => {
+    const rows = ["a", "b", "c", "d", "e"].map((id) => row(id, [...many(5, { y: 2025 })]));
+    expect(notes(rows).size).toBe(1); // only one Rising note: one row per rule
+    const r = row("z", [...many(15, { y: 2005 }), ...many(2, { y: 2020, s: "run" })]);
+    const lens: FigureState = { ...YEAR, company: "X" };
+    expect(yearNotes(rowViews(file(rows), YEAR, 2026), lens, 2026).size).toBe(0);
+    const v = rowViews(file(rows), YEAR, 2026);
+    expect(marginNotes(v, YEAR, 2026)).toEqual(yearNotes(v, YEAR, 2026));
+    expect(r).toBeTruthy();
   });
 });
