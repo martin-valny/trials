@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front door mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root{--studio:#eef0f2;--studio-ink:#22272c;--studio-muted:#69717a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--studio);color:var(--studio-ink);font-family:"Hanken Grotesk",system-ui,sans-serif;font-feature-settings:"tnum" 1,"lnum" 1}
+.studio-bar{position:sticky;top:0;z-index:50;display:flex;gap:28px;align-items:center;padding:14px 32px;background:rgba(238,240,242,.92);backdrop-filter:blur(8px);border-bottom:1px solid #d9dde1}
+.studio-bar b{font-weight:800;letter-spacing:-.01em}
+.studio-tabs{display:flex;gap:4px;background:#e1e5e8;padding:3px;border-radius:999px}
+.studio-tabs button{border:0;background:none;font:inherit;font-size:13px;padding:7px 16px;border-radius:999px;color:var(--studio-muted);cursor:pointer}
+.studio-tabs button.on{background:#fff;color:var(--studio-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.studio-note{margin-left:auto;font-size:12.5px;color:var(--studio-muted)}
+.stage{padding:28px 32px 80px;max-width:1500px;margin:0 auto}
+.stage-h{display:flex;align-items:baseline;gap:14px;margin:8px 0 14px}
+.stage-h h2{font-size:15px;font-weight:700;margin:0}
+.stage-h span{font-size:12.5px;color:var(--studio-muted)}
+.frame{border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.06),0 12px 40px -12px rgba(20,30,40,.22);border:1px solid #d3d8dc}
+.frame-chrome{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#e4e7ea;border-bottom:1px solid #d3d8dc}
+.frame-chrome i{width:9px;height:9px;border-radius:50%;background:#c9ced3;display:block}
+.frame-chrome em{margin-left:14px;font-style:normal;font-size:11.5px;color:#7b838b}
+.themes{display:inline-flex;gap:2px;background:#e1e5e8;padding:2px;border-radius:999px;margin-left:auto}
+.themes button{border:0;background:none;font:inherit;font-size:12px;padding:4px 12px;border-radius:999px;color:var(--studio-muted);cursor:pointer}
+.themes button.on{background:#fff;color:var(--studio-ink)}
+.phones{display:flex;gap:40px;flex-wrap:wrap;margin-top:48px;align-items:flex-start}
+.phone{width:375px;border-radius:38px;padding:10px;background:#1b1d20;box-shadow:0 20px 50px -18px rgba(0,0,0,.45)}
+.phone .screen{border-radius:30px;overflow:hidden;height:780px;overflow-y:auto;scrollbar-width:none}
+.phone-cap{font-size:12.5px;color:var(--studio-muted);margin:12px 0 0 14px}
+.hidden{display:none!important}
+
+/* ===== The app, themed ===== */
+.app{--plate:#fff;--ink:#111;--muted:#5b6268;--rule:#d6dadd;--pale:#e4e8eb;--red:#c8102e;--run:#3c5488;--stop:#222;--fin:#c9d1d8;--unk:#aab3bb;--fam:#8796a3;--hl:#fff4d6;--tip:#111;--tipink:#fff;
+  background:var(--plate);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:13px;line-height:1.5;font-feature-settings:"tnum" 1,"lnum" 1;position:relative}
+.app.dark{--plate:#17191c;--ink:#eceae4;--muted:#9b9d9f;--rule:#34373c;--pale:#2b2e33;--red:#ff5a6e;--run:#8da3d6;--stop:#eceae4;--fin:#50575f;--unk:#6a7178;--fam:#6c7f93;--hl:#2e2a1c;--tip:#eceae4;--tipink:#111}
+.app a{color:inherit}
+.nav{display:flex;align-items:center;gap:26px;padding:16px 40px;border-bottom:1px solid var(--rule)}
+.nav .brand{font-weight:800;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.nav .brand svg{display:block}
+.nav .links{display:flex;gap:22px;font-size:13px;color:var(--muted)}
+.nav .links .on{color:var(--ink);font-weight:600;box-shadow:0 2px 0 var(--ink);padding-bottom:3px}
+.nav .fresh{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.nav .fresh::before{content:"";width:6px;height:6px;border-radius:50%;background:#2f9e6b}
+.lede{padding:40px 40px 6px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.headline{font-size:clamp(24px,2.6vw,34px);font-weight:500;line-height:1.16;letter-spacing:-.018em;margin:0;max-width:22ch}
+.headline em{font-style:normal;color:var(--red)}
+.headline .runw{color:var(--run)}
+.keys{display:flex;gap:34px}
+.key b{display:block;font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.key span{display:block;font-size:12px;color:var(--muted);margin-top:6px;max-width:13ch;line-height:1.3}
+.source{padding:12px 40px 0;font-size:12px;color:var(--muted);max-width:110ch}
+.controls{display:flex;gap:18px;align-items:center;padding:26px 40px 16px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:2px}
+.seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--plate)}
+.find{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;min-width:220px;color:var(--muted);font-size:12.5px}
+.find input{border:0;background:none;outline:none;font:inherit;color:var(--ink);width:100%}
+.lens-chip{display:none;align-items:center;gap:8px;background:var(--ink);color:var(--plate);border-radius:999px;padding:5px 8px 5px 12px;font-size:12.5px}
+.lens-chip.on{display:inline-flex}
+.lens-chip button{border:0;background:var(--plate);color:var(--ink);width:18px;height:18px;border-radius:50%;cursor:pointer;font-size:11px;line-height:1}
+.sortby{margin-left:auto;font-size:12.5px;color:var(--muted)}
+.sortby select{font:inherit;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--rule);padding:2px 0}
+.legend{display:flex;gap:18px;padding:0 40px 14px;font-size:12px;color:var(--muted);flex-wrap:wrap;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.fig{padding:0 40px 10px}
+.grid{display:grid;grid-template-columns:200px repeat(4,minmax(0,1fr)) 116px 210px;column-gap:0}
+.colhead{font-size:11.5px;font-weight:700;color:var(--muted);padding:10px 12px 8px;border-bottom:1px solid var(--ink);letter-spacing:.02em}
+.colhead.c{text-align:left}
+.colhead small{font-weight:400;display:block;font-size:11px;letter-spacing:0}
+.fam{grid-column:1/-1;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--fam);padding:20px 0 6px;border-bottom:1px solid var(--rule)}
+.row{display:contents;cursor:pointer}
+.row>div{border-bottom:1px solid var(--rule);padding:10px 12px;min-height:58px;transition:background .15s}
+.row:hover>div{background:var(--pale)}
+.row .lab{padding-left:0}
+.lab b{font-size:15px;font-weight:700;letter-spacing:-.005em;display:block;line-height:1.2}
+.lab .sub{font-size:11.5px;color:var(--muted)}
+.lab .cos{font-size:11.5px;margin-top:4px;color:var(--ink);line-height:1.35}
+.lab .cos a{text-decoration:none;border-bottom:1px dotted var(--muted)}
+.lab .cos a:hover{border-bottom-color:var(--ink)}
+.lab .cos .more{color:var(--muted)}
+.cell{display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start;border-left:1px dotted var(--rule)}
+.m{width:8px;height:8px;border-radius:50%;flex:none;position:relative}
+.m.adv{background:var(--red)}
+.m.run{border:1.6px solid var(--run);background:transparent}
+.m.stop{background:var(--stop)}
+.m.fin{background:var(--fin)}
+.m.unk{border:1.2px dashed var(--unk)}
+.m.cb::before{content:"";position:absolute;left:-5px;top:3px;width:5px;height:1.4px;background:var(--muted);opacity:.7}
+.lensed .m{opacity:.13}
+.lensed .m.hit{opacity:1;outline:1.5px solid var(--ink);outline-offset:1px}
+.lensed .row.miss>div{opacity:.45}
+.stat{font-size:12px;color:var(--muted);line-height:1.3}
+.stat b{font-size:17px;font-weight:500;color:var(--run);display:inline-block;min-width:24px;letter-spacing:-.01em}
+.stat .bar{height:3px;background:var(--pale);margin:5px 0 4px;border-radius:2px;overflow:hidden}
+.stat .bar i{display:block;height:100%;background:var(--run)}
+.note{font-size:12px;line-height:1.38;color:var(--ink);position:relative;padding-left:26px!important}
+.note .nk{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-bottom:2px}
+.note::before{content:"";position:absolute;left:4px;top:22px;width:16px;border-top:1px solid var(--red)}
+.past{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:26px 0 6px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.past::after{content:"";flex:1;border-top:1px dashed var(--rule)}
+.past em{font-style:normal;font-weight:400;letter-spacing:0;text-transform:none;font-size:12px}
+.row.hist>div{opacity:.62}
+.foot{padding:22px 40px 40px;font-size:12px;color:var(--muted);display:flex;gap:30px;flex-wrap:wrap;border-top:1px solid var(--rule);margin-top:24px}
+.foot a{color:var(--ink)}
+.tip{position:absolute;z-index:20;pointer-events:none;background:var(--tip);color:var(--tipink);font-size:12px;padding:9px 11px;border-radius:8px;max-width:280px;line-height:1.4;opacity:0;transition:opacity .1s;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.tip b{display:block;font-weight:600;margin-bottom:3px}
+.tip span{opacity:.75}
+
+/* ===== phone ===== */
+.app.ph .nav{padding:14px 18px;gap:12px}
+.app.ph .nav .links{display:none}
+.app.ph .nav .menu{margin-left:auto;font-size:18px;line-height:1}
+.app.ph .lede{display:block;padding:24px 18px 0}
+.app.ph .headline{font-size:24px}
+.app.ph .keys{gap:0;margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule);padding-top:14px}
+.app.ph .key b{font-size:22px}
+.app.ph .key span{font-size:11px}
+.app.ph .source{padding:12px 18px 0;font-size:11.5px}
+.app.ph .controls{padding:18px 18px 10px;gap:10px}
+.app.ph .seg{overflow-x:auto;max-width:100%;flex-wrap:nowrap;scrollbar-width:none}
+.app.ph .seg button{white-space:nowrap}
+.app.ph .find{min-width:0;flex:1}
+.app.ph .sortby{margin-left:0}
+.app.ph .legend{padding:2px 18px 10px;gap:10px 14px;font-size:11.5px}
+.app.ph .fig{padding:0 18px}
+.pcol{display:grid;grid-template-columns:repeat(4,1fr);font-size:10.5px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--ink);padding:6px 0;position:sticky;top:0;background:var(--plate);z-index:3}
+.pcol span{padding-left:4px}
+.prow{padding:12px 0 12px;border-bottom:1px solid var(--rule)}
+.prow .top{display:flex;align-items:baseline;gap:8px}
+.prow .top b{font-size:15px}
+.prow .top .sub{font-size:11px;color:var(--muted)}
+.prow .top .rn{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}
+.prow .top .rn b{color:var(--run);font-weight:600;font-size:13px}
+.prow .strip{display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px}
+.prow .strip .cell{gap:2.5px;padding:0 4px;min-height:14px}
+.prow .strip .m{width:6px;height:6px}
+.prow .strip .m.run{border-width:1.3px}
+.prow .cos{font-size:11.5px;color:var(--muted);margin-top:6px}
+.prow .pn{font-size:11.5px;margin-top:6px;color:var(--ink)}
+.prow .pn b{color:var(--red);font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-right:4px}
+.pfam{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--fam);padding:18px 0 4px}
+.prow.hist{opacity:.62}
+.app.ph .foot{padding:18px;font-size:11.5px}
+
+/* ===== target page ===== */
+.crumb{padding:22px 40px 0;font-size:12px;color:var(--muted)}
+.crumb a{text-decoration:none;border-bottom:1px dotted var(--muted)}
+.thead{padding:14px 40px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end}
+.thead h1{font-size:48px;font-weight:600;letter-spacing:-.03em;margin:0;line-height:1}
+.thead h1 small{font-size:15px;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:14px;vertical-align:middle}
+.thead .tl{font-size:19px;line-height:1.35;font-weight:400;letter-spacing:-.01em;margin:14px 0 0;max-width:46ch}
+.thead .tl em{font-style:normal;color:var(--red)}
+.thead .tl .runw{color:var(--run)}
+.dzs{display:flex;gap:6px;padding:16px 40px 0;flex-wrap:wrap}
+.dz{font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.dz b{color:var(--ink);font-weight:600;margin-left:4px}
+.sec{padding:36px 40px 0}
+.sec-h{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--ink);padding-bottom:8px;margin-bottom:14px}
+.sec-h .ltr{font-size:20px;font-weight:800;line-height:1}
+.sec-h h3{font-size:13px;font-weight:700;margin:0}
+.sec-h p{margin:0 0 0 auto;font-size:12px;color:var(--muted)}
+.tline{position:relative}
+.tline svg{display:block;width:100%;overflow:visible}
+.tline text{font-family:"Hanken Grotesk",system-ui,sans-serif}
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px}
+.co{display:grid;grid-template-columns:130px minmax(0,1fr) 54px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule)}
+.co .nm{font-weight:600;font-size:13px}
+.co .nm small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.co .bar{display:flex;gap:2px;flex-wrap:wrap}
+.co .n{text-align:right;font-size:12px;color:var(--muted)}
+.co .n b{color:var(--ink);font-weight:600;font-size:14px}
+.stop-card{padding:12px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:16px minmax(0,1fr);gap:10px}
+.stop-card .q{font-size:13.5px;line-height:1.4}
+.stop-card .q::before{content:"\201C"}.stop-card .q::after{content:"\201D"}
+.stop-card .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
+.reasons{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.reasons span{font-size:12px;background:var(--pale);border-radius:6px;padding:4px 9px}
+.reasons b{font-weight:600}
+.chain{display:flex;align-items:center;gap:0;flex-wrap:wrap;padding:6px 0 4px}
+.chain .nd{border:1px solid var(--ink);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;background:var(--plate)}
+.chain .nd small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.chain .nd.drug{border-color:var(--red);color:var(--red)}
+.chain .ed{width:38px;height:1px;background:var(--ink);position:relative}
+.chain .ed::after{content:"";position:absolute;right:0;top:-3px;border:3.5px solid transparent;border-left:5px solid var(--ink);border-right:0}
+.app.ph .crumb{padding:16px 18px 0}
+.app.ph .thead{display:block;padding:10px 18px 0}
+.app.ph .thead h1{font-size:38px}
+.app.ph .thead h1 small{display:block;margin:8px 0 0;font-size:13px}
+.app.ph .thead .tl{font-size:16px}
+.app.ph .dzs{padding:14px 18px 0}
+.app.ph .sec{padding:28px 18px 0}
+.app.ph .two{display:block}
+.app.ph .co{grid-template-columns:96px minmax(0,1fr) 40px}
+.app.ph .chain .ed{width:16px}
+.app.ph .chain .nd{padding:6px 10px;font-size:12px;margin:3px 0}
+.wcell{display:flex;gap:6px;align-items:center}
+</style>
+</head>
+<body>
+<div class="studio-bar">
+  <b>Trial Radar · front door</b>
+  <div class="studio-tabs" id="tabs">
+    <button class="on" data-v="pipe">1 · Pipeline figure</button>
+    <button data-v="target">2 · Target page: CD20</button>
+  </div>
+  <span class="studio-note">Real data, snapshot 6 Nov 2026 · draft row grouping · hover marks, click a company name</span>
+</div>
+
+<div class="stage" id="v-pipe">
+  <div class="stage-h"><h2>Desktop</h2><span>1280 wide</span>
+    <div class="themes" data-for="pipe-desk"><button class="on" data-t="light">Light</button><button data-t="dark">Dark</button></div></div>
+  <div class="frame"><div class="frame-chrome"><i></i><i></i><i></i><em>trialradar · /</em></div>
+    <div class="app" id="pipe-desk"></div></div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen"><div class="app ph" id="pipe-ph-l"></div></div></div><div class="phone-cap">Phone · light</div></div>
+    <div><div class="phone"><div class="screen"><div class="app ph dark" id="pipe-ph-d"></div></div></div><div class="phone-cap">Phone · dark</div></div>
+  </div>
+</div>
+
+<div class="stage hidden" id="v-target">
+  <div class="stage-h"><h2>Desktop</h2><span>1280 wide · opened by clicking the CD20 row</span>
+    <div class="themes" data-for="tgt-desk"><button class="on" data-t="light">Light</button><button data-t="dark">Dark</button></div></div>
+  <div class="frame"><div class="frame-chrome"><i></i><i></i><i></i><em>trialradar · /target/cd20</em></div>
+    <div class="app" id="tgt-desk"></div></div>
+  <div class="phones">
+    <div><div class="phone"><div class="screen"><div class="app ph" id="tgt-ph-l"></div></div></div><div class="phone-cap">Phone · light</div></div>
+    <div><div class="phone"><div class="screen"><div class="app ph dark" id="tgt-ph-d"></div></div></div><div class="phone-cap">Phone · dark</div></div>
+  </div>
+</div>
+
+<script>
+const DATA = /*DATA*/;
+const PH = ["Phase 1","Phase 2","Phase 3","Approved use"];
+const PHS = ["incl. early phase 1","incl. 1/2","incl. 2/3","phase 4"];
+const SLBL = {adv:"Advanced to next phase",run:"Still running",stop:"Stopped",fin:"Finished, no follow-on",unk:"Status unknown"};
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const brand = `<svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="9" cy="9" r="3.5" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".55"/><circle cx="13.2" cy="5.6" r="1.8" fill="#c8102e"/></svg>`;
+
+const state = {pipe:{dz:"All",lens:null,sort:"run"}};
+
+function rowsFor(dz){
+  return DATA.rows.map(r => {
+    const ms = dz==="All" ? r.marks : r.marks.filter(m => m.dz.includes(dz));
+    const run = ms.filter(m=>m.s==="run").length, adv = ms.filter(m=>m.s==="adv").length, stop = ms.filter(m=>m.s==="stop").length;
+    const recent = ms.filter(m=>(m.y||0)>=2021).length;
+    const co = {}; ms.filter(m=>m.i).forEach(m=>{co[m.c]=co[m.c]||{n:0,run:0}; co[m.c].n++; if(m.s==="run") co[m.c].run++;});
+    const cos = Object.entries(co).sort((a,b)=>b[1].n-a[1].n);
+    const runCos = cos.filter(c=>c[1].run>0).length;
+    const acad = new Set(ms.filter(m=>!m.i).map(m=>m.c)).size;
+    return {...r, ms, run, adv, stop, recent, cos, runCos, acad, hist: run<=1 && ms.length>=12};
+  }).filter(r => r.ms.length>0);
+}
+function notesFor(rows){
+  const notes = {}; const pick = (key, f, min, txt) => {
+    const c = rows.filter(r=>!notes[r.label]).filter(r=>f(r)>=min).sort((a,b)=>f(b)-f(a))[0];
+    if(c) notes[c.label] = {k:key, t:txt(c)};
+  };
+  pick("Most crowded", r=>r.run, 5, r=>`${r.run} trials running, from ${r.runCos} compan${r.runCos===1?"y":"ies"} plus academic groups.`);
+  pick("Newest wave", r=>r.ms.length>=5 ? r.recent/r.ms.length*100 : 0, 60, r=>`${r.recent} of ${r.ms.length} trials started since 2021.`);
+  pick("Most advanced", r=>r.adv, 3, r=>`${r.adv} trials advanced to a later phase.`);
+  pick("Most stopped", r=>r.stop, 5, r=>{const top={}; r.ms.filter(m=>m.s==="stop").forEach(m=>top[m.c]=(top[m.c]||0)+1); const [c,n]=Object.entries(top).sort((a,b)=>b[1]-a[1])[0]; return `${r.stop} stopped; ${n} of them by ${c}. Reasons on the target page.`});
+  return notes;
+}
+const sorters = {run:(a,b)=>b.run-a.run||b.adv-a.adv, adv:(a,b)=>b.adv-a.adv||b.run-a.run, new:(a,b)=>b.recent-a.recent, az:(a,b)=>a.label.localeCompare(b.label)};
+const mark = m => `<i class="m ${m.s}${m.cb?" cb":""}" data-n="${m.n}"></i>`;
+function cosHtml(r, max){
+  if(!r.cos.length) return `<span class="more">academic sponsors only</span>`;
+  const top = r.cos.slice(0,max).map(([c])=>`<a href="#" data-co="${esc(c)}">${esc(c)}</a>`).join(" · ");
+  const more = r.cos.length>max ? ` <span class="more">+${r.cos.length-max}</span>` : "";
+  return top + more + (r.acad?` <span class="more">· ${r.acad} academic</span>`:"");
+}
+function headline(rows, dz, lens){
+  const all = rows.flatMap(r=>r.ms); const uniq = new Map(all.map(m=>[m.n,m]));
+  const ms=[...uniq.values()];
+  const run = ms.filter(m=>m.s==="run").length, adv = ms.filter(m=>m.s==="adv").length;
+  const cos = new Set(ms.filter(m=>m.i&&m.s==="run").map(m=>m.c)).size;
+  if(lens){
+    const mine = ms.filter(m=>m.c===lens); const rowsHit = rows.filter(r=>r.ms.some(m=>m.c===lens));
+    return {h:`<b>${esc(lens)}</b>: ${mine.length} trials across ${rowsHit.length} target classes; <span class="runw">${mine.filter(m=>m.s==="run").length} running</span>, <em>${mine.filter(m=>m.s==="adv").length} advanced</em>.`, run, adv, cos, n:ms.length};
+  }
+  const top = [...rows].sort((a,b)=>b.run-a.run)[0];
+  const fam = {}; rows.forEach(r=>fam[r.family]=(fam[r.family]||0)+r.run);
+  const topFam = Object.entries(fam).sort((a,b)=>b[1]-a[1])[0];
+  const where = dz==="All" ? "" : ` in ${dz}`;
+  return {h:`<span class="runw">${run} targeted-drug trials are running${where}.</span> ${esc(topFam[0])} leads, with ${topFam[1]} of them; ${esc(top.label)} alone has ${top.run}.`, run, adv, cos, n:ms.length};
+}
+
+function renderPipe(el, phone){
+  const st = state.pipe; const rows = rowsFor(st.dz).sort(sorters[st.sort]);
+  const notes = notesFor(rows); const H = headline(rows, st.dz, st.lens);
+  const live = rows.filter(r=>!r.hist), hist = rows.filter(r=>r.hist);
+  const dzs = ["All","MS","MG","NMOSD","CIDP","MOGAD","AE"];
+  const legend = `<span><i class="m adv"></i>Advanced to next phase</span><span><i class="m run"></i>Still running</span><span><i class="m stop"></i>Stopped</span><span><i class="m fin"></i>Finished, no follow-on</span><span><i class="m unk"></i>Status unknown</span>${phone?"":`<span style="margin-left:auto">One mark per trial, oldest first · <i class="m fin cb" style="margin-left:6px"></i> spans two phases</span>`}`;
+  let fig = "";
+  const famOrder = []; live.forEach(r=>{ if(!famOrder.includes(r.family)) famOrder.push(r.family); });
+  if(!phone){
+    fig += `<div class="grid"><div class="colhead" style="padding-left:0">Target</div>${PH.map((p,i)=>`<div class="colhead">${p}<small>${PHS[i]}</small></div>`).join("")}<div class="colhead">Running</div><div class="colhead"></div>`;
+    const rowHtml = (r, cls="") => {
+      const miss = st.lens && !r.ms.some(m=>m.c===st.lens) ? " miss":"";
+      const n = notes[r.label];
+      return `<div class="row ${cls}${miss}" data-row="${esc(r.label)}">
+        <div class="lab"><b>${esc(r.label)}</b><span class="sub">${esc(r.sub)}</span><div class="cos">${cosHtml(r,3)}</div></div>
+        ${[1,2,3,4].map(p=>`<div class="cell">${r.ms.filter(m=>m.p===p).map(m=>mark(m).replace('class="m', `class="m${st.lens&&m.c===st.lens?" hit":""}`)).join("")}</div>`).join("")}
+        <div class="stat"><b>${r.run}</b> of ${r.ms.length}<div class="bar"><i style="width:${Math.min(100,r.run/55*100)}%"></i></div>${r.runCos} compan${r.runCos===1?"y":"ies"}</div>
+        <div class="${n?"note":""}">${n?`<span class="nk">${n.k}</span>${esc(n.t)}`:""}</div></div>`;
+    };
+    if(st.sort==="az") fig += live.map(r=>rowHtml(r)).join("");
+    else famOrder.forEach(f=>{ fig += `<div class="fam">${esc(f)}</div>` + live.filter(r=>r.family===f).map(r=>rowHtml(r)).join(""); });
+    if(hist.length) fig += `<div class="past">Mostly historical <em>— many past trials, at most one running</em></div>` + hist.map(r=>rowHtml(r,"hist")).join("");
+    fig += `</div>`;
+  } else {
+    fig += `<div class="pcol">${["Ph 1","Ph 2","Ph 3","Approved"].map(p=>`<span>${p}</span>`).join("")}</div>`;
+    const prow = (r,cls="") => { const n = notes[r.label]; return `<div class="prow ${cls}" data-row="${esc(r.label)}"><div class="top"><b>${esc(r.label)}</b><span class="sub">${esc(r.sub.split(" · ")[0])}</span><span class="rn"><b>${r.run}</b> running</span></div>
+      <div class="strip">${[1,2,3,4].map(p=>`<div class="cell">${r.ms.filter(m=>m.p===p).map(mark).join("")}</div>`).join("")}</div>
+      <div class="cos">${r.cos.slice(0,3).map(c=>esc(c[0])).join(" · ")||"academic sponsors only"}${r.cos.length>3?` +${r.cos.length-3}`:""}</div>
+      ${n?`<div class="pn"><b>${n.k}</b>${esc(n.t)}</div>`:""}</div>`; };
+    famOrder.forEach(f=>{ fig += `<div class="pfam">${esc(f)}</div>` + live.filter(r=>r.family===f).map(r=>prow(r)).join(""); });
+    if(hist.length) fig += `<div class="past">Mostly historical</div>` + hist.map(r=>prow(r,"hist")).join("");
+  }
+  el.innerHTML = `
+  <nav class="nav"><span class="brand">${brand}Trial Radar</span>
+    ${phone?`<span class="menu">≡</span>`:`<span class="links"><span class="on">Pipeline</span><span>Explore</span><span>Changes</span><span>Trials</span><span>Methods</span></span><span class="fresh">Registry data from ${DATA.asof}</span>`}</nav>
+  <header class="lede"><div><div class="kicker">MS and autoimmune neurology · drug pipeline</div><h1 class="headline">${H.h}</h1></div>
+    <div class="keys"><div class="key"><b style="color:var(--run)">${H.run}</b><span>trials still running</span></div><div class="key"><b style="color:var(--red)">${H.adv}</b><span>advanced to a later phase</span></div><div class="key"><b>${H.cos}</b><span>companies with a running trial</span></div></div></header>
+  <p class="source">${H.n.toLocaleString()} of ${DATA.total.toLocaleString()} trials test a drug with a known target, grouped here into ${rows.length} target classes; the rest are care, cell transplant, plasma treatments and others (<a href="#">see all</a>). ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials.</p>
+  <div class="controls">
+    <div class="seg" data-ctl="dz">${dzs.map(d=>`<button class="${d===st.dz?"on":""}" data-v="${d}">${d==="All"?"All diseases":d}</button>`).join("")}</div>
+    <label class="find"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="5.5" cy="5.5" r="4.3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8.8 8.8 12 12" stroke="currentColor" stroke-width="1.3"/></svg><input placeholder="Company lens: find a company" data-ctl="find" list="cos-${el.id}"><datalist id="cos-${el.id}">${[...new Set(DATA.rows.flatMap(r=>r.marks.filter(m=>m.i).map(m=>m.c)))].sort().map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
+    <span class="lens-chip ${st.lens?"on":""}">${esc(st.lens||"")}<button data-ctl="clear" title="Clear">✕</button></span>
+    <label class="sortby">Sort <select data-ctl="sort"><option value="run">most running</option><option value="adv">most advanced</option><option value="new">newest activity</option><option value="az">A–Z</option></select></label>
+  </div>
+  <div class="legend">${legend}</div>
+  <div class="fig ${st.lens?"lensed":""}">${fig}</div>
+  <footer class="foot"><span>"Advanced" means the drug has a later-phase trial on the registry. It does not mean the drug worked or was approved.</span><span><a href="#">Methods</a> · <a href="#">Explore the map</a> · <a href="#">Mechanism graph</a></span></footer>
+  <div class="tip"></div>`;
+  el.querySelector('[data-ctl="sort"]').value = st.sort;
+  wire(el, phone);
+}
+function wire(el, phone){
+  const tip = el.querySelector(".tip");
+  const byN = new Map(DATA.rows.flatMap(r=>r.marks).map(m=>[m.n,m]));
+  el.addEventListener("mousemove", e=>{
+    const t = e.target.closest(".m[data-n]"); if(!t){tip.style.opacity=0;return;}
+    const m = byN.get(t.dataset.n); const r = el.getBoundingClientRect();
+    tip.innerHTML = `<b>${esc(m.t)}</b>${esc(m.dr||"")} · ${esc(m.c)}<br><span>${m.n} · ${PH[m.p-1]}${m.cb?` (${m.cb})`:""} · ${m.y||"?"} · ${SLBL[m.s]}</span>`;
+    let x = e.clientX-r.left+14, y = e.clientY-r.top+14; if(x>r.width-290) x -= 300;
+    tip.style.left=x+"px"; tip.style.top=y+"px"; tip.style.opacity=1;
+  });
+  el.onclick = e=>{
+    const co = e.target.closest("[data-co]"); if(co){e.preventDefault(); state.pipe.lens = co.dataset.co; renderAllPipe(); return;}
+    const b = e.target.closest('[data-ctl="dz"] button'); if(b){state.pipe.dz=b.dataset.v; renderAllPipe(); return;}
+    if(e.target.closest('[data-ctl="clear"]')){state.pipe.lens=null; renderAllPipe(); return;}
+    const row = e.target.closest("[data-row]"); if(row && row.dataset.row==="CD20" && !e.target.closest(".m")) showTab("target");
+  };
+  el.querySelector('[data-ctl="sort"]').onchange = e=>{state.pipe.sort=e.target.value; renderAllPipe();};
+  el.querySelector('[data-ctl="find"]').onchange = e=>{ if(e.target.value){state.pipe.lens=e.target.value; renderAllPipe();} };
+}
+function renderAllPipe(){ renderPipe(document.getElementById("pipe-desk"), false); renderPipe(document.getElementById("pipe-ph-l"), true); renderPipe(document.getElementById("pipe-ph-d"), true); }
+
+/* ===== target page ===== */
+function renderTarget(el, phone){
+  const r = DATA.rows.find(x=>x.label==="CD20"); const ms = r.marks;
+  const run = ms.filter(m=>m.s==="run").length, adv = ms.filter(m=>m.s==="adv").length, stop = ms.filter(m=>m.s==="stop").length;
+  const dz = {}; ms.forEach(m=>m.dz.forEach(d=>dz[d]=(dz[d]||0)+1));
+  const drugs = {}; ms.forEach(m=>{ const k = norm(m.dr); drugs[k]=drugs[k]||[]; drugs[k].push(m); });
+  const lanes = Object.entries(drugs).sort((a,b)=>b[1].length-a[1].length);
+  const main = lanes.filter(l=>l[1].length>=4), other = lanes.filter(l=>l[1].length<4).flatMap(l=>l[1]);
+  if(other.length) main.push(["Other anti-CD20", other]);
+  const y0 = 2000, y1 = 2030, W = phone ? 335 : 1200, L = phone ? 0 : 150, R = phone ? 6 : 20;
+  const X = y => L + (Math.min(Math.max(y,y0),y1)-y0)/(y1-y0)*(W-L-R);
+  const color = s => ({adv:"var(--red)",run:"var(--run)",stop:"var(--stop)",fin:"var(--fin)",unk:"var(--unk)"}[s]);
+  let svg = "", y = 26;
+  // axis
+  for(let yr=y0; yr<=y1; yr+=5){ svg += `<line x1="${X(yr)}" x2="${X(yr)}" y1="18" y2="__H__" stroke="var(--rule)" stroke-width="1"/><text x="${X(yr)}" y="11" font-size="10.5" fill="var(--muted)" text-anchor="middle">${yr}</text>`; }
+  main.forEach(([name, list])=>{
+    const sorted = [...list].sort((a,b)=>(a.y||0)-(b.y||0));
+    const tracks = []; sorted.forEach(m=>{ const s=m.y||2010, e=Math.max(m.y2||s, s)+0.6; let k = tracks.findIndex(t=>t<=s); if(k<0){k=tracks.length; tracks.push(0);} tracks[k]=e+0.15; m._k=k; m._s=s; m._e=e; });
+    const th = phone ? 5 : 7; const h = tracks.length*th + 10;
+    if(phone){ svg += `<text x="0" y="${y+2}" font-size="11.5" font-weight="700" fill="var(--ink)">${esc(name)} <tspan font-weight="400" fill="var(--muted)">${list.length}</tspan></text>`; y += 10; }
+    else svg += `<text x="0" y="${y+12}" font-size="12.5" font-weight="700" fill="var(--ink)">${esc(name)}</text><text x="0" y="${y+27}" font-size="11" fill="var(--muted)">${list.length} trials · ${list.filter(m=>m.s==="run").length} running</text>`;
+    sorted.forEach(m=>{
+      const yy = y + m._k*th + 4, x1 = X(m._s), x2 = X(m._e), sw = phone ? 2.4 : (m.p>=3?3.6:m.p===2?2.6:1.8);
+      const dash = m.s==="run" ? `stroke-dasharray="0" ` : "";
+      if(m.s==="run"){ const now = X(2026.85); svg += `<line x1="${x1}" x2="${Math.min(x2,now)}" y1="${yy}" y2="${yy}" stroke="${color(m.s)}" stroke-width="${sw}" stroke-linecap="round"/>`; if(x2>now) svg += `<line x1="${now}" x2="${x2}" y1="${yy}" y2="${yy}" stroke="${color(m.s)}" stroke-width="${sw*0.6}" stroke-dasharray="2 2.5"/>`; svg += `<circle cx="${x1}" cy="${yy}" r="${phone?2.4:3}" fill="var(--plate)" stroke="${color(m.s)}" stroke-width="1.4" data-n="${m.n}" class="tm"/>`; }
+      else { svg += `<line x1="${x1}" x2="${x2}" y1="${yy}" y2="${yy}" stroke="${color(m.s)}" stroke-width="${sw}" stroke-linecap="round" ${m.s==="unk"?'stroke-dasharray="2 2"':""} data-n="${m.n}" class="tm"/>`; if(m.s==="adv") svg += `<circle cx="${x2}" cy="${yy}" r="${phone?2.4:3}" fill="var(--red)"/>`; if(m.s==="stop") svg += `<line x1="${x2}" x2="${x2}" y1="${yy-3.5}" y2="${yy+3.5}" stroke="var(--stop)" stroke-width="1.6"/>`; }
+    });
+    y += h + (phone?14:18);
+    svg += `<line x1="${phone?0:0}" x2="${W}" y1="${y-9}" y2="${y-9}" stroke="var(--rule)" stroke-width="1" opacity=".0"/>`;
+  });
+  const nowX = X(2026.85);
+  svg += `<line x1="${nowX}" x2="${nowX}" y1="14" y2="${y-6}" stroke="var(--ink)" stroke-width="1"/><text x="${nowX+(phone?-4:6)}" y="${y+6}" font-size="10.5" fill="var(--ink)" text-anchor="${phone?"end":"start"}" font-weight="600">Data as of ${DATA.asof}</text>`;
+  svg = svg.replaceAll("__H__", y-6);
+  const H = y + 14;
+
+  const co = {}; ms.forEach(m=>{ const k = m.i ? m.c : "Academic and other"; co[k]=co[k]||[]; co[k].push(m); });
+  const coList = Object.entries(co).sort((a,b)=> (a[0]==="Academic and other") - (b[0]==="Academic and other") || b[1].length-a[1].length).slice(0, 7);
+  const order = {adv:0,run:1,stop:2,fin:3,unk:4};
+  const coHtml = coList.map(([c,l])=>{ const dr = [...new Set(l.map(m=>norm(m.dr)))].slice(0,2).join(", "); return `<div class="co"><div class="nm">${esc(c)}<small>${esc(dr)}</small></div><div class="bar">${[...l].sort((a,b)=>order[a.s]-order[b.s]).map(mark).join("")}</div><div class="n"><b>${l.length}</b> · ${l.filter(m=>m.s==="run").length} run</div></div>`; }).join("");
+  const stops = ms.filter(m=>m.s==="stop");
+  const cat = s => !s ? "Not given" : /business|strateg|sponsor decision|commercial|portfolio/i.test(s) ? "Business decision" : /enrol|recruit|accrual/i.test(s) ? "Slow enrolment" : /safety|adverse|death|toxic/i.test(s) ? "Safety" : /efficacy|futility/i.test(s) ? "Efficacy or futility" : /covid|pandemic/i.test(s) ? "COVID-19" : /fund/i.test(s) ? "Funding" : "Other";
+  const cats = {}; stops.forEach(m=>{ const c = cat(DATA.why[m.n]); cats[c]=(cats[c]||0)+1; });
+  const stopHtml = stops.slice(0, phone?4:6).map(m=>`<div class="stop-card"><i class="m stop" style="margin-top:6px"></i><div><div class="q">${esc(DATA.why[m.n]||"No reason given")}</div><div class="meta">${esc(norm(m.dr))} · ${esc(m.c)} · ${PH[m.p-1]} · ${m.y} · ${m.n}</div></div></div>`).join("");
+  const lead = `<span class="runw">${run} of ${ms.length} trials are running</span>, from ${new Set(ms.filter(m=>m.i&&m.s==="run").map(m=>m.c)).size} companies and academic groups. <em>${adv} advanced</em> to a later phase; ${stop} stopped.`;
+  el.innerHTML = `
+  <nav class="nav"><span class="brand">${brand}Trial Radar</span>${phone?`<span class="menu">≡</span>`:`<span class="links"><span class="on">Pipeline</span><span>Explore</span><span>Changes</span><span>Trials</span><span>Methods</span></span><span class="fresh">Registry data from ${DATA.asof}</span>`}</nav>
+  <div class="crumb"><a href="#" data-back>Pipeline</a> / B-cell depletion</div>
+  <header class="thead"><div><h1>CD20 <small>gene MS4A1 · B-cell depletion · antibodies</small></h1><p class="tl">${lead}</p></div>
+    ${phone?"":`<div class="keys"><div class="key"><b style="color:var(--run)">${run}</b><span>still running</span></div><div class="key"><b style="color:var(--red)">${adv}</b><span>advanced</span></div><div class="key"><b>${stop}</b><span>stopped</span></div></div>`}</header>
+  <div class="dzs">${Object.entries(dz).sort((a,b)=>b[1]-a[1]).map(([d,n])=>`<span class="dz">${d}<b>${n}</b></span>`).join("")}</div>
+  <section class="sec"><div class="sec-h"><span class="ltr">a</span><h3>Every CD20 trial over time, by drug</h3>${phone?"":`<p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>`}</div>
+    <div class="tline"><svg viewBox="0 0 ${W} ${H}" height="${H}">${svg}</svg></div>
+    <div class="legend" style="padding:8px 0 0">${`<span><svg width="22" height="8"><line x1="1" x2="16" y1="4" y2="4" stroke="var(--red)" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="4" r="3" fill="var(--red)"/></svg>Advanced</span><span><svg width="26" height="8"><circle cx="4" cy="4" r="3" fill="none" stroke="var(--run)" stroke-width="1.4"/><line x1="7" x2="15" y1="4" y2="4" stroke="var(--run)" stroke-width="3"/><line x1="15" x2="25" y1="4" y2="4" stroke="var(--run)" stroke-width="1.6" stroke-dasharray="2 2.5"/></svg>Running</span><span><svg width="20" height="8"><line x1="1" x2="16" y1="4" y2="4" stroke="var(--stop)" stroke-width="3"/><line x1="16" x2="16" y1="0" y2="8" stroke="var(--stop)" stroke-width="1.6"/></svg>Stopped</span><span><svg width="18" height="8"><line x1="1" x2="16" y1="4" y2="4" stroke="var(--fin)" stroke-width="3" stroke-linecap="round"/></svg>Finished, no follow-on</span>`}</div></section>
+  <section class="sec"><div class="two">
+    <div><div class="sec-h"><span class="ltr">b</span><h3>Who is working on CD20</h3><p>by parent company</p></div>${coHtml}</div>
+    <div><div class="sec-h"><span class="ltr">c</span><h3>What stopped, and why</h3><p>${stops.length} trials</p></div>
+      <div class="reasons">${Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span>${c} <b>${n}</b></span>`).join("")}</div>${stopHtml}</div>
+  </div></section>
+  <section class="sec"><div class="sec-h"><span class="ltr">d</span><h3>How it works</h3><p><a href="#">Open in the mechanism graph →</a></p></div>
+    <div class="chain"><span class="nd drug">ocrelizumab, rituximab, ofatumumab, ublituximab<small>4 antibodies</small></span><span class="ed"></span><span class="nd">CD20<small>gene MS4A1</small></span><span class="ed"></span><span class="nd">B-cell receptor signalling<small>Reactome</small></span><span class="ed"></span><span class="nd">Adaptive immune system<small>Reactome</small></span></div>
+    <p style="font-size:12px;color:var(--muted);max-width:80ch;margin:10px 0 0">Antibodies bind CD20 on B cells and deplete them. Related on the pipeline: <a href="#">CD19</a> · <a href="#">CD20 CAR-T</a> · <a href="#">BAFF / APRIL</a>.</p></section>
+  <footer class="foot"><span>ClinicalTrials.gov registered trials only. "Advanced" means the drug has a later-phase trial; it does not mean it worked.</span><span><a href="#">Show these ${ms.length} trials on the map</a></span></footer>
+  <div class="tip"></div>`;
+  const tip = el.querySelector(".tip"); const byN = new Map(ms.map(m=>[m.n,m]));
+  el.onmousemove = e=>{ const t = e.target.closest(".tm[data-n], .m[data-n]"); if(!t){tip.style.opacity=0;return;} const m = byN.get(t.dataset.n); if(!m) return; const rc = el.getBoundingClientRect();
+    tip.innerHTML = `<b>${esc(m.t)}</b>${esc(m.dr||"")} · ${esc(m.c)}<br><span>${m.n} · ${PH[m.p-1]} · ${m.y||"?"}–${m.y2||"?"}${m.e?" (expected)":""} · ${SLBL[m.s]}</span>`;
+    let x=e.clientX-rc.left+14; if(x>rc.width-290) x-=300; tip.style.left=x+"px"; tip.style.top=(e.clientY-rc.top+14)+"px"; tip.style.opacity=1; };
+  el.onclick = e=>{ if(e.target.closest("[data-back]")){ e.preventDefault(); showTab("pipe"); } };
+}
+function norm(d){ d=(d||"other").toLowerCase(); for(const k of ["ocrelizumab","rituximab","ofatumumab","ublituximab","obinutuzumab","inebilizumab"]) if(d.includes(k)) return k; return d; }
+
+function showTab(v){ document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.v===v)); document.getElementById("v-pipe").classList.toggle("hidden", v!=="pipe"); document.getElementById("v-target").classList.toggle("hidden", v!=="target"); window.scrollTo(0,0); }
+document.getElementById("tabs").onclick = e=>{ const b=e.target.closest("button"); if(b) showTab(b.dataset.v); };
+document.querySelectorAll(".themes").forEach(g=>g.onclick = e=>{ const b=e.target.closest("button"); if(!b) return; g.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b)); document.getElementById(g.dataset.for).classList.toggle("dark", b.dataset.t==="dark"); });
+renderAllPipe();
+renderTarget(document.getElementById("tgt-desk"), false);
+renderTarget(document.getElementById("tgt-ph-l"), true);
+renderTarget(document.getElementById("tgt-ph-d"), true);
+</script>
+</body>
+</html>
