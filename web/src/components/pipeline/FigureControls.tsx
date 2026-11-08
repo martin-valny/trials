@@ -23,13 +23,13 @@ export function FigureControls({ state, diseases, companies, onChange }: Props) 
   return (
     <div className="controls">
       <div className="seg" role="group" aria-label="Arrangement">
-        {(["phase", "disease"] as const).map((v) => (
+        {(["phase", "disease", "year"] as const).map((v) => (
           <button key={v} type="button" className={state.view === v ? "on" : ""} aria-pressed={state.view === v} onClick={() => set({ view: v })}>
-            {v === "phase" ? "By phase" : "By disease"}
+            {v === "phase" ? "By phase" : v === "disease" ? "By disease" : "By year"}
           </button>
         ))}
       </div>
-      {state.view === "phase" && (
+      {state.view !== "disease" && (
         <div className="seg seg-scroll seg-dz" role="group" aria-label="Disease">
           <button type="button" className={state.disease === null ? "on" : ""} aria-pressed={state.disease === null} onClick={() => set({ disease: null })}>
             All diseases

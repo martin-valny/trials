@@ -9,12 +9,16 @@ import {
   type FigureState,
   type MarginNote,
   type RowView,
+  yearBins,
+  YEAR_START,
 } from "../../lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { Mark } from "./Mark";
-import { columnsFor, columnTracks, layout, RowCompanies, rowHref, type Draw } from "./parts";
+import { columnsFor, columnTracks, layout, RowCompanies, rowHref, type Draw, type MarkSize } from "./parts";
 import { PipelineStrip } from "./PipelineStrip";
 import { phaseText, TrialCard } from "./TrialCard";
+
+const STATE_ORDER: MarkState[] = ["adv", "run", "stop", "fin", "unk"];
 
 interface Props {
   file: PipelineFile;
@@ -46,7 +50,21 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
   const [tip, setTip] = useState<Tip | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const lens = state.company === null ? null : normKey(state.company);
-  const cols = columnsFor(file, state.view);
+  const year = state.view === "year";
+  const thisYear = Number(file.generated_for.slice(0, 4)) || new Date().getFullYear();
+  const width = phone ? 3 : 2;
+  const bins = useMemo(() => (year ? yearBins(thisYear, width) : []), [year, thisYear, width]);
+  const cols = columnsFor(file, state.view, bins);
+  // Where the snapshot date falls across the bins (the "data as of" hairline).
+  const asOf = useMemo(() => {
+    if (!year) return undefined;
+    const d = new Date(file.generated_for);
+    const t = Number.isNaN(d.getTime()) ? thisYear + 1 : d.getUTCFullYear() + (d.getTime() - Date.UTC(d.getUTCFullYear(), 0, 1)) / 31_557_600_000;
+    return Math.max(0, Math.min(1, (t - YEAR_START) / (bins.length * width)));
+  }, [year, file.generated_for, thisYear, bins.length, width]);
+  // By year the marks stack bottom-up in state order: advanced, running, stopped, finished, unknown.
+  const sortCell = (ms: PipelineMark[]): PipelineMark[] =>
+    year ? [...ms].sort((a, b) => STATE_ORDER.indexOf(markState(a, state.disease)) - STATE_ORDER.indexOf(markState(b, state.disease))) : ms;
   const items = layout(file, views, state);
   const tracks = useMemo(() => columnTracks(file, cols, state.view), [file, cols, state.view]);
   const maxRun = Math.max(1, ...views.map((v) => v.run));
@@ -63,7 +81,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
   };
   const close = useCallback(() => setOpen(null), []);
 
-  const mark = (m: PipelineMark, rowId: string, col: number | string, size: 6 | 8 = 8) => {
+  const mark = (m: PipelineMark, rowId: string, col: number | string, size: MarkSize = 8) => {
     const disease = state.view === "disease" ? String(col) : state.disease;
     const st: MarkState = markState(m, disease);
     const sp = file.sponsors[m.sp];
@@ -98,14 +116,15 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
   return (
     <div className={`fig${lens ? " lensed" : ""}`} ref={box}>
       {phone ? (
-        <PipelineStrip key={lens ?? ""} items={items} cols={cols} tracks={tracks} notes={notes} draw={draw} />
+        <PipelineStrip key={lens ?? ""} items={items} cols={cols} tracks={tracks} bins={bins} asOf={asOf} sortCell={sortCell} notes={notes} draw={draw} />
       ) : (
-        <div className="grid" style={{ "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}) } as React.CSSProperties}>
+        <div className={`grid${year ? " by-year" : ""}`} style={{ "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}), ...(asOf !== undefined ? { "--asof": asOf } : {}) } as React.CSSProperties}>
+          {year && <i className="asof" aria-hidden="true" />}
           <div className="grid-head">
             <div className="colhead first">Target</div>
             {cols.map((c) => (
-              <div key={c.key} className="colhead" data-col={c.key}>
-                {c.label}
+              <div key={c.key} className="colhead" data-col={c.key} data-tick={c.tick ? "" : undefined}>
+                {year ? (c.tick ? c.label : <span className="sr-only">{c.label}</span>) : c.label}
                 {c.sub && <small>{c.sub}</small>}
               </div>
             ))}
@@ -134,10 +153,10 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                   </div>
                 </div>
                 {cols.map((c) => {
-                  const ms = cellMarks(v, c.key, state);
+                  const ms = sortCell(cellMarks(v, c.key, state, bins));
                   return (
-                    <div key={c.key} className="cell" data-cell={c.key}>
-                      {ms.map((m) => mark(m, v.row.id, c.key))}
+                    <div key={c.key} className="cell" data-cell={c.key} data-tick={c.tick ? "" : undefined}>
+                      {ms.map((m) => mark(m, v.row.id, c.key, year ? 4 : 8))}
                       {ms.length === 0 && state.view === "disease" && (
                         <span
                           className="nodot"

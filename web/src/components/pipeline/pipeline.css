@@ -219,3 +219,25 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 
 .other-rows { display: block; width: 100%; margin: 14px 0 4px; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .other-rows:hover { border-color: var(--ink); }
+
+/* By year: equal-width start-year bins, marks stacked bottom-up, a hairline at the data snapshot. */
+.m4 { width: 4px; height: 4px; }
+.m4.run { border-width: 1.1px; }
+.m4.unk { border-width: 1px; }
+.m35 { width: 3.5px; height: 3.5px; }
+.m35.run { border-width: 1px; }
+.m35.unk { border-width: 1px; }
+.m4.cb::before, .m35.cb::before { display: none; }
+.grid { position: relative; --tail: calc(var(--stat) + var(--note)); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.grid.by-year .colhead:not(.first) { padding-left: 4px; padding-right: 0; white-space: nowrap; }
+.grid.by-year .cell { border-left: 0; padding: 10px 4px; gap: 2px; flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; }
+.grid.by-year .cell[data-tick] { border-left: 1px dotted var(--rule); }
+.grid.by-year .colhead[data-tick] { border-left: 1px dotted var(--rule); }
+.asof { position: absolute; z-index: 2; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--ink); pointer-events: none; left: calc(var(--lab) + (100% - var(--lab) - var(--tail)) * var(--asof, 1)); }
+.pstrip.by-year .asof { top: 30px; left: calc(100% * var(--asof, 1)); }
+.pstrip.by-year .pcol span { padding-left: 4px; white-space: nowrap; }
+.pstrip.by-year .strip .cell { flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; gap: 2px; padding: 0 3px; min-height: 28px; }
+@media (max-width: 1099px) {
+  .grid { --tail: var(--stat); }
+}

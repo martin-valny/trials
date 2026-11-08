@@ -11,6 +11,7 @@ import {
   sourceLine,
   type FigureState,
   type Headline,
+  undatedCount,
 } from "../../lib/pipeline";
 import { usePhone } from "../../lib/useMediaQuery";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
@@ -66,6 +67,11 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
   const views = useMemo(() => rowViews(file, state, year), [file, state, year]);
   const head = useMemo(() => headline(file, views, state), [file, views, state]);
   const notes = useMemo(() => marginNotes(views, state, year, file.diseases.map((d) => d.code)), [views, state, year, file.diseases]);
+  const source = useMemo(() => {
+    const base = sourceLine(file, views);
+    const k = state.view === "year" ? undatedCount(views) : 0;
+    return k > 0 ? `${base.replace(/\.$/, "")}; ${k} ${k === 1 ? "trial without a start year is" : "trials without a start year are"} not drawn.` : base;
+  }, [file, views, state.view]);
   const companies = useMemo(() => companyOptions(file), [file]);
   const empty = views.length === 0 || (state.company !== null && head.kind === "none");
   const disease = file.diseases.find((d) => d.code === state.disease);
@@ -86,7 +92,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
         </div>
       </header>
       <p className="source">
-        <Source text={sourceLine(file, views)} />
+        <Source text={source} />
       </p>
       <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change} />
       <div className="legend" role="group" aria-label="Legend">
@@ -96,11 +102,15 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
             {LEGEND_TEXT[s]}
           </span>
         ))}
-        {!phone && (
-          <span className="legend-note">
-            {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
-            <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
-          </span>
+        {state.view === "year" ? (
+          <span className="legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
+        ) : (
+          !phone && (
+            <span className="legend-note">
+              {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
+              <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
+            </span>
+          )
         )}
       </div>
       {empty ? (

@@ -162,3 +162,56 @@ test("on desktop the lens fades the other rows and offers no toggle", async () =
   expect(container.querySelectorAll(".row.miss").length).toBeGreaterThan(0);
   expect(screen.queryByRole("button", { name: /other rows?$/ })).not.toBeInTheDocument();
 });
+
+test("By year: the switch sets view=year and draws start-year bins from 2000", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  await userEvent.click(screen.getByRole("button", { name: "By year" }));
+  expect(where()).toContain("view=year");
+  const cols = [...container.querySelectorAll(".grid-head [data-col]")].map((e) => e.textContent);
+  expect(cols[0]).toBe("≤2001");
+  expect(cols.length).toBeGreaterThan(10);
+  // the disease control stays, and every trial lands in a bin
+  expect(screen.getByRole("group", { name: "Disease" })).toBeInTheDocument();
+  expect(container.querySelectorAll(".cell .m").length).toBe(8);
+  expect(container.querySelector(".asof")).not.toBeNull();
+});
+
+test("By year: notes follow the thresholds and never crash on the fixture", async () => {
+  stubFetch();
+  const { container } = renderPage("/?view=year");
+  await screen.findByRole("heading", { level: 1 });
+  const kickers = [...container.querySelectorAll(".note .nk")].map((e) => e.textContent);
+  kickers.forEach((k) => expect(["Rising", "Fading", "Longest run"]).toContain(k));
+});
+
+test("By year with an empty disease shows the calm empty state", async () => {
+  stubFetch();
+  renderPage("/?view=year&disease=AE");
+  const btn = await screen.findByRole("button", { name: /Show all diseases/ });
+  expect(btn.closest("p")!.textContent).toBe("No targeted-drug trials in AE. Show all diseases →");
+});
+
+test("By year on a phone uses 3-year bins", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch();
+    const { container } = renderPage("/?view=year");
+    await screen.findByRole("heading", { level: 1 });
+    const labels = [...container.querySelectorAll(".pcol span")].map((e) => e.textContent);
+    expect(labels[0]).toBe("≤2002");
+    expect(labels).toContain("2015");
+    expect(container.querySelector(".strip .cell[data-cell='1']")).not.toBeNull();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("By year source line counts trials without a start year", async () => {
+  const f = readFixture<PipelineFile>("pipeline.json");
+  f.rows[0]!.marks[0]!.y = null;
+  stubFetch({ "pipeline.json": f });
+  renderPage("/?view=year");
+  expect(await screen.findByText(/1 trial without a start year is not drawn\./)).toBeInTheDocument();
+});

@@ -1,19 +1,24 @@
 import { useState } from "react";
 import type { MarginNote } from "../../lib/pipeline";
-import { cellMarks, rowAccessibleName } from "../../lib/pipeline";
+import { cellMarks, rowAccessibleName, type YearBin } from "../../lib/pipeline";
 import { Link } from "react-router-dom";
+import type { PipelineMark } from "../../types";
 import { RowCompanies, rowHref, type Col, type Draw, type Item } from "./parts";
 
 interface Props {
   items: Item[];
   cols: Col[];
   tracks?: string | undefined;
+  bins?: YearBin[] | undefined;
+  /** Where the data snapshot falls across the year bins, 0 to 1. */
+  asOf?: number | undefined;
+  sortCell: (marks: PipelineMark[]) => PipelineMark[];
   notes: Map<string, MarginNote>;
   draw: Draw;
 }
 
 /** The phone arrangement (<= 640px): a sticky column header, then each row as label plus a strip of cells. */
-export function PipelineStrip({ items: all, cols, tracks, notes, draw }: Props) {
+export function PipelineStrip({ items: all, cols, tracks, bins, asOf, sortCell, notes, draw }: Props) {
   // With a company lens a phone shows only the rows the company is in; the rest sit behind a toggle
   // (the desktop figure fades them to 45% instead; faded rows are unreadable at this size).
   const [others, setOthers] = useState(false);
@@ -22,9 +27,11 @@ export function PipelineStrip({ items: all, cols, tracks, notes, draw }: Props) 
   const kept = hide ? all.filter((it) => !missing(it)) : all;
   const items = kept.filter((it, i) => it.t !== "past" || kept.slice(i + 1).some((x) => x.t === "row"));
   const hidden = draw.lens !== null ? all.filter(missing).length : 0;
-  const style = { "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}) } as React.CSSProperties;
+  const year = draw.state.view === "year";
+  const style = { "--n": cols.length, ...(tracks ? { "--cols": tracks } : {}), ...(asOf !== undefined ? { "--asof": asOf } : {}) } as React.CSSProperties;
   return (
-    <div className="pstrip" style={style}>
+    <div className={`pstrip${year ? " by-year" : ""}`} style={style}>
+      {year && <i className="asof" aria-hidden="true" />}
       <div className="pcol" aria-hidden="true">
         {cols.map((c) => (
           <span key={c.key}>{c.short}</span>
@@ -49,7 +56,7 @@ export function PipelineStrip({ items: all, cols, tracks, notes, draw }: Props) 
             <div className="strip">
               {cols.map((c) => (
                 <div key={c.key} className="cell" data-cell={c.key}>
-                  {cellMarks(v, c.key, draw.state).map((m) => draw.mark(m, v.row.id, c.key, 6))}
+                  {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, year ? 3.5 : 6))}
                 </div>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { COMPANIES_ON_ROW, figureSearch, type FigureState, type RowView } from "../../lib/pipeline";
+import { COMPANIES_ON_ROW, figureSearch, type FigureState, type RowView, type YearBin } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark } from "../../types";
 
 const PHASE_COLS = [
@@ -16,11 +16,14 @@ export interface Col {
   label: string;
   short: string;
   sub: string;
+  /** By year: this bin carries a label (every fifth year, and the first bin). */
+  tick?: boolean;
 }
 
 /** The figure's columns: four phases, or the diseases in the order pipeline.json lists them. */
-export function columnsFor(f: PipelineFile, view: FigureState["view"]): Col[] {
+export function columnsFor(f: PipelineFile, view: FigureState["view"], bins: YearBin[] = []): Col[] {
   if (view === "phase") return PHASE_COLS;
+  if (view === "year") return bins.map((b, i) => ({ key: i, label: b.label, short: i === 0 || b.start % 5 === 0 ? b.label : "", sub: "", tick: i === 0 || b.start % 5 === 0 }));
   return f.diseases.map((d) => ({ key: d.code, label: d.code, short: phoneCode(d.code), sub: d.label === d.code ? "" : d.label }));
 }
 
@@ -66,12 +69,14 @@ export function layout(f: PipelineFile, views: RowView[], s: FigureState): Item[
   return items;
 }
 
+export type MarkSize = 8 | 6 | 4 | 3.5;
+
 export interface Draw {
   state: FigureState;
   file: PipelineFile;
   /** The company lens, normalised, or null. */
   lens: string | null;
-  mark: (m: PipelineMark, rowId: string, col: number | string, size?: 6 | 8) => React.ReactNode;
+  mark: (m: PipelineMark, rowId: string, col: number | string, size?: MarkSize) => React.ReactNode;
   onCompany: (name: string) => void;
 }
 
