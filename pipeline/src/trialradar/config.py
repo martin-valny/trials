@@ -154,6 +154,7 @@ class AreaConfig(_Strict):
     thresholds: Thresholds = Thresholds()
     aliases_dir: Path
     mechanisms_dir: Path = Path("mechanisms")
+    approaches_dir: Path = Path("approaches")
     explorer: ExplorerConfig = ExplorerConfig()
 
     @field_validator("tracked_fields")
@@ -170,7 +171,8 @@ class AreaConfig(_Strict):
 
 
 def load_config(path: Path) -> AreaConfig:
-    """Load and validate a config YAML; ``aliases_dir`` and ``mechanisms_dir`` resolve relative to the file."""
+    """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir`` and ``approaches_dir``
+    resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -185,5 +187,6 @@ def load_config(path: Path) -> AreaConfig:
         update={
             "aliases_dir": (path.parent / cfg.aliases_dir).resolve(),
             "mechanisms_dir": (path.parent / cfg.mechanisms_dir).resolve(),
+            "approaches_dir": (path.parent / cfg.approaches_dir).resolve(),
         }
     )

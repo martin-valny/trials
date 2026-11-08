@@ -115,6 +115,16 @@ def test_invalid_values_rejected_with_a_reason(
         load_config(path)
 
 
+def test_config_dirs_resolve_relative_to_file(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data.pop("approaches_dir", None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    cfg = load_config(path)
+    assert cfg.approaches_dir == (tmp_path / "approaches").resolve()
+    assert cfg.mechanisms_dir == (tmp_path / "mechanisms").resolve()
+
+
 def test_explorer_defaults_when_block_absent(tmp_path: Path) -> None:
     data = yaml.safe_load(REPO_YAML.read_text())
     data.pop("explorer", None)
