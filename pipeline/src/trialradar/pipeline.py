@@ -222,6 +222,7 @@ def _pipeline_figure(
     warnings: list[str] = []
     try:
         with _stage("pipeline_figure", **extra) as info:
+            info["warnings"] = warnings
             fig = read_figure_config(cfg.pipeline_dir, cfg.sponsors_dir, cfg.stop_reasons)
             for_day = day or date.fromisoformat(explorer["generated_for"])
             doc = build_pipeline_doc(explorer, tables.trial, cfg, fig, for_day, warnings)

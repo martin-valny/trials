@@ -14,3 +14,17 @@ Related files: `config/sponsors/parents.csv` (company parents) and `config/stop_
 
 A bad row stops the stage with `<file>:<line>: <problem>`; the run itself continues without a
 `pipeline.json` (R19).
+
+## Known comparator cases
+
+Interferon-β, glatiramer and corticosteroids are often a comparator or background therapy.
+`background.csv` lists the registry spellings seen on the 2026-11 snapshot, so a trial of a
+studied drug against them is placed in the studied drug's row only. Two trials still sit in two
+rows because a single intervention string names both drugs; Methods should say they are counted
+in each row (and once in the headline totals):
+
+- NCT00168766: "interferon-beta-1a plus methylprednisolone" (Interferon-β and Glucocorticoids)
+- NCT00771043: "tysabri and avonex" (α4-integrin and Interferon-β)
+
+Trials whose only experimental drug is a listed background drug still define their row. A trial
+of a listed background drug plus a drug that maps to no row has no mark (5 on this snapshot).
