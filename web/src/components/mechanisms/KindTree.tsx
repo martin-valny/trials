@@ -21,24 +21,34 @@ const STRIP_WORDS: Record<Outcome, string> = {
   unknown: "status unknown",
 };
 
-/** "3 running, 1 stopped, 1 succeeded": the strip read out, in strip order, zeros left out. */
-export const outcomeWords = (outcomes: Record<Outcome, number>): string =>
-  STRIP_ORDER.filter((o) => outcomes[o] > 0)
-    .map((o) => `${fmt(outcomes[o])} ${STRIP_WORDS[o]}`)
-    .join(", ");
+/** What a succeeded trial whose win is credited to a drug outside the kind (1b) reads as. */
+export const ELSEWHERE_WORDS = "succeeded via another drug";
+
+/**
+ * "1 succeeded, 1 stopped, 2 succeeded via another drug, 3 running": the strip read out, in strip
+ * order, zeros left out. ``elsewhere`` sits where the strip draws it, just before completed.
+ */
+export const outcomeWords = (outcomes: Record<Outcome, number>, elsewhere = 0): string =>
+  STRIP_ORDER.flatMap((o) => {
+    const own = outcomes[o] > 0 ? [`${fmt(outcomes[o])} ${STRIP_WORDS[o]}`] : [];
+    return o === "completed_unknown" && elsewhere > 0 ? [`${fmt(elsewhere)} ${ELSEWHERE_WORDS}`, ...own] : own;
+  }).join(", ");
 
 /**
  * A kind's trials by outcome: a 6px square-ended bar whose length is the kind's share of the largest
- * kind in the tree, split by outcome (succeeded in red, the only red). Unknown is a hairline outline,
- * as the map's unknown ring is.
+ * kind in the tree, split by outcome (succeeded in red, the only red, and only for wins credited to
+ * the kind, 1b). A win credited to another drug is drawn in the completed grey, beside the completed
+ * segment. Unknown is a hairline outline, as the map's unknown ring is.
  */
 export function OutcomeStrip({
   outcomes,
+  elsewhere = 0,
   n,
   max,
   palette,
 }: {
   outcomes: Record<Outcome, number>;
+  elsewhere?: number;
   n: number;
   max: number;
   palette: Palette;
@@ -46,12 +56,20 @@ export function OutcomeStrip({
   return (
     <span className="strip" aria-hidden="true">
       <span className="strip-bar" style={{ width: `${Math.max(2, (n / Math.max(1, max)) * 100)}%` }}>
+        {elsewhere > 0 ? (
+          <i
+            className="strip-seg elsewhere"
+            style={{ flexGrow: elsewhere, background: outcomeColor("completed_unknown", palette), order: 1 }}
+          />
+        ) : null}
         {STRIP_ORDER.filter((o) => outcomes[o] > 0).map((o) => (
           <i
             key={o}
             className={o === "unknown" ? "strip-seg ring" : "strip-seg"}
             style={{
               flexGrow: outcomes[o],
+              // Grey beside grey: the credited-elsewhere segment sits right before completed.
+              order: STRIP_ORDER.indexOf(o) < STRIP_ORDER.indexOf("completed_unknown") ? 0 : 2,
               ...(o === "unknown"
                 ? { borderColor: outcomeColor(o, palette) }
                 : { background: outcomeColor(o, palette) }),
@@ -152,8 +170,8 @@ export function KindTree({
                         <span className="kind-leader" aria-hidden="true" />
                       </span>
                       <span className="kind-n">{trialsWord(k.n)}</span>
-                      <OutcomeStrip outcomes={k.outcomes} n={k.n} max={max} palette={palette} />
-                      <span className="visually-hidden">: {outcomeWords(k.outcomes)}</span>
+                      <OutcomeStrip outcomes={k.outcomes} elsewhere={k.elsewhere} n={k.n} max={max} palette={palette} />
+                      <span className="visually-hidden">: {outcomeWords(k.outcomes, k.elsewhere)}</span>
                       <Share kind={k} defined={successDefined} />
                     </button>
                     {own ? <Rationale text={own.text} url={own.url} /> : null}

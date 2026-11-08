@@ -181,6 +181,8 @@ test("a long group shows its first 20 rows until Show more", async () => {
     label: `name ${i}`,
     n: 1,
     outcomes: { succeeded: 0, stopped: 0, completed_unknown: 0, running: 1, unknown: 0 },
+    elsewhere: 0,
+    elsewhereTrials: [],
     finished: 0,
     succeeded: 0,
     rate: null,
@@ -199,4 +201,71 @@ test("a long group shows its first 20 rows until Show more", async () => {
   expect(document.querySelectorAll(".kind-row")).toHaveLength(20);
   await userEvent.click(screen.getByRole("button", { name: "Show 3 more, 3 trials" }));
   expect(document.querySelectorAll(".kind-row")).toHaveLength(23);
+});
+
+test("a kind's strip and panel read a win credited to another drug as such, never as its own success", async () => {
+  const { KindTree } = await import("../src/components/mechanisms/KindTree");
+  const { SidePanel } = await import("../src/components/mechanisms/SidePanel");
+  const { LIGHT_PALETTE, outcomeColor } = await import("../src/lib/explorer");
+  const kind = {
+    key: "ahsct",
+    label: "aHSCT",
+    n: 3,
+    outcomes: { succeeded: 0, stopped: 0, completed_unknown: 1, running: 0, unknown: 0 },
+    elsewhere: 2,
+    elsewhereTrials: ["NCT1", "NCT2"],
+    finished: 3,
+    succeeded: 0,
+    rate: null,
+    trials: ["NCT1", "NCT2", "NCT3"],
+  };
+  const { unmount } = render(
+    <KindTree
+      groups={[{ group: "Haematopoietic reset", rationale: null, source_url: null, kinds: [kind] }]}
+      selected={null}
+      successDefined
+      palette={LIGHT_PALETTE}
+      rationales={() => null}
+      onSelect={() => undefined}
+    />,
+  );
+  const row = screen.getByRole("button", { name: /^aHSCT/ });
+  expect(row).toHaveTextContent("2 succeeded via another drug, 1 completed");
+  const red = outcomeColor("succeeded", LIGHT_PALETTE);
+  for (const seg of row.querySelectorAll<HTMLElement>(".strip-seg")) expect(seg.style.background).not.toBe(red);
+  unmount();
+
+  const t = (nct: string, outcome: ExplorerFile["trials"][number]["outcome"], by: string[]) => ({
+    ...base.trials[0],
+    nct_id: nct,
+    outcome,
+    succeeded_by: by,
+  });
+  render(
+    <MemoryRouter>
+      <SidePanel
+        kind={kind}
+        group="Haematopoietic reset"
+        approach="Cell & transplant"
+        rationale={null}
+        trials={[t("NCT1", "succeeded", ["cyclophosphamide"]), t("NCT2", "succeeded", ["rituximab"]), t("NCT3", "completed_unknown", [])]}
+        successDefined
+        onClose={() => undefined}
+      />
+    </MemoryRouter>,
+  );
+  const panel = screen.getByRole("complementary");
+  expect(panel).toHaveTextContent("3 trials: 2 succeeded via another drug, 1 completed.");
+  expect(panel).toHaveTextContent("3 in the success pool, 0 succeeded");
+  expect(within(panel).getByText(/Succeeded via cyclophosphamide/)).toBeInTheDocument();
+});
+
+test("Non-drug care's strip key has no Succeeded entry", async () => {
+  const f = structuredClone(base);
+  f.trials[0] = { ...f.trials[0], approaches: ["nondrug"], kinds: Object.keys(f.kinds).filter((k) => f.kinds[k].approach === "nondrug").slice(0, 1) };
+  stubFetch({ "explorer.json": f });
+  renderPage("/mechanisms/nondrug");
+  const key = await screen.findByRole("list", { name: "Outcome strip key" });
+  expect(key).not.toHaveTextContent("Succeeded");
+  expect(key).toHaveTextContent("Completed");
 });

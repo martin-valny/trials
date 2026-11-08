@@ -665,7 +665,12 @@ export interface SuccessGroup {
   finished: number;
   succeeded: number;
   rate: number | null;
+  /** Present (false) only for Non-drug care By approach: success means a drug moved on, so no share. */
+  successDefined?: false;
 }
+
+/** The approach with no success rule: no drug moves on, so there is no share to show. */
+export const NONDRUG = "nondrug";
 
 /** The groups a trial touches in a grouping: its conditions, modalities, mechanism classes or approaches. */
 export function groupsOf(t: ExplorerTrial, by: SuccessBy): string[] {
@@ -705,7 +710,8 @@ export function wonIn(t: ExplorerTrial, by: SuccessBy, group: string, drugIndex:
  * Panel b grouping: finished trials that could succeed (the pool), counted in the denominator of every
  * group they touch. With ``drugIndex`` a success counts only in the groups of the drug that moved on
  * (wonIn); without it, the trial's own outcome (disease groups always use succeeded_in).
- * `rate` is null below minGroup. Sorted by finished desc, capped at topN.
+ * `rate` is null below minGroup, and always for Non-drug care By approach (success not defined; its
+ * succeeded count is 0). Sorted by finished desc, capped at topN.
  * `order` is for the disease view only: it keeps that area order, lists every group even with none finished,
  * and disables sorting and topN.
  */
@@ -734,11 +740,11 @@ export function successGroups(
       acc.set(g, row);
     }
   }
-  const rows = [...acc].map(([group, r]) => ({
-    group,
-    ...r,
-    rate: r.finished >= minGroup && r.finished > 0 ? r.succeeded / r.finished : null,
-  }));
+  const rows: SuccessGroup[] = [...acc].map(([group, r]) =>
+    by === "approach" && group === NONDRUG
+      ? { group, finished: r.finished, succeeded: 0, rate: null, successDefined: false }
+      : { group, ...r, rate: r.finished >= minGroup && r.finished > 0 ? r.succeeded / r.finished : null },
+  );
   if (order) return rows;
   return rows.sort((a, b) => b.finished - a.finished || a.group.localeCompare(b.group)).slice(0, topN);
 }

@@ -87,6 +87,17 @@ function TrialList({ trials }: { trials: ExplorerTrial[] }) {
 }
 
 /**
+ * A trial's outcome as this kind reads it (1b): a win credited to another drug names that drug, and in
+ * Non-drug care (success not defined) a succeeded trial reads as completed.
+ */
+function kindOutcome(t: ExplorerTrial, kind: TreeKind, successDefined: boolean): string {
+  if (t.outcome !== "succeeded") return outcomeLabel(t.outcome);
+  if (!successDefined) return outcomeLabel("completed_unknown");
+  if (!kind.elsewhereTrials.includes(t.nct_id)) return outcomeLabel(t.outcome);
+  return t.succeeded_by.length > 0 ? `Succeeded via ${t.succeeded_by.join(", ")}` : "Succeeded via another drug";
+}
+
+/**
  * Panel c: one kind's trials. Its rationale (marked proposed, with its source), its counts, "Show these
  * trials on the map", and every trial with a link to its page. Escape or Close hands focus back to the
  * row that opened it.
@@ -115,7 +126,7 @@ export function SidePanel({
         {approach} › {group}
       </p>
       <p className="side-counts">
-        {trialsWord(kind.n)}: {outcomeWords(kind.outcomes)}.
+        {trialsWord(kind.n)}: {outcomeWords(kind.outcomes, kind.elsewhere)}.
         {successDefined && kind.finished > 0 ? (
           <>
             {" "}
@@ -135,7 +146,7 @@ export function SidePanel({
               {t.nct_id}
             </Link>{" "}
             <span className="side-title">{t.title}</span>
-            <span className="side-outcome"> · {outcomeLabel(t.outcome)}</span>
+            <span className="side-outcome"> · {kindOutcome(t, kind, successDefined)}</span>
           </li>
         ))}
       </ul>

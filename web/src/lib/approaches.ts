@@ -1,5 +1,5 @@
 import type { DrugInfo, ExplorerFile, ExplorerTrial, Outcome } from "../types";
-import { APPROACH_SERIES, OUTCOMES, UNCLASSIFIED, wonIn } from "./explorer";
+import { APPROACH_SERIES, NONDRUG, OUTCOMES, UNCLASSIFIED, wonIn } from "./explorer";
 import { drugNodeId } from "./graph";
 
 /** The seven approach keys, in the vocabulary's order (the URL's /mechanisms/:approach). */
@@ -8,11 +8,16 @@ export const APPROACH_KEYS: readonly string[] = [...APPROACH_SERIES, UNCLASSIFIE
 export const isApproachKey = (key: string | undefined): key is string =>
   key !== undefined && APPROACH_KEYS.includes(key);
 
-/** The approach with no success rule: no drug moves on, so there is no share to show. */
-export const NONDRUG = "nondrug";
+export { NONDRUG };
 
 /** The Unclassified group whose rows are the unsorted names (the mapping backlog). */
 export const NOT_YET_SORTED = "Not yet sorted";
+
+/**
+ * The last Unclassified group: unsorted names carried only by trials in other approaches (an unmapped
+ * drug beside a mapped one, say). The trials are not in Unclassified; the names are still backlog.
+ */
+export const NOT_YET_SORTED_ELSEWHERE = "Not yet sorted, in trials of other approaches";
 
 /**
  * The Unclassified group (and its one row) for trials with neither a kind nor an unsorted name: no
@@ -72,7 +77,16 @@ export interface TreeKind {
   key: string;
   label: string;
   n: number;
+  /**
+   * Trials by outcome, 1b: ``succeeded`` counts only wins credited to this kind. A succeeded trial whose
+   * win belongs to another drug is in ``elsewhere`` instead; in Non-drug care (success not defined) it
+   * counts as completed.
+   */
   outcomes: Record<Outcome, number>;
+  /** Succeeded trials whose win is credited to a drug outside this kind ("succeeded via another drug"). */
+  elsewhere: number;
+  /** Their NCT ids, sorted. */
+  elsewhereTrials: string[];
   finished: number;
   succeeded: number;
   rate: number | null;
@@ -115,21 +129,27 @@ interface Acc {
   won: (t: ExplorerTrial) => boolean;
 }
 
-function toKind(a: Acc, minGroup: number): TreeKind {
+function toKind(a: Acc, minGroup: number, successDefined: boolean): TreeKind {
   const outcomes = zeroOutcomes();
+  const elsewhere: string[] = [];
   let finished = 0;
   let succeeded = 0;
   for (const t of a.members) {
-    outcomes[t.outcome] += 1;
+    const won = successDefined && a.won(t);
+    if (t.outcome !== "succeeded" || won) outcomes[t.outcome] += 1;
+    else if (successDefined) elsewhere.push(t.nct_id);
+    else outcomes.completed_unknown += 1;
     if (!t.in_pool) continue;
     finished += 1;
-    if (a.won(t)) succeeded += 1;
+    if (won) succeeded += 1;
   }
   return {
     key: a.key,
     label: a.label,
     n: a.members.length,
     outcomes,
+    elsewhere: elsewhere.length,
+    elsewhereTrials: elsewhere.sort(),
     finished,
     succeeded,
     rate: rateOf(finished, succeeded, minGroup),
@@ -145,7 +165,10 @@ const byCount = (a: { n: number; label: string }, b: { n: number; label: string 
  * and each trial's kinds. Groups and kinds run by trial count (most first). In Unclassified the
  * "Not yet sorted" group lists the trials' unsorted names instead of the type fallbacks, so the
  * mapping backlog reads by name; a trial with neither is listed as "No experimental treatment listed".
- * Success is credited to the drug that moved on (1b); under minGroup there is no rate.
+ * Names carried only by trials in other approaches follow in a last group of their own
+ * (NOT_YET_SORTED_ELSEWHERE), so every unsorted name is listed somewhere.
+ * Success is credited to the drug that moved on (1b), in the row counts as in the share; under minGroup
+ * there is no rate, and Non-drug care never shows a success.
  */
 export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerFile, minGroup: number): TreeGroup[] {
   const accs = new Map<string, Acc>();
@@ -178,11 +201,24 @@ export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerF
     }
     if (!placed) add(unsortedKey(""), NO_INTERVENTION_ROW, NO_INTERVENTION, t, () => false);
   }
+  if (unclassified) {
+    // Names no Unclassified trial carries: the rest of the backlog, with the trials (elsewhere) that hold them.
+    const listed = new Set([...accs.keys()]);
+    for (const t of trials) {
+      if (t.approaches.includes(UNCLASSIFIED)) continue;
+      for (const name of new Set(t.unsorted)) {
+        const key = unsortedKey(name);
+        if (listed.has(key)) continue;
+        add(key, name, NOT_YET_SORTED_ELSEWHERE, t, (x) => x.outcome === "succeeded" && x.succeeded_by.includes(name));
+      }
+    }
+  }
+  const successDefined = approach !== NONDRUG;
 
   const groups = new Map<string, { kinds: TreeKind[]; trials: Set<string> }>();
   for (const a of accs.values()) {
     const g = groups.get(a.group) ?? { kinds: [], trials: new Set<string>() };
-    g.kinds.push(toKind(a, minGroup));
+    g.kinds.push(toKind(a, minGroup, successDefined));
     a.members.forEach((t) => g.trials.add(t.nct_id));
     groups.set(a.group, g);
   }
@@ -203,7 +239,7 @@ export function kindTree(approach: string, trials: ExplorerTrial[], f: ExplorerF
         kinds,
       };
     })
-    .sort(byCount)
+    .sort((a, b) => Number(a.group === NOT_YET_SORTED_ELSEWHERE) - Number(b.group === NOT_YET_SORTED_ELSEWHERE) || byCount(a, b))
     .map(({ group, rationale, source_url, kinds }) => ({ group, rationale, source_url, kinds }));
 }
 

@@ -859,6 +859,19 @@ describe("successGroups", () => {
     expect(ten[0].rate).toBeCloseTo(0.3);
   });
 
+  it("gives Non-drug care no success share By approach, however many finished", () => {
+    const ts = many(12, { approaches: ["targeted", "nondrug"], succeeded_by: [] }, 4);
+    const rows = successGroups(ts, "approach", 10, 8, undefined, {});
+    const nondrug = rows.find((r) => r.group === "nondrug")!;
+    expect(nondrug.finished).toBe(12);
+    expect(nondrug.succeeded).toBe(0);
+    expect(nondrug.rate).toBeNull();
+    expect(nondrug.successDefined).toBe(false);
+    const targeted = rows.find((r) => r.group === "targeted")!;
+    expect(targeted.rate).toBeCloseTo(4 / 12);
+    expect(targeted.successDefined).toBeUndefined();
+  });
+
   it("sorts by finished desc, then name, and keeps the top N", () => {
     const ts = [
       ...many(3, { modalities: ["b"] }),

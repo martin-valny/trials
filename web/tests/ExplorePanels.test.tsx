@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Explore } from "../src/components/explore/Explore";
@@ -551,4 +551,27 @@ test("panel b By approach credits success to the drug that moved on", async () =
   expect(within(b).getByText("Targeted drugs")).toBeInTheDocument();
   expect(within(b).getByText("Trials in several approaches count in each.")).toBeInTheDocument();
   expect(within(b).getByText(/a success counts only for the groups of the drug that moved on/)).toBeInTheDocument();
+});
+
+test("panel b By approach never gives Non-drug care a share, even with enough finished trials", async () => {
+  const { PanelSuccess } = await import("../src/components/explore/PanelSuccess");
+  const pool = explorer.trials[0];
+  const trials = Array.from({ length: 12 }, (_, i) => ({
+    ...pool,
+    nct_id: `NCT9000000${i}`,
+    approaches: ["targeted", "nondrug"],
+    in_pool: true,
+    outcome: i < 3 ? ("succeeded" as const) : ("completed_unknown" as const),
+    succeeded_by: [],
+  }));
+  render(<PanelSuccess stats={explorer.stats} k={10} trials={trials} minGroup={10} approaches={explorer.approaches} drugIndex={{}} />);
+  const b = screen.getByRole("region", { name: /Share that succeeded/ });
+  await userEvent.click(within(b).getByRole("button", { name: "By approach" }));
+  const row = within(b).getByText("Non-drug care").closest("li")!;
+  expect(row).toHaveTextContent("—");
+  expect(row).toHaveTextContent("success not defined");
+  expect(row).not.toHaveTextContent("%");
+  expect(row.querySelector(".bar-fill")).toBeNull();
+  const targeted = within(b).getByText("Targeted drugs").closest("li")!;
+  expect(targeted).toHaveTextContent("25%");
 });

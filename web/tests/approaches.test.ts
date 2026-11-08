@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kindTree, railRows, APPROACH_KEYS, isApproachKey } from "../src/lib/approaches";
+import { kindTree, railRows, APPROACH_KEYS, isApproachKey, NOT_YET_SORTED_ELSEWHERE } from "../src/lib/approaches";
 import type { ExplorerFile, ExplorerTrial } from "../src/types";
 
 const trial = (o: Partial<ExplorerTrial> = {}): ExplorerTrial => ({
@@ -197,7 +197,10 @@ describe("kindTree", () => {
     expect(ahsct.n).toBe(2);
     expect(ahsct.finished).toBe(2);
     expect(ahsct.succeeded).toBe(1); // only B: A's win belongs to cyclophosphamide
-    expect(ahsct.outcomes.succeeded).toBe(2); // the trials' own outcomes stay as R21 says
+    // The strip and its words follow 1b too: A is drawn as completed, read as "succeeded via another drug".
+    expect(ahsct.outcomes.succeeded).toBe(1);
+    expect(ahsct.elsewhere).toBe(1);
+    expect(ahsct.elsewhereTrials).toEqual(["A"]);
     expect(ahsct.rate).toBe(0.5);
   });
 
@@ -221,7 +224,12 @@ describe("kindTree", () => {
       trial({ nct_id: "E", approaches: ["targeted"], unsorted: ["mystery drug"] }),
     ];
     const tree = kindTree("unclassified", trials, file(trials), 10);
-    expect(tree.map((g) => g.group)).toEqual(["Not yet sorted", "No experimental treatment listed", "Not a treatment"]);
+    expect(tree.map((g) => g.group)).toEqual([
+      "Not yet sorted",
+      "No experimental treatment listed",
+      "Not a treatment",
+      NOT_YET_SORTED_ELSEWHERE,
+    ]);
     const notYet = tree[0];
     expect(notYet.kinds.map((k) => [k.label, k.n])).toEqual([
       ["standard therapy", 2],
@@ -231,6 +239,55 @@ describe("kindTree", () => {
     expect(notYet.kinds[0].trials).toEqual(["A", "B"]);
     expect(notYet.rationale).toBeNull();
     expect(tree[2].kinds.map((k) => [k.label, k.n])).toEqual([["not a treatment", 1]]);
+  });
+
+  it("lists unsorted names whose trials all sit in other approaches in a last group of their own", () => {
+    const trials = [
+      trial({ nct_id: "A", approaches: ["unclassified"], kinds: ["type:OTHER"], unsorted: ["standard therapy"] }),
+      // Listed in Unclassified already (A): not repeated below.
+      trial({ nct_id: "B", approaches: ["targeted"], unsorted: ["standard therapy"] }),
+      // Only in other bubbles: the backlog still shows them, by trial count.
+      trial({ nct_id: "C", approaches: ["targeted"], unsorted: ["ct103a cells", "2b3-201"] }),
+      trial({ nct_id: "D", approaches: ["cell"], kinds: ["ahsct"], unsorted: ["ct103a cells"] }),
+    ];
+    const tree = kindTree("unclassified", trials, file(trials), 10);
+    expect(tree.map((g) => g.group)).toEqual(["Not yet sorted", NOT_YET_SORTED_ELSEWHERE]);
+    expect(tree[0].kinds.map((k) => [k.label, k.trials])).toEqual([["standard therapy", ["A"]]]);
+    expect(tree[1].kinds.map((k) => [k.label, k.trials])).toEqual([
+      ["ct103a cells", ["C", "D"]],
+      ["2b3-201", ["C"]],
+    ]);
+    // Other approaches' trees never carry the backlog.
+    expect(kindTree("targeted", trials, file(trials), 10)).toEqual([]);
+  });
+
+  it("never shows a success in Non-drug care: a win through a drug reads as completed", () => {
+    const trials = [
+      trial({
+        nct_id: "A",
+        approaches: ["targeted", "nondrug"],
+        kinds: ["exercise"],
+        drugs: ["cyclophosphamide"],
+        in_pool: true,
+        outcome: "succeeded",
+        succeeded_by: ["cyclophosphamide"],
+      }),
+      trial({ nct_id: "B", approaches: ["nondrug"], kinds: ["exercise"], outcome: "running" }),
+    ];
+    const ex = kindTree("nondrug", trials, file(trials), 1)[0].kinds[0];
+    expect(ex.outcomes.succeeded).toBe(0);
+    expect(ex.outcomes.completed_unknown).toBe(1);
+    expect(ex.elsewhere).toBe(0);
+    expect(ex.succeeded).toBe(0);
+  });
+
+  it("a legacy trial with no succeeded_by keeps its own outcome", () => {
+    const trials = [
+      trial({ nct_id: "A", approaches: ["cell"], kinds: ["ahsct"], in_pool: true, outcome: "succeeded" }),
+    ];
+    const k = kindTree("cell", trials, file(trials), 1)[0].kinds[0];
+    expect(k.outcomes.succeeded).toBe(1);
+    expect(k.elsewhere).toBe(0);
   });
 });
 

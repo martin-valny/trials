@@ -92,7 +92,7 @@ All data is public ClinicalTrials.gov registry data. It is **self-reported by sp
 - Relevance matches conditions, keywords and MeSH terms as whole phrases against configured synonyms. Titles are not used. Studies that list only a bare abbreviation (for example a two-letter acronym) as their condition are missed.
 - If a trial drops out of the registry response and returns, only an "added" row is recorded; field changes during its absence are not reported.
 - A partial registry response under the 25% drop threshold can still produce a burst of removed/added rows.
-- Mechanism coverage is partial (84.6% of drug-bearing trials fully mapped); trials with unmapped drugs show as "no known mechanism", and their names are listed under Unclassified › Not yet sorted on the Mechanisms page.
+- Mechanism coverage is partial (84.6% of drug-bearing trials fully mapped); trials with unmapped drugs show as "no known mechanism", and their names are listed under Unclassified › Not yet sorted on the Mechanisms page (or, when the trial also has a mapped drug and so sits in another approach, in the last Unclassified group, "Not yet sorted, in trials of other approaches").
 - Slice 1 has no AI and no prediction model: every value comes straight from the registry record or the committed ChEMBL mapping. The Explore layout is a deterministic dimensionality reduction of registry fields, and its success label is the proxy described above.
 
 ## Evaluation

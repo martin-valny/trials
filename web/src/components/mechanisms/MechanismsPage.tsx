@@ -165,7 +165,7 @@ function Filtersbar({
 }
 
 /** The strip's key, under the canvas heading: what each colour in an outcome strip means. */
-function StripKey({ palette }: { palette: Palette }) {
+function StripKey({ palette, successDefined }: { palette: Palette; successDefined: boolean }) {
   const words: Record<Outcome, string> = {
     succeeded: "Succeeded",
     stopped: "Stopped early",
@@ -175,7 +175,8 @@ function StripKey({ palette }: { palette: Palette }) {
   };
   return (
     <ul className="key-list strip-key" aria-label="Outcome strip key">
-      {STRIP_ORDER.map((o) => (
+      {/* Non-drug care has no success rule, so no red and no Succeeded entry. */}
+      {STRIP_ORDER.filter((o) => successDefined || o !== "succeeded").map((o) => (
         <li key={o}>
           <span
             className={o === "unknown" ? "swatch ring" : "swatch"}
@@ -327,7 +328,13 @@ function Plate({
             />
           ) : (
             <>
-              <StripKey palette={palette} />
+              <StripKey palette={palette} successDefined={row?.successDefined ?? true} />
+              {tree.some((g) => g.kinds.some((k) => k.elsewhere > 0)) ? (
+                <p className="panel-note">
+                  A trial that succeeded because a drug outside the row moved on is drawn grey and read as
+                  &ldquo;succeeded via another drug&rdquo;: the success counts for that drug&rsquo;s group.
+                </p>
+              ) : null}
               <KindTree
                 groups={tree}
                 selected={selected?.kind.key ?? null}
@@ -339,7 +346,8 @@ function Plate({
               {approach === "unclassified" ? (
                 <p className="panel-note">
                   Not yet sorted: names not in the drug mapping or the keyword rules, by trial count. Each is a mapping
-                  still to decide.
+                  still to decide. Names carried only by trials in other approaches (an unmapped drug beside a mapped
+                  one) are listed last, with those trials.
                 </p>
               ) : null}
             </>

@@ -111,7 +111,12 @@ class GraphConfig(_Strict):
     ``max_nodes`` caps the **pathway** nodes. Drug and target nodes are never pruned, so every
     targeted trial stays reachable; pathways are pruned toward the cap (single-target leaves
     first, then the leaves reached by the fewest trials). The layout seed is
-    ``ExplorerConfig.seed``."""
+    ``ExplorerConfig.seed``.
+
+    Deviation, open for Martin: spec 2026-11-06 §7.1 aims at ~150-300 nodes in total and the plan
+    (Task 7) at a cap on all nodes. With drugs and targets unpruned the 2026-11-06 snapshot builds
+    1,237 nodes (515 drugs, 472 targets, 250 pathways) and 4,198 edges, about 4x that aim. Accept
+    it, or prune / merge low-n drugs and targets (HANDOFF §00 open items)."""
 
     max_nodes: int = Field(default=250, ge=0)
     overlap_floor: float = Field(default=0.3, gt=0, le=1)

@@ -94,6 +94,21 @@ export function PanelSuccess({
                 : by === "approach"
                   ? approachLabel(row.group, { approaches })
                   : row.group;
+            if (row.successDefined === false)
+              // Non-drug care: success means a drug moved on, so a dash and the words, as the rail says.
+              return (
+                <li className="bar undefined" key={row.group}>
+                  <span className="bar-label">{name}</span>
+                  <span className="bar-track" aria-hidden="true">
+                    {avg !== null ? <span className="bar-avg" style={{ left: pct(avg) }} /> : null}
+                  </span>
+                  <span className="bar-n">—</span>
+                  <span className="bar-k">
+                    <span className="bar-few">success not defined</span>
+                    <span className="visually-hidden">{` (${fmt(row.finished)} finished trials; not drugs)`}</span>
+                  </span>
+                </li>
+              );
             return (
               <li className={few ? "bar few" : "bar"} key={row.group}>
                 <span className="bar-label">{name}</span>
@@ -131,7 +146,12 @@ export function PanelSuccess({
         </>
       ) : null}
       {avg !== null ? <p className="panel-note">Tick: average across all finished trials that could succeed ({pct(avg)}).</p> : null}
-      {rows.some((r) => r.finished < minGroup) ? (
+      {rows.some((r) => r.successDefined === false) ? (
+        <p className="panel-note">
+          Non-drug care: success not defined, since success here means a drug moved to a later phase.
+        </p>
+      ) : null}
+      {rows.some((r) => r.successDefined !== false && r.finished < minGroup) ? (
         <p className="panel-note">Outlined: fewer than {minGroup} finished trials.</p>
       ) : null}
       <p className="panel-claim">{liftSentence(stats)}</p>
