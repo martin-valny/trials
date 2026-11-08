@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline by year</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#eef0f2;color:#22272c;font-family:"Hanken Grotesk",system-ui,sans-serif;font-feature-settings:"tnum" 1}
+.bar{position:sticky;top:0;z-index:50;display:flex;gap:20px;align-items:center;padding:14px 32px;background:rgba(238,240,242,.92);backdrop-filter:blur(8px);border-bottom:1px solid #d9dde1;font-size:13px}
+.bar b{font-weight:800}.bar span{color:#69717a}
+.stage{padding:24px 32px 80px;max-width:1500px;margin:0 auto}
+.sh{display:flex;align-items:baseline;gap:12px;margin:8px 0 12px}.sh h2{font-size:15px;margin:0}.sh span{font-size:12.5px;color:#69717a}
+.themes{margin-left:auto;display:inline-flex;gap:2px;background:#e1e5e8;padding:2px;border-radius:999px}
+.themes button{border:0;background:none;font:inherit;font-size:12px;padding:4px 12px;border-radius:999px;color:#69717a;cursor:pointer}.themes button.on{background:#fff;color:#22272c}
+.frame{border-radius:14px;overflow:hidden;box-shadow:0 12px 40px -12px rgba(20,30,40,.22);border:1px solid #d3d8dc}
+.chrome{height:30px;display:flex;align-items:center;gap:6px;padding:0 12px;background:#e4e7ea;border-bottom:1px solid #d3d8dc}.chrome i{width:9px;height:9px;border-radius:50%;background:#c9ced3}
+.chrome em{margin-left:14px;font-style:normal;font-size:11.5px;color:#7b838b}
+.phones{display:flex;gap:40px;flex-wrap:wrap;margin-top:44px}
+.phone{width:375px;border-radius:38px;padding:10px;background:#1b1d20}.phone .scr{border-radius:30px;overflow:hidden;height:780px;overflow-y:auto;scrollbar-width:none}
+.cap{font-size:12.5px;color:#69717a;margin:10px 0 0 14px}
+.app{--plate:#fff;--ink:#111;--muted:#5b6268;--rule:#d6dadd;--pale:#e4e8eb;--red:#c8102e;--run:#3c5488;--stop:#222;--fin:#c9d1d8;--unk:#aab3bb;--fam:#62758a;--tip:#111;--tipink:#fff;
+ background:var(--plate);color:var(--ink);font-size:13px;line-height:1.5;position:relative}
+.app.dark{--plate:#17191c;--ink:#eceae4;--muted:#9b9d9f;--rule:#34373c;--pale:#2b2e33;--red:#ff8a3d;--run:#8da3d6;--stop:#eceae4;--fin:#50575f;--unk:#6a7178;--fam:#7a8ea5;--tip:#eceae4;--tipink:#111}
+.nav{display:flex;align-items:center;gap:26px;padding:16px 40px;border-bottom:1px solid var(--rule)}
+.nav b{font-weight:800;font-size:15px}.nav .l{display:flex;gap:22px;color:var(--muted)}.nav .on{color:var(--ink);font-weight:600;box-shadow:0 2px 0 var(--ink);padding-bottom:3px}
+.nav .f{margin-left:auto;font-size:12px;color:var(--muted)}
+.lede{padding:36px 40px 4px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:end}
+.kick{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.hl{font-size:clamp(22px,2.4vw,32px);font-weight:500;line-height:1.18;letter-spacing:-.018em;margin:0;max-width:26ch}
+.hl em{font-style:normal;color:var(--run)}
+.keys{display:flex;gap:30px}.key b{display:block;font-size:28px;font-weight:500;line-height:1}.key span{display:block;font-size:12px;color:var(--muted);margin-top:6px;max-width:14ch;line-height:1.3}
+.src{padding:12px 40px 0;font-size:12px;color:var(--muted);max-width:110ch}
+.ctl{display:flex;gap:16px;align-items:center;padding:22px 40px 12px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;padding:2px}
+.seg button{border:0;background:none;color:var(--muted);font:inherit;font-size:12.5px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.seg.primary button.on{background:var(--ink);color:var(--plate)}
+.seg.quiet button.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--ink);border-radius:0}
+.lg{display:flex;gap:16px;padding:0 40px 12px;font-size:12px;color:var(--muted);flex-wrap:wrap}.lg span{display:inline-flex;align-items:center;gap:6px}
+.m{width:4px;height:4px;border-radius:50%;display:inline-block}
+.m.adv{background:var(--red)}.m.run{box-shadow:inset 0 0 0 1.2px var(--run)}.m.stop{background:var(--stop)}.m.fin{background:var(--fin)}.m.unk{box-shadow:inset 0 0 0 1px var(--unk)}
+.lg .m{width:8px;height:8px}.lg .m.run{box-shadow:inset 0 0 0 1.6px var(--run)}
+.fig{padding:0 40px 10px;position:relative}
+.axis,.trow{display:grid;grid-template-columns:190px minmax(0,1fr) 80px 200px}
+.axis{border-bottom:1px solid var(--ink);font-size:11px;color:var(--muted);position:sticky;top:0;background:var(--plate);z-index:3}
+.axis .yrs{position:relative;height:26px}.axis .yrs span{position:absolute;bottom:6px;transform:translateX(-50%)}
+.trow{border-bottom:1px solid var(--rule);cursor:pointer}.trow:hover{background:var(--pale)}
+.trow .lab{padding:10px 12px 8px 0}.lab b{display:block;font-size:14px;font-weight:700;line-height:1.2}.lab span{font-size:11.5px;color:var(--muted)}
+.trow.muted .lab b{color:var(--muted);font-weight:600}
+.cols{display:grid;align-items:end;padding:8px 0 6px;position:relative;min-height:44px}
+.yc{display:flex;flex-wrap:wrap-reverse;align-content:flex-start;gap:1px;justify-content:center;padding:0 1px}
+.era{position:absolute;top:2px;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--fam);border-left:1px solid var(--fam);padding-left:4px;white-space:nowrap;line-height:1}
+.now{position:absolute;top:0;bottom:0;border-left:1px solid var(--ink);pointer-events:none}
+.now em{position:absolute;bottom:-18px;left:4px;font-style:normal;font-size:10.5px;font-weight:600;white-space:nowrap;color:var(--ink)}
+.stat{font-size:12px;color:var(--muted);padding:12px 0 0 10px;line-height:1.3}.stat b{display:block;font-size:17px;font-weight:500;color:var(--ink)}
+.note{font-size:12px;color:var(--muted);padding:26px 40px 36px;display:flex;gap:28px;flex-wrap:wrap}
+.tip{position:absolute;z-index:20;pointer-events:none;background:var(--tip);color:var(--tipink);font-size:12px;padding:8px 10px;border-radius:8px;max-width:280px;opacity:0;line-height:1.4}
+.tip span{opacity:.75}
+.app.ph .nav{padding:14px 18px}.app.ph .nav .l,.app.ph .nav .f{display:none}
+.app.ph .lede{display:block;padding:22px 18px 0}.app.ph .hl{font-size:22px}
+.app.ph .keys{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--rule);padding-top:12px}.app.ph .key b{font-size:22px}
+.app.ph .src{padding:10px 18px 0;font-size:11.5px}.app.ph .ctl{padding:16px 18px 8px}.app.ph .lg{padding:0 18px 10px;gap:10px}
+.app.ph .fig{padding:0 18px}
+.app.ph .axis,.app.ph .trow{grid-template-columns:minmax(0,1fr)}.fam{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--fam);padding:18px 0 6px;border-bottom:1px solid var(--rule)}.fam.past{color:var(--muted);border-bottom-style:dashed}.nt{font-size:12px;line-height:1.38;padding:12px 0 0 22px;position:relative}.nt .nk{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}.nt:not(:empty)::before{content:"";position:absolute;left:2px;top:20px;width:14px;border-top:1px solid var(--red)}.pn{font-size:11.5px;padding:2px 0 8px}.pn b{color:var(--red);font-size:10px;letter-spacing:.08em;text-transform:uppercase}.trow.muted{opacity:.62}
+.app.ph .axis .lab0,.app.ph .axis .st0{display:none}
+.app.ph .trow{display:block}.app.ph .trow .lab{display:flex;align-items:baseline;gap:8px;padding:12px 0 0}.app.ph .trow .lab span{margin-left:auto}
+.app.ph .stat{display:none}.app.ph .era{display:none}.app.ph .seg{overflow-x:auto;max-width:100%;scrollbar-width:none}.app.ph .seg button{white-space:nowrap}
+</style></head><body>
+<div class="bar"><b>Pipeline · By year</b><span>Real data, snapshot 6 Nov 2026 · the third arrangement of the front-page figure (lede and source line unchanged, omitted here) · hover marks</span></div>
+<div class="stage">
+ <div class="sh"><h2>Desktop</h2><span>1280 wide</span><div class="themes"><button class="on" data-t="light">Light</button><button data-t="dark">Dark</button></div></div>
+ <div class="frame"><div class="chrome"><i></i><i></i><i></i><em>trialradar · /?view=year</em></div><div class="app" id="d"></div></div>
+ <div class="phones">
+  <div><div class="phone"><div class="scr"><div class="app ph" id="pl"></div></div></div><div class="cap">Phone · light</div></div>
+  <div><div class="phone"><div class="scr"><div class="app ph dark" id="pd"></div></div></div><div class="cap">Phone · dark</div></div>
+ </div>
+</div>
+<script>
+const D=/*DATA*/;
+const SL={adv:"Advanced to next phase",run:"Still running",stop:"Stopped",fin:"Finished, no follow-on",unk:"Status unknown"};
+const Y0=1995,Y1=2026; const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const st={dz:"All"}; const SP=D.sponsors, TI=D.trials;
+function render(el,phone){
+  const bin=phone?3:1; const years=[]; for(let y=Y0;y<=Y1;y+=bin) years.push(y);
+  const fam=Object.fromEntries(D.families.map(f=>[f.id,f]));
+  let rows=D.rows.map(r=>{const ms=r.marks.filter(m=>st.dz==="All"||m.dz.includes(st.dz)); const run=ms.filter(m=>m.s==="run").length;
+     const recent=ms.filter(m=>(m.y||0)>=2022).length, old=ms.filter(m=>(m.y||0)<2012).length;
+     const cos={}; ms.forEach(m=>{const s=SP[m.sp]; if(s.kind==="industry") cos[s.parent]=(cos[s.parent]||0)+1;});
+     return {...r,ms,run,recent,old,cos:Object.entries(cos).sort((a,b)=>b[1]-a[1]).slice(0,3).map(c=>c[0]),hist:run<=1&&ms.length>=12};}).filter(r=>r.ms.length);
+  rows.sort((a,b)=>b.run-a.run);
+  const notes={}; const pick=(k,f,min,txt)=>{const c=rows.filter(r=>!notes[r.id]&&f(r)>=min).sort((a,b)=>f(b)-f(a))[0]; if(c) notes[c.id]={k,t:txt(c)};};
+  pick("Rising",r=>r.ms.length>=5?r.recent/r.ms.length*100:0,60,r=>`${r.recent} of ${r.ms.length} trials started since 2022.`);
+  pick("Fading",r=>r.run<=1?r.old:0,15,r=>`${r.old} trials before 2012; ${r.run} running now.`);
+  pick("Longest run",r=>{const ys=r.ms.map(m=>m.y).filter(Boolean); return ys.length>=20?Math.max(...ys)-Math.min(...ys):0;},15,r=>{const ys=r.ms.map(m=>m.y).filter(Boolean);return `Trials every few years since ${Math.min(...ys)}.`});
+  const pos=y=>((y-Y0)/(Y1-Y0+bin))*100;
+  const ord="advrunstopfinunk";
+  const cell=(ms,y)=>ms.filter(m=>m.y>=y&&m.y<y+bin).sort((a,b)=>ord.indexOf(a.s)-ord.indexOf(b.s)).map(m=>`<i class="m ${m.s}" data-n="${m.n}"></i>`).join("");
+  const live=rows.filter(r=>!r.hist), hist=rows.filter(r=>r.hist);
+  const famOrder=[]; live.forEach(r=>{if(!famOrder.includes(r.family)) famOrder.push(r.family);});
+  const row=r=>`<div class="trow ${r.hist?"muted":""}"><div class="lab"><b>${esc(r.label)}</b><span>${phone?`${r.run} running`:esc(r.cos.join(" · ")||"academic sponsors")}</span></div>
+     <div class="cols" style="grid-template-columns:repeat(${years.length},1fr)">${years.map(y=>`<div class="yc">${cell(r.ms,y)}</div>`).join("")}<span class="now" style="left:${pos(2026.85)}%"></span></div>
+     <div class="stat"><b>${r.run}</b>of ${r.ms.length}</div>${phone?"":`<div class="nt">${notes[r.id]?`<span class="nk">${notes[r.id].k}</span>${esc(notes[r.id].t)}`:""}</div>`}${phone&&notes[r.id]?`<div class="pn"><b>${notes[r.id].k}</b> ${esc(notes[r.id].t)}</div>`:""}</div>`;
+  let fig=famOrder.map(f=>`<div class="fam">${esc(fam[f].label)}</div>`+live.filter(r=>r.family===f).map(row).join("")).join("");
+  if(hist.length) fig+=`<div class="fam past">Mostly historical</div>`+hist.map(row).join("");
+  const axis=`<div class="axis"><div class="lab0" style="padding:0 0 6px;align-self:end">Target</div><div class="yrs">${[1995,2000,2005,2010,2015,2020,2025].map(y=>`<span style="left:${pos(y)}%">${y}</span>`).join("")}</div><div class="st0" style="padding:0 0 6px 10px;align-self:end">Running</div>${phone?"":"<div></div>"}</div>`;
+  el.innerHTML=`<nav class="nav"><b>Trial Radar</b><span class="l"><span class="on">Pipeline</span><span>Approaches</span><span>Explore ▾</span><span>Changes</span><span>Trials</span><span>Methods</span></span><span class="f">Registry data from 6 Nov 2026</span></nav>
+   <div class="ctl"><div class="seg primary"><button>By phase</button><button>By disease</button><button class="on">By year</button></div>
+     <div class="seg quiet" data-dz>${["All","MS","MG","NMOSD","CIDP","MOGAD","AE"].map(d=>`<button class="${d===st.dz?"on":""}" data-v="${d}">${d==="All"?"All diseases":d}</button>`).join("")}</div></div>
+   <div class="lg"><span><i class="m adv"></i>Advanced to next phase</span><span><i class="m run"></i>Still running</span><span><i class="m stop"></i>Stopped</span><span><i class="m fin"></i>Finished, no follow-on</span><span><i class="m unk"></i>Status unknown</span><span style="margin-left:auto">One mark per trial at its start year${phone?" (3-year bins)":""}</span></div>
+   <div class="fig">${axis}${fig}</div><div class="tip"></div>`;
+  const tip=el.querySelector(".tip"),by=new Map(D.rows.flatMap(r=>r.marks.map(m=>[m.n,{...m,row:r.label}])));
+  el.onmousemove=e=>{const m=e.target.closest(".m[data-n]"); if(!m){tip.style.opacity=0;return;} const x0=by.get(m.dataset.n),r=el.getBoundingClientRect();
+    tip.innerHTML=`<b>${esc(TI[x0.n]?.t)}</b><br><span>${x0.n} · ${x0.y} · ${esc(x0.drug)} · ${esc(SP[x0.sp].parent)} · ${SL[x0.s]}</span>`; let x=e.clientX-r.left+12; if(x>r.width-290)x-=300; tip.style.left=x+"px"; tip.style.top=(e.clientY-r.top+12)+"px"; tip.style.opacity=1;};
+  el.onclick=e=>{const b=e.target.closest("[data-dz] button"); if(b){st.dz=b.dataset.v; all();}};
+}
+function all(){render(document.getElementById("d"),false);render(document.getElementById("pl"),true);render(document.getElementById("pd"),true);}
+document.querySelector(".themes").onclick=e=>{const b=e.target.closest("button"); if(!b)return; document.querySelectorAll(".themes button").forEach(x=>x.classList.toggle("on",x===b)); document.getElementById("d").classList.toggle("dark",b.dataset.t==="dark");};
+all();
+</script></body></html>
