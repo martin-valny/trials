@@ -323,7 +323,8 @@ export function headline(f: PipelineFile, views: RowView[], s: FigureState): Hea
   const order = (id: string): number => f.families.find((x) => x.id === id)?.order ?? Infinity;
   const [famId, famSet] = [...byFamily.entries()].sort((a, b) => b[1].size - a[1].size || order(a[0]) - order(b[0]))[0]!;
   const famLabel = f.families.find((x) => x.id === famId)?.label ?? famId;
-  const top = views.find((v) => v.run > 0)!;
+  // The row with most running trials; the current sort order breaks ties (views are already sorted).
+  const top = views.reduce((best, v) => (v.run > best.run ? v : best), views[0]!);
   return {
     kind: "field",
     ...base,

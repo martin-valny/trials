@@ -193,6 +193,17 @@ describe("headline", () => {
     expect(h.text.lead).toBe("3 targeted-drug trials are running.");
     expect(h.text.rest).toBe("Family one leads, with 3 of them; A alone has 3.");
   });
+  it("names the row with most running trials under any sort", () => {
+    const g = file([
+      row("aaa", many(2, { s: "run" })),
+      row("zzz", many(5, { s: "run", y: 2000 })),
+      row("mmm", many(3, { s: "run", y: 2025 })),
+    ]);
+    for (const sort of ["az", "new", "adv", "run"] as const) {
+      const s = { ...DEFAULT, sort };
+      expect(headline(g, rowViews(g, s, 2026), s).text.rest).toBe("Family one leads, with 10 of them; ZZZ alone has 5.");
+    }
+  });
   it("names the disease and uses singulars", () => {
     const g = file([row("a", [mark({ s: "run", dz: ["MG"] })])]);
     const s = { ...DEFAULT, disease: "MG" };
@@ -334,6 +345,28 @@ describe("target page helpers", () => {
 });
 
 describe("fixture", () => {
+  it("has the keys the types promise", () => {
+    const f = readFixture<PipelineFile>("pipeline.json");
+    expect(Object.keys(f).sort()).toEqual(["counts", "diseases", "families", "generated_for", "rows", "sponsors", "trials", "unrowed"]);
+    expect(Object.keys(f.counts).sort()).toEqual(["in_rows", "targeted", "targeted_not_rowed", "trials"]);
+    expect(Array.isArray(f.unrowed)).toBe(true);
+    for (const sp of f.sponsors) {
+      expect(typeof sp.raw).toBe("string");
+      expect(["industry", "academic", "government", "other"]).toContain(sp.kind);
+    }
+    for (const r of f.rows) {
+      for (const k of ["id", "label", "sub", "family", "order", "gene", "related", "marks"]) expect(r).toHaveProperty(k);
+      expect(f.families.some((x) => x.id === r.family)).toBe(true);
+      for (const m of r.marks) {
+        for (const k of ["n", "c", "s", "y", "y2", "dz", "drug", "sp"]) expect(m).toHaveProperty(k);
+        expect(f.sponsors[m.sp]).toBeDefined();
+        expect(f.trials[m.n]?.t.length).toBeLessThanOrEqual(80);
+      }
+    }
+    const stopped = Object.values(f.trials).filter((t) => t.r !== undefined);
+    expect(stopped.length).toBeGreaterThan(0);
+    expect(stopped.every((t) => "why" in t)).toBe(true);
+  });
   it("parses and yields views", () => {
     const f = readFixture<PipelineFile>("pipeline.json");
     const v = rowViews(f, DEFAULT, 2026);
