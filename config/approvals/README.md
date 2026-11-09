@@ -30,4 +30,4 @@ Read the printed review: cells found by one source only, cells where the sources
 
 ## Release
 
-ChEMBL_37 (2026-05-01); openFDA labels fetched <date>
+ChEMBL_37 (2026-05-01); openFDA labels fetched 2026-11-09

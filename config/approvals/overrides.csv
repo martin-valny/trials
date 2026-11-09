@@ -1,1 +1,3 @@
 action,row_id,disease,drug,regulator,year,withdrawn,source_url,note
+add,cd20,NMOSD,rituximab,PMDA,2022,,https://www.pmda.go.jp/files/000265591.pdf,"Japan: Rituxan, prevention of relapse of NMOSD (incl. NMO); PMDA review report 2022-05-16, MHLW deliberation 2022-06-08"
+add,cannabinoids,MS,nabiximols,MHRA,2010,,https://www.geneesmiddeleninformatiebank.nl/pars/h111277.pdf,"UK: Sativex PL 18024/0009 granted 2010-06-16, spasticity due to MS; MHRA public assessment report (UK/H/2462/001/DC)"
