@@ -148,3 +148,7 @@ Grid sorting details and the long-tail cut; outcome mark design within `DESIGN.m
 ## 11. Amendment (2026-11-08)
 
 See `2026-11-08-front-door-pipeline-design.md` §13. Kept: R21 (§5.4), the anti-goals, the ChEMBL indications source (§5.1, re-keyed by pipeline row) for round 2. Superseded: §5.2 file location and categories (shared `config/stop_reasons.csv`), §5.3 `scorecard.json`, §6 page, genetics (§5.1 `genetics.csv`, dropped).
+
+## 12. Round 2 (2026-11-09)
+
+Approvals per pipeline row × disease are designed in `2026-11-09-approved-for-disease-design.md`, which replaces §5.1 `indications.csv` (ChEMBL plus FDA labels plus a hand file, in `config/approvals/`).
