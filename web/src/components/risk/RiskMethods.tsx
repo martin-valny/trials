@@ -219,7 +219,8 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         </table>
       </div>
       <p className="rk-m-note">
-        The area row is the same shipped model scored on this area&apos;s test trials only. With a few hundred
+        The area row is the evaluation fit (trained on trials started up to {year(model.split.train_end)}) scored on
+        this area&apos;s test trials only. With a few hundred
         trials or fewer, changing the random seed alone moves its AUC by several hundredths, so it cannot show
         whether the model does better or worse here than elsewhere.
       </p>
@@ -233,7 +234,9 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       <CalibrationChart m={shipped} label={MODEL_LABEL[model.shipped]} />
       <p className="rk-m-note">
         Calibration (turning the trees&apos; scores into chances) was simplified after a first run to keep the model
-        file small; that cost about a hundredth of AUC (0.692 to 0.682 on the 9 November 2026 run).
+        file small; that cost about a hundredth of AUC (0.010, measured on the first 9 November 2026 run).
+        Estimates come in steps, because calibration maps scores onto a step curve, so several trials can share the
+        same estimate; ties are listed by NCT number.
       </p>
 
       <h3>What is left out, and why</h3>
@@ -316,8 +319,7 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         (registry)&rdquo;. In training it counts only trials that finished before each trial started; for running
         trials, the count is as of today, so it can include trials that finished after this one started. A sponsor
         with fewer than 5
-        earlier finished trials has too short a record: the model is told so and uses the average stop rate
-        instead.
+        earlier finished trials has too short a record: the model is told so and does not use the rate.
       </p>
 
       <h3>Retraining</h3>

@@ -326,6 +326,22 @@ test("stop-risk: exclusions lead with enrollment; the comparison, text experimen
   expect(text).not.toMatch(/risk of failure|likely to fail|in trouble/i);
 });
 
+test("stop-risk: area row, calibration cost, short sponsor record and tied estimates are described as they are", async () => {
+  stubFetch({ "risk.json": riskFile({}) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  await within(s).findByRole("table");
+  const text = (s.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/The area row is the evaluation fit \(trained on trials started up to 2015\) scored on this area's test trials only/);
+  expect(text).not.toMatch(/same shipped model/);
+  expect(text).toMatch(/on the first 9 November 2026 run/);
+  expect(text).not.toMatch(/0\.692 to 0\.682/);
+  expect(text).toMatch(/the model is told so and does not use the rate/);
+  expect(text).not.toMatch(/average stop rate instead/);
+  expect(text).toMatch(/Estimates come in steps/);
+  expect(text).toMatch(/ties are listed by NCT number/);
+});
+
 test("stop-risk: without risk.json the section renders no numbers and says when estimates appear", async () => {
   stubFetch({ "risk.json": 404 });
   renderAt(<Methods />, "/methods#stop-risk");

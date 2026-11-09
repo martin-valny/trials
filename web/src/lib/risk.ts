@@ -136,10 +136,10 @@ export function rankTrials(
   return rows.filter(keep).sort((a, b) => key(b) - key(a) || a.nct.localeCompare(b.nct));
 }
 
-/** A target's median estimate and typical rate, overall or within one disease; null when not scored. */
 /** Without per-trial scores, the pipeline leaves out summaries of fewer trials (they would give away single estimates); the web holds the same line. */
 export const MIN_SUMMARY_N = 3;
 
+/** A target's median estimate and typical rate, overall or within one disease; null when not scored. */
 export function targetSummary(file: RiskFile, rowId: string, disease?: string): RiskTargetSummary | null {
   const t = file.targets?.[rowId];
   if (!t) return null;
