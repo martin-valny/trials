@@ -26,7 +26,7 @@ function useRouteScopedOpen(): [boolean, (f: (o: boolean) => boolean) => void] {
   return [open, set];
 }
 
-/** Pipeline, Approaches, Changes, Trials, Methods. A menu button on a phone. */
+/** Pipeline, Watchlist, Approaches, Changes, Trials, Methods. A menu button on a phone. */
 export function SiteNav() {
   const phone = usePhone();
   const [open, setOpen] = useRouteScopedOpen();
@@ -40,6 +40,7 @@ export function SiteNav() {
         {open && (
           <div className="nav-sheet">
             <NavLink to="/" end>Pipeline</NavLink>
+            <NavLink to="/watchlist">Watchlist</NavLink>
             <NavLink to="/approaches">Approaches</NavLink>
             <NavLink to="/changes">Changes</NavLink>
             <NavLink to="/trials">Trials</NavLink>
@@ -54,6 +55,7 @@ export function SiteNav() {
   return (
     <nav aria-label="Main">
       <NavLink to="/" end>Pipeline</NavLink>
+      <NavLink to="/watchlist">Watchlist</NavLink>
       <NavLink to="/approaches">Approaches</NavLink>
       <NavLink to="/changes">Changes</NavLink>
       <NavLink to="/trials">Trials</NavLink>

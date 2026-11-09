@@ -1,0 +1,88 @@
+/* The Watchlist: every scored running trial in one ranked table, read as the same family as the target page's
+   panel e (the scale, estimate text and factors come from risk.css). Plate tokens, the toolbar and its dropdowns
+   come from explore.css (the page root is ".explore.watchlist.rk"). No colours of its own. */
+.wl-head { padding: 28px 40px 0; }
+.wl-head h1 { margin: 0; font-size: clamp(30px, 3.2vw, 44px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.wl-lede { margin: 12px 0 0; font-size: 18px; line-height: 1.35; letter-spacing: -.01em; max-width: 62ch; text-wrap: balance; }
+.wl-note { padding: 0 40px; }
+.wl-note .rk-note { margin-top: 10px; }
+
+.watchlist .toolbar.wl-toolbar { display: flex; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+.wl-toolbar .tb-sort { gap: 8px; }
+.wl-toolbar .tb-count { margin-left: auto; }
+.watchlist .wl-reset { margin-left: 10px; }
+
+.wl-body { padding: 16px 40px 56px; }
+.wl-sk { height: 360px; }
+.wl-msg { margin: 0; padding: 4px 0; font-size: 15px; line-height: 1.5; max-width: 60ch; }
+.wl-key { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+
+/* One hairline-ruled table; the heading row closes with an ink rule, like the panel heads. */
+.wl-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; line-height: 1.4; }
+.wl-c-trial { width: 27%; }
+.wl-c-tgt { width: 15%; }
+.wl-c-est { width: 31%; }
+.wl-c-why { width: 27%; }
+.wl-table th { text-align: left; vertical-align: bottom; font-size: 11px; font-weight: 400; color: var(--muted); padding: 0 24px 6px 0; border-bottom: 1px solid var(--ink); }
+.wl-table td { vertical-align: top; padding: 11px 24px 12px 0; border-bottom: 1px solid var(--rule); }
+.wl-table th:last-child, .wl-table td:last-child { padding-right: 0; }
+.wl-th-t { display: block; margin-bottom: 4px; }
+
+/* The scale and the estimate text share a grid in the head and in every row, so the scales line up under the axis. */
+.wl-est-in { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: 0 18px; align-items: center; }
+.wl-table td.wl-est { padding-top: 9px; }
+
+.watchlist .rk-id a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.watchlist .rk-id a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.wl-tg { font-weight: 600; }
+.wl-tg a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+.wl-tg a:hover { border-bottom-color: var(--ink); }
+.wl-dz { margin-top: 2px; font-size: 12px; color: var(--muted); }
+.wl-none { color: var(--muted); font-weight: 400; }
+.wl-why .rk-factors { font-size: 12px; line-height: 1.35; }
+.wl-why .rk-factors li:first-child { padding-top: 0; }
+
+/* Per-trial estimates off: target, count, median beside typical. */
+.wl-targets { max-width: 44rem; margin-top: 14px; }
+.wl-targets td { vertical-align: baseline; }
+.wl-targets td:first-child a { font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--rule); }
+.wl-num { text-align: right; font-variant-numeric: tabular-nums; }
+.wl-table th.wl-num { text-align: right; }
+.wl-targets .rk-est-t small { display: inline; margin-left: 8px; }
+
+@media (max-width: 1099px) {
+  .wl-head, .wl-note { padding-left: 24px; padding-right: 24px; }
+  .wl-body { padding-left: 24px; padding-right: 24px; }
+  .wl-table th, .wl-table td { padding-right: 16px; }
+  .wl-est-in { grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0 12px; }
+}
+
+/* Phone: each trial is a stacked card between hairlines; the axis stays once, over the first card. */
+@media (max-width: 640px) {
+  .wl-head { padding: 22px 16px 0; }
+  .wl-head h1 { font-size: 30px; }
+  .wl-lede { font-size: 16px; }
+  .wl-note { padding: 0 16px; }
+  .wl-body { padding: 12px 16px 40px; }
+  .watchlist .wl-reset { margin-left: 4px; }
+  /* Two sorts fit one phone line: keep the split pill (explore.css turns its own into a block on a phone). */
+  .watchlist .toolbar .wl-sort { display: inline-flex; flex: none; border-radius: 999px; }
+  .watchlist .toolbar .wl-sort button { padding: 3px 10px; white-space: nowrap; }
+  /* The links grow to 44px targets here, so the dotted rule moves from the box edge to the text. */
+  .watchlist .rk-id a { border-bottom: 0; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .wl-table:not(.wl-targets), .wl-table:not(.wl-targets) tbody, .wl-table:not(.wl-targets) thead { display: block; width: auto; }
+  .wl-table:not(.wl-targets) colgroup { display: none; }
+  .wl-table:not(.wl-targets) tr { display: block; }
+  .wl-table:not(.wl-targets) th { display: none; }
+  .wl-table:not(.wl-targets) th.wl-est { display: block; padding: 0 0 6px; }
+  .wl-table:not(.wl-targets) td { display: block; padding: 0; border: 0; }
+  .wl-table:not(.wl-targets) tbody tr { padding: 12px 0 14px; border-bottom: 1px solid var(--rule); }
+  .wl-table td.wl-tgt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin-top: 2px; }
+  .wl-table td.wl-tgt .wl-dz { margin-top: 0; }
+  .wl-table td.wl-est { margin-top: 10px; padding: 0; }
+  .wl-table td.wl-why { margin-top: 10px; }
+  .wl-table td.wl-why::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
+  .wl-est-in { grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0 16px; }
+  .wl-targets th, .wl-targets td { padding-right: 12px; }
+  .wl-targets .rk-est-t small { display: block; margin-left: 0; }
+}
