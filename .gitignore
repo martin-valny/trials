@@ -17,3 +17,6 @@ playwright-report/
 .impeccable/build/
 web/.shoot.cjs
 pipeline/.cache/
+
+# TypeScript incremental build info
+*.tsbuildinfo
