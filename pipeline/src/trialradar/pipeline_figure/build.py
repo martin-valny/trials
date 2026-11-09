@@ -13,6 +13,7 @@ from typing import Any
 
 import polars as pl
 
+from trialradar.approvals.io import Approval
 from trialradar.config import AreaConfig
 from trialradar.pipeline_figure.io import FigureConfig, norm_sponsor
 from trialradar.pipeline_figure.rules import (
@@ -40,6 +41,42 @@ def _join(items: Sequence[tuple[str, int]]) -> str:
     return ", ".join(f"{name} ({n})" for name, n in items)
 
 
+def _ap_entry(a: Approval) -> dict[str, Any]:
+    entry: dict[str, Any] = {"d": a.drug, "src": list(a.sources), "url": a.url}
+    # Default-valued keys are omitted (readers treat absent as the default).
+    if a.withdrawn:
+        entry["wd"] = True
+    if a.regulator:
+        entry["reg"] = a.regulator
+    if a.year is not None:
+        entry["y"] = a.year
+    return entry
+
+
+def _approved_cells(
+    approvals: Sequence[Approval],
+    row_ids: set[str],
+    codes: set[str],
+    warnings: list[str],
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Approved drugs per (row, disease): not-withdrawn first, then withdrawn, file order within.
+
+    Lines for a row or disease the figure doesn't have are skipped, with one warning."""
+    unknown: set[str] = set()
+    cells: dict[tuple[str, str], list[Approval]] = defaultdict(list)
+    for a in approvals:
+        if a.row_id not in row_ids or a.disease not in codes:
+            unknown.add(f"{a.row_id} \u00d7 {a.disease}")
+            continue
+        cells[(a.row_id, a.disease)].append(a)
+    if unknown:
+        warnings.append(f"approvals_unknown: {', '.join(sorted(unknown))}")
+    return {
+        key: [_ap_entry(a) for a in sorted(items, key=lambda a: a.withdrawn)]  # stable
+        for key, items in cells.items()
+    }
+
+
 def build_pipeline_doc(
     explorer: Mapping[str, Any],
     trial: pl.DataFrame,
@@ -47,6 +84,7 @@ def build_pipeline_doc(
     fig: FigureConfig,
     day: date,
     warnings: list[str],
+    approvals: Sequence[Approval] = (),
 ) -> dict[str, Any]:
     by_label = {c.label: c.code for c in cfg.conditions if c.code}
     coded = [c for c in cfg.conditions if c.code]
@@ -156,6 +194,11 @@ def build_pipeline_doc(
                 if cls in fig.unrowed:
                     unrowed_counts[cls].add(t["nct_id"])
 
+    approved = _approved_cells(approvals, set(marks), {c.code for c in coded if c.code}, warnings)
+    ap_by_row: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for (row_id, code), entries in approved.items():
+        ap_by_row.setdefault(row_id, {})[code] = entries
+
     return {
         "generated_for": day.isoformat(),
         "diseases": diseases,
@@ -177,6 +220,7 @@ def build_pipeline_doc(
                 "blurb": r.blurb,
                 "related": list(r.related),
                 "marks": marks[r.id],
+                **({"ap": ap_by_row[r.id]} if r.id in ap_by_row else {}),
             }
             for r in fig.rows
         ],

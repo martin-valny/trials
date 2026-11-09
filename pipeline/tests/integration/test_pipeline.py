@@ -748,3 +748,34 @@ def test_missing_pipeline_config_warns_and_writes_no_figure(
     assert any(w.startswith("pipeline_figure:") for w in result.warnings)
     assert (broken.site_dir / "explorer.json").exists()
     assert not (broken.site_dir / "pipeline.json").exists()
+
+
+def test_run_without_approvals_warns_missing(tmp_path: Path, cfg: AreaConfig) -> None:
+    """R19: no approvals.csv means a warning and no ``ap`` keys; the figure still builds."""
+    bare = Env(tmp_path, cfg)
+    bare.cfg = bare.cfg.model_copy(update={"approvals_dir": tmp_path / "missing"})
+    result = bare.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert "approvals: missing" in result.warnings
+    doc = json.loads((bare.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_bad_approvals_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    bad_dir = tmp_path / "approvals"
+    bad_dir.mkdir()
+    (bad_dir / "approvals.csv").write_text("wrong,header\n", encoding="utf-8")
+    bad = Env(tmp_path, cfg)
+    bad.cfg = bad.cfg.model_copy(update={"approvals_dir": bad_dir})
+    result = bad.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("approvals: ") and "approvals.csv:1: " in w for w in result.warnings)
+    doc = json.loads((bad.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_joins_fixture_approvals(env: Env, cfg: AreaConfig) -> None:
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    doc = json.loads((env.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    cd20 = next(r for r in doc["rows"] if r["id"] == "cd20")
+    assert sorted(cd20["ap"]) == ["CIDP", "MS", "NMOSD"]

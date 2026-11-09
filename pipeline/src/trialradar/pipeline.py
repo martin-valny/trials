@@ -31,6 +31,7 @@ from typing import Any, Literal
 import polars as pl
 
 from trialradar import quality
+from trialradar.approvals.io import Approval, ApprovalsError, read_approvals
 from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovClient
 from trialradar.diff import diff
@@ -204,6 +205,17 @@ def _mechanism_graph(
     return graph, []
 
 
+def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval]:
+    """The committed ``approvals.csv``; a missing or malformed file is a warning, not a failure."""
+    try:
+        return read_approvals(cfg.approvals_dir / "approvals.csv")
+    except FileNotFoundError:
+        warnings.append("approvals: missing")
+    except ApprovalsError as exc:
+        warnings.append(f"approvals: {exc}")
+    return []
+
+
 def _pipeline_figure(
     explorer: dict[str, Any] | None,
     tables: Tables,
@@ -225,7 +237,10 @@ def _pipeline_figure(
             info["warnings"] = warnings
             fig = read_figure_config(cfg.pipeline_dir, cfg.sponsors_dir, cfg.stop_reasons)
             for_day = day or date.fromisoformat(explorer["generated_for"])
-            doc = build_pipeline_doc(explorer, tables.trial, cfg, fig, for_day, warnings)
+            approvals = _read_approvals(cfg, warnings)
+            doc = build_pipeline_doc(
+                explorer, tables.trial, cfg, fig, for_day, warnings, approvals=approvals
+            )
             info["rows"] = len(doc["trials"])
     except Exception as exc:  # noqa: BLE001 - the figure never fails the daily run
         return None, [f"pipeline_figure: {_describe(exc)}"]

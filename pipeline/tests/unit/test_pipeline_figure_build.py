@@ -8,6 +8,7 @@ import polars as pl
 import pytest
 from conftest import REPO_ROOT
 
+from trialradar.approvals.io import Approval
 from trialradar.config import AreaConfig, load_config
 from trialradar.pipeline_figure.build import build_pipeline_doc
 from trialradar.pipeline_figure.io import (
@@ -235,3 +236,83 @@ def test_build_non_targeted_trial_gets_no_mark(cfg: AreaConfig, fig: FigureConfi
     assert [m["n"] for m in doc["rows"][0]["marks"]] == ["NCT00000001"]
     assert "NCT00000002" not in doc["trials"]
     assert doc["counts"] == {"trials": 2, "targeted": 1, "in_rows": 1, "targeted_not_rowed": 0}
+
+
+def _ap(
+    row: str,
+    disease: str,
+    drug: str,
+    *,
+    sources: tuple[str, ...] = ("chembl",),
+    withdrawn: bool = False,
+    regulator: str = "",
+    year: int | None = None,
+) -> Approval:
+    return Approval(
+        row, disease, drug, "", sources, withdrawn, regulator, year, f"https://x/{drug}"
+    )
+
+
+def _with_approvals(
+    cfg: AreaConfig, fig: FigureConfig, approvals: list[Approval]
+) -> tuple[dict[str, Any], list[str]]:
+    warnings: list[str] = []
+    doc = build_pipeline_doc(
+        _explorer([]), _table([]), cfg, fig, DAY, warnings, approvals=approvals
+    )
+    return doc, warnings
+
+
+def test_ap_joined(cfg: AreaConfig, fig: FigureConfig) -> None:
+    doc, warnings = _with_approvals(
+        cfg,
+        fig,
+        [
+            _ap("cd20", "MS", "alpha", withdrawn=True),
+            _ap("cd20", "MS", "beta", sources=("chembl", "fda_label")),
+            _ap("cd20", "MS", "gamma"),
+            _ap("cd20", "NMOSD", "rituximab", sources=("hand",), regulator="PMDA", year=2022),
+        ],
+    )
+    rows = {r["id"]: r for r in doc["rows"]}
+    assert rows["cd20"]["ap"] == {
+        "MS": [
+            {"d": "beta", "src": ["chembl", "fda_label"], "url": "https://x/beta"},
+            {"d": "gamma", "src": ["chembl"], "url": "https://x/gamma"},
+            {"d": "alpha", "src": ["chembl"], "url": "https://x/alpha", "wd": True},
+        ],
+        "NMOSD": [
+            {
+                "d": "rituximab",
+                "src": ["hand"],
+                "url": "https://x/rituximab",
+                "reg": "PMDA",
+                "y": 2022,
+            }
+        ],
+    }
+    assert "ap" not in rows["car19"]
+    assert warnings == []
+
+
+def test_ap_omitted_when_none(cfg: AreaConfig, fig: FigureConfig) -> None:
+    doc, warnings = _with_approvals(cfg, fig, [])
+    assert all("ap" not in r for r in doc["rows"])
+    assert warnings == []
+
+
+def test_ap_unknown_row_warns(cfg: AreaConfig, fig: FigureConfig) -> None:
+    doc, warnings = _with_approvals(
+        cfg,
+        fig,
+        [
+            _ap("nope", "MS", "a"),
+            _ap("nope", "MS", "b"),
+            _ap("cd20", "ZZZ", "c"),
+            _ap("cd20", "MS", "d"),
+        ],
+    )
+    assert warnings == ["approvals_unknown: cd20 \u00d7 ZZZ, nope \u00d7 MS"]
+    rows = {r["id"]: r for r in doc["rows"]}
+    assert [a["d"] for a in rows["cd20"]["ap"]["MS"]] == ["d"]
+    assert list(rows["cd20"]["ap"]) == ["MS"]

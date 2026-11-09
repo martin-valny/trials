@@ -49,6 +49,7 @@ def main(out_dir: Path) -> None:
             "mechanisms_dir": fixtures / "mechanisms",
             "approaches_dir": fixtures / "approaches",
             "sponsors_dir": fixtures / "sponsors",
+            "approvals_dir": fixtures / "approvals",
         }
     )
     with tempfile.TemporaryDirectory() as tmp:

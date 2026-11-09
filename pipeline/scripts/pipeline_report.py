@@ -39,6 +39,11 @@ def report(site: Path) -> tuple[str, int]:
         )
         for m in row["marks"]:
             in_rows[m["n"]].append(row["id"])
+    approved = Counter(code for row in doc["rows"] for code in row.get("ap", {}))
+    cells = ", ".join(
+        f"{d['code']} {approved[d['code']]}" for d in doc["diseases"] if approved[d["code"]]
+    )
+    lines += ["", f"Approved cells: {cells or 'none'}"]
     reasons = [t["r"] for t in doc["trials"].values() if "r" in t and t["r"] != "Not given"]
     other = reasons.count("Other")
     share = f"{other / len(reasons):.1%}" if reasons else "n/a"
