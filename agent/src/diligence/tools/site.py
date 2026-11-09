@@ -2,6 +2,7 @@
 
 import hashlib
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import httpx
@@ -39,7 +40,13 @@ def row_fingerprint(
     marks = _marks(row, disease) if row else []
     info = pipeline.get("trials", {})
     parts = sorted(
-        (m["n"], m.get("s"), m.get("c"), (info.get(m["n"]) or {}).get("why") or "") for m in marks
+        (
+            m["n"],
+            m.get("s") or "",
+            -1 if m.get("c") is None else m["c"],
+            (info.get(m["n"]) or {}).get("why") or "",
+        )
+        for m in marks
     )
     risks = (risk or {}).get("trials", {})
     ps = sorted((m["n"], round(float(risks[m["n"]]["p"]), 2)) for m in marks if m["n"] in risks)
@@ -49,6 +56,50 @@ def row_fingerprint(
 
 def _phase_label(phases: list[str]) -> str:
     return "/".join(p.replace("PHASE", "") for p in phases) or "NA"
+
+
+_STATE_ORDER = {"stop": 0, "run": 1, "adv": 2, "fin": 3, "unk": 4}
+FETCH_WORKERS = 8
+
+
+def _pick(marks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The trials worth showing first: stopped, then running, advanced, ...; newest first."""
+    return sorted(
+        marks,
+        key=lambda m: (
+            _STATE_ORDER.get(m.get("s") or "unk", 4),
+            -(m.get("y2") or m.get("y") or 0),
+            m.get("n") or "",
+        ),
+    )
+
+
+def _trial(
+    m: dict[str, Any], info: dict[str, Any], base_url: str, http: httpx.Client
+) -> dict[str, Any]:
+    nct = m["n"]
+    t: dict[str, Any] = {
+        "nct": nct,
+        "title": trim((info.get(nct) or {}).get("t", ""), 120),
+        "state": STATE_LABEL.get(m.get("s") or "unk", "unknown"),
+        "drug": m.get("drug"),
+        "start_year": m.get("y"),
+        "end_year": m.get("y2"),
+    }
+    try:
+        resp = get_response(http, f"{base_url}trials/{nct}.json")
+        full = resp.json() if resp.status_code == 200 else None
+    except (ToolError, ValueError):
+        full = None
+    if isinstance(full, dict):
+        t["title"] = trim(full.get("title") or t["title"], 120)
+        t["phases"] = full.get("phases", [])
+        t["overall_status"] = full.get("overall_status")
+        t["why_stopped"] = trim(full.get("why_stopped") or "", 300) or None
+        t["lead_sponsor"] = full.get("lead_sponsor")
+    else:
+        t["why_stopped"] = (info.get(nct) or {}).get("why")
+    return t
 
 
 def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client) -> ToolResult:
@@ -61,37 +112,20 @@ def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client)
         marks = _marks(row, disease)
         sponsors = pipeline.get("sponsors", [])
         info = pipeline.get("trials", {})
-        trials: list[dict[str, Any]] = []
-        for m in marks:
-            nct = m["n"]
-            t: dict[str, Any] = {
-                "nct": nct,
-                "title": trim((info.get(nct) or {}).get("t", ""), 120),
-                "state": STATE_LABEL.get(m.get("s", "unk"), "unknown"),
-                "drug": m.get("drug"),
-                "start_year": m.get("y"),
-                "end_year": m.get("y2"),
-            }
-            resp = get_response(http, f"{base_url}trials/{nct}.json")
-            if resp.status_code == 200:
-                full = resp.json()
-                t["title"] = trim(full.get("title") or t["title"], 120)
-                t["phases"] = full.get("phases", [])
-                t["overall_status"] = full.get("overall_status")
-                t["why_stopped"] = trim(full.get("why_stopped") or "", 300) or None
-                t["lead_sponsor"] = full.get("lead_sponsor")
-            else:
-                t["why_stopped"] = (info.get(nct) or {}).get("why")
-            trials.append(t)
-        by_status = Counter(t["state"] for t in trials)
-        by_phase = Counter(f"Phase {m.get('c')}" for m in marks)
+        shown = _pick(marks)[:MAX_TRIALS]
+        with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as pool:
+            trials = list(pool.map(lambda m: _trial(m, info, base_url, http), shown))
+        by_status = Counter(STATE_LABEL.get(m.get("s") or "unk", "unknown") for m in marks)
+        by_phase = Counter(
+            f"Phase {m['c']}" if m.get("c") is not None else "Phase unknown" for m in marks
+        )
         companies = Counter(
             sponsors[m["sp"]]["parent"] for m in marks if 0 <= m.get("sp", -1) < len(sponsors)
         )
         approved = {
             dz: [
                 {
-                    "drug": a["d"],
+                    "drug": a.get("d"),
                     "regulator": a.get("reg"),
                     "year": a.get("y"),
                     "withdrawn": bool(a.get("wd")),
@@ -101,15 +135,15 @@ def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client)
             for dz, drugs in (row.get("ap") or {}).items()
             if disease == "all" or dz == disease
         }
-        data = {
+        data: dict[str, Any] = {
             "row": {
                 "id": row["id"],
                 "label": row.get("label"),
                 "gene": row.get("gene"),
                 "blurb": row.get("blurb"),
             },
-            "trials": trials[:MAX_TRIALS],
-            "trials_total": len(trials),
+            "trials": trials,
+            "trials_total": len(marks),
             "counts_by_status": dict(by_status),
             "counts_by_phase": dict(sorted(by_phase.items())),
             "companies": dict(companies.most_common(10)),
@@ -120,8 +154,12 @@ def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client)
                 "related_targets": row.get("related", []),
             },
         }
-        ids = [t["nct"] for t in trials[:MAX_TRIALS]]
-        return ToolResult(name="site_target", args=args, data=data, ids=ids)
+        if len(marks) > len(trials):
+            data["note"] = (
+                f"Showing {len(trials)} of {len(marks)} trials (stopped first, then running, "
+                "advanced, finished; newest first). Counts cover all trials."
+            )
+        return ToolResult(name="site_target", args=args, data=data, ids=[t["nct"] for t in trials])
     except (ToolError, ValueError, KeyError, TypeError) as exc:
         return ToolResult(name="site_target", args=args, error=f"site data unavailable: {exc}")
 
