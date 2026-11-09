@@ -119,7 +119,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .past::after { content: ""; flex: 1; border-top: 1px dashed var(--rule); }
 .past em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12px; order: 1; }
 .past::after { order: 2; }
-.row.hist > div, .prow.hist > div { opacity: .62; }
+.row.hist > div:not(.cell), .row.hist > .cell > :not(.floor),
+.prow.hist > div:not(.strip), .prow.hist > .strip > .cell > :not(.floor) { opacity: .62; }
 .lensed .row.miss > div:not(.cell), .lensed .prow.miss > div:not(.strip),
 .lensed .row.miss > .cell > :not(.floor), .lensed .prow.miss > .strip > .cell > :not(.floor) { opacity: .45; }
 

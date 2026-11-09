@@ -262,6 +262,18 @@ test("the lens dimming selectors exclude the floor rule", () => {
   expect(selectors.filter((s) => s.includes(":not(.floor)"))).toHaveLength(2);
 });
 
+test("the historical dimming selectors exclude the floor rule", () => {
+  const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  const rules = [...css.matchAll(/([^{}]*\.hist[^{}]*)\{[^}]*opacity:\s*\.62[^}]*\}/g)];
+  expect(rules.length).toBe(1);
+  const selectors = rules[0]![1]!.split(",").map((x) => x.trim());
+  for (const sel of selectors) {
+    expect(sel).not.toMatch(/\.cell\s*$/);
+    expect(/:not\(\.floor\)|:not\(\.cell\)|:not\(\.strip\)/.test(sel)).toBe(true);
+  }
+  expect(selectors.filter((s) => s.includes(":not(.floor)"))).toHaveLength(2);
+});
+
 test("on a phone the strip shows the floor rule in the same cell", async () => {
   vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
   try {
