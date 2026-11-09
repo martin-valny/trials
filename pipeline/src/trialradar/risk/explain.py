@@ -60,7 +60,8 @@ def top_factors(
 ) -> list[dict[str, str]]:
     """Top `k` factors by |contribution|, as `{"label", "dir"}` (dir is "up" or "down").
 
-    Zero contributions and features without a label are skipped. The three sponsor
+    Zero contributions, features without a label or without a template for the direction,
+    and absent (value 0) `cat_*` condition categories are skipped. The three sponsor
     features collapse into one factor with fixed copy. The stopped count is derived as
     round(sponsor_prior_rate x sponsor_prior_n), since the feature frame carries a rate.
     """
@@ -92,6 +93,10 @@ def top_factors(
         if lab is None:
             continue
         template = lab.up if c > 0 else lab.down
+        if not template:
+            continue
+        if name.startswith("cat_") and float(x_row[int(i)]) == 0.0:
+            continue  # absence of an unrelated disease category is not a reason
         out.append(
             {"label": template.replace("{value}", _fmt(float(x_row[int(i)]))), "dir": direction}
         )

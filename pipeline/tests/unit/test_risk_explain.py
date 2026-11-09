@@ -70,3 +70,22 @@ def test_sponsor_few_prior_copy_and_no_duplicate() -> None:
     cols = ("sponsor_prior_n", "sponsor_prior_rate", "sponsor_few_prior")
     out = top_factors(np.array([0.1, 0.3, -0.2]), np.array([2.0, 0.3, 1.0]), cols, {})
     assert out == [{"label": "Sponsor has few earlier finished trials", "dir": "up"}]
+
+
+def test_absent_category_never_a_factor() -> None:
+    cols = ("cat_nervous_system_diseases", "b")
+    labels = {
+        "cat_nervous_system_diseases": FactorLabel(
+            "cat_nervous_system_diseases", "Condition category: Nervous", ""
+        ),
+        "b": FactorLabel("b", "B up", "B down"),
+    }
+    out = top_factors(np.array([-0.9, -0.1]), np.array([0.0, 1.0]), cols, labels)
+    assert out == [{"label": "B down", "dir": "down"}]
+
+
+def test_present_category_can_be_a_factor() -> None:
+    cols = ("cat_neoplasms",)
+    labels = {"cat_neoplasms": FactorLabel("cat_neoplasms", "Condition category: Neoplasms", "")}
+    out = top_factors(np.array([0.4]), np.array([1.0]), cols, labels)
+    assert out == [{"label": "Condition category: Neoplasms", "dir": "up"}]

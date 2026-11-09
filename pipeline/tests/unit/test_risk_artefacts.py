@@ -139,4 +139,5 @@ def test_typical_rate_split_rule() -> None:
 def test_factor_labels_cover_features() -> None:
     labels = artefacts.read_factor_labels(REPO / "config" / "risk" / "factor_labels.csv")
     assert set(FEATURES) <= set(labels)
-    assert all(labels[f].up and labels[f].down for f in FEATURES)
+    assert all(labels[f].up for f in FEATURES)
+    assert all(labels[f].down for f in FEATURES if not f.startswith("cat_"))

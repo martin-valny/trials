@@ -130,6 +130,18 @@ test("company filter narrows and is in the URL", async () => {
   expect(where()).toMatch(/company=Acme/);
 });
 
+test("company filter keeps only that company's trials", async () => {
+  const pipeline = pipelineVariant((p) => {
+    p.rows[0]!.marks.find((m) => m.n === "NCT90000099")!.sp = 0; // Acme Biotech
+  });
+  stubFetch({ "pipeline.json": pipeline });
+  renderPage("/watchlist?company=Acme%20Biotech");
+  await table();
+  expect(order()).toEqual(["NCT90000099"]);
+  expect(screen.getByText("Showing 1 of 7 trials")).toBeInTheDocument();
+  expect(where()).toMatch(/company=Acme/);
+});
+
 test('"No target row" filter shows untargeted trials', async () => {
   const risk = riskVariant((r) => {
     r.trials!.NCT02343159 = { ...r.trials!.NCT90000002!, p: 0.3 };
