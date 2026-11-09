@@ -70,7 +70,9 @@ Test-set accuracy, bootstrap ensembles:
 
 The boosted model won on both criteria, and `site_leak_flag` is false (removing sites costs
 0.009 AUC). The in-area sample is too small to say anything about the area itself. Overall
-stop rate 16.0% (industry 14.0%, other 18.9%). Each boosted member is one booster refit with
+stop rate, over the shipped refit's trials (starts up to 2019, 61,346 trials, the window the
+typical rates use): 15.1% (industry 12.6%, other 18.6%); over every pulled year it would read
+16.0%. Each boosted member is one booster refit with
 an isotonic map learned from shuffled 5-fold out-of-fold scores (`ensemble=False`; the folds
 must be shuffled because training rows are ordered by start year), and the model file
 is zlib-compressed, to keep it near 7 MB.
