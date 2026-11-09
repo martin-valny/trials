@@ -128,7 +128,7 @@ p.sec.empty-line { padding-bottom: 20px; }
 .dzh .lad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .dzt .dzl { padding: 16px 0 14px; border-bottom: 1px solid var(--rule); align-items: start; }
 .dzl .nm, .dzp .top b { font-size: 14px; font-weight: 700; }
-.dzl[aria-current="true"] .nm, .dzl[aria-current="true"] .top b { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.dzl[aria-current="true"] .nm, .dzl[aria-current="true"] .top b { color: var(--ink); font-weight: 700; }
 .dzl:not([aria-current="true"]) .nm, .dzl:not([aria-current="true"]) .top b { font-weight: 600; }
 .dzl .tc span { display: block; font-size: 15px; line-height: 1.2; }
 .dzl .tc em, .dzl .rn em { display: block; font-style: normal; font-size: 12px; color: var(--run); margin-top: 3px; }

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -779,3 +780,27 @@ def test_run_joins_fixture_approvals(env: Env, cfg: AreaConfig) -> None:
     doc = json.loads((env.site_dir / "pipeline.json").read_text(encoding="utf-8"))
     cd20 = next(r for r in doc["rows"] if r["id"] == "cd20")
     assert sorted(cd20["ap"]) == ["CIDP", "MS", "NMOSD"]
+
+
+def _run_with_unreadable_approvals(
+    tmp_path: Path, cfg: AreaConfig, make: Callable[[Path], None]
+) -> None:
+    bad_dir = tmp_path / "approvals"
+    bad_dir.mkdir()
+    make(bad_dir / "approvals.csv")
+    bad = Env(tmp_path, cfg)
+    bad.cfg = bad.cfg.model_copy(update={"approvals_dir": bad_dir})
+    result = bad.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("approvals: ") and "approvals.csv: " in w for w in result.warnings)
+    assert not any(w.startswith("pipeline_figure") for w in result.warnings)
+    doc = json.loads((bad.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_non_utf8_approvals_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    _run_with_unreadable_approvals(tmp_path, cfg, lambda p: p.write_bytes(b"\xff\xfe caf\xe9"))
+
+
+def test_run_approvals_is_a_directory_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    _run_with_unreadable_approvals(tmp_path, cfg, lambda p: p.mkdir())

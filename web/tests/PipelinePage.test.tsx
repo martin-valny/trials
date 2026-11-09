@@ -234,7 +234,9 @@ test("By disease: an approved cell has the floor rule and accessible text; withd
   expect(nmosd.querySelector(".floor")).not.toBeNull();
   expect(nmosd.querySelector(".nodot")).not.toBeNull();
   expect(container.querySelector('[data-row="cd20"] [data-cell="CIDP"] .floor')).toBeNull();
-  expect(container.querySelector('.legend [data-key="approved"]')).not.toBeNull();
+  expect(container.querySelector('.legend [data-key="approved"]')).toHaveTextContent(
+    "a drug on this target is approved for this disease",
+  );
 });
 
 test("By phase and By year draw no floor rule and no approved legend item", async () => {

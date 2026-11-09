@@ -106,7 +106,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
         {state.view === "disease" && hasApprovalData(file) && (
           <span data-key="approved">
             <i className="floor-swatch" aria-hidden="true" />
-            Approved for this disease
+            a drug on this target is approved for this disease
           </span>
         )}
         {state.view === "year" ? (

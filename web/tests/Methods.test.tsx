@@ -207,7 +207,9 @@ test("Methods explains what approved means for a disease", async () => {
   expect(text).toMatch(/any regulator/);
   expect(text).toMatch(/withdrawn/);
   expect(text).toMatch(/not underlined/);
-  expect(text).toMatch(/MOGAD has no ChEMBL term/);
+  expect(text).toMatch(/ChEMBL has no disease term for MOGAD; at the last check, no drug on these targets was approved for MOGAD or AE/);
+  expect(text).toMatch(/fetched on 9 November 2026/);
+  expect(text).toMatch(/by its name in ChEMBL’s disease vocabulary/);
   expect(text).toMatch(/“Approved use” column is a trial phase/);
   expect(text).toMatch(/no success rate/);
   expect(text).toMatch(/combination kits/i);

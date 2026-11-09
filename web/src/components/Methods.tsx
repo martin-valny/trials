@@ -246,11 +246,11 @@ export function Methods() {
         <p>Approval comes from three places, and a drug needs only one of them:</p>
         <ul>
           <li>
-            ChEMBL release ChEMBL_37 (1 May 2026): its drug indications at maximum phase 4, matched on
-            the disease&rsquo;s medical subject heading.
+            ChEMBL release ChEMBL_37 (1 May 2026): its drug indications at maximum phase 4, matched to
+            the disease by its name in ChEMBL&rsquo;s disease vocabulary.
           </li>
           <li>
-            FDA drug labels from openFDA: the indications text of a label names the disease.
+            FDA drug labels from openFDA, fetched on 9 November 2026: the indications text of a label names the disease.
           </li>
           <li>
             A short hand file for approvals neither finds. Each row names its regulator, year and
@@ -260,8 +260,8 @@ export function Methods() {
         <p>
           The list is made by hand with <code>pipeline/scripts/fetch_approvals.py</code> and committed
           under <code>config/approvals/</code>; the daily run never calls ChEMBL or openFDA, so a new
-          approval shows up after the next hand run. MOGAD has no ChEMBL term, so it is found only
-          through label text and the hand file, and nothing is approved for it yet. The
+          approval shows up after the next hand run. ChEMBL has no disease term for MOGAD; at the
+          last check, no drug on these targets was approved for MOGAD or AE. The
           figure&rsquo;s &ldquo;Approved use&rdquo; column is a trial phase (Phase 4 trials), not this.
         </p>
         <p>

@@ -213,6 +213,8 @@ def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval]:
         warnings.append("approvals: missing")
     except ApprovalsError as exc:
         warnings.append(f"approvals: {exc}")
+    except (OSError, ValueError) as exc:  # unreadable, or not UTF-8 (UnicodeDecodeError)
+        warnings.append(f"approvals: {cfg.approvals_dir / 'approvals.csv'}: {_describe(exc)}")
     return []
 
 
