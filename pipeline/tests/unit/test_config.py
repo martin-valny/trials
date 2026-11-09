@@ -260,3 +260,20 @@ def test_risk_config_defaults_and_resolves_dir(tmp_path: Path) -> None:
     assert cfg.risk.enabled is True
     assert cfg.risk.per_trial is True
     assert cfg.risk.dir == (tmp_path / "risk").resolve()
+
+
+@pytest.mark.parametrize("field", ["label", "code"])
+def test_duplicate_condition_label_or_code_rejected(tmp_path: Path, field: str) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    coded = [c for c in data["conditions"] if c.get("code")]
+    coded[1][field] = coded[0][field]
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError):
+        load_config(path)
+
+
+def test_codes_for_is_figure_ordered_and_deduplicated(cfg: AreaConfig) -> None:
+    codes = list(cfg.disease_codes().values())
+    labels = list(cfg.disease_codes())
+    assert cfg.codes_for([labels[1], "Unknown", labels[0], labels[1]]) == codes[:2]

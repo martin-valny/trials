@@ -507,9 +507,12 @@ describe("year binning and By year notes", () => {
     expect(notes([row("a", [...many(14, { y: 2005 })])]).has("a")).toBe(false);
     expect(notes([row("a", [...many(15, { y: 2005 }), ...many(2, { y: 2020, s: "run" })])]).has("a")).toBe(false);
   });
-  it("Fading needs no majority before 2012, only some trials before it", () => {
-    const mixed = [...many(9, { y: 2005, s: "fin" }), ...many(11, { y: 2015, s: "fin" })];
-    expect(notes([row("a", mixed)]).get("a")).toEqual({ kicker: "Fading", text: "9 trials before 2012; 0 running now." });
+  it("Fading needs 15 trials started before 2012, not a majority", () => {
+    const mixed = [...many(15, { y: 2005, s: "fin" }), ...many(30, { y: 2015, s: "fin" })];
+    expect(notes([row("a", mixed)]).get("a")).toEqual({ kicker: "Fading", text: "15 trials before 2012; 0 running now." });
+    const few = [...many(14, { y: 2005, s: "fin" }), ...many(11, { y: 2015, s: "fin" })];
+    expect(notes([row("a", few)]).has("a")).toBe(false);
+    expect(notes([row("a", [...many(9, { y: 2005, s: "fin" }), ...many(11, { y: 2015, s: "fin" })])]).has("a")).toBe(false);
     expect(notes([row("a", many(20, { y: 2015, s: "fin" }))]).has("a")).toBe(false);
   });
   it("Longest run", () => {

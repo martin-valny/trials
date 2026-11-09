@@ -163,13 +163,11 @@ def _index(
 
     ``dz`` lists the trial's disease codes (figure order, no repeats), as the pipeline
     figure assigns a mark's; it is omitted when the trial has none."""
-    by_label = cfg.disease_codes()
     rows = []
     for nct in sorted(docs):
         d = docs[nct]
         x = extras.get(nct)
-        labels = set(x.condition_labels) if x else set()
-        dz = list(dict.fromkeys(code for label, code in by_label.items() if label in labels))
+        dz = cfg.codes_for(x.condition_labels if x else ())
         rows.append(
             {
                 "nct_id": nct,

@@ -109,11 +109,14 @@ async function patchPipeline(page: Page) {
   });
 }
 
-// Opacity is multiplicative down the tree, so the floor and every ancestor up to the row must each be 1.
+// Opacity is multiplicative down the tree, so the floor and every ancestor up to and including the row must each be 1.
 const opacities = (page: Page, sel: string) =>
   page.locator(sel).evaluate((el) => {
     const out: string[] = [];
-    for (let n: Element | null = el; n && !n.classList.contains("row"); n = n.parentElement) out.push(getComputedStyle(n).opacity);
+    for (let n: Element | null = el; n; n = n.parentElement) {
+      out.push(getComputedStyle(n).opacity);
+      if (n.classList.contains("row")) break;
+    }
     return out;
   });
 
@@ -136,6 +139,7 @@ test("desktop: the floor rule stays fully opaque in a Mostly historical row", as
   await page.goto("/#/?view=disease");
   await expect(page.locator('.row.hist[data-row="cd19"]')).toHaveCount(1);
   const ops = await opacities(page, '.row[data-row="cd19"] [data-cell="MS"] .floor');
+  expect(ops.length).toBeGreaterThan(1);
   expect(ops.every((o) => o === "1")).toBe(true);
   expect(await page.locator('.row[data-row="cd19"] [data-cell="MS"] .m').first().evaluate((el) => getComputedStyle(el).opacity)).toBe("0.62");
 });

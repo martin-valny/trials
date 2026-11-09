@@ -301,10 +301,9 @@ test("hovering the floor rule shows the figure's tooltip with the approval sente
   expect(screen.queryByRole("tooltip")).toBeNull();
 });
 
-test("the phone strip's floor is not interactive and its hit area stays inside the cell padding", () => {
+test("the phone strip's floor is not interactive", () => {
   const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
   expect(css).toMatch(/\.prow \.strip \.cell \.floor \{ pointer-events: none; \}/);
-  expect(css).toMatch(/\.prow \.strip \.cell \.floor::before \{ top: -4px; bottom: -1px; \}/);
 });
 
 test("the ladder colour is a token with a dark value, not a hard-coded hex in target.css", () => {

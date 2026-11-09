@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal
 
@@ -230,12 +231,27 @@ class AreaConfig(_Strict):
             raise ValueError(f"unknown tracked_fields: {unknown}")
         return value
 
+    @model_validator(mode="after")
+    def _unique_conditions(self) -> AreaConfig:
+        labels = [c.label for c in self.conditions]
+        if len(set(labels)) != len(labels):
+            raise ValueError("conditions must not share a label")
+        codes = [c.code for c in self.conditions if c.code]
+        if len(set(codes)) != len(codes):
+            raise ValueError("conditions must not share a code")
+        return self
+
     def disease_codes(self) -> dict[str, str]:
         """Condition label -> disease code, for the coded conditions, in figure order
         (unset ``figure_order`` sorts after; ties keep config order)."""
         coded = [c for c in self.conditions if c.code]
         coded.sort(key=lambda c: (c.figure_order is None, c.figure_order or 0))
         return {c.label: c.code for c in coded if c.code}
+
+    def codes_for(self, labels: Iterable[str]) -> list[str]:
+        """Disease codes of the coded conditions among ``labels``, in figure order, no repeats."""
+        wanted = set(labels)
+        return [code for label, code in self.disease_codes().items() if label in wanted]
 
 
 def load_config(path: Path) -> AreaConfig:

@@ -242,7 +242,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .cell .floor::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
 /* Phone strip: no tooltip, so no hit area; the rule alone, with nothing reaching up into the marks. */
 .prow .strip .cell .floor { pointer-events: none; }
-.prow .strip .cell .floor::before { top: -4px; bottom: -1px; }
 .prow .strip .cell.ap { padding-bottom: 8px; }
 .prow .strip .cell .floor { left: 3px; right: 3px; bottom: 1px; }
 .floor-swatch { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }

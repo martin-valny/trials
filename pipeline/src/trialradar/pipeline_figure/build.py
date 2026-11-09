@@ -33,10 +33,6 @@ UNLISTED_SPONSOR_MIN = 3
 _NOT_GIVEN = "Not given"
 
 
-def _codes(labels: Sequence[str], by_label: Mapping[str, str]) -> list[str]:
-    return [by_label[label] for label in labels if label in by_label]
-
-
 def _join(items: Sequence[tuple[str, int]]) -> str:
     return ", ".join(f"{name} ({n})" for name, n in items)
 
@@ -121,7 +117,7 @@ def build_pipeline_doc(
                 "s": state,
                 "y": t.get("start_year"),
                 "y2": t.get("end_year"),
-                "dz": _codes(t.get("condition_labels", ()), by_label),
+                "dz": cfg.codes_for(t.get("condition_labels", ())),
                 "drug": drug,
                 "sp": sponsor,  # replaced by an index below
             }
@@ -130,7 +126,7 @@ def build_pipeline_doc(
                 mark["span"] = sp
             if via is not None:
                 mark["via"] = via
-            if si := _codes(t.get("succeeded_in", ()), by_label):
+            if si := cfg.codes_for(t.get("succeeded_in", ())):
                 mark["si"] = si
             if t.get("end_estimated"):
                 mark["est"] = True
