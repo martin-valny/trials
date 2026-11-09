@@ -145,3 +145,28 @@ def test_multi_region_ignores_unmapped_countries():
 
     assert mr("United States", "Germany") == 1
     assert mr("United States", "Narnia") == 0
+
+
+def test_no_listed_sites_is_missing_not_zero():
+    # A trial that lists no sites yet (often not yet recruiting) has unknown site counts;
+    # a zero would read as "no sites planned", which is rare in finished trials.
+    s = make_study("NCT00000001", **{"contactsLocationsModule": DELETE})
+    row = _build([s]).row(0, named=True)
+    assert row["n_sites"] is None
+    assert row["n_countries"] is None
+    assert row["multi_region"] is None
+
+
+def test_sites_without_country_count_sites_and_zero_countries():
+    s = make_study(
+        "NCT00000001",
+        **{
+            "contactsLocationsModule.locations": [
+                {"facility": "F", "city": "C", "status": "RECRUITING"}
+            ]
+        },
+    )
+    row = _build([s]).row(0, named=True)
+    assert row["n_sites"] == 1
+    assert row["n_countries"] == 0
+    assert row["multi_region"] == 0

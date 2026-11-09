@@ -141,10 +141,11 @@ def build(
     site_frame = (
         trial.select("nct_id")
         .join(site_counts, on="nct_id", how="left")
+        # No listed sites is unknown, not zero: all three stay null. Listed sites without a
+        # country count as zero countries.
         .with_columns(
-            pl.col("n_sites").fill_null(0),
-            pl.col("n_countries").fill_null(0),
-            pl.col("multi_region").fill_null(0),
+            pl.when(pl.col("n_sites").is_not_null()).then(pl.col(c).fill_null(0)).alias(c)
+            for c in ("n_countries", "multi_region")
         )
     )
 
