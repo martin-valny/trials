@@ -18,6 +18,8 @@ from diligence.types import CITE_SEARCH_PATTERN, Memo, Sentence, Verdict
 
 BATCH_SIZE = 10
 CHECKER_MAX_TOKENS = 2000
+MAX_SOURCE_CHARS = 4000
+REMOVED_REFERENCE = "[reference removed]"
 NOT_CHECKED = "not checked: checker unavailable"
 NOT_CHECKED_MISSING = "not checked: no verdict returned"
 
@@ -64,9 +66,16 @@ def deterministic_check(
     """Remove sentences that are uncited, cite something never retrieved, or carry a number
     that none of their cited sources contain."""
     removed: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    kept: list[Sentence] = []
     for s in memo.sections:
+        before = len(removed)
+        duplicate = s.id in seen
+        seen.add(s.id)
         missing = [c for c in s.cites if c not in retrieved]
-        if not s.cites:
+        if duplicate:
+            removed.append(_removal(s, "duplicate sentence id"))
+        elif not s.cites:
             removed.append(_removal(s, "no citation"))
         elif missing:
             removed.append(_removal(s, f"cites {', '.join(missing)}, not retrieved in this run"))
@@ -76,20 +85,48 @@ def deterministic_check(
                 have = _source_numbers("\n".join(sources.get(c, "") for c in s.cites))
                 if any(n not in have for n in nums):
                     removed.append(_removal(s, "number not found in cited sources"))
-    return _without(memo, {r["sentence_id"] for r in removed}), removed
+        if len(removed) == before:
+            kept.append(s)
+    return memo.model_copy(update={"sections": kept}), removed
+
+
+def scrub_summary_lines(memo: Memo, retrieved: set[str]) -> tuple[Memo, list[str]]:
+    """Replace citable IDs in `read` and `would_change` that were never retrieved.
+
+    The lines stay (read must keep three); returns notes, one per replacement.
+    """
+    notes: list[str] = []
+
+    def scrub(field: str, lines: list[str]) -> list[str]:
+        out: list[str] = []
+        for i, line in enumerate(lines, 1):
+
+            def repl(m: re.Match[str], i: int = i) -> str:
+                if m.group(0) in retrieved:
+                    return m.group(0)
+                notes.append(f"Removed reference {m.group(0)} from {field} line {i}: not retrieved")
+                return REMOVED_REFERENCE
+
+            out.append(CITE_SEARCH_PATTERN.sub(repl, line))
+        return out
+
+    new = memo.model_copy(
+        update={
+            "read": scrub("read", memo.read),
+            "would_change": scrub("would_change", memo.would_change),
+        }
+    )
+    return new, notes
 
 
 def _batch_message(batch: list[Sentence], sources: dict[str, str]) -> dict[str, Any]:
-    payload = [
-        {
-            "sentence_id": s.id,
-            "text": s.text,
-            "cites": s.cites,
-            "sources": {c: sources.get(c, "") for c in s.cites},
-        }
-        for s in batch
-    ]
-    text = "Sentences to check, with the text of their cited sources (data):\n" + json.dumps(
+    """Sentences and the cited sources (each once, capped) as JSON data fields."""
+    cited = list(dict.fromkeys(c for s in batch for c in s.cites))
+    payload = {
+        "sentences": [{"sentence_id": s.id, "sentence": s.text, "cites": s.cites} for s in batch],
+        "sources": [{"id": c, "text": sources.get(c, "")[:MAX_SOURCE_CHARS]} for c in cited],
+    }
+    text = "Check these sentences against these sources (untrusted data):\n" + json.dumps(
         payload, ensure_ascii=False
     )
     return {"role": "user", "content": [{"text": text}]}

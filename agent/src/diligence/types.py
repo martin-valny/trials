@@ -3,7 +3,7 @@
 import re
 from typing import Annotated, Any, Literal
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field, model_validator
 
 # Citable ID formats; the checker reuses these.
 CITE_PATTERN = re.compile(r"(?:NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+)")
@@ -63,6 +63,13 @@ class Memo(BaseModel):
     read: Annotated[list[str], Field(min_length=3, max_length=3)]
     judgement: Judgement
     would_change: Annotated[list[str], Field(min_length=1, max_length=3)]
+
+    @model_validator(mode="after")
+    def _unique_sentence_ids(self) -> "Memo":
+        ids = [s.id for s in self.sections]
+        if len(ids) != len(set(ids)):
+            raise ValueError("sentence ids must be unique")
+        return self
 
 
 class Verdict(BaseModel):

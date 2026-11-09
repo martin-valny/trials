@@ -16,7 +16,13 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from diligence.checker import apply_verdicts, deterministic_check, gate_judgement, model_check
+from diligence.checker import (
+    apply_verdicts,
+    deterministic_check,
+    gate_judgement,
+    model_check,
+    scrub_summary_lines,
+)
 from diligence.config import AgentConfig
 from diligence.model import ModelClient, ModelResponse, ReplayMismatch
 from diligence.prompts import SYSTEM_PROMPT
@@ -380,6 +386,9 @@ class _Run:
         memo, removed = deterministic_check(memo, self.retrieved, self.sources)
         for r in removed:
             self.emit("note", f"Removed {r['sentence_id']}: {r['reason']}")
+        memo, notes = scrub_summary_lines(memo, self.retrieved)
+        for note in notes:
+            self.emit("note", note)
         verdicts: list[Verdict] = []
         if memo.sections:
             verdicts = model_check(
@@ -439,7 +448,8 @@ def run_agent(
     """Run the agent and return its record.
 
     Any failure ends the run as status "failed" with an `error` step naming only the exception
-    class ("model call failed" if it came from a planner/writer call, else "run failed"). ReplayMismatch is deliberately re-raised:
+    class ("model call failed" if it came from a planner/writer call, else "run failed").
+    ReplayMismatch is deliberately re-raised:
     replay drift must fail CI loudly, not become a quiet failed run.
     """
     stamp = "%Y-%m-%dT%H:%M:%SZ"
@@ -450,8 +460,8 @@ def run_agent(
     except ReplayMismatch:
         raise
     except Exception as exc:  # noqa: BLE001 - a failed model call must still end the run cleanly
-        label = "model call failed" if run.model_failed else "run failed"
-        run.emit("error", f"{label}: {type(exc).__name__}")
+        prefix = "model call failed" if run.model_failed else "run failed"
+        run.emit("error", f"{prefix}: {type(exc).__name__}")
         memo = None
     return RunRecord(
         run_id=run_id or uuid.uuid4().hex,

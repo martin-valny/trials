@@ -167,3 +167,19 @@ def test_number_check_runs_in_loop(tctx: ToolContext) -> None:
     assert rec.removed[0]["reason"] == "number not found in cited sources"
     assert steps[-2].text == "checking 1 claims … 0 supported, 0 partly, 1 removed"
     assert isinstance(rec, RunRecord)
+
+
+def test_summary_lines_scrubbed_with_notes(tctx: ToolContext) -> None:
+    memo = valid_memo()
+    memo["read"] = ["See NCT12345678.", "b", "c"]
+    _, rec, steps = run_with(memo, [verdicts(("s1", "supported"))], tctx)
+    assert rec.memo.read == ["See [reference removed].", "b", "c"]  # type: ignore[union-attr]
+    assert "Removed reference NCT12345678 from read line 1: not retrieved" in [
+        s.text for s in steps if s.kind == "note"
+    ]
+
+
+def test_number_removal_has_note_step(tctx: ToolContext) -> None:
+    _, _, steps = run_with(valid_memo("It enrolled 412 patients."), [], tctx)
+    notes = [s.text for s in steps if s.kind == "note"]
+    assert notes == ["Removed s1: number not found in cited sources"]

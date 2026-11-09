@@ -67,3 +67,15 @@ def test_run_record_roundtrip() -> None:
     )
     assert r.finished_at is None and r.memo is None and r.steps == []
     assert RunRecord.model_validate_json(r.model_dump_json()) == r
+
+
+def test_memo_duplicate_ids_rejected() -> None:
+    sent = {"id": "s1", "section": "landscape", "text": "t", "cites": ["NCT90000001"]}
+    memo = {
+        "sections": [sent, {**sent, "text": "u"}],
+        "read": ["a", "b", "c"],
+        "judgement": {"stance": "mixed", "confidence": "low", "reasons": ["s1"]},
+        "would_change": ["x"],
+    }
+    with pytest.raises(ValidationError):
+        Memo.model_validate(memo)

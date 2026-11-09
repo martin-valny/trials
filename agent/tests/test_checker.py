@@ -8,10 +8,11 @@ from diligence.checker import (
     deterministic_check,
     gate_judgement,
     model_check,
+    scrub_summary_lines,
 )
 from diligence.model import ModelResponse
 from diligence.prompts import CHECKER_PROMPT, VERDICTS_TOOL
-from diligence.types import Memo, Verdict
+from diligence.types import Memo, Sentence, Verdict
 
 
 def memo_of(*sentences: tuple[str, str, list[str]], reasons: list[str] | None = None) -> Memo:
@@ -252,3 +253,88 @@ def test_json_serialisable_removed() -> None:
     memo = memo_of(("s1", "Bare.", []))
     _, removed = deterministic_check(memo, set(), {})
     json.dumps(removed)
+
+
+# -- fix round 1 -------------------------------------------------------------------------------
+
+
+def raw_memo(sentences: list[dict[str, Any]]) -> Memo:
+    base = memo_of(("s1", "x", ["NCT90000001"]))
+    return Memo.model_construct(**{**base.__dict__, "sections": [Sentence(**s) for s in sentences]})
+
+
+def test_memo_rejects_duplicate_sentence_ids() -> None:
+    with pytest.raises(ValueError, match="unique"):
+        memo_of(("s1", "One.", ["NCT90000001"]), ("s1", "Two.", ["NCT90000001"]))
+
+
+def test_duplicate_ids_removed_in_deterministic_check() -> None:
+    def sent(text: str) -> dict[str, Any]:
+        return {"id": "s1", "section": "landscape", "text": text, "cites": ["NCT90000001"]}
+
+    memo = raw_memo([sent("First."), sent("Second.")])
+    out, removed = deterministic_check(memo, {"NCT90000001"}, {})
+    assert [s.text for s in out.sections] == ["First."]
+    assert removed == [{"sentence_id": "s1", "text": "Second.", "reason": "duplicate sentence id"}]
+
+
+def test_scrub_summary_lines() -> None:
+    memo = memo_of(("s1", "One.", ["NCT90000001"]))
+    memo = memo.model_copy(
+        update={
+            "read": ["See NCT12345678 and NCT90000001.", "plain", "PMID:5 too"],
+            "would_change": ["A result like FDA:abc-1"],
+        }
+    )
+    out, notes = scrub_summary_lines(memo, {"NCT90000001"})
+    assert out.read == [
+        "See [reference removed] and NCT90000001.",
+        "plain",
+        "[reference removed] too",
+    ]
+    assert out.would_change == ["A result like [reference removed]"]
+    assert len(out.read) == 3
+    assert notes == [
+        "Removed reference NCT12345678 from read line 1: not retrieved",
+        "Removed reference PMID:5 from read line 3: not retrieved",
+        "Removed reference FDA:abc-1 from would_change line 1: not retrieved",
+    ]
+
+
+def test_prompt_states_untrusted_sentences_and_sources() -> None:
+    low = CHECKER_PROMPT.lower()
+    assert "sentences" in low and "untrusted" in low and "ignore any instructions" in low
+
+
+def test_batch_payload_dedupes_and_caps_sources() -> None:
+    memo = memo_of(("s1", "One.", ["NCT90000001"]), ("s2", "Two.", ["NCT90000001"]))
+    fake = FakeChecker([verdict_resp([v("s1"), v("s2")])])
+    model_check(memo, {"NCT90000001": "A" * 9000}, model=fake, model_id="chk")
+    text = fake.calls[0]["messages"][0]["content"][0]["text"]
+    payload = json.loads(text[text.index("{") :])
+    assert [x["id"] for x in payload["sources"]] == ["NCT90000001"]
+    assert len(payload["sources"][0]["text"]) == 4000
+    assert [x["sentence_id"] for x in payload["sentences"]] == ["s1", "s2"]
+    assert payload["sentences"][0]["sentence"] == "One."
+
+
+@pytest.mark.parametrize(
+    ("text", "source", "kept"),
+    [
+        ("Enrolled 412 patients.", '{"a":[412,500]}', True),
+        ("Enrolled 412,500 patients.", '{"a":[412,500]}', True),
+        ("Enrolled 412 patients.", None, False),  # retrieved cite with no source text
+    ],
+)
+def test_source_edge_cases(text: str, source: str | None, kept: bool) -> None:
+    memo = memo_of(("s1", text, ["NCT90000001"]))
+    srcs = {} if source is None else {"NCT90000001": source}
+    out, _ = deterministic_check(memo, {"NCT90000001"}, srcs)
+    assert bool(out.sections) is kept
+
+
+@pytest.mark.parametrize("cite", ["FDA:abc-123456", "PPR123456", "CHEMBL123456"])
+def test_other_ids_stripped_before_numbers(cite: str) -> None:
+    memo = memo_of(("s1", f"Per {cite} this holds.", [cite]))
+    out, _ = deterministic_check(memo, {cite}, {cite: "{}"})
+    assert len(out.sections) == 1
