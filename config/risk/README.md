@@ -53,29 +53,35 @@ A boosted model ships only if its test AUC is at least 0.02 above the logistic b
 worse; otherwise the baseline ships. The card records which, and why. A boosted fit without
 site and country features is also reported; if removing them costs more than 0.03 AUC the
 card sets `site_leak_flag` and Methods names them as a possible leak. All of these numbers
-(baseline, boosted, boosted without sites, in-area) are bootstrap-ensemble metrics on the same
-held-out set, and the shipping reason and leak flag quote exactly the numbers in `card.json`.
+(baseline, boosted, boosted without sites, in-area) are measured on the same held-out set, each
+from its ensemble's main fit (the estimate p, not an average over the 20 bootstrap refits), and
+the shipping reason and leak flag quote exactly the numbers in `card.json`. Only the shipped
+kind's and the in-area numbers are recomputed in CI (`tests/unit/test_risk_card.py`); the
+baseline and no-sites fits are not saved, so their numbers are recorded at training time only.
 
-## First trained model (stop-risk-20261109)
+## Current model (stop-risk-20261109)
 
 Pulled 2008-2025 (81,655 labelled trials; train 41,564, test 19,782 with 3,392 stopped).
-Test-set accuracy, bootstrap ensembles:
+Test-set accuracy, each ensemble's main fit:
 
 | Model | AUC | Brier |
 | --- | --- | --- |
 | Logistic baseline | 0.567 | 0.1420 |
-| Boosted (shipped) | 0.683 | 0.1346 |
-| Boosted without site and country features | 0.674 | 0.1355 |
-| Boosted, in-area trials only (n 141, 29 stopped) | 0.556 | 0.1640 |
+| Boosted (shipped) | 0.682 | 0.1348 |
+| Boosted without site and country features | 0.676 | 0.1353 |
+| Boosted, in-area trials only (n 141, 29 stopped) | 0.602 | 0.1609 |
 
 The boosted model won on both criteria, and `site_leak_flag` is false (removing sites costs
-0.009 AUC). The in-area sample is too small to say anything about the area itself. Overall
+0.006 AUC). The in-area sample is too small to say anything about the area itself. Overall
 stop rate, over the shipped refit's trials (starts up to 2019, 61,346 trials, the window the
 typical rates use): 15.1% (industry 12.6%, other 18.6%); over every pulled year it would read
 16.0%. Each boosted member is one booster refit with
 an isotonic map learned from shuffled 5-fold out-of-fold scores (`ensemble=False`; the folds
 must be shuffled because training rows are ordered by start year), and the model file
-is zlib-compressed, to keep it near 7 MB.
+is zlib-compressed, to keep it near 7 MB. Retrained on 9 November 2026 after two feature fixes
+(Neoplasms via the paraneoplastic chain alone no longer counted; no listed sites read as
+missing): boosted AUC 0.683 → 0.682, Brier 0.1346 → 0.1348, no sites 0.674 → 0.676, in-area
+0.556 → 0.602; baseline and typical rates unchanged.
 
 ## Files
 
@@ -101,8 +107,15 @@ a label can never contradict the value (no "Few sites (112)").
 
 A missing value is never described, and a label already given for a trial is not repeated. The
 category labels read "Registry files it under: ...", because they follow the registry's MeSH
-filing rather than the disease as a clinician would name it: MeSH files Myasthenia Gravis under
-Paraneoplastic Syndromes, so every myasthenia gravis trial carries the Neoplasms category.
+filing rather than the disease as a clinician would name it. One filing is corrected: MeSH files
+Myasthenia Gravis (and anti-NMDA receptor encephalitis) under Paraneoplastic Syndromes, whose
+ancestors climb to Neoplasms through Nervous System Neoplasms. "Neoplasms" reached only through
+that chain is not counted (`risk/fields.py`); a trial keeps it when a condition or an ancestor
+outside the chain is itself a neoplasm (thymoma, a lymphoma, a brain tumour).
+
+A record that lists no sites yet (often a trial not yet recruiting) has unknown site counts:
+`n_sites`, `n_countries` and `multi_region` are missing (NaN), not zero, in training and live
+scoring alike. Listed sites without a country count as zero countries.
 
 `sponsor_history.csv` is the one deliberate exception to "never commit real registry data":
 it holds counts per sponsor name, no trial records. Live scoring reads it for the sponsor
