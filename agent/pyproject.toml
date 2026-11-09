@@ -1,0 +1,39 @@
+[project]
+name = "diligence"
+version = "0.1.0"
+description = "Trial Radar diligence agent (Bedrock tool-use)"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3",
+    "httpx",
+    "pydantic>=2",
+    "pyyaml",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "moto[dynamodb,lambda]",
+    "ruff",
+    "mypy",
+    "types-PyYAML",
+    "boto3-stubs[bedrock-runtime,dynamodb,lambda]",
+    "pip-audit",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.32,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "diligence"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
