@@ -86,12 +86,8 @@ def build_pipeline_doc(
     warnings: list[str],
     approvals: Sequence[Approval] | None = None,
 ) -> dict[str, Any]:
-    by_label = {c.label: c.code for c in cfg.conditions if c.code}
-    coded = [c for c in cfg.conditions if c.code]
-    coded.sort(
-        key=lambda c: (c.figure_order is None, c.figure_order or 0)
-    )  # stable: ties keep config order
-    diseases = [{"code": c.code, "label": c.label} for c in coded]
+    by_label = cfg.disease_codes()  # figure order
+    diseases = [{"code": code, "label": label} for label, code in by_label.items()]
     table: dict[str, dict[str, Any]] = {r["nct_id"]: r for r in trial.iter_rows(named=True)}
     drug_index: Mapping[str, Mapping[str, Any]] = explorer.get("drug_index", {})
     drug_mechanisms = {d: list(v.get("mechanisms", ())) for d, v in drug_index.items()}
@@ -194,9 +190,7 @@ def build_pipeline_doc(
                 if cls in fig.unrowed:
                     unrowed_counts[cls].add(t["nct_id"])
 
-    approved = _approved_cells(
-        approvals or (), set(marks), {c.code for c in coded if c.code}, warnings
-    )
+    approved = _approved_cells(approvals or (), set(marks), set(by_label.values()), warnings)
     ap_by_row: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for (row_id, code), entries in approved.items():
         ap_by_row.setdefault(row_id, {})[code] = entries

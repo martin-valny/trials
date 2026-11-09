@@ -153,11 +153,23 @@ def _trial_docs(
     return docs
 
 
-def _index(docs: dict[str, dict[str, Any]], day: date) -> dict[str, Any]:
-    """One row per tracked trial for the browse view; sorted so output is stable."""
+def _index(
+    docs: dict[str, dict[str, Any]],
+    day: date,
+    cfg: AreaConfig,
+    extras: Mapping[str, StudyExtras],
+) -> dict[str, Any]:
+    """One row per tracked trial for the browse view; sorted so output is stable.
+
+    ``dz`` lists the trial's disease codes (figure order, no repeats), as the pipeline
+    figure assigns a mark's; it is omitted when the trial has none."""
+    by_label = cfg.disease_codes()
     rows = []
     for nct in sorted(docs):
         d = docs[nct]
+        x = extras.get(nct)
+        labels = set(x.condition_labels) if x else set()
+        dz = list(dict.fromkeys(code for label, code in by_label.items() if label in labels))
         rows.append(
             {
                 "nct_id": nct,
@@ -169,6 +181,7 @@ def _index(docs: dict[str, dict[str, Any]], day: date) -> dict[str, Any]:
                 "primary_completion_date": d["primary_completion_date"],
                 "enrollment": d["enrollment"],
                 "last_change": max((c["detected_date"] for c in d["changes"]), default=None),
+                **({"dz": dz} if dz else {}),
             }
         )
     return {"generated_for": day.isoformat(), "trials": rows}
@@ -247,7 +260,7 @@ def export(
         if _TRIAL_FILE.fullmatch(p.name) and p.is_file() and p.stem not in docs:
             p.unlink()
 
-    _write_json(out_dir / "trials.json", _index(docs, day))
+    _write_json(out_dir / "trials.json", _index(docs, day, cfg, extras or {}))
     if explorer is not None:
         _write_json(out_dir / "explorer.json", explorer)
     else:

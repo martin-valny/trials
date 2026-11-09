@@ -82,6 +82,7 @@ export interface TrialSummary {
   primary_completion_date: DateInfo | null;
   enrollment: number | null;
   last_change: string | null; // YYYY-MM-DD of the latest recorded change
+  dz?: string[]; // disease codes in figure order; absent when the trial is in none
 }
 
 export interface TrialsIndex {

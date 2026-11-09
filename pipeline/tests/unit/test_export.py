@@ -466,6 +466,39 @@ def _extras(nct: str) -> StudyExtras:
     )
 
 
+def test_trial_index_disease_codes(tmp_path: Path, cfg: AreaConfig) -> None:
+    def with_labels(nct: str, labels: tuple[str, ...]) -> StudyExtras:
+        return replace(_extras(nct), condition_labels=labels)
+
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        # Label order is the reverse of figure order (MS 1, MG 2); a repeat must not repeat.
+        extras={
+            "NCT00000001": with_labels(
+                "NCT00000001", ("Myasthenia gravis", "Multiple sclerosis", "Myasthenia gravis")
+            )
+        },
+    )
+    first, second = load(tmp_path / "trials.json")["trials"]
+    assert first["dz"] == ["MS", "MG"]
+    assert "dz" not in second  # no extras entry: omitted, not empty
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        extras={"NCT00000001": with_labels("NCT00000001", ())},
+    )
+    assert all("dz" not in t for t in load(tmp_path / "trials.json")["trials"])
+
+
 def test_export_trial_doc_has_summary(tmp_path: Path, cfg: AreaConfig) -> None:
     export(
         small_tables(),

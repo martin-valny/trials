@@ -230,6 +230,13 @@ class AreaConfig(_Strict):
             raise ValueError(f"unknown tracked_fields: {unknown}")
         return value
 
+    def disease_codes(self) -> dict[str, str]:
+        """Condition label -> disease code, for the coded conditions, in figure order
+        (unset ``figure_order`` sorts after; ties keep config order)."""
+        coded = [c for c in self.conditions if c.code]
+        coded.sort(key=lambda c: (c.figure_order is None, c.figure_order or 0))
+        return {c.label: c.code for c in coded if c.code}
+
 
 def load_config(path: Path) -> AreaConfig:
     """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir``, ``approaches_dir``,
