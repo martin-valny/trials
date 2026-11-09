@@ -61,6 +61,31 @@ _Note = tuple[str, str, str, str, str]
 _Key = tuple[str, str, str]
 
 
+def _url_rank(url: str) -> int:
+    """Hand link > DailyMed > ChEMBL card > none."""
+    if not url:
+        return -1
+    if url.startswith(DAILYMED):
+        return 1
+    return 0 if url.startswith(CHEMBL_CARD) else 2
+
+
+def _best_url(first: str, second: str) -> str:
+    """The better link; a tie keeps ``first``."""
+    return second if _url_rank(second) > _url_rank(first) else first
+
+
+def _still_true(kind: str, detail: str, sources: tuple[str, ...]) -> bool:
+    """Whether a review note, written for one molecule, still holds for the final cell."""
+    if kind == "one_source":
+        return len(sources) == 1
+    if kind == "negated":
+        return "fda_label" not in sources
+    if "below phase 4" in detail:  # label yes, ChEMBL below phase 4
+        return "chembl" not in sources
+    return "fda_label" not in sources  # ChEMBL phase 4, label does not name it
+
+
 def _line(row_id: str, disease: str, drug: str, detail: str) -> str:
     return f"{row_id} × {disease}: {drug} — {detail}"
 
@@ -248,8 +273,7 @@ def _auto(
         if prior is not None:  # two molecules with one name: merge into one line
             sources = tuple(s for s in SOURCES if s in prior.sources or s in sources)
             withdrawn = withdrawn and prior.withdrawn
-            if not set_id and prior.url.startswith(DAILYMED):
-                url = prior.url  # a DailyMed link beats a ChEMBL card
+            url = _best_url(url, prior.url)  # a DailyMed link beats a ChEMBL card
         out[key] = Approval(row.id, disease, name, cid, sources, withdrawn, "", None, url)
 
 
@@ -271,7 +295,7 @@ def _fold_variants(out: dict[_Key, Approval]) -> dict[_Key, _Key]:
         out[root_key] = replace(
             root,
             chembl_id=root.chembl_id or var.chembl_id,
-            url=root.url or var.url,
+            url=_best_url(root.url, var.url),
             sources=tuple(s for s in SOURCES if s in root.sources or s in var.sources),
             withdrawn=root.withdrawn and var.withdrawn,
         )
@@ -326,8 +350,11 @@ def build_approvals(
             _auto(row, cid, terms, look, notes, out)
     folded = _fold_variants(out)
     for kind, row_id, disease, name, detail in notes:
-        root = folded.get((row_id, disease, name))
-        getattr(review, kind).append(_line(row_id, disease, root[2] if root else name, detail))
+        root_key = folded.get((row_id, disease, name), (row_id, disease, name))
+        cell = out.get(root_key)
+        if cell is not None and not _still_true(kind, detail, cell.sources):
+            continue  # folding or merging gave the cell the source the note says is missing
+        getattr(review, kind).append(_line(row_id, disease, root_key[2], detail))
     _apply_overrides(out, overrides, review)
     items = sorted(out.values(), key=lambda a: (a.row_id, a.disease, a.drug.casefold()))
     review.counts = {d: len({a.row_id for a in items if a.disease == d}) for d in sorted(terms)}

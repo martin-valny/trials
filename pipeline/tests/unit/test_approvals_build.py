@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from trialradar.approvals.build import Review, build_approvals
 from trialradar.approvals.io import Override
 from trialradar.config import ApprovalTerms
@@ -451,3 +453,60 @@ def test_same_name_merge_prefers_dailymed_url() -> None:
             b._auto(row("r"), cid, TERMS, look, [], out)
         (a,) = out.values()
         assert a.url == f"{b.DAILYMED}SET"
+
+
+def test_folded_variant_sources_clear_one_source_notes() -> None:
+    chembl = FakeChembl(
+        {
+            "C1": mol("Prednisolone", "Small molecule"),
+            "C2": mol("Prednisolone acetate", "Small molecule"),
+        },
+        [mech("C1", "T1"), mech("C2", "T1")],
+        {"C1": [ind("Multiple Sclerosis", 4)]},
+    )  # the root is ChEMBL only; the variant is label only
+    fda = FakeFda({"prednisolone acetate": [label("SET", "Treats multiple sclerosis.")]})
+    items, review = run([row("r", ("X",))], {"p": mapping("p", "C1", ("X",))}, chembl, fda)
+    assert [(a.drug, a.sources) for a in items] == [("prednisolone", ("chembl", "fda_label"))]
+    assert review.one_source == []
+    assert review.disagree == []
+
+
+def test_same_name_merge_with_differing_sources_clears_notes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from trialradar.approvals import build as b
+
+    class Look(b._Lookups):  # only the second molecule sees a label (memoising hides this)
+        calls = 0
+
+        def labels(self, name: str) -> list[Json]:
+            self.calls += 1
+            if self.calls == 1:
+                return []
+            return [
+                {
+                    "generic_name": "SAME",
+                    "product": "",
+                    **label("SET", "Treats multiple sclerosis."),
+                }
+            ]
+
+    monkeypatch.setattr(b, "_Lookups", Look)
+    chembl = FakeChembl(
+        {"C1": mol("Same"), "C2": mol("Same")},
+        [mech("C1", "T1"), mech("C2", "T1")],
+        {"C1": [ind("Multiple Sclerosis", 4)]},
+    )
+    items, review = run([row("r", ("X",))], {"same": mapping("same", "C1", ("X",))}, chembl)
+    assert [(a.drug, a.sources) for a in items] == [("same", ("chembl", "fda_label"))]
+    assert review.one_source == []
+    assert review.disagree == []
+
+
+def test_fold_url_prefers_dailymed_over_card() -> None:
+    from trialradar.approvals.build import CHEMBL_CARD, DAILYMED, _best_url
+
+    assert _best_url(f"{CHEMBL_CARD}C1/", f"{DAILYMED}S") == f"{DAILYMED}S"
+    assert _best_url(f"{DAILYMED}S", f"{CHEMBL_CARD}C1/") == f"{DAILYMED}S"
+    assert _best_url("", f"{CHEMBL_CARD}C1/") == f"{CHEMBL_CARD}C1/"
+    assert _best_url("https://hand", f"{DAILYMED}S") == "https://hand"
