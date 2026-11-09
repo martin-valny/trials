@@ -215,6 +215,7 @@ def export(
     explorer: dict[str, Any] | None = None,
     mechanisms: dict[str, Any] | None = None,
     pipeline: dict[str, Any] | None = None,
+    risk: dict[str, Any] | None = None,
 ) -> None:
     """Write the site JSON views for ``day`` into ``out_dir``.
 
@@ -222,7 +223,9 @@ def export(
     files (null/false when absent); ``explorer`` is written as ``explorer.json``, and
     without it a previous ``explorer.json`` is removed (the site then shows no map).
     ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
-    only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``)."""
+    only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``).
+    ``risk`` (the stop-risk estimates) is written as ``risk.json``, and a stale one is
+    removed when there is none; it does not depend on the map."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -262,4 +265,8 @@ def export(
         _write_json(out_dir / "pipeline.json", pipeline)
     else:
         (out_dir / "pipeline.json").unlink(missing_ok=True)
+    if risk is not None:
+        _write_json(out_dir / "risk.json", risk)
+    else:
+        (out_dir / "risk.json").unlink(missing_ok=True)
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

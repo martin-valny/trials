@@ -539,3 +539,13 @@ def test_export_writes_and_removes_pipeline_json(tmp_path: Path, cfg: AreaConfig
     export(*args, explorer=doc, pipeline=fig)
     export(*args, pipeline=fig)  # no map: no figure either
     assert not (tmp_path / "pipeline.json").exists()
+
+
+def test_export_writes_and_removes_risk_json(tmp_path: Path, cfg: AreaConfig) -> None:
+    """risk.json is present exactly when this export carries a risk document."""
+    doc = {"generated_for": DAY.isoformat(), "model": {}}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, risk=doc)
+    assert json.loads((tmp_path / "risk.json").read_text(encoding="utf-8")) == doc
+    export(*args)
+    assert not (tmp_path / "risk.json").exists()

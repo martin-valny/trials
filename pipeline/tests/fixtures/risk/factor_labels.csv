@@ -1,0 +1,49 @@
+feature,up,down
+phase_1,Phase 1 trial,Not a phase 1 trial
+phase_2,Phase 2 trial,Not a phase 2 trial
+phase_3,Phase 3 trial,Not a phase 3 trial
+randomized,Randomized allocation,Non-randomized allocation
+masking_level,Higher blinding level ({value} of 4),Lower blinding level ({value} of 4)
+n_arms,Many arms ({value}),Few arms ({value})
+placebo_arm,Has a placebo or sham arm,No placebo or sham arm
+sponsor_industry,Industry sponsor,Not an industry sponsor
+sponsor_academic,Non-commercial sponsor,Not a non-commercial sponsor
+n_collaborators,Many collaborators ({value}),Few collaborators ({value})
+n_sites,Many sites ({value}),Few sites ({value})
+n_countries,Many countries ({value}),Few countries ({value})
+multi_region,Sites span several world regions,Sites within one world region
+n_primary_outcomes,Many primary outcomes ({value}),Few primary outcomes ({value})
+n_secondary_outcomes,Many secondary outcomes ({value}),Few secondary outcomes ({value})
+n_conditions,Many conditions listed ({value}),Few conditions listed ({value})
+cat_infections,Condition category: Infections,Not in condition category: Infections
+cat_neoplasms,Condition category: Neoplasms,Not in condition category: Neoplasms
+cat_musculoskeletal_diseases,Condition category: Musculoskeletal Diseases,Not in condition category: Musculoskeletal Diseases
+cat_digestive_system_diseases,Condition category: Digestive System Diseases,Not in condition category: Digestive System Diseases
+cat_stomatognathic_diseases,Condition category: Stomatognathic Diseases,Not in condition category: Stomatognathic Diseases
+cat_respiratory_tract_diseases,Condition category: Respiratory Tract Diseases,Not in condition category: Respiratory Tract Diseases
+cat_otorhinolaryngologic_diseases,Condition category: Otorhinolaryngologic Diseases,Not in condition category: Otorhinolaryngologic Diseases
+cat_nervous_system_diseases,Condition category: Nervous System Diseases,Not in condition category: Nervous System Diseases
+cat_eye_diseases,Condition category: Eye Diseases,Not in condition category: Eye Diseases
+cat_urogenital_diseases,Condition category: Urogenital Diseases,Not in condition category: Urogenital Diseases
+cat_female_urogenital_diseases_and_pregnancy_complications,Condition category: Female Urogenital Diseases and Pregnancy Complications,Not in condition category: Female Urogenital Diseases and Pregnancy Complications
+cat_pregnancy_complications,Condition category: Pregnancy Complications,Not in condition category: Pregnancy Complications
+cat_cardiovascular_diseases,Condition category: Cardiovascular Diseases,Not in condition category: Cardiovascular Diseases
+cat_hemic_and_lymphatic_diseases,Condition category: Hemic and Lymphatic Diseases,Not in condition category: Hemic and Lymphatic Diseases
+cat_congenital_hereditary_and_neonatal_diseases_and_abnormalities,"Condition category: Congenital, Hereditary, and Neonatal Diseases and Abnormalities","Not in condition category: Congenital, Hereditary, and Neonatal Diseases and Abnormalities"
+cat_skin_and_connective_tissue_diseases,Condition category: Skin and Connective Tissue Diseases,Not in condition category: Skin and Connective Tissue Diseases
+cat_nutritional_and_metabolic_diseases,Condition category: Nutritional and Metabolic Diseases,Not in condition category: Nutritional and Metabolic Diseases
+cat_endocrine_system_diseases,Condition category: Endocrine System Diseases,Not in condition category: Endocrine System Diseases
+cat_immune_system_diseases,Condition category: Immune System Diseases,Not in condition category: Immune System Diseases
+cat_disorders_of_environmental_origin,Condition category: Disorders of Environmental Origin,Not in condition category: Disorders of Environmental Origin
+cat_pathological_conditions_signs_and_symptoms,"Condition category: Pathological Conditions, Signs and Symptoms","Not in condition category: Pathological Conditions, Signs and Symptoms"
+cat_occupational_diseases,Condition category: Occupational Diseases,Not in condition category: Occupational Diseases
+cat_chemically_induced_disorders,Condition category: Chemically-Induced Disorders,Not in condition category: Chemically-Induced Disorders
+cat_wounds_and_injuries,Condition category: Wounds and Injuries,Not in condition category: Wounds and Injuries
+cat_mental_disorders,Condition category: Mental Disorders,Not in condition category: Mental Disorders
+n_categories,Spans many condition categories ({value}),Spans few condition categories ({value})
+has_biological,Includes a biological product,No biological product
+n_experimental_interventions,Many drug interventions ({value}),Few drug interventions ({value})
+start_year,Later start year ({value}),Earlier start year ({value})
+sponsor_prior_n,Sponsor has many earlier finished trials ({value}),Sponsor has few earlier finished trials ({value})
+sponsor_prior_rate,Sponsor's earlier trials stopped more often,Sponsor's earlier trials stopped less often
+sponsor_few_prior,Sponsor has few earlier finished trials,Sponsor has several earlier finished trials

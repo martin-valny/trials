@@ -125,6 +125,7 @@ class Env:
                 "mechanisms_dir": fixtures / "mechanisms",
                 "approaches_dir": fixtures / "approaches",
                 "sponsors_dir": fixtures / "sponsors",
+                "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk"}),
             }
         )
         self.store_root = root / "data"

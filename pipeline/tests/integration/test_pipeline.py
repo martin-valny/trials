@@ -407,6 +407,7 @@ def test_each_stage_logs_one_json_line(
         "store",
         "explorer",
         "pipeline_figure",
+        "stop_risk",
         "mechanism_graph",
         "export",
         "explorer_coords",
@@ -748,3 +749,39 @@ def test_missing_pipeline_config_warns_and_writes_no_figure(
     assert any(w.startswith("pipeline_figure:") for w in result.warnings)
     assert (broken.site_dir / "explorer.json").exists()
     assert not (broken.site_dir / "pipeline.json").exists()
+
+
+def test_run_writes_risk_json(env: Env, cfg: AreaConfig) -> None:
+    result = env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert not any(w.startswith("stop_risk:") for w in result.warnings)
+    doc = json.loads((env.site_dir / "risk.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == "2026-03-01"
+    assert doc["model"]["version"] == "stop-risk-fixture"
+
+
+def test_stop_risk_failure_is_warning(tmp_path: Path, cfg: AreaConfig) -> None:
+    """R19: unreadable risk artefacts mean one warning, no risk.json, a successful run."""
+    empty = tmp_path / "no-risk"
+    empty.mkdir()
+    broken = Env(tmp_path, cfg)
+    broken.cfg = broken.cfg.model_copy(
+        update={"risk": broken.cfg.risk.model_copy(update={"dir": empty})}
+    )
+    broken.site_dir.mkdir()
+    (broken.site_dir / "risk.json").write_text("{}", encoding="utf-8")  # stale
+    result = broken.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("stop_risk:") for w in result.warnings)
+    assert not (broken.site_dir / "risk.json").exists()
+
+
+def test_stop_risk_disabled_writes_nothing(tmp_path: Path, cfg: AreaConfig) -> None:
+    off = Env(tmp_path, cfg)
+    off.cfg = off.cfg.model_copy(
+        update={"risk": off.cfg.risk.model_copy(update={"enabled": False})}
+    )
+    result = off.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert not any(w.startswith("stop_risk:") for w in result.warnings)
+    assert not (off.site_dir / "risk.json").exists()
