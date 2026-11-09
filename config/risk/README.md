@@ -43,11 +43,29 @@ card sets `site_leak_flag` and Methods names them as a possible leak. All of the
 (baseline, boosted, boosted without sites, in-area) are bootstrap-ensemble metrics on the same
 held-out set, and the shipping reason and leak flag quote exactly the numbers in `card.json`.
 
+## First trained model (stop-risk-20261109)
+
+Pulled 2008-2025 (81,655 labelled trials; train 41,564, test 19,782 with 3,392 stopped).
+Test-set accuracy, bootstrap ensembles:
+
+| Model | AUC | Brier |
+| --- | --- | --- |
+| Logistic baseline | 0.567 | 0.1420 |
+| Boosted (shipped) | 0.682 | 0.1347 |
+| Boosted without site and country features | 0.675 | 0.1356 |
+| Boosted, in-area trials only (n 141, 29 stopped) | 0.539 | 0.1648 |
+
+The boosted model won on both criteria, and `site_leak_flag` is false (removing sites costs
+0.007 AUC). The in-area sample is too small to say anything about the area itself. Overall
+stop rate 16.0% (industry 14.0%, other 18.9%). Each boosted member is one booster refit with
+an isotonic map learned from 5-fold out-of-fold scores (`ensemble=False`), and the model file
+is zlib-compressed, to keep it near 7 MB.
+
 ## Files
 
 | File | Content |
 | --- | --- |
-| `model.joblib` | `{"version", "eval", "shipped"}` ensembles (main model plus 20 bootstrap refits) |
+| `model.joblib` | `{"version", "eval", "shipped"}` ensembles (main model plus 20 bootstrap refits each) |
 | `card.json` | metrics, filter, features, exclusions, versions, dates, typical stop rates |
 | `heldout.parquet` | test-set features and labels only: no NCT ids, no text |
 | `sponsor_history.csv` | per sponsor: earlier finished trials, how many stopped, as-of date |

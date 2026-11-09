@@ -1,0 +1,440 @@
+{
+  "version": "stop-risk-20261109",
+  "trained_on": "2026-11-09",
+  "sklearn": "1.9.1",
+  "shipped": "boosted",
+  "shipped_reason": "boosted AUC 0.682 beats baseline 0.567 by at least 0.02 and Brier 0.1347 is no worse than 0.1420",
+  "filter": {
+    "study_type": "INTERVENTIONAL",
+    "phases": [
+      "PHASE1",
+      "PHASE2",
+      "PHASE3"
+    ],
+    "intervention_types": [
+      "DRUG",
+      "BIOLOGICAL"
+    ],
+    "statuses": {
+      "COMPLETED": 0,
+      "TERMINATED": 1
+    },
+    "start_year_min": 2008,
+    "years_pulled": "2008-2025"
+  },
+  "features": [
+    "phase_1",
+    "phase_2",
+    "phase_3",
+    "randomized",
+    "masking_level",
+    "n_arms",
+    "placebo_arm",
+    "sponsor_industry",
+    "sponsor_academic",
+    "n_collaborators",
+    "n_sites",
+    "n_countries",
+    "multi_region",
+    "n_primary_outcomes",
+    "n_secondary_outcomes",
+    "n_conditions",
+    "cat_infections",
+    "cat_neoplasms",
+    "cat_musculoskeletal_diseases",
+    "cat_digestive_system_diseases",
+    "cat_stomatognathic_diseases",
+    "cat_respiratory_tract_diseases",
+    "cat_otorhinolaryngologic_diseases",
+    "cat_nervous_system_diseases",
+    "cat_eye_diseases",
+    "cat_urogenital_diseases",
+    "cat_female_urogenital_diseases_and_pregnancy_complications",
+    "cat_pregnancy_complications",
+    "cat_cardiovascular_diseases",
+    "cat_hemic_and_lymphatic_diseases",
+    "cat_congenital_hereditary_and_neonatal_diseases_and_abnormalities",
+    "cat_skin_and_connective_tissue_diseases",
+    "cat_nutritional_and_metabolic_diseases",
+    "cat_endocrine_system_diseases",
+    "cat_immune_system_diseases",
+    "cat_disorders_of_environmental_origin",
+    "cat_pathological_conditions_signs_and_symptoms",
+    "cat_occupational_diseases",
+    "cat_chemically_induced_disorders",
+    "cat_wounds_and_injuries",
+    "cat_mental_disorders",
+    "n_categories",
+    "has_biological",
+    "n_experimental_interventions",
+    "start_year",
+    "sponsor_prior_n",
+    "sponsor_prior_rate",
+    "sponsor_few_prior"
+  ],
+  "excluded": [
+    "enrollment (actual enrollment is small because a trial stopped)",
+    "why_stopped",
+    "results posted",
+    "actual completion dates and durations",
+    "last update date",
+    "site recruitment status",
+    "overall status"
+  ],
+  "split": {
+    "train_end": "2015-12-31",
+    "test": [
+      "2016-01-01",
+      "2019-12-31"
+    ]
+  },
+  "metrics": {
+    "baseline": {
+      "auc": 0.566514317505497,
+      "brier": 0.1420111949300894,
+      "n": 19782,
+      "positives": 3392,
+      "calibration": [
+        {
+          "p": 0.08781445617083766,
+          "observed": 0.11571500757958565,
+          "n": 1979
+        },
+        {
+          "p": 0.08823121107122356,
+          "observed": 0.10611419909044972,
+          "n": 1979
+        },
+        {
+          "p": 0.0946386992704158,
+          "observed": 0.14054600606673406,
+          "n": 1978
+        },
+        {
+          "p": 0.10606015252496623,
+          "observed": 0.13751263902932254,
+          "n": 1978
+        },
+        {
+          "p": 0.13220171198963657,
+          "observed": 0.2199191102123357,
+          "n": 1978
+        },
+        {
+          "p": 0.14362790059530187,
+          "observed": 0.18958543983822043,
+          "n": 1978
+        },
+        {
+          "p": 0.14675677711212257,
+          "observed": 0.19666329625884732,
+          "n": 1978
+        },
+        {
+          "p": 0.18290917288742323,
+          "observed": 0.19716885743174925,
+          "n": 1978
+        },
+        {
+          "p": 0.20868720992259598,
+          "observed": 0.23407482305358948,
+          "n": 1978
+        },
+        {
+          "p": 0.21243083351009348,
+          "observed": 0.17745197168857432,
+          "n": 1978
+        }
+      ]
+    },
+    "boosted": {
+      "auc": 0.6818475910011856,
+      "brier": 0.1346721370047916,
+      "n": 19782,
+      "positives": 3392,
+      "calibration": [
+        {
+          "p": 0.024155240667275254,
+          "observed": 0.035371399696816574,
+          "n": 1979
+        },
+        {
+          "p": 0.059121013222347994,
+          "observed": 0.06670035371399696,
+          "n": 1979
+        },
+        {
+          "p": 0.08420001765283976,
+          "observed": 0.09605662285136501,
+          "n": 1978
+        },
+        {
+          "p": 0.10036962051606273,
+          "observed": 0.1319514661274014,
+          "n": 1978
+        },
+        {
+          "p": 0.12247922609322719,
+          "observed": 0.1435793731041456,
+          "n": 1978
+        },
+        {
+          "p": 0.14644158185339817,
+          "observed": 0.17542972699696663,
+          "n": 1978
+        },
+        {
+          "p": 0.16804805114204555,
+          "observed": 0.22093023255813954,
+          "n": 1978
+        },
+        {
+          "p": 0.2063397005428623,
+          "observed": 0.23761375126390294,
+          "n": 1978
+        },
+        {
+          "p": 0.24116020918090145,
+          "observed": 0.27553083923154703,
+          "n": 1978
+        },
+        {
+          "p": 0.3186714317919867,
+          "observed": 0.3316481294236603,
+          "n": 1978
+        }
+      ]
+    },
+    "boosted_no_sites": {
+      "auc": 0.6746910866612177,
+      "brier": 0.13563011470269498,
+      "n": 19782,
+      "positives": 3392,
+      "calibration": [
+        {
+          "p": 0.035583256042764244,
+          "observed": 0.033855482566953005,
+          "n": 1979
+        },
+        {
+          "p": 0.06489576125902896,
+          "observed": 0.07630116220313289,
+          "n": 1979
+        },
+        {
+          "p": 0.09405652318482972,
+          "observed": 0.09302325581395349,
+          "n": 1978
+        },
+        {
+          "p": 0.10186334132524645,
+          "observed": 0.13245702730030334,
+          "n": 1978
+        },
+        {
+          "p": 0.13317809743096998,
+          "observed": 0.15267947421638017,
+          "n": 1978
+        },
+        {
+          "p": 0.14886368622093987,
+          "observed": 0.18958543983822043,
+          "n": 1978
+        },
+        {
+          "p": 0.1727600931698976,
+          "observed": 0.19211324570273003,
+          "n": 1978
+        },
+        {
+          "p": 0.19088192517157612,
+          "observed": 0.25935288169868553,
+          "n": 1978
+        },
+        {
+          "p": 0.23408164302799592,
+          "observed": 0.2780586450960566,
+          "n": 1978
+        },
+        {
+          "p": 0.28833393266416024,
+          "observed": 0.30738119312436807,
+          "n": 1978
+        }
+      ]
+    },
+    "in_area": {
+      "auc": 0.5392549261083744,
+      "brier": 0.16484372516918938,
+      "n": 141,
+      "positives": 29,
+      "calibration": [
+        {
+          "p": 0.06574841243118029,
+          "observed": 0.13333333333333333,
+          "n": 15
+        },
+        {
+          "p": 0.09675268304201533,
+          "observed": 0.2857142857142857,
+          "n": 14
+        },
+        {
+          "p": 0.1159501916215834,
+          "observed": 0.14285714285714285,
+          "n": 14
+        },
+        {
+          "p": 0.13813687975191563,
+          "observed": 0.14285714285714285,
+          "n": 14
+        },
+        {
+          "p": 0.15755398663252346,
+          "observed": 0.2857142857142857,
+          "n": 14
+        },
+        {
+          "p": 0.17646971892349206,
+          "observed": 0.21428571428571427,
+          "n": 14
+        },
+        {
+          "p": 0.20190476190476186,
+          "observed": 0.21428571428571427,
+          "n": 14
+        },
+        {
+          "p": 0.21260537310072583,
+          "observed": 0.07142857142857142,
+          "n": 14
+        },
+        {
+          "p": 0.23979815273147212,
+          "observed": 0.2857142857142857,
+          "n": 14
+        },
+        {
+          "p": 0.31640974139348893,
+          "observed": 0.2857142857142857,
+          "n": 14
+        }
+      ]
+    }
+  },
+  "site_leak_flag": false,
+  "typical": [
+    {
+      "phase": "all",
+      "sponsor": "all",
+      "rate": 0.15962280325760822,
+      "n": 81655
+    },
+    {
+      "phase": "all",
+      "sponsor": "industry",
+      "rate": 0.14014164767176815,
+      "n": 49136
+    },
+    {
+      "phase": "all",
+      "sponsor": "other",
+      "rate": 0.1890587041421938,
+      "n": 32519
+    },
+    {
+      "phase": "phase 2",
+      "sponsor": "all",
+      "rate": 0.20126374037239214,
+      "n": 26746
+    },
+    {
+      "phase": "phase 2",
+      "sponsor": "industry",
+      "rate": 0.1847766133480419,
+      "n": 12691
+    },
+    {
+      "phase": "phase 2",
+      "sponsor": "other",
+      "rate": 0.21615083600142299,
+      "n": 14055
+    },
+    {
+      "phase": "phase 1/2",
+      "sponsor": "all",
+      "rate": 0.24337722695584818,
+      "n": 6455
+    },
+    {
+      "phase": "phase 1/2",
+      "sponsor": "industry",
+      "rate": 0.2851913477537438,
+      "n": 3005
+    },
+    {
+      "phase": "phase 1/2",
+      "sponsor": "other",
+      "rate": 0.20695652173913043,
+      "n": 3450
+    },
+    {
+      "phase": "phase 2/3",
+      "sponsor": "all",
+      "rate": 0.16499068901303537,
+      "n": 2685
+    },
+    {
+      "phase": "phase 2/3",
+      "sponsor": "industry",
+      "rate": 0.24415584415584415,
+      "n": 770
+    },
+    {
+      "phase": "phase 2/3",
+      "sponsor": "other",
+      "rate": 0.13315926892950392,
+      "n": 1915
+    },
+    {
+      "phase": "phase 3",
+      "sponsor": "all",
+      "rate": 0.13415461121157324,
+      "n": 17696
+    },
+    {
+      "phase": "phase 3",
+      "sponsor": "industry",
+      "rate": 0.12362545818060647,
+      "n": 12004
+    },
+    {
+      "phase": "phase 3",
+      "sponsor": "other",
+      "rate": 0.15635980323260718,
+      "n": 5692
+    },
+    {
+      "phase": "phase 1",
+      "sponsor": "all",
+      "rate": 0.1162326790866669,
+      "n": 28073
+    },
+    {
+      "phase": "phase 1",
+      "sponsor": "industry",
+      "rate": 0.0973579792896545,
+      "n": 20666
+    },
+    {
+      "phase": "phase 1",
+      "sponsor": "other",
+      "rate": 0.16889428918590524,
+      "n": 7407
+    }
+  ],
+  "max_start_year": 2025,
+  "sponsor_floor": 5,
+  "n_train": 41564,
+  "n_test": 19782
+}

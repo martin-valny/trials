@@ -130,7 +130,9 @@ def save(
     """Write model.joblib, card.json, heldout.parquet and sponsor_history.csv into `dir`."""
     dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(
-        {"version": card.version, "eval": eval_ens, "shipped": shipped}, dir / "model.joblib"
+        {"version": card.version, "eval": eval_ens, "shipped": shipped},
+        dir / "model.joblib",
+        compress=3,
     )
     (dir / "card.json").write_text(card.model_dump_json(indent=2) + "\n")
     heldout.write_parquet(dir / "heldout.parquet")
