@@ -96,6 +96,7 @@ class Card(_Strict):
     features: list[str]
     excluded: list[str]
     split: Split
+    refit_end: str  # the shipped model is refit on labelled trials started up to this date
     metrics: MetricSet
     site_leak_flag: bool
     typical: list[Typical]

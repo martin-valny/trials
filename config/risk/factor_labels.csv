@@ -43,7 +43,6 @@ cat_mental_disorders,Condition category: Mental Disorders,
 n_categories,Spans many condition categories ({value}),Spans few condition categories ({value})
 has_biological,Includes a biological product,No biological product
 n_experimental_interventions,Many drug interventions ({value}),Few drug interventions ({value})
-start_year,Later start year ({value}),Earlier start year ({value})
 sponsor_prior_n,Sponsor has many earlier finished trials ({value}),Sponsor has few earlier finished trials ({value})
 sponsor_prior_rate,Sponsor's earlier trials stopped more often,Sponsor's earlier trials stopped less often
 sponsor_few_prior,Sponsor has few earlier finished trials,Sponsor has several earlier finished trials

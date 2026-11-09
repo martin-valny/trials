@@ -9,8 +9,9 @@ Pulls finished phase 1-3 drug trials one start year at a time into ``<cache>/<ye
 normalizes them, builds start-time features, trains a baseline logistic model and a calibrated
 boosted model on starts up to 2015, evaluates both on starts 2016-2019 (plus a boosted model
 without site features, and the in-area subset), picks the shipped recipe by the fixed rule,
-refits it on all labelled trials and writes the artefacts to ``--out``. Real registry data is
-never written, only the sponsor counts table and the held-out features.
+refits it on all labelled trials started up to 2019 (later starts are mostly early stops) and
+writes the artefacts to ``--out``. Real registry data is never written, only the sponsor counts
+table and the held-out features.
 """
 
 from __future__ import annotations
@@ -48,6 +49,10 @@ _REPO = Path(__file__).resolve().parents[2]
 FIRST_YEAR = 2008
 TRAIN_END = date(2015, 12, 31)
 TEST_START, TEST_END = date(2016, 1, 1), date(2019, 12, 31)
+# The shipped refit stops where the test window stops: finished trials with a later start are
+# mostly early stops (the ones that would complete are still running), so including them
+# would teach start year "recent means stopped".
+REFIT_END = TEST_END
 MARGIN = 0.02
 LEAK_DROP = 0.03
 
@@ -262,7 +267,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         _metrics(yte[mask], p_eval[mask]) if mask.any() and len(np.unique(yte[mask])) == 2 else None
     )
 
-    xall, yall = artefacts.feature_matrix(frame), frame["label"].to_numpy()
+    refit = frame.filter(pl.col("start_date") <= REFIT_END)
+    xall, yall = artefacts.feature_matrix(refit), refit["label"].to_numpy()
     shipped_ens = fit_ensemble(recipe, xall, yall, cols, n_boot=args.n_boot)
 
     card = Card(
@@ -284,12 +290,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         split=artefacts.Split(
             train_end=TRAIN_END.isoformat(), test=[TEST_START.isoformat(), TEST_END.isoformat()]
         ),
+        refit_end=REFIT_END.isoformat(),
         metrics=artefacts.MetricSet(
             baseline=m_base, boosted=m_boost, boosted_no_sites=m_nosite, in_area=in_area_m
         ),
         site_leak_flag=bool(m_boost.auc - m_nosite.auc > LEAK_DROP),
         typical=_typical(frame),
-        max_start_year=int(frame["start_year"].max()),  # type: ignore[arg-type]
+        max_start_year=int(refit["start_year"].max()),  # type: ignore[arg-type]
         sponsor_floor=SPONSOR_FLOOR,
         n_train=train.height,
         n_test=test.height,

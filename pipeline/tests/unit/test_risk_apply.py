@@ -97,6 +97,7 @@ def test_build_risk_doc_scores_running_only(loaded: artefacts.Loaded, cfg: AreaC
     assert doc["model"]["metrics"]["boosted"]["calibration"]
     assert doc["model"]["typical"]
     assert doc["model"]["per_trial"] is True
+    assert doc["model"]["refit_end"] == loaded.card.refit_end
     assert "targets" not in doc
 
 

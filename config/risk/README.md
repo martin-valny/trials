@@ -35,7 +35,13 @@ One recipe, two fits. The **evaluation model** is trained on trials started up t
 and tested on starts 2016-01-01 to 2019-12-31 (later starts are left out: their finished set
 is biased toward short, early-stopped trials). Every published accuracy number comes from it,
 and `tests/unit/test_risk_card.py` reloads it and recomputes them. The **shipped model** is
-the same recipe refit on all labelled trials and scores live trials. A boosted model ships
+the same recipe refit on all labelled trials started up to 2019-12-31 (`refit_end` on the card)
+and scores live trials. Later starts are left out of the refit for the same reason they are left
+out of the test: among trials started since 2020, the ones already finished are mostly the ones
+that stopped early (selection by outcome), so a refit on them learns "recent start means
+stopped". `max_start_year` is therefore 2019, and a live trial started later is read as 2019.
+Start year still shifts the estimate, but it is never shown as one of a trial's factors, because
+the clamped year would not be the trial's own. A boosted model ships
 only if its test AUC is at least 0.02 above the logistic baseline and its Brier score is no
 worse; otherwise the baseline ships. The card records which, and why. A boosted fit without
 site and country features is also reported; if removing them costs more than 0.03 AUC the
@@ -58,7 +64,8 @@ Test-set accuracy, bootstrap ensembles:
 The boosted model won on both criteria, and `site_leak_flag` is false (removing sites costs
 0.007 AUC). The in-area sample is too small to say anything about the area itself. Overall
 stop rate 16.0% (industry 14.0%, other 18.9%). Each boosted member is one booster refit with
-an isotonic map learned from 5-fold out-of-fold scores (`ensemble=False`), and the model file
+an isotonic map learned from shuffled 5-fold out-of-fold scores (`ensemble=False`; the folds
+must be shuffled because training rows are ordered by start year), and the model file
 is zlib-compressed, to keep it near 7 MB.
 
 ## Files
@@ -73,7 +80,10 @@ is zlib-compressed, to keep it near 7 MB.
 
 `sponsor_history.csv` is the one deliberate exception to "never commit real registry data":
 it holds counts per sponsor name, no trial records. Live scoring reads it for the sponsor
-track-record factor.
+track-record factor. Unlike the shipped refit it is not cut at 2019: it counts all of a
+sponsor's trials that had finished by the training date, because a sponsor's finished record
+is genuinely known at scoring time. (During training each trial sees only the sponsor's trials
+that finished before it started.)
 
 ## Retrain (by hand, needs network)
 

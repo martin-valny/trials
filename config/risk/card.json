@@ -88,6 +88,7 @@
       "2019-12-31"
     ]
   },
+  "refit_end": "2019-12-31",
   "metrics": {
     "baseline": {
       "auc": 0.566514317505497,
@@ -433,7 +434,7 @@
       "n": 7407
     }
   ],
-  "max_start_year": 2025,
+  "max_start_year": 2019,
   "sponsor_floor": 5,
   "n_train": 41564,
   "n_test": 19782

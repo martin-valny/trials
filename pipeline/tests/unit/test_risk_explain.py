@@ -89,3 +89,18 @@ def test_present_category_can_be_a_factor() -> None:
     labels = {"cat_neoplasms": FactorLabel("cat_neoplasms", "Condition category: Neoplasms", "")}
     out = top_factors(np.array([0.4]), np.array([1.0]), cols, labels)
     assert out == [{"label": "Condition category: Neoplasms", "dir": "up"}]
+
+
+def test_start_year_is_never_a_shown_factor() -> None:
+    """Live start years are clamped to the refit's last year, so the value shown would not be
+    the trial's own; start year shifts the estimate but is not given as a reason."""
+    from conftest import REPO_ROOT
+
+    from trialradar.risk.artefacts import read_factor_labels
+
+    labels = read_factor_labels(REPO_ROOT / "config" / "risk" / "factor_labels.csv")
+    cols = ("start_year", "n_sites")
+    labels = {**labels, "start_year": FactorLabel("start_year", "Later ({value})", "Earlier")}
+    for sign in (1.0, -1.0):
+        f = top_factors(np.array([sign * 5.0, 0.1]), np.array([2019.0, 3.0]), cols, labels)
+        assert [x["label"] for x in f] == ["Many sites (3)"]

@@ -13,6 +13,9 @@ from trialradar.risk.model import Ensemble
 __all__ = ["FactorLabel", "contributions", "top_factors"]
 
 SPONSOR_FEATURES = ("sponsor_prior_n", "sponsor_prior_rate", "sponsor_few_prior")
+# Shift the estimate but are never given as a reason. Live start years are clamped to the
+# shipped refit's last start year (2019), so "start year 2019" would not be the trial's own.
+HIDDEN_FEATURES = frozenset({"start_year"})
 
 
 @dataclass(frozen=True)
@@ -61,9 +64,9 @@ def top_factors(
     """Top `k` factors by |contribution|, as `{"label", "dir"}` (dir is "up" or "down").
 
     Zero contributions, features without a label or without a template for the direction,
-    and absent (value 0) `cat_*` condition categories are skipped. The three sponsor
-    features collapse into one factor with fixed copy. The stopped count is derived as
-    round(sponsor_prior_rate x sponsor_prior_n), since the feature frame carries a rate.
+    absent (value 0) `cat_*` condition categories and HIDDEN_FEATURES are skipped. The three
+    sponsor features collapse into one factor with fixed copy. The stopped count is derived
+    as round(sponsor_prior_rate x sponsor_prior_n), since the feature frame carries a rate.
     """
     col = {c: i for i, c in enumerate(columns)}
     out: list[dict[str, str]] = []
@@ -73,6 +76,8 @@ def top_factors(
         if c == 0.0 or len(out) >= k:
             continue
         name = columns[int(i)]
+        if name in HIDDEN_FEATURES:
+            continue
         direction = "up" if c > 0 else "down"
         if name in SPONSOR_FEATURES:
             if sponsor_done:

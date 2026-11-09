@@ -14,6 +14,7 @@ from _risk_synth import COLUMNS, make_data, single_thread  # noqa: F401
 
 from trialradar.risk import artefacts
 from trialradar.risk.artefacts import Card, Metrics, RiskArtefactError
+from trialradar.risk.explain import HIDDEN_FEATURES
 from trialradar.risk.features import FEATURES
 from trialradar.risk.model import fit_ensemble
 
@@ -37,6 +38,7 @@ def _card(**kw: object) -> Card:
         "features": list(FEATURES),
         "excluded": ["enrollment"],
         "split": {"train_end": "2015-12-31", "test": ["2016-01-01", "2019-12-31"]},
+        "refit_end": "2019-12-31",
         "metrics": {
             "baseline": _metrics(),
             "boosted": _metrics(),
@@ -81,7 +83,7 @@ def test_save_load_roundtrip(tmp_path: Path) -> None:
     np.testing.assert_allclose(loaded.eval.predict(x)[0], loaded.shipped.predict(x)[0])
     assert loaded.sponsor_table["sponsor"].to_list() == ["A"]
     assert loaded.sponsor_table["as_of"].dtype == pl.Date
-    assert set(loaded.factor_labels) == set(FEATURES)
+    assert set(loaded.factor_labels) == set(FEATURES) - HIDDEN_FEATURES
 
 
 def test_load_rejects_minor_version_mismatch(tmp_path: Path) -> None:
@@ -138,6 +140,8 @@ def test_typical_rate_split_rule() -> None:
 
 def test_factor_labels_cover_features() -> None:
     labels = artefacts.read_factor_labels(REPO / "config" / "risk" / "factor_labels.csv")
-    assert set(FEATURES) <= set(labels)
-    assert all(labels[f].up for f in FEATURES)
-    assert all(labels[f].down for f in FEATURES if not f.startswith("cat_"))
+    shown = [f for f in FEATURES if f not in HIDDEN_FEATURES]
+    assert set(shown) <= set(labels)
+    assert not HIDDEN_FEATURES & set(labels)  # a label for a hidden feature would be dead copy
+    assert all(labels[f].up for f in shown)
+    assert all(labels[f].down for f in shown if not f.startswith("cat_"))

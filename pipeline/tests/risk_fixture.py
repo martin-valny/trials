@@ -65,6 +65,7 @@ def write_fixture_artefacts(dir: Path) -> None:
         features=cols,
         excluded=list(artefacts.EXCLUDED),
         split=Split(train_end="2015-12-31", test=["2016-01-01", "2019-12-31"]),
+        refit_end="2019-12-31",
         metrics=MetricSet(baseline=m, boosted=m, boosted_no_sites=m, in_area=None),
         site_leak_flag=False,
         typical=[

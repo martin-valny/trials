@@ -48,6 +48,7 @@ def _model_block(loaded: Loaded, cfg: AreaConfig) -> dict[str, Any]:
         "metrics": c.metrics.model_dump(mode="json"),
         "site_leak_flag": c.site_leak_flag,
         "split": c.split.model_dump(mode="json"),
+        "refit_end": c.refit_end,
         "features": list(c.features),
         "excluded": list(c.excluded),
         "typical": [t.model_dump(mode="json") for t in c.typical],

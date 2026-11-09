@@ -29,8 +29,8 @@ _SPEC.loader.exec_module(script)
 def _studies() -> dict[int, list[dict[str, Any]]]:
     rng = random.Random(0)
     out: dict[int, list[dict[str, Any]]] = {}
-    for i in range(480):
-        year = 2008 + i % 12
+    for i in range(560):
+        year = 2008 + i % 14  # 2008-2021: starts after 2019 must stay out of every fit
         n_primary = rng.randint(1, 4)
         industry = rng.random() < 0.5
         # planted signal: many primary outcomes and academic sponsors stop more often
@@ -77,6 +77,9 @@ def _studies() -> dict[int, list[dict[str, Any]]]:
     return out
 
 
+_FIT_YEARS: list[tuple[int, int, int]] = []  # (rows, min start year, max start year) per fit
+
+
 @pytest.fixture(scope="module")
 def trained(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path]:
     cache = tmp_path_factory.mktemp("cache")
@@ -85,8 +88,18 @@ def trained(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path]:
             for s in studies:
                 fh.write(json.dumps(s) + "\n")
     out = tmp_path_factory.mktemp("out")
-    argv = ["--cache", str(cache), "--out", str(out), "--offline", "--years", "2008-2019"]
-    assert script.main([*argv, "--n-boot", "3"]) == 0
+    argv = ["--cache", str(cache), "--out", str(out), "--offline", "--years", "2008-2021"]
+    real_fit = script.fit_ensemble
+    col = list(FEATURES).index("start_year")
+
+    def spy(recipe: Any, x: Any, y: Any, cols: Any, **kw: Any) -> Any:
+        if len(cols) == len(FEATURES):
+            _FIT_YEARS.append((len(x), int(x[:, col].min()), int(x[:, col].max())))
+        return real_fit(recipe, x, y, cols, **kw)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(script, "fit_ensemble", spy)
+        assert script.main([*argv, "--n-boot", "3"]) == 0
     return cache, out
 
 
@@ -106,8 +119,19 @@ def test_train_script_offline_on_fixture(trained: tuple[Path, Path]) -> None:
     assert card.n_test > 0 and card.n_train > 0
     assert card.shipped in {"baseline", "boosted"}
     assert card.shipped_reason
-    assert card.n_train + card.n_test <= 480
+    assert card.n_train + card.n_test <= 560
     assert card.max_start_year == 2019
+
+
+def test_shipped_refit_leaves_out_starts_after_2019(trained: tuple[Path, Path]) -> None:
+    """Finished trials started after 2019 are mostly early stops (selection by outcome)."""
+    card = artefacts.load(trained[1]).card
+    assert card.refit_end == "2019-12-31"
+    # full-feature fits: baseline and boosted on <= 2015, then the shipped refit
+    assert len(_FIT_YEARS) == 3
+    rows, lo, hi = _FIT_YEARS[-1]
+    assert (lo, hi) == (2008, 2019)
+    assert rows == card.n_train + card.n_test
 
 
 def test_site_ablation_reported(trained: tuple[Path, Path]) -> None:
