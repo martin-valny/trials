@@ -88,3 +88,17 @@ def test_openfda_cache_hit_skips_http(tmp_path: Path) -> None:
     first = client.labels("drugname")
     assert client.labels("drugname") == first
     assert len(seen) == 1
+
+
+def test_openfda_record_trimmer(tmp_path: Path) -> None:
+    rec = tmp_path / "rec"
+    client = _client(
+        lambda r: httpx.Response(200, json=LABEL_BODY),
+        record_dir=rec,
+        record=lambda _path, body: {"results": body["results"][:1]},
+    )
+    assert len(client.labels("drugname")) == 3
+    import json
+
+    (saved,) = list(rec.iterdir())
+    assert len(json.loads(saved.read_text(encoding="utf-8"))["results"]) == 1

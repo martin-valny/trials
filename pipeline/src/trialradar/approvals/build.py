@@ -56,6 +56,11 @@ class Review:
     counts: dict[str, int] = field(default_factory=dict)
 
 
+# (list name on Review, row_id, disease, drug, detail): kept until variants are folded
+_Note = tuple[str, str, str, str, str]
+_Key = tuple[str, str, str]
+
+
 def _line(row_id: str, disease: str, drug: str, detail: str) -> str:
     return f"{row_id} × {disease}: {drug} — {detail}"
 
@@ -189,8 +194,8 @@ def _auto(
     cid: str,
     terms: Mapping[str, ApprovalTerms],
     look: _Lookups,
-    review: Review,
-    out: dict[tuple[str, str, str], Approval],
+    notes: list[_Note],
+    out: dict[_Key, Approval],
 ) -> None:
     mol = look.molecule(cid)
     name = str(mol.get("pref_name") or "").casefold() or cid
@@ -209,7 +214,7 @@ def _auto(
                 fda_set.setdefault(hit.disease, str(label.get("set_id") or ""))
     for disease, hit in sorted(negated.items()):
         if disease not in fda_set:
-            review.negated.append(_line(row.id, disease, name, hit.sentence))
+            notes.append(("negated", row.id, disease, name, hit.sentence))
     for disease in sorted(chembl_ok | set(fda_set)):
         sources = tuple(
             s
@@ -218,18 +223,24 @@ def _auto(
         )
         if "chembl" not in sources:
             if disease in chembl_below:
-                review.disagree.append(
-                    _line(row.id, disease, name, "FDA label yes, ChEMBL below phase 4")
+                notes.append(
+                    ("disagree", row.id, disease, name, "FDA label yes, ChEMBL below phase 4")
                 )
             else:
-                review.one_source.append(_line(row.id, disease, name, "FDA label only"))
+                notes.append(("one_source", row.id, disease, name, "FDA label only"))
         elif "fda_label" not in sources:
             if labels:
-                review.disagree.append(
-                    _line(row.id, disease, name, "ChEMBL phase 4, FDA label does not name it")
+                notes.append(
+                    (
+                        "disagree",
+                        row.id,
+                        disease,
+                        name,
+                        "ChEMBL phase 4, FDA label does not name it",
+                    )
                 )
             else:
-                review.one_source.append(_line(row.id, disease, name, "ChEMBL only"))
+                notes.append(("one_source", row.id, disease, name, "ChEMBL only"))
         set_id = fda_set.get(disease, "")
         url = f"{DAILYMED}{set_id}" if set_id else f"{CHEMBL_CARD}{cid}/"
         key = (row.id, disease, name)
@@ -237,12 +248,16 @@ def _auto(
         if prior is not None:  # two molecules with one name: merge into one line
             sources = tuple(s for s in SOURCES if s in prior.sources or s in sources)
             withdrawn = withdrawn and prior.withdrawn
+            if not set_id and prior.url.startswith(DAILYMED):
+                url = prior.url  # a DailyMed link beats a ChEMBL card
         out[key] = Approval(row.id, disease, name, cid, sources, withdrawn, "", None, url)
 
 
-def _fold_variants(out: dict[tuple[str, str, str], Approval]) -> None:
+def _fold_variants(out: dict[_Key, Approval]) -> dict[_Key, _Key]:
     """Within one row x disease, fold "x acetate" into "x" (a name starting with another
-    drug's name and a space); sources union, withdrawn only if both are."""
+    drug's name and a space); sources union, withdrawn only if both are. Returns each folded
+    key mapped to the root key it went into."""
+    folded: dict[_Key, _Key] = {}
     for key in sorted(out, key=lambda k: (k[0], k[1], len(k[2]), k[2])):
         if key not in out:
             continue
@@ -252,6 +267,7 @@ def _fold_variants(out: dict[tuple[str, str, str], Approval]) -> None:
             continue
         root_key = min(roots, key=lambda k: len(k[2]))
         root, var = out[root_key], out.pop(key)
+        folded[key] = root_key
         out[root_key] = replace(
             root,
             chembl_id=root.chembl_id or var.chembl_id,
@@ -259,6 +275,7 @@ def _fold_variants(out: dict[tuple[str, str, str], Approval]) -> None:
             sources=tuple(s for s in SOURCES if s in root.sources or s in var.sources),
             withdrawn=root.withdrawn and var.withdrawn,
         )
+    return folded
 
 
 def _apply_overrides(
@@ -301,12 +318,16 @@ def build_approvals(
     """Approvals sorted by ``(row_id, disease, drug)``, and the review for the human."""
     look = _Lookups(chembl, fda)
     review = Review()
-    out: dict[tuple[str, str, str], Approval] = {}
+    notes: list[_Note] = []
+    out: dict[_Key, Approval] = {}
     for row in rows:
         seeds = _seed_ids(row, mappings)
         for cid in sorted(_candidates(row, seeds, look)):
-            _auto(row, cid, terms, look, review, out)
-    _fold_variants(out)
+            _auto(row, cid, terms, look, notes, out)
+    folded = _fold_variants(out)
+    for kind, row_id, disease, name, detail in notes:
+        root = folded.get((row_id, disease, name))
+        getattr(review, kind).append(_line(row_id, disease, root[2] if root else name, detail))
     _apply_overrides(out, overrides, review)
     items = sorted(out.values(), key=lambda a: (a.row_id, a.disease, a.drug.casefold()))
     review.counts = {d: len({a.row_id for a in items if a.disease == d}) for d in sorted(terms)}

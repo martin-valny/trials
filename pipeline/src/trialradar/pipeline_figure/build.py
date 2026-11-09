@@ -84,7 +84,7 @@ def build_pipeline_doc(
     fig: FigureConfig,
     day: date,
     warnings: list[str],
-    approvals: Sequence[Approval] = (),
+    approvals: Sequence[Approval] | None = None,
 ) -> dict[str, Any]:
     by_label = {c.label: c.code for c in cfg.conditions if c.code}
     coded = [c for c in cfg.conditions if c.code]
@@ -194,13 +194,16 @@ def build_pipeline_doc(
                 if cls in fig.unrowed:
                     unrowed_counts[cls].add(t["nct_id"])
 
-    approved = _approved_cells(approvals, set(marks), {c.code for c in coded if c.code}, warnings)
+    approved = _approved_cells(
+        approvals or (), set(marks), {c.code for c in coded if c.code}, warnings
+    )
     ap_by_row: dict[str, dict[str, list[dict[str, Any]]]] = {}
     for (row_id, code), entries in approved.items():
         ap_by_row.setdefault(row_id, {})[code] = entries
 
     return {
         "generated_for": day.isoformat(),
+        **({"approvals": True} if approvals is not None else {}),  # approvals.csv was read
         "diseases": diseases,
         "counts": {
             "trials": len(explorer_trials),

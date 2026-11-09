@@ -405,3 +405,49 @@ def test_hyaluronidase_partner_ignored_but_multi_antibody_rejected() -> None:
         fda = FakeFda({name: [label_of("S", text, generic)]})
         items, _ = run([row("r", ("X",))], mappings, chembl, fda)
         assert bool(items) is ok, generic
+
+
+def test_review_lines_use_folded_root_name() -> None:
+    names = {"C1": "Prednisolone", "C2": "Prednisolone acetate"}
+    chembl = FakeChembl(
+        {c: mol(n, "Small molecule") for c, n in names.items()},
+        [mech(c, "T1") for c in names],
+        {"C1": [ind("Multiple Sclerosis", 4)], "C2": [ind("Multiple Sclerosis", 4)]},
+    )
+    items, review = run([row("r", ("X",))], {"p": mapping("p", "C1", ("X",))}, chembl)
+    assert [a.drug for a in items] == ["prednisolone"]
+    assert review.one_source == ["r × MS: prednisolone — ChEMBL only"]
+    assert not any("acetate" in line for line in review.one_source)
+
+
+def test_same_name_merge_prefers_dailymed_url() -> None:
+    from trialradar.approvals import build as b
+
+    class Look(b._Lookups):  # the label answer differs per molecule (memoising would hide it)
+        def __init__(self, chembl: FakeChembl, answers: list[list[Json]]) -> None:
+            super().__init__(chembl, FakeFda())
+            self._answers = answers
+
+        def labels(self, name: str) -> list[Json]:
+            return self._answers.pop(0)
+
+    chembl = FakeChembl(
+        {"C1": mol("Same"), "C2": mol("Same")},
+        [],
+        {c: [ind("Multiple Sclerosis", 4)] for c in ("C1", "C2")},
+    )
+    with_label = [
+        {
+            "set_id": "SET",
+            "generic_name": "SAME",
+            "product": "",
+            **label("SET", "Treats multiple sclerosis."),
+        }
+    ]
+    for answers in ([with_label, []], [[], with_label]):
+        look = Look(chembl, answers)
+        out: dict[Any, Any] = {}
+        for cid in ("C1", "C2"):
+            b._auto(row("r"), cid, TERMS, look, [], out)
+        (a,) = out.values()
+        assert a.url == f"{b.DAILYMED}SET"

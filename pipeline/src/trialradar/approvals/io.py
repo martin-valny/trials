@@ -91,7 +91,8 @@ def _rows(path: Path, columns: tuple[str, ...]) -> Iterable[tuple[int, dict[str 
         if tuple(reader.fieldnames or ()) != columns:
             raise ApprovalsError(f"{path}:1: header must be {','.join(columns)}")
         try:
-            for line, raw in enumerate(reader, start=2):
+            for raw in reader:
+                line = reader.line_num  # the real file line: blank lines are skipped, not counted
                 if None in raw or any(raw.get(c) is None for c in columns):
                     raise ApprovalsError(f"{path}:{line}: wrong number of cells")
                 yield line, raw
@@ -141,11 +142,18 @@ def read_approvals(path: Path) -> list[Approval]:
 
 
 def write_approvals(path: Path, items: Iterable[Approval]) -> None:
-    """Write ``items`` sorted by ``(row_id, disease, drug)``; ``sources`` in ``SOURCES`` order."""
+    """Write ``items`` sorted by ``(row_id, disease, drug)``; ``sources`` in ``SOURCES`` order.
+
+    Raises ``ValueError`` (before writing) on a source not in ``SOURCES``."""
+    rows = sorted(items, key=lambda a: (a.row_id, a.disease, a.drug.casefold()))
+    for a in rows:
+        unknown = [s for s in a.sources if s not in SOURCES]
+        if unknown:
+            raise ValueError(f"{a.row_id}/{a.disease}/{a.drug}: unknown source {unknown[0]!r}")
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS, lineterminator="\n")
         w.writeheader()
-        for a in sorted(items, key=lambda a: (a.row_id, a.disease, a.drug.casefold())):
+        for a in rows:
             w.writerow(
                 {
                     "row_id": a.row_id,

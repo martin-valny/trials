@@ -375,6 +375,8 @@ export interface PipelineUnrowed {
 
 export interface PipelineFile {
   generated_for: string;
+  /** true when approvals.csv was read (even with no lines); absent when missing or bad */
+  approvals?: true;
   counts: { trials: number; targeted: number; in_rows: number; targeted_not_rowed: number };
   diseases: PipelineDisease[];
   families: PipelineFamily[];

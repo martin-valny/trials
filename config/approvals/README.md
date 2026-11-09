@@ -22,6 +22,8 @@ From `pipeline/`, with network access (on this Mac set `SSL_CERT_FILE` as for `m
 
 Read the printed review: cells found by one source only, cells where the sources disagree, every hand row (an `exclude` that matched nothing says "(no match)"), and label sentences with a negation nearby ("not indicated", "limitations of use"). Fix a wrong hit with an `exclude` row and a missing approval with an `add` row, then run again.
 
+A label mention with "not indicated" or "limitations of use" nearby is never counted as an approval; it is only printed for review.
+
 ## Sources and licences
 
 - ChEMBL drug indications at phase 4 (any regulator), and molecule data. CC BY-SA 3.0.

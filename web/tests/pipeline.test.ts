@@ -377,7 +377,7 @@ describe("target page helpers", () => {
 describe("fixture", () => {
   it("has the keys the types promise", () => {
     const f = readFixture<PipelineFile>("pipeline.json");
-    expect(Object.keys(f).sort()).toEqual(["counts", "diseases", "families", "generated_for", "rows", "sponsors", "trials", "unrowed"]);
+    expect(Object.keys(f).sort()).toEqual(["approvals", "counts", "diseases", "families", "generated_for", "rows", "sponsors", "trials", "unrowed"]);
     expect(Object.keys(f.counts).sort()).toEqual(["in_rows", "targeted", "targeted_not_rowed", "trials"]);
     expect(Array.isArray(f.unrowed)).toBe(true);
     for (const sp of f.sponsors) {

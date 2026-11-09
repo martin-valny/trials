@@ -140,3 +140,21 @@ def test_overrides_bad_header_and_values(tmp_path: Path) -> None:
 
 def test_overrides_missing_file_is_empty(tmp_path: Path) -> None:
     assert read_overrides(tmp_path / "overrides.csv") == []
+
+
+def test_line_number_counts_blank_lines(tmp_path: Path) -> None:
+    p = tmp_path / "approvals.csv"
+    p.write_text(f"{HEADER}\n\nr1,D1,x,,chembl,,,2020,u\nr1,D1,y,,nope,,,,u\n", encoding="utf-8")
+    with pytest.raises(ApprovalsError, match=rf"{p}:4: unknown source 'nope'"):
+        read_approvals(p)
+    o = tmp_path / "overrides.csv"
+    o.write_text(f"{OVR_HEADER}\n\n\nzap,r1,D1,x,,,,,\n", encoding="utf-8")
+    with pytest.raises(ApprovalsError, match=rf"{o}:4: unknown action 'zap'"):
+        read_overrides(o)
+
+
+def test_write_rejects_unknown_source(tmp_path: Path) -> None:
+    p = tmp_path / "approvals.csv"
+    with pytest.raises(ValueError, match="unknown source 'bogus'"):
+        write_approvals(p, [_ap("r1", "D1", "x", sources=("chembl", "bogus"))])
+    assert not p.exists()

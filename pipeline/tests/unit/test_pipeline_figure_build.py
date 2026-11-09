@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import polars as pl
@@ -316,3 +317,30 @@ def test_ap_unknown_row_warns(cfg: AreaConfig, fig: FigureConfig) -> None:
     rows = {r["id"]: r for r in doc["rows"]}
     assert [a["d"] for a in rows["cd20"]["ap"]["MS"]] == ["d"]
     assert list(rows["cd20"]["ap"]) == ["MS"]
+
+
+def test_approvals_flag_only_when_file_was_read(cfg: AreaConfig, fig: FigureConfig) -> None:
+    read, _ = _with_approvals(cfg, fig, [])  # read, zero lines
+    assert read["approvals"] is True
+    unread = build_pipeline_doc(_explorer([]), _table([]), cfg, fig, DAY, [])
+    assert "approvals" not in unread
+    assert (
+        build_pipeline_doc(_explorer([]), _table([]), cfg, fig, DAY, [], approvals=None) == unread
+    )
+
+
+def test_read_approvals_none_on_missing_or_bad(tmp_path: Path) -> None:
+    from types import SimpleNamespace
+
+    from trialradar.approvals.io import COLUMNS
+    from trialradar.pipeline import _read_approvals
+
+    cfg: Any = SimpleNamespace(approvals_dir=tmp_path)
+    warnings: list[str] = []
+    assert _read_approvals(cfg, warnings) is None
+    assert warnings == ["approvals: missing"]
+    (tmp_path / "approvals.csv").write_text("bad\n", encoding="utf-8")
+    assert _read_approvals(cfg, warnings) is None
+    assert warnings[1].startswith("approvals: ")
+    (tmp_path / "approvals.csv").write_text(",".join(COLUMNS) + "\n", encoding="utf-8")
+    assert _read_approvals(cfg, warnings) == []

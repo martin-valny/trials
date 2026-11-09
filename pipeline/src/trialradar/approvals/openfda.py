@@ -40,11 +40,18 @@ class OpenFdaClient(JsonClient):
         *,
         base_url: str = BASE_URL,
         record_dir: Path | None = None,
+        record: Callable[[str, Json], Json] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         rng: Callable[[float, float], float] = random.uniform,
     ) -> None:
         super().__init__(
-            http, cache_dir, base_url=base_url, record_dir=record_dir, sleep=sleep, rng=rng
+            http,
+            cache_dir,
+            base_url=base_url,
+            record_dir=record_dir,
+            record=record,
+            sleep=sleep,
+            rng=rng,
         )
 
     def _accepted_error(self, resp: httpx.Response) -> Json | None:

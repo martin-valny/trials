@@ -205,8 +205,9 @@ def _mechanism_graph(
     return graph, []
 
 
-def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval]:
-    """The committed ``approvals.csv``; a missing or malformed file is a warning, not a failure."""
+def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval] | None:
+    """The committed ``approvals.csv``; a missing or malformed file is a warning, not a
+    failure, and gives ``None`` (an empty file gives ``[]``)."""
     try:
         return read_approvals(cfg.approvals_dir / "approvals.csv")
     except FileNotFoundError:
@@ -215,7 +216,7 @@ def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval]:
         warnings.append(f"approvals: {exc}")
     except (OSError, ValueError) as exc:  # unreadable, or not UTF-8 (UnicodeDecodeError)
         warnings.append(f"approvals: {cfg.approvals_dir / 'approvals.csv'}: {_describe(exc)}")
-    return []
+    return None
 
 
 def _pipeline_figure(
