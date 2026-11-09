@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { markState } from "../../lib/pipeline";
-import { aboveLine, countAbove, formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
+import { MIN_SUMMARY_N, aboveLine, countAbove, formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
 import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, PipelineMark, RiskFile, RiskTrial } from "../../types";
 import { phaseText } from "../pipeline/TrialCard";
@@ -48,10 +48,13 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
   if (!risk.trials) {
     const s = targetSummary(risk, rowId, disease ?? undefined);
     body =
-      s && s.n > 0 ? (
+      s && s.n >= MIN_SUMMARY_N ? (
         <p className="rk-sum">
-          Median estimate {formatPct(s.median)} across {n(s.n)} running {s.n === 1 ? "trial" : "trials"}; typical {formatPct(s.typical)}.
+          Median estimate {formatPct(s.median)} across {n(s.n)} running trials; typical {formatPct(s.typical)}.
         </p>
+      ) : (s && s.n > 0) || marks.some((m) => markState(m, disease) === "run") ? (
+        // Summaries of fewer than MIN_SUMMARY_N trials are left out of risk.json.
+        <p className="empty-line">Too few running trials to summarise.</p>
       ) : (
         empty
       );

@@ -150,7 +150,7 @@ def test_multi_region_ignores_unmapped_countries():
 def test_no_listed_sites_is_missing_not_zero():
     # A trial that lists no sites yet (often not yet recruiting) has unknown site counts;
     # a zero would read as "no sites planned", which is rare in finished trials.
-    s = make_study("NCT00000001", **{"contactsLocationsModule": DELETE})
+    s = make_study("NCT00000001", contactsLocationsModule=DELETE)
     row = _build([s]).row(0, named=True)
     assert row["n_sites"] is None
     assert row["n_countries"] is None

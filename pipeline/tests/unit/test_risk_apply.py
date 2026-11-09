@@ -123,7 +123,33 @@ def test_per_trial_false_omits_trials(loaded: artefacts.Loaded, cfg: AreaConfig)
     doc = _doc(loaded, off, [_trial("NCT00000001", "RECRUITING", ["PHASE2"])], fig)
     assert "trials" not in doc
     assert doc["model"]["per_trial"] is False
-    assert doc["targets"]["fcrn"]["all"]["n"] == 1
+    # One trial's summary would be its own estimate: too few to show without per-trial output.
+    assert "fcrn" not in doc["targets"]
+
+
+def test_per_trial_false_omits_summaries_under_three(
+    loaded: artefacts.Loaded, cfg: AreaConfig
+) -> None:
+    off = cfg.model_copy(update={"risk": cfg.risk.model_copy(update={"per_trial": False})})
+    ids = [f"NCT0000001{i}" for i in range(4)]
+    dz = [["MG", "NMOSD"], ["MG"], ["MG"], ["NMOSD"]]
+    fig = {
+        "rows": [
+            {"id": "fcrn", "marks": [{"n": n, "dz": d} for n, d in zip(ids, dz, strict=True)]},
+            {"id": "pair", "marks": [{"n": n, "dz": ["MG"]} for n in ids[:2]]},
+        ]
+    }
+    trials = [_trial(n, "RECRUITING", ["PHASE2"]) for n in ids]
+    doc = _doc(loaded, off, trials, fig)
+    row = doc["targets"]["fcrn"]
+    assert row["all"]["n"] == 4
+    assert row["by_disease"]["MG"]["n"] == 3
+    assert "NMOSD" not in row["by_disease"]  # two trials
+    assert "pair" not in doc["targets"]
+    # With per-trial output on, every summary stays (the trials are shown anyway).
+    on = _doc(loaded, cfg, trials, fig)
+    assert on["targets"]["fcrn"]["by_disease"]["NMOSD"]["n"] == 2
+    assert on["targets"]["pair"]["all"]["n"] == 2
 
 
 def test_targets_from_figure_marks(loaded: artefacts.Loaded, cfg: AreaConfig) -> None:

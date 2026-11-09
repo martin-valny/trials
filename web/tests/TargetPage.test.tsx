@@ -314,6 +314,19 @@ test("hides per-trial scores when trials block absent", async () => {
   expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toBeInTheDocument();
 });
 
+test("without per-trial scores, a summary of fewer than three trials is not shown", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  delete risk.trials;
+  risk.targets!.cd20!.all = { n: 2, median: 0.5, typical: 0.2 };
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("Too few running trials to summarise.");
+  expect(panel).not.toHaveTextContent("50%");
+  expect(panel).not.toHaveTextContent(/Median estimate/);
+});
+
 test("panel absent without risk.json", async () => {
   stubFetch({ "risk.json": 404 });
   renderPage();
@@ -333,4 +346,14 @@ test("panel e opens with a claim line counting trials above their typical rate",
   const claim = within(riskPanel()).getByText(/sits? above their phase's typical rate\.$/);
   expect(claim).toHaveTextContent("1 of 7 running CD20 trials sits above their phase's typical rate.");
   expect(claim.compareDocumentPosition(within(riskPanel()).getByText(/^CD20 · All diseases/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("without per-trial scores, a disease whose summary was left out says too few, not none", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  delete risk.trials;
+  risk.targets!.cd20!.by_disease = {};
+  stubFetch({ "risk.json": risk });
+  renderPage("/target/cd20?disease=MS");
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  expect(riskPanel()).toHaveTextContent("Too few running trials to summarise.");
 });

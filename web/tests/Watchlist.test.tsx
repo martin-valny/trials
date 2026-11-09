@@ -178,6 +178,19 @@ test("hides per-trial scores when trials block absent (target list instead)", as
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
 });
 
+test("target list leaves out targets with fewer than three running trials", async () => {
+  const risk = riskVariant((r) => {
+    delete r.trials;
+    r.targets!.pair = { all: { n: 2, median: 0.5, typical: 0.2 }, by_disease: {} };
+  });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  const list = await screen.findByRole("table", { name: /Targets by median estimate/ });
+  const rows = within(list).getAllByRole("row").slice(1);
+  expect(rows).toHaveLength(1);
+  expect(list).not.toHaveTextContent("50%");
+});
+
 test("missing risk.json says when estimates appear", async () => {
   stubFetch({ "risk.json": 404 });
   renderPage();

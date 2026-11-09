@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadTrials } from "../../data";
-import { aboveLine, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
+import { MIN_SUMMARY_N, aboveLine, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
 import { usePipelineFile } from "../../lib/useDisease";
 import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, RiskFile, TrialsIndex } from "../../types";
@@ -378,7 +378,7 @@ function TargetList({ risk, pipeline }: { risk: RiskFile; pipeline: PipelineFile
   const rows = useMemo(() => {
     const label = new Map((pipeline?.rows ?? []).map((r) => [r.id, r.label]));
     return Object.entries(risk.targets ?? {})
-      .filter(([, t]) => t.all.n > 0)
+      .filter(([, t]) => t.all.n >= MIN_SUMMARY_N)
       .map(([id, t]) => ({ id, label: label.get(id) ?? id, s: t.all }))
       .sort((a, b) => b.s.median - a.s.median || a.label.localeCompare(b.label));
   }, [risk, pipeline]);

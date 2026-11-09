@@ -137,6 +137,9 @@ export function rankTrials(
 }
 
 /** A target's median estimate and typical rate, overall or within one disease; null when not scored. */
+/** Without per-trial scores, the pipeline leaves out summaries of fewer trials (they would give away single estimates); the web holds the same line. */
+export const MIN_SUMMARY_N = 3;
+
 export function targetSummary(file: RiskFile, rowId: string, disease?: string): RiskTargetSummary | null {
   const t = file.targets?.[rowId];
   if (!t) return null;

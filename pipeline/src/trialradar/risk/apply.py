@@ -37,6 +37,8 @@ _NO_DRUG = "no drug or biologic"
 _RESULTS = "results posted"
 _PRIMARY_DONE = "primary completion reached"
 _DRUG_TYPES = frozenset({"DRUG", "BIOLOGICAL"})
+MIN_SUMMARY_N = 3
+"""Without per-trial output, a summary of fewer trials would give away single estimates."""
 
 
 def _r(v: float) -> float:
@@ -63,15 +65,20 @@ def _model_block(loaded: Loaded, cfg: AreaConfig) -> dict[str, Any]:
     }
 
 
-def _targets(figure: Mapping[str, Any], scored: Mapping[str, dict[str, Any]]) -> dict[str, Any]:
-    """Per figure row: median estimate and median typical rate, overall and by disease code."""
+def _targets(
+    figure: Mapping[str, Any], scored: Mapping[str, dict[str, Any]], min_n: int = 1
+) -> dict[str, Any]:
+    """Per figure row: median estimate and median typical rate, overall and by disease code.
+
+    Summaries of fewer than `min_n` trials are left out (a row whose overall summary is
+    left out is left out entirely)."""
     out: dict[str, Any] = {}
     for row in figure.get("rows", []):
         trials: dict[str, set[str]] = {}
         for mark in row.get("marks", []):
             if mark["n"] in scored:
                 trials.setdefault(mark["n"], set()).update(mark.get("dz") or ())
-        if not trials:
+        if len(trials) < max(min_n, 1):
             continue
 
         def summary(ids: list[str]) -> dict[str, Any]:
@@ -85,7 +92,9 @@ def _targets(figure: Mapping[str, Any], scored: Mapping[str, dict[str, Any]]) ->
         out[row["id"]] = {
             "all": summary(sorted(trials)),
             "by_disease": {
-                d: summary(sorted(n for n, c in trials.items() if d in c)) for d in diseases
+                d: summary(ids)
+                for d in diseases
+                if len(ids := sorted(n for n, c in trials.items() if d in c)) >= min_n
             },
         }
     return out
@@ -225,5 +234,5 @@ def build_risk_doc(
     if cfg.risk.per_trial:
         doc["trials"] = scored
     if figure is not None:
-        doc["targets"] = _targets(figure, scored)
+        doc["targets"] = _targets(figure, scored, min_n=1 if cfg.risk.per_trial else MIN_SUMMARY_N)
     return doc
