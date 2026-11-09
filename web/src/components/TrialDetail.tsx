@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadTrial } from "../data";
 import { fieldLabel, formatAgeRange, formatDate, formatValue, sexLabel } from "../lib/format";
-import type { DateInfo, TrialFile } from "../types";
+import { formatPct, formatRange } from "../lib/risk";
+import { useRisk } from "../lib/useRisk";
+import type { DateInfo, RiskFile, TrialFile } from "../types";
 import { ChangeTable } from "./ChangeTable";
+import { RiskFactors } from "./risk/RiskFactors";
+import { RiskNote } from "./risk/RiskNote";
+import { RiskAxis, RiskScale } from "./risk/RiskScale";
 
 const TIMELINE_FIELDS = new Set([
   "overall_status",
@@ -20,6 +25,7 @@ const dateText = (d: DateInfo | null): string =>
 export function TrialDetail() {
   const { nct = "" } = useParams();
   const [result, setResult] = useState<Result | null>(null);
+  const risk = useRisk();
 
   useEffect(() => {
     let live = true;
@@ -95,6 +101,8 @@ export function TrialDetail() {
         ))}
       </dl>
 
+      <TrialRisk nct={t.nct_id} risk={risk ?? null} />
+
       <section className="summary" aria-labelledby="summary-h">
         <h2 id="summary-h">Summary</h2>
         <p className="muted">From the registry</p>
@@ -132,5 +140,31 @@ export function TrialDetail() {
         <ChangeTable items={t.changes} />
       )}
     </article>
+  );
+}
+
+/** The trial's estimated chance of stopping early, under the status block; nothing when per-trial estimates are off. */
+function TrialRisk({ nct, risk }: { nct: string; risk: RiskFile | null }) {
+  if (!risk?.trials) return null;
+  const r = risk.trials[nct];
+  const why = risk.not_scored[nct];
+  if (!r) return why ? <p className="muted rk-unscored">Not scored: {why}</p> : null;
+  return (
+    <section className="rk rk-trial" aria-label="Estimated chance of stopping early">
+      <p className="rk-line">
+        Estimated chance of stopping early: <b>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)}), typical {formatPct(r.typical)} for {r.basis}
+      </p>
+      <div className="rk-plot">
+        <RiskScale p={r.p} lo={r.lo} hi={r.hi} typical={r.typical} />
+        <RiskAxis />
+      </div>
+      {r.factors.length > 0 && (
+        <>
+          <p className="rk-fh">Main factors</p>
+          <RiskFactors factors={r.factors} />
+        </>
+      )}
+      <RiskNote />
+    </section>
   );
 }

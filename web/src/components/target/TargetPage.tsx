@@ -9,6 +9,7 @@ import "../pipeline/pipeline.css";
 import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
+import { TargetRisk } from "./TargetRisk";
 import { TargetStops } from "./TargetStops";
 import { TargetTimeline } from "./TargetTimeline";
 
@@ -198,6 +199,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
           <section className="sec" aria-label="How it works">
             <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} />
           </section>
+          <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />
         </>
       )}
 

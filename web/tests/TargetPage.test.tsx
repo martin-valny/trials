@@ -242,3 +242,74 @@ test("List these trials link is singular for a one-trial row", async () => {
   expect(screen.getByRole("link", { name: "List this trial →" })).toBeInTheDocument();
   expect(screen.queryByText(/List these 1 trials/)).not.toBeInTheDocument();
 });
+
+// ---------------------------------------------------------------- e. stop-risk estimates
+const RISK_H = "Running trials, estimated chance of stopping early";
+const NOTE =
+  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy.";
+const riskPanel = () => screen.getByRole("region", { name: RISK_H });
+
+test("renders the risk panel with heading and rows", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("CD20 · All diseases · 7 running. Tick = typical for phase 2 drug trials.");
+  const rows = within(within(panel).getByRole("list", { name: "Running trials by estimate" })).getAllByRole("listitem");
+  expect(rows).toHaveLength(7);
+  // Highest estimate first.
+  expect(rows[0]).toHaveTextContent("65% (53–74)");
+  const row = rows.find((r) => r.textContent?.includes("NCT90000002"))!;
+  expect(row).toHaveTextContent("example drug · Phase 2 · Example Pharma");
+  expect(row).toHaveTextContent("25% (3–25)");
+  expect(row).toHaveTextContent("typical 20%");
+  expect(within(row).getByRole("img", { name: "Estimated 25% (3–25); typical 20%" })).toBeInTheDocument();
+  expect(within(row).getByRole("link", { name: "NCT90000002" })).toHaveAttribute("href", "/trial/NCT90000002");
+  const more = within(row).getByRole("button", { name: /Main factors/ });
+  expect(more).toHaveAttribute("aria-expanded", "false");
+  expect(row).not.toHaveTextContent("Few sites (1)");
+  await userEvent.click(more);
+  expect(more).toHaveAttribute("aria-expanded", "true");
+  const factors = within(row).getByRole("list", { name: "Main factors" });
+  expect(within(factors).getAllByRole("listitem")).toHaveLength(3);
+  expect(factors).toHaveTextContent("Few sites (1)");
+  expect(factors).toHaveTextContent("lowers");
+  expect(within(panel).getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
+  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
+});
+
+test("empty panel under disease filter", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks[0]!.dz = ["MG"]; // the stopped trial: MG has a trial but no running one
+  });
+  stubFetch({ "pipeline.json": f });
+  renderPage("/target/cd20?disease=MG");
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("No running trials with an estimate for this disease.");
+  expect(panel.textContent).not.toMatch(/NaN|0 of 0|undefined/);
+  expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
+});
+
+test("hides per-trial scores when trials block absent", async () => {
+  const risk = readFixture<Record<string, unknown>>("risk.json");
+  delete risk.trials;
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("Median estimate 25% across 7 running trials; typical 20%.");
+  expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
+  expect(within(panel).queryByRole("button", { name: /Main factors/ })).not.toBeInTheDocument();
+  expect(within(panel).queryByText(/NCT9/)).not.toBeInTheDocument();
+  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toBeInTheDocument();
+});
+
+test("panel absent without risk.json", async () => {
+  stubFetch({ "risk.json": 404 });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: /What stopped, and why/ });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByRole("heading", { name: RISK_H })).not.toBeInTheDocument();
+  expect(screen.queryByText(/see Methods for accuracy/)).not.toBeInTheDocument();
+});
