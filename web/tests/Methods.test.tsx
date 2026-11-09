@@ -311,6 +311,8 @@ test("stop-risk: exclusions lead with enrollment; the comparison, text experimen
   expect(text).toMatch(/Kavalci and Hartshorn/);
   expect(within(s).getByRole("link", { name: /Kavalci and Hartshorn/ })).toHaveAttribute("href", "https://doi.org/10.1038/s41598-023-27416-7");
   expect(within(s).getByRole("link", { name: /Elkin and Zhu/ })).toHaveAttribute("href", "https://doi.org/10.1038/s41598-021-82840-x");
+  expect(text).toMatch(/held-out share of their own data \(a 20% hold-out and a 70:30 split\); ours is measured on trials started in later years/);
+  expect(text).not.toMatch(/rather than on later years/);
   expect(text).toMatch(/PubMedBERT/);
   expect(text).toMatch(/fewer than 5 earlier finished trials/);
   expect(text).toMatch(/Sponsor's earlier trials: k of n stopped early \(registry\)/);

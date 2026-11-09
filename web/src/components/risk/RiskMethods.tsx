@@ -270,8 +270,9 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         <a href="https://doi.org/10.1038/s41598-023-27416-7">Kavalci and Hartshorn</a> (&ldquo;Improving clinical
         trial design using interpretable machine learning based prediction of early trial termination&rdquo;,{" "}
         <i>Scientific Reports</i>, 2023) report 0.80, counting withdrawn trials as stopped. Both use features drawn
-        from eligibility criteria and test on a held-out share of the same trials rather than on later years, so
-        the numbers are not directly comparable.
+        from eligibility criteria and report accuracy on a held-out share of their own data (a 20% hold-out and a
+        70:30 split); ours is measured on trials started in later years, which is usually harder, so the numbers
+        are not directly comparable.
       </p>
 
       <h3>What we tried: trial text (9 November 2026)</h3>
