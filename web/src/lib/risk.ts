@@ -29,8 +29,10 @@ export interface WatchRow {
   typical: number;
   basis: string;
   factors: { dir: "up" | "down"; label: string }[];
-  /** Pipeline row id; null when the trial is in no row. */
+  /** Primary (first) pipeline row id, for display; null when the trial is in no row. */
   target: string | null;
+  /** Every pipeline row the trial is in, in row order. */
+  targets: string[];
   diseases: string[];
   company: string | null;
   phase: string;
@@ -53,23 +55,25 @@ function phaseLabel(phases: readonly string[]): string {
 }
 
 interface Placement {
-  target: string;
+  targets: string[];
   diseases: string[];
   company: string;
 }
 
-/** Where each trial sits in the pipeline figure: its first row, the mark's diseases and sponsor parent. */
+/** Where each trial sits in the pipeline figure: every row it is in (in row order), the union of its
+ *  marks' diseases, and the first mark's sponsor parent. Matches the pipeline's own roll-up. */
 function placements(pipeline: PipelineFile | null): Map<string, Placement> {
   const out = new Map<string, Placement>();
   if (!pipeline) return out;
   for (const row of pipeline.rows) {
     for (const m of row.marks) {
-      if (out.has(m.n)) continue;
-      out.set(m.n, {
-        target: row.id,
-        diseases: [...(m.dz ?? [])],
-        company: pipeline.sponsors[m.sp]?.parent ?? "",
-      });
+      let pl = out.get(m.n);
+      if (!pl) {
+        pl = { targets: [], diseases: [], company: pipeline.sponsors[m.sp]?.parent ?? "" };
+        out.set(m.n, pl);
+      }
+      if (!pl.targets.includes(row.id)) pl.targets.push(row.id);
+      for (const d of m.dz ?? []) if (!pl.diseases.includes(d)) pl.diseases.push(d);
     }
   }
   return out;
@@ -96,9 +100,10 @@ export function rankTrials(
       typical: t.typical,
       basis: t.basis,
       factors: t.factors,
-      target: pl?.target ?? null,
+      target: pl?.targets[0] ?? null,
+      targets: pl?.targets ?? [],
       diseases: pl?.diseases ?? [],
-      company: (pl ? pl.company : summary?.lead_sponsor) || null,
+      company: (pl?.company || summary?.lead_sponsor) || null,
       phase: phaseLabel(summary?.phases ?? []),
       title: summary?.title ?? "",
     };
@@ -106,7 +111,7 @@ export function rankTrials(
   const keep = (r: WatchRow): boolean =>
     (!filter.disease?.length || r.diseases.some((d) => filter.disease?.includes(d))) &&
     (!filter.company?.length || (r.company !== null && filter.company.includes(r.company))) &&
-    (!filter.target?.length || filter.target.includes(r.target ?? "none"));
+    (!filter.target?.length || (r.targets.length === 0 ? filter.target.includes("none") : r.targets.some((t) => filter.target?.includes(t))));
   const key = (r: WatchRow): number => (sort === "estimate" ? r.p : r.p - r.typical);
   return rows.filter(keep).sort((a, b) => key(b) - key(a) || a.nct.localeCompare(b.nct));
 }

@@ -84,6 +84,33 @@ describe("rankTrials", () => {
     expect(rankTrials(risk, { target: ["none"] }, "estimate", p2, index).map((r) => r.nct)).toEqual([gone]);
   });
 
+  it("finds a trial in two rows by either row and either disease", () => {
+    const nct = ids[0]!;
+    const base = pipeline.rows[0]!.marks.find((m) => m.n === nct)!;
+    const clean = pipeline.rows.map((r) => ({ ...r, marks: r.marks.filter((m) => m.n !== nct) }));
+    const p2: PipelineFile = {
+      ...pipeline,
+      rows: clean.map((r, i) =>
+        i === 0
+          ? { ...r, marks: [...r.marks, { ...base, dz: ["MS"] }] }
+          : i === 1
+            ? { ...r, marks: [...r.marks, { ...base, dz: ["RA"] }] }
+            : r,
+      ),
+    };
+    const [r0, r1] = [p2.rows[0]!.id, p2.rows[1]!.id];
+    const find = (f: Parameters<typeof rankTrials>[1]) =>
+      rankTrials(risk, f, "estimate", p2, index).some((r) => r.nct === nct);
+    expect(find({ target: [r0] })).toBe(true);
+    expect(find({ target: [r1] })).toBe(true);
+    expect(find({ target: ["none"] })).toBe(false);
+    expect(find({ disease: ["MS"] })).toBe(true);
+    expect(find({ disease: ["RA"] })).toBe(true);
+    const row = rankTrials(risk, {}, "estimate", p2, index).find((r) => r.nct === nct)!;
+    expect(row.target).toBe(r0);
+    expect(row.targets).toEqual([r0, r1]);
+  });
+
   it("works without the pipeline or the index", () => {
     const rows = rankTrials(risk, {}, "estimate", null, null);
     expect(rows).toHaveLength(ids.length);
