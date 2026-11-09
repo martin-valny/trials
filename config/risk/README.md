@@ -57,12 +57,12 @@ Test-set accuracy, bootstrap ensembles:
 | Model | AUC | Brier |
 | --- | --- | --- |
 | Logistic baseline | 0.567 | 0.1420 |
-| Boosted (shipped) | 0.682 | 0.1347 |
-| Boosted without site and country features | 0.675 | 0.1356 |
-| Boosted, in-area trials only (n 141, 29 stopped) | 0.539 | 0.1648 |
+| Boosted (shipped) | 0.683 | 0.1346 |
+| Boosted without site and country features | 0.674 | 0.1355 |
+| Boosted, in-area trials only (n 141, 29 stopped) | 0.556 | 0.1640 |
 
 The boosted model won on both criteria, and `site_leak_flag` is false (removing sites costs
-0.007 AUC). The in-area sample is too small to say anything about the area itself. Overall
+0.009 AUC). The in-area sample is too small to say anything about the area itself. Overall
 stop rate 16.0% (industry 14.0%, other 18.9%). Each boosted member is one booster refit with
 an isotonic map learned from shuffled 5-fold out-of-fold scores (`ensemble=False`; the folds
 must be shuffled because training rows are ordered by start year), and the model file
