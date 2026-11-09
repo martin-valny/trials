@@ -169,3 +169,57 @@ def test_extras_fields_feed_the_features(loaded: artefacts.Loaded, cfg: AreaConf
     ex = {"NCT00000001": empty_extras("NCT00000001")}
     doc = _doc(loaded, cfg, [_trial("NCT00000001", "RECRUITING", ["PHASE2"])], extras=ex)
     assert "NCT00000001" in doc["trials"]
+
+
+class _Constant:
+    """An estimator stub whose P(stopped) is the same for every row."""
+
+    def predict_proba(self, x: Any) -> Any:
+        import numpy as np
+
+        return np.column_stack([np.full(len(x), 0.851), np.full(len(x), 0.149)])
+
+
+def _many_running(n: int = 24) -> list[dict[str, Any]]:
+    phases = (["PHASE1"], ["PHASE2"], ["PHASE3"], ["PHASE2", "PHASE3"])
+    return [
+        _trial(
+            f"NCT{i:08d}",
+            "RECRUITING",
+            phases[i % 4],
+            start_date=date(2016 + i % 10, 1, 1),
+            sponsor_class="INDUSTRY" if i % 3 else "OTHER",
+            masking=("NONE", "DOUBLE", "QUADRUPLE")[i % 3],
+        )
+        for i in range(1, n + 1)
+    ]
+
+
+def test_varied_estimates_pass_the_degeneracy_guard(
+    loaded: artefacts.Loaded, cfg: AreaConfig
+) -> None:
+    trials = _many_running()
+    base = _tables(trials)
+    outcomes = pl.DataFrame(
+        [
+            {"nct_id": t["nct_id"], "kind": "secondary", "measure": f"m{k}"}
+            for i, t in enumerate(trials)
+            for k in range(i % 12)
+        ],
+        schema=SCHEMAS["outcome"],
+    )
+    tables = Tables(
+        base.trial, base.condition, base.intervention, base.sponsor, base.site, outcomes
+    )
+    doc = build_risk_doc(tables, {}, cfg, loaded, None, DAY)
+    assert len({t["p"] for t in doc["trials"].values()}) >= 3
+
+
+def test_degenerate_estimates_raise(loaded: artefacts.Loaded, cfg: AreaConfig) -> None:
+    """A shipped main that outputs one value for every running trial must never ship."""
+    from dataclasses import replace
+
+    main = replace(loaded.shipped.main, estimator=_Constant())
+    flat = replace(loaded, shipped=replace(loaded.shipped, main=main))
+    with pytest.raises(ValueError, match="degenerate"):
+        _doc(flat, cfg, _many_running())

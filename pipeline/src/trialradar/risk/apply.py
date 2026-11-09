@@ -24,9 +24,13 @@ from trialradar.risk.scope import RUNNING, has_drug, in_phase_scope
 from trialradar.risk.sponsors import live_counts
 from trialradar.tables import Tables
 
-__all__ = ["build_risk_doc"]
+__all__ = ["DEGENERATE_MIN_DISTINCT", "DEGENERATE_MIN_TRIALS", "build_risk_doc"]
 
 _NOT_PHASE = "phase not 1–3"
+# A shipped model whose estimates collapse to a couple of values is broken (the isotonic map
+# went flat); with at least this many scored trials, fewer distinct estimates is an error.
+DEGENERATE_MIN_TRIALS = 20
+DEGENERATE_MIN_DISTINCT = 3
 _NO_DRUG = "no drug or biologic"
 
 
@@ -118,6 +122,12 @@ def build_risk_doc(
         ens = loaded.shipped
         x = artefacts.feature_matrix(frame)
         p, lo, hi = ens.predict(x)
+        distinct = len({_r(v) for v in p})
+        if len(p) >= DEGENERATE_MIN_TRIALS and distinct < DEGENERATE_MIN_DISTINCT:
+            raise ValueError(
+                f"degenerate estimates: {len(p)} scored trials share {distinct} distinct "
+                "p value(s); the shipped model is broken, not shipping risk.json"
+            )
         contrib = contributions(ens, x)
         for i, nct in enumerate(frame["nct_id"].to_list()):
             r = rows[nct]
