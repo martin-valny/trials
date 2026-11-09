@@ -239,7 +239,7 @@ function TrialList({
           </div>
         </div>
         <div className="tb-count">
-          Showing {n(shown.length)} of {n(total)} {total === 1 ? "trial" : "trials"}
+          Showing {n(visible.length)} of {n(total)} {total === 1 ? "trial" : "trials"}
         </div>
       </div>
 

@@ -245,12 +245,14 @@ test("shows the first 50 rows, then reveals 50 more at a time; a new sort starts
   await table();
   expect(order()).toHaveLength(50);
   expect(order()[0]).toBe("NCT80000001");
+  // the count is the rows on screen
+  expect(screen.getByText("Showing 50 of 120 trials")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Show 50 more, 120 trials" }));
   expect(order()).toHaveLength(100);
+  expect(screen.getByText("Showing 100 of 120 trials")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Show 20 more, 120 trials" }));
   expect(order()).toHaveLength(120);
   expect(screen.queryByRole("button", { name: /^Show \d+ more/ })).not.toBeInTheDocument();
-  // the count reflects the whole filtered list, not the page
   expect(screen.getByText("Showing 120 of 120 trials")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Above typical by most" }));
   expect(order()).toHaveLength(50);
