@@ -1,6 +1,6 @@
 # Stop-risk model ("Will this trial stop early?") — design
 
-Status: draft for Martin's approval, 2026-11-09. First of three linked pieces: **A** this model; **B** a target memo agent that cites it (separate spec); **C** a live Bedrock mode for B (separate spec, reopens the §5.2 "no AWS" ruling in HANDOFF).
+Status: approved by Martin, 2026-11-09. First of three linked pieces: **A** this model; **B** a target memo agent that cites it (separate spec); **C** a live Bedrock mode for B (separate spec, reopens the §5.2 "no AWS" ruling in HANDOFF).
 
 ## 1. Intent and why
 
