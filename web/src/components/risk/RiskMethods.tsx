@@ -303,6 +303,8 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         . The range is the 10th to 90th percentile of the estimate over 20 refits of the model on resampled
         training data; a wide range means the model is unsure. An estimate whose range includes the typical rate
         reads as near typical. The listed factors are the three features that moved that trial&apos;s estimate most.
+        Start year is never listed as a factor: it shifts the estimate, but a recent trial&apos;s year is read as the
+        last year the model was refitted on, so the year shown would not be the trial&apos;s own.
       </p>
       <p>
         The sponsor&apos;s history is shown as &ldquo;Sponsor&apos;s earlier trials: k of n stopped early
@@ -316,9 +318,11 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         The model is retrained by hand, not by the daily update; it was last trained on {longDate(model.trained_on)}{" "}
         (version {model.version}). There are two fits of the same recipe. Every accuracy figure on this page comes
         from the fit trained on trials started up to {year(model.split.train_end)}; the estimates on the site come
-        from the same recipe refitted on all finished trials, so their accuracy is the recipe&apos;s accuracy on
-        later years, measured on the earlier fit. For trials started after the last training year, the start year
-        is read as that last year.
+        from the same recipe refitted on all finished trials started up to {year(model.refit_end)}, so their accuracy is
+        the recipe&apos;s accuracy on later years, measured on the earlier fit. Later starts are left out of the refit
+        for the same reason they are left out of the test: of the trials started since then, the ones already
+        finished are mostly those that stopped early. For trials started after {year(model.refit_end)}, the start
+        year is read as {year(model.refit_end)}.
       </p>
     </>
   );

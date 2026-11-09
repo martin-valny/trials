@@ -17,10 +17,11 @@ describe("formatting", () => {
     expect(formatRange(0.1, 0.29)).toBe("10–29");
   });
   it("never shows a near-zero range as certainty", () => {
-    expect(formatRange(0, 0.004)).toBe("0–<1");
-    expect(formatRange(0, 0.024)).toBe("0–2");
+    // a model estimate of exactly 0 is still an estimate: it reads "<1", never "0"
+    expect(formatRange(0, 0.004)).toBe("<1–<1");
+    expect(formatRange(0, 0.024)).toBe("<1–2");
     expect(formatRange(0.002, 0.004)).toBe("<1–<1");
-    expect(formatRange(0, 0)).toBe("0–0");
+    expect(formatRange(0, 0)).toBe("<1–<1");
     expect(formatRange(0.028, 0.25)).toBe("3–25");
   });
   it("compares with the typical rate", () => {
@@ -144,4 +145,9 @@ describe("targetSummary", () => {
     expect(targetSummary(risk, "nope")).toBeNull();
     expect(targetSummary({ ...risk, targets: undefined }, "cd20")).toBeNull();
   });
+});
+
+test("an estimate of exactly 0 or under 0.5% never reads as 0%", () => {
+  expect(formatPct(0)).toBe("<1%");
+  expect(formatPct(0.0049)).toBe("<1%");
 });

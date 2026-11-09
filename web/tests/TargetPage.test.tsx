@@ -258,15 +258,15 @@ test("renders the risk panel with heading and rows", async () => {
   const rows = within(within(panel).getByRole("list", { name: "Running trials by estimate" })).getAllByRole("listitem");
   expect(rows).toHaveLength(7);
   // Highest estimate first; a near-zero range never reads "(0–0)".
-  expect(rows[0]).toHaveTextContent("65% (53–74)");
-  expect(rows.find((r) => r.textContent?.includes("NCT90000006"))).toHaveTextContent("<1% (0–<1)");
-  expect(panel.textContent).not.toContain("(0–0)");
+  expect(rows[0]).toHaveTextContent("66% (66–71)");
+  expect(rows.find((r) => r.textContent?.includes("NCT90000006"))).toHaveTextContent("<1% (<1–<1)");
+  expect(panel.textContent).not.toMatch(/\(0–/);
   const row = rows.find((r) => r.textContent?.includes("NCT90000002"))!;
   expect(row).toHaveTextContent("example drug · Phase 2 · Example Pharma");
-  expect(row).toHaveTextContent("25% (3–25)");
+  expect(row).toHaveTextContent("24% (5–24)");
   expect(row).toHaveTextContent("typical 20%");
-  expect(row).toHaveTextContent("near typical 20%"); // its range (3–25) contains the typical rate
-  expect(within(row).getByRole("img", { name: "Estimated 25% (3–25); typical 20%" })).toBeInTheDocument();
+  expect(row).toHaveTextContent("near typical 20%"); // its range (5–24) contains the typical rate
+  expect(within(row).getByRole("img", { name: "Estimated 24% (5–24); typical 20%" })).toBeInTheDocument();
   expect(within(row).getByRole("link", { name: "NCT90000002" })).toHaveAttribute("href", "/trial/NCT90000002");
   const more = within(row).getByRole("button", { name: /Main factors/ });
   expect(more).toHaveAttribute("aria-expanded", "false");
@@ -307,7 +307,7 @@ test("hides per-trial scores when trials block absent", async () => {
   renderPage();
   await screen.findByRole("heading", { level: 2, name: RISK_H });
   const panel = riskPanel();
-  expect(panel).toHaveTextContent("Median estimate 25% across 7 running trials; typical 20%.");
+  expect(panel).toHaveTextContent("Median estimate 24% across 7 running trials; typical 20%.");
   expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
   expect(within(panel).queryByRole("button", { name: /Main factors/ })).not.toBeInTheDocument();
   expect(within(panel).queryByText(/NCT9/)).not.toBeInTheDocument();

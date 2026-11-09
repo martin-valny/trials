@@ -394,6 +394,8 @@ export interface RiskModelInfo {
   };
   site_leak_flag: boolean;
   split: { train_end: string; test: [string, string] };
+  /** The shipped model is refit on finished trials started up to this date. */
+  refit_end: string;
   features: string[];
   excluded: string[];
   typical: { phase: string; sponsor: string; rate: number; n: number }[];

@@ -9,8 +9,8 @@ const NEAR = 0.03;
 
 export const formatPct = (p: number): string => (p < 0.005 ? "<1%" : `${Math.round(p * 100)}%`);
 
-/** One end of a range: exactly 0 is "0"; anything else under 0.5% is "<1", so a tiny range never reads as certainty. */
-const rangeEnd = (x: number): string => (x === 0 ? "0" : x < 0.005 ? "<1" : `${Math.round(x * 100)}`);
+/** One end of a range: anything under 0.5%, exactly 0 included, is "<1", so a range never reads as certainty. */
+const rangeEnd = (x: number): string => (x < 0.005 ? "<1" : `${Math.round(x * 100)}`);
 
 export const formatRange = (lo: number, hi: number): string => `${rangeEnd(lo)}–${rangeEnd(hi)}`;
 

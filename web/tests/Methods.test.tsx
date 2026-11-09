@@ -331,3 +331,11 @@ test("stop-risk: without risk.json the section renders no numbers and says when 
   expect(within(s).queryByRole("img")).toBeNull();
   expect(s.textContent).not.toMatch(/\d\.\d{2}/);
 });
+
+test("stop-risk: retraining names the shipped refit window; start year is not a listed factor", async () => {
+  stubFetch({ "risk.json": riskFile({ refit_end: "2019-12-31" }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  expect(s.textContent).toMatch(/refitted on all finished trials started up to 2019/);
+  expect(s.textContent).toMatch(/start year is never listed as a factor/i);
+});

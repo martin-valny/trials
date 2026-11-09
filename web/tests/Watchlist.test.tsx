@@ -48,10 +48,10 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
   expect(order()).toEqual(["NCT90000004", "NCT90000005", "NCT90000099", "NCT90000002", "NCT90000008", "NCT90000006", "NCT90000007"]);
   const first = screen.getAllByRole("row")[1]!;
-  expect(first).toHaveTextContent("65% (53–74)");
+  expect(first).toHaveTextContent("66% (66–71)");
   expect(first).toHaveTextContent("above typical 20%");
   expect(first).toHaveTextContent("Phase 2 · Example Pharma");
-  expect(within(first).getByRole("img", { name: "Estimated 65% (53–74); typical 20%" })).toBeInTheDocument();
+  expect(within(first).getByRole("img", { name: "Estimated 66% (66–71); typical 20%" })).toBeInTheDocument();
   expect(within(first).getByRole("link", { name: "NCT90000004" })).toHaveAttribute("href", "/trial/NCT90000004");
   expect(within(first).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(
     "href",
@@ -172,7 +172,7 @@ test("hides per-trial scores when trials block absent (target list instead)", as
   const rows = within(list).getAllByRole("row").slice(1);
   expect(rows).toHaveLength(1);
   expect(within(rows[0]!).getByRole("link", { name: "CD20" })).toHaveAttribute("href", "/target/cd20");
-  expect(rows[0]).toHaveTextContent("25%");
+  expect(rows[0]).toHaveTextContent("24%");
   expect(rows[0]).toHaveTextContent("typical 20%");
   expect(rows[0]).toHaveTextContent("7");
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
