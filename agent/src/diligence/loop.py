@@ -30,6 +30,7 @@ from diligence.tools.registry_of_tools import TOOL_SPECS, ToolContext, dispatch
 from diligence.types import Memo, RunRecord, Step, StepKind, ToolResult, Verdict
 
 StepSink = Callable[[Step], None]
+DispatchFn = Callable[[str, dict[str, Any], ToolContext], ToolResult]
 
 MIN_FINAL_WRITER_TOKENS = 1500
 MIN_PLANNER_TOKENS = 1024
@@ -142,7 +143,9 @@ class _Run:
         clock: Callable[[], float],
         label: str | None,
         data_date: str,
+        dispatch_fn: DispatchFn | None = None,
     ) -> None:
+        self.dispatch_fn = dispatch_fn
         self.req, self.cfg, self.model, self.ctx = req, cfg, model, ctx
         self.sink, self.clock = sink, clock
         self.label, self.data_date = label, data_date
@@ -275,7 +278,7 @@ class _Run:
             return _toolresult(use["toolUseId"], text, error=True)
         self.tool_calls += 1
         started = self.clock()
-        result = dispatch(use["name"], use.get("input") or {}, self.ctx)
+        result = (self.dispatch_fn or dispatch)(use["name"], use.get("input") or {}, self.ctx)
         ms = int((self.clock() - started) * 1000)
         self.retrieved.update(result.ids)
         _add_sources(self.sources, result)
@@ -444,6 +447,7 @@ def run_agent(
     data_date: str = "",
     label: str | None = None,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    dispatch_fn: DispatchFn | None = None,
 ) -> RunRecord:
     """Run the agent and return its record.
 
@@ -454,7 +458,7 @@ def run_agent(
     """
     stamp = "%Y-%m-%dT%H:%M:%SZ"
     started = now().strftime(stamp)
-    run = _Run(req, cfg, model, ctx, sink, clock, label, data_date)
+    run = _Run(req, cfg, model, ctx, sink, clock, label, data_date, dispatch_fn)
     try:
         memo = run.execute()
     except ReplayMismatch:

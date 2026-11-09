@@ -30,6 +30,7 @@ module-name = "diligence"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["scripts"]
 
 [tool.ruff]
 line-length = 100
