@@ -52,16 +52,17 @@ class OpenFdaClient(JsonClient):
         return {"results": []} if _is_not_found(resp) else None
 
     def labels(self, generic_name: str) -> list[Json]:
-        """Labels whose ``openfda.generic_name`` matches, reduced to ``set_id``, ``generic_name``
-        and ``indications`` (the ``indications_and_usage`` paragraphs joined by a space).
+        """Labels naming ``generic_name`` in ``openfda.generic_name`` or in the SPL product
+        elements (newer labels have no ``openfda`` block), reduced to ``set_id``,
+        ``generic_name`` (the ``openfda`` names joined by "; ", or ""), ``indications`` (the
+        ``indications_and_usage`` paragraphs joined by a space) and ``product`` (the first
+        ``spl_product_data_elements`` entry, or "").
 
         One request with ``limit=100`` (no paging): enough labels for any one generic name.
         An unmatched name (404 NOT_FOUND) gives ``[]``, and that empty result is cached too.
         """
-        body = self._get(
-            "drug/label.json",
-            {"search": f'openfda.generic_name:"{generic_name}"', "limit": LABEL_LIMIT},
-        )
+        search = f'openfda.generic_name:"{generic_name}" spl_product_data_elements:"{generic_name}"'
+        body = self._get("drug/label.json", {"search": search, "limit": LABEL_LIMIT})
         results = body.get("results")
         labels: list[Json] = []
         for item in results if isinstance(results, list) else []:
@@ -70,13 +71,17 @@ class OpenFdaClient(JsonClient):
             openfda = item.get("openfda")
             names = openfda.get("generic_name") if isinstance(openfda, dict) else None
             usage = item.get("indications_and_usage")
+            product = item.get("spl_product_data_elements")
             labels.append(
                 {
                     "set_id": str(item.get("set_id") or ""),
-                    "generic_name": str(names[0]) if isinstance(names, list) and names else "",
+                    "generic_name": "; ".join(str(n) for n in names)
+                    if isinstance(names, list)
+                    else "",
                     "indications": " ".join(str(u) for u in usage)
                     if isinstance(usage, list)
                     else "",
+                    "product": str(product[0]) if isinstance(product, list) and product else "",
                 }
             )
         return labels

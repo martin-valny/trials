@@ -7,8 +7,9 @@ indication for it or its FDA label names the disease; hand overrides then add or
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Protocol
 
 from trialradar.approvals.io import SOURCES, Approval, Override
@@ -28,6 +29,7 @@ Json = dict[str, Any]
 DAILYMED = "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid="
 CHEMBL_CARD = "https://www.ebi.ac.uk/chembl/compound_report_card/"
 _HAND_OK = ("mapped", "manual")
+_BIOSIMILAR_SUFFIX = re.compile(r"-[a-z]{4}$")
 
 
 class ChemblLike(Protocol):
@@ -102,7 +104,12 @@ def _seed_ids(row: FigureRow, mappings: Mapping[str, DrugMapping]) -> set[str]:
     found = {m for m in named if usable(m)}
     if row.classes:
         wanted = set(row.classes)
-        found |= {m for m in mappings.values() if usable(m) and wanted & set(m.mechanism_class)}
+        # all of a mapping's classes must belong to the row: a combination stays out
+        found |= {
+            m
+            for m in mappings.values()
+            if usable(m) and m.mechanism_class and set(m.mechanism_class) <= wanted
+        }
     return {m.chembl_id for m in found if m.chembl_id}
 
 
@@ -141,6 +148,19 @@ def _candidates(row: FigureRow, seeds: set[str], look: _Lookups) -> set[str]:
     return out | widen(seed_mechs, on_target)
 
 
+def _label_is_for(name: str, label: Json) -> bool:
+    """A single-ingredient label for ``name`` (kits and combinations are not)."""
+    generic = str(label.get("generic_name") or "").casefold().strip()
+    if generic:
+        if ";" in generic or "," in generic or " and " in generic:
+            return False
+        generic = _BIOSIMILAR_SUFFIX.sub("", generic)
+        return generic == name or generic.startswith(f"{name} ")
+    want = name.split()
+    words = str(label.get("product") or "").casefold().split()[: len(want) + 2]
+    return any(words[i : i + len(want)] == want for i in range(len(words)))
+
+
 def _phase(value: Any) -> float:
     try:
         return float(value)
@@ -174,7 +194,9 @@ def _auto(
     name = str(mol.get("pref_name") or "").casefold() or cid
     withdrawn = bool(mol.get("withdrawn_flag"))
     chembl_ok, chembl_below = _chembl_phases(look.indications(cid), terms)
-    labels = look.labels(name) if mol.get("pref_name") else []
+    labels = (
+        [lb for lb in look.labels(name) if _label_is_for(name, lb)] if mol.get("pref_name") else []
+    )
     fda_set: dict[str, str] = {}
     negated: dict[str, LabelHit] = {}
     for label in labels:
@@ -216,13 +238,34 @@ def _auto(
         out[key] = Approval(row.id, disease, name, cid, sources, withdrawn, "", None, url)
 
 
+def _fold_variants(out: dict[tuple[str, str, str], Approval]) -> None:
+    """Within one row x disease, fold "x acetate" into "x" (a name starting with another
+    drug's name and a space); sources union, withdrawn only if both are."""
+    for key in sorted(out, key=lambda k: (k[0], k[1], len(k[2]), k[2])):
+        if key not in out:
+            continue
+        row_id, disease, name = key
+        roots = [k for k in out if k[:2] == (row_id, disease) and name.startswith(f"{k[2]} ")]
+        if not roots:
+            continue
+        root_key = min(roots, key=lambda k: len(k[2]))
+        root, var = out[root_key], out.pop(key)
+        out[root_key] = replace(
+            root,
+            chembl_id=root.chembl_id or var.chembl_id,
+            url=root.url or var.url,
+            sources=tuple(s for s in SOURCES if s in root.sources or s in var.sources),
+            withdrawn=root.withdrawn and var.withdrawn,
+        )
+
+
 def _apply_overrides(
     out: dict[tuple[str, str, str], Approval], overrides: Sequence[Override], review: Review
 ) -> None:
     for o in overrides:
         key = (o.row_id, o.disease, o.drug.casefold())
         found = out.get(key)
-        who = _line(o.row_id, o.disease, o.drug, "")[:-2]
+        who = f"{o.row_id} × {o.disease}: {o.drug}"
         if o.action == "exclude":
             if found is None:
                 review.hand.append(f"{who} — exclude (no match)")
@@ -232,7 +275,7 @@ def _apply_overrides(
             continue
         if found is None:
             out[key] = Approval(
-                o.row_id, o.disease, o.drug, "", ("hand",), o.withdrawn,
+                o.row_id, o.disease, o.drug.casefold(), "", ("hand",), o.withdrawn,
                 o.regulator, o.year, o.source_url,
             )  # fmt: skip
         else:
@@ -261,9 +304,10 @@ def build_approvals(
         seeds = _seed_ids(row, mappings)
         for cid in sorted(_candidates(row, seeds, look)):
             _auto(row, cid, terms, look, review, out)
+    _fold_variants(out)
     _apply_overrides(out, overrides, review)
     items = sorted(out.values(), key=lambda a: (a.row_id, a.disease, a.drug.casefold()))
     review.counts = {d: len({a.row_id for a in items if a.disease == d}) for d in sorted(terms)}
     for lines in (review.one_source, review.disagree, review.negated):
-        lines.sort()
+        lines[:] = sorted(set(lines))
     return items, review

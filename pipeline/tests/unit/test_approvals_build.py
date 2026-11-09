@@ -46,7 +46,10 @@ class FakeFda:
         self._labels = labels or {}
 
     def labels(self, generic_name: str) -> list[Json]:
-        return self._labels.get(generic_name, [])
+        return [
+            {"generic_name": generic_name.upper(), "product": "", **lb}
+            for lb in self._labels.get(generic_name, [])
+        ]
 
 
 def mech(mol: str, target: str, action: str = "inhibitor") -> Json:
@@ -75,7 +78,7 @@ def row(rid: str, classes: tuple[str, ...] = (), drugs: tuple[str, ...] = ()) ->
 
 
 def label(set_id: str, text: str) -> Json:
-    return {"set_id": set_id, "generic_name": "x", "indications": text}
+    return {"set_id": set_id, "indications": text}
 
 
 def run(
@@ -201,7 +204,7 @@ def test_override_add_and_exclude() -> None:
     items, review = run([row("cd20", ("CD20",))], mappings, chembl, overrides=overrides)
     got = {(a.row_id, a.disease, a.drug): a for a in items}
     assert ("cd20", "MS", "ofatumumab") not in got
-    zil = got[("c5", "MG", "Zilucoplan")]
+    zil = got[("c5", "MG", "zilucoplan")]
     assert (zil.chembl_id, zil.sources, zil.regulator, zil.year) == ("", ("hand",), "FDA", 2023)
     oc = got[("cd20", "MS", "ocrelizumab")]
     assert oc.sources == ("chembl", "hand")
@@ -262,3 +265,127 @@ def test_fetch_script_help_exits_zero() -> None:
     )
     assert done.returncode == 0
     assert "--record" in done.stdout
+
+
+def label_of(set_id: str, text: str, generic: str, product: str = "") -> Json:
+    return {"set_id": set_id, "indications": text, "generic_name": generic, "product": product}
+
+
+def one_drug_world(name: str, cid: str = "C1") -> tuple[dict[str, DrugMapping], FakeChembl]:
+    chembl = FakeChembl({cid: mol(name.title())}, [mech(cid, "T1")], {})
+    return {name: mapping(name, cid, ("X",))}, chembl
+
+
+def test_combination_and_kit_labels_rejected() -> None:
+    mappings, chembl = one_drug_world("lidocaine")
+    text = "Triamcinolone: multiple sclerosis."
+    fda = FakeFda(
+        {
+            "lidocaine": [
+                label_of("K1", text, "LIDOCAINE, KENALOG, POVIDONE IODINE"),
+                label_of("K2", text, "LIDOCAINE HYDROCHLORIDE AND TRIAMCINOLONE"),
+                label_of("K3", text, "LIDOCAINE; BUPIVACAINE"),
+            ]
+        }
+    )
+    items, review = run([row("r", ("X",))], mappings, chembl, fda)
+    assert items == []
+    assert review.negated == []
+
+
+def test_rejected_label_is_not_fda_data() -> None:
+    mappings, chembl = one_drug_world("drugx")
+    chembl = FakeChembl(
+        {"C1": mol("Drugx")}, [mech("C1", "T1")], {"C1": [ind("Multiple Sclerosis", 4)]}
+    )
+    fda = FakeFda({"drugx": [label_of("K", "x", "DRUGX, OTHER")]})
+    _, review = run([row("r", ("X",))], mappings, chembl, fda)
+    assert review.one_source == ["r × MS: drugx — ChEMBL only"]
+    assert review.disagree == []
+
+
+def test_label_name_rules() -> None:
+    text = "Indicated for multiple sclerosis."
+    for name, label in [
+        ("eculizumab", label_of("A", text, "ECULIZUMAB-AEEB")),
+        ("prednisolone", label_of("B", text, "PREDNISOLONE SODIUM PHOSPHATE")),
+        ("ravulizumab", label_of("C", text, "", "Ultomiris ravulizumab ravulizumab SODIUM")),
+    ]:
+        mappings, chembl = one_drug_world(name)
+        items, _ = run([row("r", ("X",))], mappings, chembl, FakeFda({name: [label]}))
+        assert [a.sources for a in items] == [("fda_label",)], name
+    mappings, chembl = one_drug_world("sodium phosphate")
+    deep = label_of("D", text, "", "Brand other drug a b c SODIUM PHOSPHATE inactive")
+    items, _ = run([row("r", ("X",))], mappings, chembl, FakeFda({"sodium phosphate": [deep]}))
+    assert items == []
+
+
+def test_combination_mapping_does_not_seed_class_row() -> None:
+    chembl = FakeChembl(
+        {"C1": mol("Inebilizumab"), "C2": mol("Prednisone", "Small molecule")},
+        [mech("C1", "T1"), mech("C2", "T2")],
+        {"C1": [ind("Multiple Sclerosis", 4)], "C2": [ind("Multiple Sclerosis", 4)]},
+    )
+    mappings = {
+        "combo": mapping("combo", "C1", ("anti-CD19", "glucocorticoid")),
+        "prednisone": mapping("prednisone", "C2", ("glucocorticoid",)),
+    }
+    items, _ = run([row("gc", ("glucocorticoid",))], mappings, chembl)
+    assert [a.drug for a in items] == ["prednisone"]
+
+
+def test_variants_fold_into_base_drug() -> None:
+    names = {
+        "C1": "Prednisolone",
+        "C2": "Prednisolone acetate",
+        "C3": "Interferon beta-1a",
+        "C4": "Peginterferon beta-1a",
+        "C5": "Dimethyl fumarate",
+        "C6": "Monomethyl fumarate",
+    }
+    chembl = FakeChembl(
+        {c: mol(n, "Small molecule", withdrawn=(c == "C1")) for c, n in names.items()},
+        [mech(c, "T1") for c in names],
+        {c: [ind("Multiple Sclerosis", 4)] for c in names},
+    )
+    fda = FakeFda({"prednisolone acetate": [label("SET", "Treats multiple sclerosis.")]})
+    mappings = {"prednisolone": mapping("prednisolone", "C1", ("X",))}
+    items, review = run([row("r", ("X",))], mappings, chembl, fda)
+    by_name = {a.drug: a for a in items}
+    assert sorted(by_name) == [
+        "dimethyl fumarate",
+        "interferon beta-1a",
+        "monomethyl fumarate",
+        "peginterferon beta-1a",
+        "prednisolone",
+    ]
+    pred = by_name["prednisolone"]
+    assert pred.sources == ("chembl", "fda_label")
+    assert pred.chembl_id == "C1"
+    assert pred.withdrawn is False  # the acetate is not withdrawn
+    overrides = [hand("exclude", "prednisolone acetate", row_id="r")]
+    _, review = run([row("r", ("X",))], mappings, chembl, fda, overrides)
+    assert review.hand[0].endswith("exclude (no match)")
+
+
+def test_review_lines_clean_and_unique() -> None:
+    mappings, chembl = cd20_world()
+    items, review = run(
+        [row("cd20", ("CD20",))],
+        mappings,
+        chembl,
+        overrides=[
+            hand("exclude", "Ofatumumab"),
+            hand("add", "Zilucoplan", row_id="c5", disease="MG", source_url="https://h"),
+        ],
+    )
+    assert "  " not in "".join(review.hand)
+    assert review.hand[0] == "cd20 × MS: Ofatumumab — exclude"
+    assert "zilucoplan" in {a.drug for a in items}
+    chembl2 = FakeChembl(
+        {"C1": mol("Same"), "C2": mol("Same")},
+        [mech("C1", "T1"), mech("C2", "T1")],
+        {"C1": [ind("Multiple Sclerosis", 4)], "C2": [ind("Multiple Sclerosis", 4)]},
+    )
+    _, review2 = run([row("r", ("X",))], {"same": mapping("same", "C1", ("X",))}, chembl2)
+    assert review2.one_source == ["r × MS: same — ChEMBL only"]

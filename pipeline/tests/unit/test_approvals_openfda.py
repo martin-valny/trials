@@ -17,7 +17,8 @@ LABEL_BODY = {
             "indications_and_usage": ["INDICATIONS: for A.", "Also for B."],
             "openfda": {"generic_name": ["DRUGNAME"]},
         },
-        {"set_id": "abc-2", "openfda": {"generic_name": ["DRUGNAME"]}},
+        {"set_id": "abc-2", "openfda": {"generic_name": ["DRUGNAME", "OTHER"]}},
+        {"set_id": "abc-3", "spl_product_data_elements": ["Brand drugname X", "Y"]},
     ]
 }
 
@@ -40,11 +41,20 @@ def test_openfda_labels_reduced() -> None:
             "set_id": "abc-1",
             "generic_name": "DRUGNAME",
             "indications": "INDICATIONS: for A. Also for B.",
+            "product": "",
         },
-        {"set_id": "abc-2", "generic_name": "DRUGNAME", "indications": ""},
+        {"set_id": "abc-2", "generic_name": "DRUGNAME; OTHER", "indications": "", "product": ""},
+        {
+            "set_id": "abc-3",
+            "generic_name": "",
+            "indications": "",
+            "product": "Brand drugname X",
+        },
     ]
     params = seen[0].url.params
-    assert params["search"] == 'openfda.generic_name:"drugname"'
+    assert params["search"] == (
+        'openfda.generic_name:"drugname" spl_product_data_elements:"drugname"'
+    )
     assert params["limit"] == "100"
     assert seen[0].url.path == "/drug/label.json"
 
