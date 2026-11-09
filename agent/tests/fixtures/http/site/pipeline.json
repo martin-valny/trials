@@ -1,0 +1,150 @@
+{
+ "diseases": [
+  {
+   "code": "MS",
+   "label": "Multiple sclerosis"
+  },
+  {
+   "code": "MG",
+   "label": "Myasthenia gravis"
+  },
+  {
+   "code": "NMOSD",
+   "label": "NMOSD"
+  },
+  {
+   "code": "CIDP",
+   "label": "CIDP"
+  },
+  {
+   "code": "MOGAD",
+   "label": "MOGAD"
+  },
+  {
+   "code": "AE",
+   "label": "Autoimmune encephalitis"
+  }
+ ],
+ "rows": [
+  {
+   "ap": {
+    "CIDP": [
+     {
+      "d": "obinutuzumab",
+      "src": [
+       "chembl"
+      ],
+      "url": "https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL1743048/",
+      "wd": true
+     }
+    ],
+    "MS": [
+     {
+      "d": "ocrelizumab",
+      "src": [
+       "chembl",
+       "fda_label"
+      ],
+      "url": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ocrelizumab"
+     },
+     {
+      "d": "ofatumumab",
+      "src": [
+       "chembl",
+       "fda_label"
+      ],
+      "url": "https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL1743048/"
+     }
+    ],
+    "NMOSD": [
+     {
+      "d": "rituximab",
+      "reg": "PMDA",
+      "src": [
+       "hand"
+      ],
+      "url": "https://example.org/rituximab-nmosd",
+      "y": 2022
+     }
+    ]
+   },
+   "blurb": "Antibodies that remove CD20-bearing B cells; the best-established way to quiet B-cell-driven disease.",
+   "family": "b-cell-depletion",
+   "gene": "MS4A1",
+   "id": "cd20",
+   "label": "CD20",
+   "marks": [
+    {
+     "c": 2,
+     "drug": "example drug",
+     "dz": [
+      "MS"
+     ],
+     "est": true,
+     "n": "NCT90000001",
+     "s": "stop",
+     "sp": 0,
+     "y": 2024,
+     "y2": 2026
+    },
+    {
+     "c": 2,
+     "drug": "example drug",
+     "dz": [
+      "MS"
+     ],
+     "est": true,
+     "n": "NCT90000002",
+     "s": "run",
+     "sp": 1,
+     "y": 2024,
+     "y2": 2026
+    },
+    {
+     "c": 2,
+     "drug": "example drug",
+     "dz": [
+      "MS"
+     ],
+     "est": true,
+     "n": "NCT90000004",
+     "s": "run",
+     "sp": 1,
+     "y": 2024,
+     "y2": 2026
+    }
+   ],
+   "order": 1,
+   "related": [
+    "cd19",
+    "cd20-car-t"
+   ],
+   "sub": "MS4A1 \u00b7 antibodies"
+  }
+ ],
+ "sponsors": [
+  {
+   "kind": "industry",
+   "parent": "Acme Biotech",
+   "raw": "Acme Biotech"
+  },
+  {
+   "kind": "industry",
+   "parent": "Example Pharma",
+   "raw": "Example Pharma"
+  }
+ ],
+ "trials": {
+  "NCT90000001": {
+   "r": "Not given",
+   "t": "Study NCT90000001",
+   "why": "Sponsor decision after interim safety review"
+  },
+  "NCT90000002": {
+   "t": "Study NCT90000002"
+  },
+  "NCT90000004": {
+   "t": "Study NCT90000004"
+  }
+ }
+}

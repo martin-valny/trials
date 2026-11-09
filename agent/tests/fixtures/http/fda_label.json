@@ -1,0 +1,18 @@
+{
+ "results": [
+  {
+   "set_id": "9da42362-3bb5-4b83-b4bb-b59fd4e55f0d",
+   "warnings_and_cautions": [
+    "5 WARNINGS AND PRECAUTIONS Infusion Reactions: Management recommendations for infusion reactions depend on the type and severity of the reaction. Permanently discontinue OCREVUS if a life-threatening or disabling infusion reaction occurs ( 2.3 , 5.1 ) Infections: Serious, including life-threatening and fatal infections, have occurred. Delay OCREVUS administration in patients with an active infection until the infection is resolved. Vaccination with live-attenuated or live vaccines is not recommended during treatment with OCREVUS and after discontinuation, until B-cell repletion ( 5.2 ) Progressive Multifocal Leukoencephalopathy (PML): Withhold OCREVUS at the first sign or symptom suggestive of PML ( 5.3 ) Reduction in Immunoglobulins: Monitor the level of immunoglobulins at the beginning of treatment. Monitor during and after discontinuation of treatment with OCREVUS, until B-cell repletion, and especially when recurrent serious infections are suspected. Consider discontinuing OCREVUS in patients with serious opportunistic or recurrent serious infections, and if prolonged hypogammaglobulinemia requires treatment with intravenous immunoglobulins ( 2.1 , 5.4 ) Malignancies: An increased risk of malignancy, including breast cancer, may exist with OCREVUS ( 5.5 ) Immune-Mediated Colitis: Immune-mediated colitis has been reported in the postmarketing setting. Monitor patients for new or persistent diarrhea or other gastrointestinal symptoms, and evaluate promptly if colitis is suspected ( 5.6 ) Liver Injury: Clinically significant liver injury has occurred. Obtain serum aminotransferases, alkaline phosphatase, and bilirubin levels before initiating OCREVUS, and during treatment as clinically indicated. Discontinue OCREVUS in patients with evidence of liver injury in the absence of an alternative etiology ( 5.7 ). 5.1 Infusion Reactions OCREVUS can cause infusion reactions, which can include pruritus, rash, urticaria, erythema, bronchospasm, throat irritation, oropharynge"
+   ],
+   "indications_and_usage": [
+    "1 INDICATIONS AND USAGE OCREVUS is indicated for the treatment of: Relapsing forms of multiple sclerosis (MS), to include clinically isolated syndrome, relapsing-remitting disease, and active secondary progressive disease, in adults Primary progressive MS, in adults Relapsing-remitting MS, in pediatric patients 10 years of age and older who weigh 25 kg or more. OCREVUS is a CD20-directed cytolytic antibody indicated for the treatment of: Relapsing forms of multiple sclerosis (MS), to include clinically isolated syndrome, relapsing-remitting disease, and active secondary progressive disease, in"
+   ],
+   "openfda": {
+    "generic_name": [
+     "OCRELIZUMAB"
+    ]
+   }
+  }
+ ]
+}

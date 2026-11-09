@@ -1,0 +1,10 @@
+{
+ "mechanisms": [
+  {
+   "mechanism_of_action": "B-lymphocyte antigen CD20 binding agent",
+   "action_type": "BINDING AGENT",
+   "max_phase": 4,
+   "molecule_chembl_id": "CHEMBL2108041"
+  }
+ ]
+}

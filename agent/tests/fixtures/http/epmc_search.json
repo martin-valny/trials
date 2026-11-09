@@ -1,0 +1,33 @@
+{
+ "hitCount": 5762,
+ "resultList": {
+  "result": [
+   {
+    "id": "42949019",
+    "source": "MED",
+    "pmid": "42949019",
+    "title": "Ocrelizumab treatment and disability progression in non-Hispanic Black and Hispanic or Latino individuals with relapsing multiple sclerosis: A post hoc analysis of the OPERA I and II trials.",
+    "pubYear": "2026",
+    "abstractText": "<h4>Background</h4>Racial and ethnic disparities are evident in multiple sclerosis.<h4>Objectives</h4>To assess whether disease progression and treatment response differ between non-Hispanic Black or Hispanic/Latino and non-Hispanic White people with relapsing multiple sclerosis.<h4>Methods</h4>This post hoc analysis included people with relapsing multiple sclerosis from ocrelizumab trials (NCT01247324/NCT01412333) self-reporting as non-Hispanic Black (<i>n</i>\u2009=\u200965), Hispanic/Latino (<i>n</i>\u2009=\u2009213), or non-Hispanic White (<i>n</i>\u2009=\u20091350). Genetic ancestry was analyzed for consenting participants (<i>n</i>\u2009=\u20091138). In addition, 24-week composite confirmed disability progression risk and CD19<sup>+</sup> B cells were compared between subgroups.<h4>Results</h4>In the interferon beta-1a treatment arm, non-Hispanic Black and Hispanic/Latino people with relapsing multiple sclerosis had increased 24-week cCDP risk compared with non-Hispanic White people with relapsing multiple sclerosis (hazard ratio (95% confidence interval) non-Hispanic Black: 3.0 (1.4-6.5); <i>p</i>\u2009=\u20090.005; Hispanic/Latino: 2.3 (1.6-3.4); <i>p</i>\u2009<\u20090.001). Composite confirmed disability progression risk was greater in people with relapsing multiple sclerosis with higher African (hazard ratio: 4.4 (1.7-11.2); <i>p</i>\u2009=\u20090.002) or Americas ancestry (hazard ratio: 5.8 [2.7-12.4]; <i>p</i>\u2009<\u20090.001) than European ancestry. Non-Hispanic Black and Hispanic/Latino people with relapsing multiple sclerosis had increased baseline CD19<sup>+</sup> B cells. Compared with interferon beta-1a, ocrelizumab reduced B cells in all groups (<i>p</i>\u2009<\u20090.001) and decreased composite confirmed disability progression risk in all people with relapsing multiple sclerosis, including non-Hispanic Black (hazard ratio: 0.41 (0.13-1.29); <i>p</i>\u2009=\u20090.13) and Hispanic/Latino (hazard ratio: 0.38 (0.20-0.72); <i>p</i>\u2009=\u20090.003).<h4>Conclusion</h4>Compared with non-Hispanic White people, non-Hispanic Black and Hispanic/Latino people with relapsing multiple sclerosis showed higher disease progression risk. Ocrelizumab reduced composite confirmed disability progression risk in people with relapsing multiple sclerosis regardless of race, ethnicity, or genetic ancestry.",
+    "journalInfo": {
+     "journal": {
+      "title": "Multiple sclerosis (Houndmills, Basingstoke, England)"
+     }
+    }
+   },
+   {
+    "id": "42768184",
+    "source": "MED",
+    "pmid": "42768184",
+    "title": "Real-World Outcomes of Ocrelizumab and Ofatumumab Treatment in Pediatric-Onset Multiple Sclerosis.",
+    "pubYear": "2026",
+    "abstractText": "<h4>Background and objective</h4>Ocrelizumab and ofatumumab are highly effective disease-modifying therapies (DMTs) for adult-onset multiple sclerosis and are increasingly used in pediatric-onset multiple sclerosis. However, there is a paucity of data on their safety and efficacy in pediatric-onset multiple sclerosis. We aimed to describe real-world outcomes of ocrelizumab and ofatumumab in a single center cohort of patients with pediatric-onset multiple sclerosis.<h4>Methods</h4>A retrospective cohort study of pediatric patients evaluated at Children's National Hospital between 2015 and 2026 who fulfilled 2017 McDonald criteria for relapsing-remitting multiple sclerosis and were treated with either ocrelizumab or ofatumumab. Patients were included regardless of whether they were treatment na\u00efve or switching from a prior DMT. Primary outcomes were clinical relapse or radiologic worsening with new/enlarging T2 or gadolinium-enhancing lesions on magnetic resonance imaging. Secondary outcomes included safety and tolerability outcomes characterized by frequency and severity of infections, medication side effects, and hypogammaglobulinemia. Statistical analysis included descriptive statistics and an exploratory Kaplan-Meier survival analysis.<h4>Results</h4>Forty-one patients were included, with mean age at diagnosis of 15 years (range 8-17 years). There were 32/41 (78%) patients treated with ocrelizumab and 9/41 (22%) treated with ofatumumab; 22/41 (54%) received these agents as first-line DMTs. There were 19/41 (46%) patients prescribed a previous DMT, and radiologic worsening/clinical relapse was the most common reason for switching (9/19, 47%). Only 1/41 (2%) experienced a clinical relapse occurring >\u20093 months after ocrelizumab initiation, with an annualized relapse rate of 0.012. There were 3/41 (7%) patients who had new or enlarged T2 hyperintense lesions after re-baseline magnetic resonance imaging. There were 5/41 (12%) patients who experienced an infusion or injection-site reaction, which were all mild and managed conservatively. No patients discontinued ocrelizumab or ofatumumab because of adverse events.<h4>Conclusions</h4>These results provide descriptive real-word data on the use of ocrelizumab and ofatumumab, especially when used as a first-line DMT in pediatric-onset multiple sclerosis. Although limited by a short follow-up period, our real-world findings provide safety and effectiveness data to inform DMT selection and shared decision making with families.",
+    "journalInfo": {
+     "journal": {
+      "title": "Paediatric drugs"
+     }
+    }
+   }
+  ]
+ }
+}
