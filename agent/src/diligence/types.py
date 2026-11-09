@@ -48,7 +48,8 @@ class Sentence(BaseModel):
     id: str
     section: Section
     text: str
-    cites: Annotated[list[CiteId], Field(min_length=1)]
+    # May be empty at schema level; the checker removes uncited sentences.
+    cites: list[CiteId]
 
 
 class Judgement(BaseModel):

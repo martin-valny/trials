@@ -51,9 +51,8 @@ def test_sentence_cite_format_rejected(cite: str) -> None:
         _sentence([cite])
 
 
-def test_sentence_requires_a_cite() -> None:
-    with pytest.raises(ValidationError):
-        _sentence([])
+def test_sentence_allows_empty_cites() -> None:
+    assert _sentence([]).cites == []
 
 
 def test_run_record_roundtrip() -> None:
