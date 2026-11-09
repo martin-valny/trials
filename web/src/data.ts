@@ -1,5 +1,5 @@
 import { normalizeFile } from "./lib/explorer";
-import type { ChangesFile, ExplorerFile, GraphFile, Meta, PipelineFile, TrialFile, TrialsIndex, Window } from "./types";
+import type { ChangesFile, ExplorerFile, GraphFile, Meta, PipelineFile, RiskFile, TrialFile, TrialsIndex, Window } from "./types";
 
 const base = (): string => import.meta.env.BASE_URL + "data/";
 
@@ -29,3 +29,6 @@ export const loadGraph = (): Promise<GraphFile | null> => fetchJson<GraphFile>("
 
 /** The pipeline figure's data (pipeline.json); null when the refresh did not write it (R19). */
 export const loadPipeline = (): Promise<PipelineFile | null> => fetchJson<PipelineFile>("pipeline.json");
+
+/** The stop-risk estimates (risk.json); null when the refresh did not write it. */
+export const loadRisk = (): Promise<RiskFile | null> => fetchJson<RiskFile>("risk.json");

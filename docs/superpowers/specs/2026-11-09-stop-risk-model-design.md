@@ -71,9 +71,9 @@ Allowed (from normalized tables, raw study where needed):
 - phase; allocation, masking, number of arms (design);
 - planned design scale only where the record still states it as planned (see the enrollment rule below);
 - sponsor class (industry, academic, other), whether there is more than one sponsor or collaborator;
-- number of sites and of countries at the time of the record, region mix;
+- number of sites and of countries at the time of the record, region mix (a record that lists no sites yet gives missing values, not zero);
 - number of primary and secondary outcomes;
-- condition category (broad, e.g. via MeSH tree or a small mapping), number of conditions;
+- condition category (broad, e.g. via MeSH tree or a small mapping), number of conditions; "Neoplasms" reached only through the paraneoplastic-syndromes chain (MeSH files some autoimmune conditions there) is not counted;
 - intervention type mix, number of experimental interventions, placebo arm present;
 - start year;
 - **sponsor track record, time-aware**: the share of this sponsor's earlier trials (finished before this trial started) that stopped early, with a count; computed only from trials that ended before the start date. Martin, 2026-11-09: keep it. Live scoring reads a committed **aggregate** table (one row per normalized sponsor: earlier trials, stopped, as-of date; no trial records), an explicit exception to "never commit real data" limited to these counts. As a factor it is worded as a bare count, e.g. "Sponsor's earlier trials: 9 of 40 stopped early (registry)", never as a judgement; the per-trial switch hides it with everything else. Sponsors with fewer than 5 earlier trials get a neutral "few earlier trials" value rather than a noisy rate (builder may tune the floor).
@@ -86,8 +86,8 @@ Excluded because they are set or changed at the end of a trial: `why_stopped`, r
 - Baseline: logistic regression on phase, sponsor class and start year.
 - Candidate: scikit-learn `HistGradientBoostingClassifier` (no new dependency), calibrated (isotonic or Platt on a calibration fold).
 - Ship the candidate only if its test AUC beats the baseline by a margin fixed before looking (proposal: 0.02) and calibration is no worse; otherwise ship the baseline and say so on Methods.
-- Range per trial: a bootstrap ensemble (proposal: 20 refits); the range is the 10th–90th percentile of the members' predictions.
-- Factors per trial: the top three contributions to that trial's score, faithful to the shipped model (coefficients times values for logistic; TreeSHAP or an equivalent exact method for boosting; a new dependency such as `shap` is acceptable if needed). Each factor is turned into plain words by a small hand-kept label file.
+- Range per trial: a bootstrap ensemble (proposal: 20 refits); the range is the members' 10th–90th percentile spread placed around the shipped estimate p: lo = p − (median − q10), hi = p + (q90 − median), clipped to [0, 1] (Ruling 11).
+- Factors per trial: the top three contributions to that trial's score, faithful to the shipped model (coefficients times values for logistic; TreeSHAP or an equivalent exact method for boosting; a new dependency such as `shap` is acceptable if needed). Each factor is turned into plain words by a small hand-kept label file. The words describe the trial's own value ("Sites planned: 112", "Phase 3 trial", "Registry files it under: Neoplasms"); the contribution's sign only sets raises/lowers (finish review, 2026-11-09).
 - Typical rate: the observed stop rate in the training set for the same phase (and sponsor class if it differs materially), shown next to every score.
 
 ### 6.4 Evaluation
@@ -112,8 +112,8 @@ scikit-learn is pinned to a minor version in `pyproject.toml`; the loader accept
 
 ### 6.6 `risk.json` (contract sketch)
 - `model`: version, trained date, test AUC (model and baseline), in-area AUC and n, calibration points, Brier, which model shipped and why, feature list, exclusions, `per_trial` (bool from config).
-- `trials`: per NCT, `p`, `lo`, `hi`, `typical`, `typical_basis` (e.g. "phase 3 drug trials"), `factors` (up to three: label, direction). When `per_trial` is false, this block is omitted.
-- `targets`: per pipeline row (and per row × disease), counts of scored running trials, median `p` and the typical rate, so target-level summaries survive with the switch off.
+- `trials`: per NCT, `drug` (the figure row's canonical name, in registry casing when it is just the registered name lower-cased; else the first experimental drug or biologic as registered), `p`, `lo`, `hi`, `typical`, `basis` (the trials the typical rate is drawn from, e.g. "phase 3 drug trials"), `factors` (up to three: label, direction). When `per_trial` is false, this block is omitted. Running-status trials that are finished in all but status (active, not recruiting with an actual primary completion date in the past, or results posted) go to `not_scored` with the reason "primary completion reached" / "results posted".
+- `targets`: per pipeline row (and per row × disease), counts of scored running trials, median `p` and the typical rate, so target-level summaries survive with the switch off. With the switch off, summaries of fewer than 3 trials are left out (they would give away single estimates).
 
 ## 7. Surfaces (web)
 

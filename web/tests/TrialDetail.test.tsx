@@ -136,3 +136,48 @@ test("results link shown only when has_results", async () => {
   await screen.findByRole("heading", { level: 1, name: trial.title });
   expect(screen.queryByRole("link", { name: /Results posted/ })).toBeNull();
 });
+
+test("trial page shows estimate and note", async () => {
+  stubFetch();
+  show();
+  const sec = await screen.findByRole("region", { name: "Estimated chance of stopping early" });
+  expect(sec).toHaveTextContent("Estimated chance of stopping early: 24% (24–25), typical 20% for phase 2 drug trials");
+  expect(within(sec).getByRole("img", { name: "Estimated 24% (24–25); typical 20%" })).toBeInTheDocument();
+  const factors = within(sec).getByRole("list", { name: "Main factors" });
+  expect(factors).toHaveTextContent("Sites planned: 1");
+  expect(factors).not.toHaveAttribute("aria-label");
+  expect(factors).toHaveAttribute("aria-labelledby");
+  expect(within(sec).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
+});
+
+test("trial page shows Not scored reason", async () => {
+  stubFetch();
+  show("NCT04334031");
+  expect(await screen.findByText("Not scored: phase not 1–3")).toBeInTheDocument();
+  expect(screen.queryByText(/^Estimated chance of stopping early:/)).not.toBeInTheDocument();
+});
+
+test("trial page shows no estimate when per-trial estimates are off or risk.json is missing", async () => {
+  const risk = readFixture<Record<string, unknown>>("risk.json");
+  delete risk.trials;
+  stubFetch({ "risk.json": risk });
+  const a = show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByText(/stopping early/)).not.toBeInTheDocument();
+  a.unmount();
+
+  stubFetch({ "risk.json": 404 });
+  show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByText(/stopping early/)).not.toBeInTheDocument();
+});
+
+test("a running trial finished in all but status shows why it is not scored", async () => {
+  const risk = readFixture<{ not_scored: Record<string, string>; trials: Record<string, unknown> }>("risk.json");
+  risk.not_scored.NCT04334031 = "primary completion reached";
+  stubFetch({ "risk.json": risk });
+  show("NCT04334031");
+  expect(await screen.findByText("Not scored: primary completion reached")).toBeInTheDocument();
+});

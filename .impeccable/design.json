@@ -455,7 +455,47 @@
       "name": "Site nav",
       "kind": "custom",
       "refersTo": "",
-      "description": "Pipeline, Approaches, Changes, Trials, Methods (no Explore entry; /explore is linked only from Methods). On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
+      "description": "Pipeline, Watchlist, Approaches, Changes, Trials, Methods (no Explore entry; /explore is linked only from Methods). On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Risk scale",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Hairline 0-60% track; ring = estimate; pale band = range, with an open-end arrowhead when it runs past 60%; short ink tick = typical rate; the ring becomes a right-pointing arrowhead when the estimate is above 60%. Always also written as a number.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Target panel f (stop risk)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Sixth lettered section on a target page (f, after By disease): a computed claim line, then one row per scored running trial (highest estimate first) with the scale, the estimate against typical in words, and up to three factors (a bare-text disclosure on a phone). Respects the disease chip; target summary only when per_trial is off.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Watchlist (/watchlist)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Toolbar of Disease, Company and Target multi-selects plus a sort (estimate or difference from typical), a claim line, the standing note and a table of scored running trials with the scale. 50 rows and a 'Show N more' button; filters and sort in the URL; factors as a phone disclosure.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial-page estimate block",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Under the status block: 'Estimated chance of stopping early: N% (range), typical M% for phase X', the scale with its axis, the factors and the standing note. Nothing when the trial is not scored or per_trial is off.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Methods calibration figure",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "SVG of estimated chance against observed share stopped, one ink point per tenth of the held-out trials, hairline axes and a dashed diagonal for a perfect match, beside a metrics table; in-area metric shown as 'too few to judge' under 300 trials.",
       "html": "",
       "css": ""
     }

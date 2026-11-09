@@ -50,6 +50,7 @@ def main(out_dir: Path) -> None:
             "approaches_dir": fixtures / "approaches",
             "sponsors_dir": fixtures / "sponsors",
             "approvals_dir": fixtures / "approvals",
+            "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk"}),
         }
     )
     with tempfile.TemporaryDirectory() as tmp:

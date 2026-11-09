@@ -16,7 +16,8 @@ flowchart LR
     DIFF --> STORE[(store: current/, previous/,<br/>history/*.parquet)]
     STORE --> PROMOTE[promote raw snapshot<br/>raw/YYYY-MM-DD.jsonl.gz]
     PROMOTE --> EXPL[explorer stage<br/>features, UMAP layout, outcome labels,<br/>neighbourhood statistic]
-    EXPL --> EXPORT[export site JSON<br/>changes, trials, meta, explorer]
+    EXPL --> RISK[stop_risk stage<br/>score running trials, optional R19]
+    RISK --> EXPORT[export site JSON<br/>changes, trials, meta, explorer, risk]
     EXPORT --> COORDS[(save explorer/coords.parquet)]
     COORDS --> LOG[run_log: success]
     LOG --> DATA[(data branch<br/>orphan commit)]
@@ -34,6 +35,12 @@ After the store write and snapshot promotion, and before export, `pipeline._expl
 4. The result is written to the site as `explorer.json`. Trial files gain `brief_summary`, `eligibility` and `has_results`.
 
 Unlike the export, a failed explorer build does not fail the run: it becomes an `explorer:` run warning, the site is exported without `explorer.json` (a stale one is removed, so the page says the map appears after the next daily update) and the saved coordinates are kept. A UMAP failure that falls back to a flat layout is an `explorer_layout_fallback:` warning. `rebuild` runs the same stage for the final day, with the same handling.
+
+## Stop-risk stage
+
+After the pipeline figure and mechanism graph and before export, `pipeline._stop_risk` (`trialradar.risk.apply`) scores the running drug and biologic trials of phase 1 to 3 with the committed model and writes `risk.json`: per-trial estimate, range, typical rate and up to three factors (omitted when `risk.per_trial` is false), the `not_scored` reasons, per-target and per-target-by-disease summaries, and the model block (version, refit window). The stage is optional (R19): a missing or mismatched artefact, a scikit-learn minor version other than the card's, or any other failure becomes one `stop_risk:` run warning, the site is exported without `risk.json` (a stale one is removed) and the web shows "Estimates appear after the next daily update". `rebuild` runs it for the final day.
+
+Training is never part of the run. `pipeline/scripts/train_stop_risk.py` is run by hand with network access: it pulls finished trials year by year into a cache, fits the baseline and the calibrated boosted ensembles, applies the ship rule (boosted ships only if AUC is 0.02 higher and Brier no worse), and writes the committed artefacts to `config/risk/`: `model.joblib` (about 7 MB), `card.json` (metrics, filter, features, exclusions, typical rates), `heldout.parquet`, `sponsor_history.csv`; `factor_labels.csv` is hand-kept. `tests/unit/test_risk_card.py` reloads the model and recomputes the card's numbers. See `config/risk/README.md`.
 
 ## Principles
 
@@ -56,7 +63,11 @@ Unlike the export, a failed explorer build does not fail the run: it becomes an 
 | `quality` | Raw schema, null-rate, date-order, duplicate and row-drop checks |
 | `snapshot`, `store` | Raw snapshot staging/promotion; crash-safe Parquet store |
 | `explorer/*` | Map data: `extras`, `drugs`, `outcomes`, `features`, `layout`, `stats`, `build` (see Explorer stage) |
-| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json`, `explorer.json` |
+| `risk/scope`, `risk/fields`, `risk/features` | Which trials are covered and labelled; raw fields; the start-time feature frame |
+| `risk/model`, `risk/evaluate` | Baseline logistic and calibrated boosted recipes, bootstrap ensemble; AUC, Brier, calibration |
+| `risk/sponsors`, `risk/explain` | Sponsor track record (point-in-time in training); contributions and plain-words factors |
+| `risk/artefacts`, `risk/apply` | Save and load of `config/risk/`; the daily scoring that builds `risk.json` |
+| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json`, `explorer.json`, `pipeline.json`, `mechanisms.json`, `risk.json` |
 | `pipeline`, `cli` | Orchestration, `rebuild`, `trialradar run`, `check`, `rebuild` |
 
 ## Workflows

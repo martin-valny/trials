@@ -39,10 +39,16 @@ def nct(study: dict[str, Any]) -> str:
 
 
 def clone(nct_id: str) -> dict[str, Any]:
+    # Clones differ in their number of secondary outcomes so the stop-risk estimates spread.
+    secondary = [
+        {"measure": f"Secondary outcome {k}", "timeFrame": "96 weeks"}
+        for k in range(int(nct_id[-2:]) % 6 * 2 + 1)
+    ]
     return make_study(
         nct_id,
         **{
             "conditionsModule.conditions": ["Multiple Sclerosis"],
+            "outcomesModule.secondaryOutcomes": secondary,
             "statusModule.primaryCompletionDateStruct": {"date": "2026-06-01", "type": "ESTIMATED"},
         },
     )
@@ -126,6 +132,7 @@ class Env:
                 "approaches_dir": fixtures / "approaches",
                 "sponsors_dir": fixtures / "sponsors",
                 "approvals_dir": fixtures / "approvals",
+                "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk"}),
             }
         )
         self.store_root = root / "data"

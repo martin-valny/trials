@@ -10,6 +10,7 @@ import { Brand, SiteNav } from "./components/SiteNav";
 import { ThemeSwitch } from "./components/ThemeSwitch";
 import { TrialDetail } from "./components/TrialDetail";
 import { TrialsList } from "./components/TrialsList";
+import { WatchlistPage } from "./components/watchlist/WatchlistPage";
 
 /** The old /mechanisms/... address: same path and query under /approaches. */
 function MechanismsRedirect() {
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <Routes>
           <Route path="/" element={<PipelinePage />} />
           <Route path="/target/:slug" element={<TargetPage />} />
+          <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/mechanisms/*" element={<MechanismsRedirect />} />
           <Route path="/approaches" element={<Navigate to="/approaches/targeted" replace />} />

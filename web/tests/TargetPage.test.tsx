@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { axisStart } from "../src/components/target/TargetTimeline";
-import type { PipelineFile } from "../src/types";
+import type { PipelineFile, RiskFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
 function Where() {
@@ -344,4 +344,122 @@ test("panel e on a phone is one block per disease", async () => {
   expect(within(blocks[0] as HTMLElement).getAllByText("P1").length).toBe(1);
   expect(within(blocks[0] as HTMLElement).getByRole("link", { name: "ocrelizumab" })).toBeInTheDocument();
   expect(e.querySelector(".dzh")).toBeNull();
+});
+
+// ---------------------------------------------------------------- f. stop-risk estimates
+const RISK_H = "Running trials, estimated chance of stopping early";
+const NOTE =
+  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy.";
+const riskPanel = () => screen.getByRole("region", { name: RISK_H });
+
+test("renders the risk panel with heading and rows", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(within(panel).getByText("f")).toHaveClass("ltr");
+  // f follows e ("By disease") on the page
+  expect(screen.getByRole("heading", { name: "CD20 by disease" }).compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(panel).toHaveTextContent("CD20 · All diseases · 7 running. Tick = typical for phase 2 drug trials.");
+  const rows = within(within(panel).getByRole("list", { name: "Running trials by estimate" })).getAllByRole("listitem");
+  expect(rows).toHaveLength(7);
+  // Highest estimate first; a near-zero range never reads "(0–0)".
+  expect(rows[0]).toHaveTextContent("66% (64–68)");
+  expect(rows.find((r) => r.textContent?.includes("NCT90000006"))).toHaveTextContent("<1% (<1–<1)");
+  expect(panel.textContent).not.toMatch(/\(0–/);
+  const row = rows.find((r) => r.textContent?.includes("NCT90000002"))!;
+  // risk.json's drug name (registry casing) over the figure's lower-case name
+  expect(row).toHaveTextContent("Example Drug · Phase 2 · Example Pharma");
+  expect(row).toHaveTextContent("24% (24–25)");
+  expect(row).toHaveTextContent("above typical 20%");
+  expect(within(row).getByRole("img", { name: "Estimated 24% (24–25); typical 20%" })).toBeInTheDocument();
+  expect(within(row).getByRole("link", { name: "NCT90000002" })).toHaveAttribute("href", "/trial/NCT90000002");
+  const more = within(row).getByRole("button", { name: /Main factors/ });
+  expect(more).toHaveAttribute("aria-expanded", "false");
+  expect(row).not.toHaveTextContent("Sites planned: 1");
+  await userEvent.click(more);
+  expect(more).toHaveAttribute("aria-expanded", "true");
+  const factors = within(row).getByRole("list", { name: "Main factors" });
+  expect(within(factors).getAllByRole("listitem")).toHaveLength(3);
+  expect(factors).toHaveTextContent("Sites planned: 1");
+  expect(factors).toHaveTextContent("lowers");
+  expect(within(factors).queryByRole("link")).not.toBeInTheDocument();
+  expect(more).toHaveAttribute("aria-controls", factors.closest(".rk-why")!.id);
+  expect(within(row.querySelector(".rk-id") as HTMLElement).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(
+    "href",
+    "https://clinicaltrials.gov/study/NCT90000002",
+  );
+  expect(within(panel).getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
+  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
+});
+
+test("empty panel under disease filter", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks[0]!.dz = ["MG"]; // the stopped trial: MG has a trial but no running one
+  });
+  stubFetch({ "pipeline.json": f });
+  renderPage("/target/cd20?disease=MG");
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("No running trials with an estimate for this disease.");
+  expect(panel.textContent).not.toMatch(/NaN|0 of 0|undefined/);
+  expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
+});
+
+test("hides per-trial scores when trials block absent", async () => {
+  const risk = readFixture<Record<string, unknown>>("risk.json");
+  delete risk.trials;
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("Median estimate 24% across 7 running trials; typical 20%.");
+  expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
+  expect(within(panel).queryByRole("button", { name: /Main factors/ })).not.toBeInTheDocument();
+  expect(within(panel).queryByText(/NCT9/)).not.toBeInTheDocument();
+  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toBeInTheDocument();
+});
+
+test("without per-trial scores, a summary of fewer than three trials is not shown", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  delete risk.trials;
+  risk.targets!.cd20!.all = { n: 2, median: 0.5, typical: 0.2 };
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const panel = riskPanel();
+  expect(panel).toHaveTextContent("Too few running trials to summarise.");
+  expect(panel).not.toHaveTextContent("50%");
+  expect(panel).not.toHaveTextContent(/Median estimate/);
+});
+
+test("panel absent without risk.json", async () => {
+  stubFetch({ "risk.json": 404 });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: /What stopped, and why/ });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByRole("heading", { name: RISK_H })).not.toBeInTheDocument();
+  expect(screen.queryByText(/see Methods for accuracy/)).not.toBeInTheDocument();
+});
+
+test("panel f opens with a claim line counting trials above their typical rate", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  for (const t of Object.values(risk.trials!)) Object.assign(t, { p: 0.2, lo: 0.15, hi: 0.25, typical: 0.2 });
+  Object.assign(risk.trials!.NCT90000004!, { p: 0.5, lo: 0.4, hi: 0.6 });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const claim = within(riskPanel()).getByText(/sits? above their phase's typical rate\.$/);
+  expect(claim).toHaveTextContent("1 of 7 running CD20 trials sits above their phase's typical rate.");
+  expect(claim.compareDocumentPosition(within(riskPanel()).getByText(/^CD20 · All diseases/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("without per-trial scores, a disease whose summary was left out says too few, not none", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  delete risk.trials;
+  risk.targets!.cd20!.by_disease = {};
+  stubFetch({ "risk.json": risk });
+  renderPage("/target/cd20?disease=MS");
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  expect(riskPanel()).toHaveTextContent("Too few running trials to summarise.");
 });

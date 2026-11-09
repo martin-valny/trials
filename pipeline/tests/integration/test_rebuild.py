@@ -294,3 +294,12 @@ def test_rebuild_survives_an_explorer_failure(
     assert "explorer: RuntimeError: umap exploded" in last
     meta = json.loads((site / "meta.json").read_text(encoding="utf-8"))
     assert "explorer: RuntimeError: umap exploded" in meta["warnings"]
+
+
+def test_rebuild_writes_risk_json(env: Env, cfg: AreaConfig, tmp_path: Path) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    _, site = rebuilt(env, tmp_path)
+    doc = json.loads((site / "risk.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == D2.isoformat()
+    assert doc["model"]["version"] == "stop-risk-fixture"

@@ -26,6 +26,7 @@ A static site on GitHub Pages, rebuilt daily by GitHub Actions. Visitors arrive 
 - Registry facts available: conditions, interventions (type, name), phases, status, why stopped, enrollment, sponsor, countries, outcomes, dates. Brief summary, sex and age eligibility are cheap to add. Race/ethnicity is not in the protocol and is out of scope.
 - "Success" has no registry field. Proxies: completed vs stopped early (all trials), the drug progressing to a later phase or approval (needs drug mapping), and primary endpoint met where results are posted (a minority).
 - Molecular pathway views depend on drug → target → pathway enrichment that does not exist yet.
+- Stop-risk model (shipped): each running drug or biologic trial in Phase 1 to 3 gets an estimated chance of stopping early, with a range, the typical rate for its phase and up to three plain-words factors, on target pages, trial pages and a Watchlist route; accuracy is published on Methods (held-out AUC 0.682, in-area sample too small to judge). Trained by hand and committed under `config/risk/`; the daily run only scores. A per-trial switch in `config/area.yaml` can reduce it to target-level summaries. Wording rules: "estimated chance of stopping early", never "risk of failure"; the typical rate always beside the number; the standing note on every surface.
 
 ## Brand Commitments
 None yet. The user asked to avoid the glowing black-and-neon "AI dashboard" look.
@@ -38,6 +39,7 @@ Live data on the `data` branch (Parquet), web fixtures in `web/tests/fixtures/da
 2. Outcomes are overlays, never inputs to the layout.
 3. Show the real data at work in the first view.
 4. Every view links back to the source record on ClinicalTrials.gov.
+5. A prediction is shown with its typical rate, its range and its measured accuracy, and says it is often wrong.
 
 ## Accessibility & Inclusion
 Colour is never the only carrier of meaning (status and outcome always also as text or shape); keyboard-reachable controls; light and dark themes; reduced-motion users get a still layout.

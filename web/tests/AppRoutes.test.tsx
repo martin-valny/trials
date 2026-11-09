@@ -42,13 +42,13 @@ test("an unknown route goes to the pipeline", async () => {
   expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
 });
 
-test("the nav is Pipeline, Approaches, Changes, Trials, Methods: no Explore, no Trial map", () => {
+test("the nav is Pipeline, Watchlist, Approaches, Changes, Trials, Methods: no Explore, no Trial map", () => {
   stubFetch();
   go("/changes");
   const nav = screen.getByRole("navigation", { name: "Main" });
   expect(within(nav).queryByRole("button", { name: /Explore/ })).not.toBeInTheDocument();
   expect(within(nav).queryByText("Trial map")).not.toBeInTheDocument();
-  expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual(["Pipeline", "Approaches", "Changes", "Trials", "Methods"]);
+  expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual(["Pipeline", "Watchlist", "Approaches", "Changes", "Trials", "Methods"]);
 });
 
 test("/explore still renders the map for old bookmarks", async () => {
@@ -62,4 +62,12 @@ test("the brand links to the pipeline", () => {
   stubFetch();
   go("/changes");
   expect(screen.getByRole("link", { name: /Trial Radar/ })).toHaveAttribute("href", "/");
+});
+
+test("/watchlist renders the Watchlist", async () => {
+  stubFetch();
+  go("/watchlist");
+  await screen.findByRole("table", { name: /Running trials ranked/ });
+  expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
+  expect(screen.getByTestId("where").textContent).toBe("/watchlist");
 });

@@ -269,7 +269,7 @@ Web: `src/types.ts`, `src/data.ts`, `src/lib/risk.ts`, `src/components/risk/{Ris
 ### Task 11: Real-data preview, finish review, docs, final review
 
 **Files:**
-- Modify: `README.md` (status line, routes, a "Stop-risk estimates" section, remove "does not predict anything yet"), `DESIGN.md` (panel e, Watchlist, Methods chart), `PRODUCT.md` (capabilities), `docs/architecture.md` (stop_risk stage, risk.json), `docs/superpowers/HANDOFF.md` (§00 session entry)
+- Modify: `README.md` (status line, routes, a "Stop-risk estimates" section, remove "does not predict anything yet"), `DESIGN.md` (panel f, Watchlist, Methods chart), `PRODUCT.md` (capabilities), `docs/architecture.md` (stop_risk stage, risk.json), `docs/superpowers/HANDOFF.md` (§00 session entry)
 
 - [ ] **Step 1: Build the real-data preview** per HANDOFF §00 "Real-data preview" on port 4174 (never 4173); confirm `risk.json` exists and report: scored trials n, not-scored n, the five highest estimates with their factors, and the target summaries for the top 5 rows.
 - [ ] **Step 2: Screenshots** (fresh page per view) of `/watchlist`, one target page, a trial page and `/methods#stop-risk` at 1280 and 375, light and dark, into the session scratch.

@@ -41,6 +41,10 @@ const noMapWords = () => {
   expect(/on the map|Trial map|Show on map/.test(text), "a map link is on the page").toBe(false);
 };
 
+/** Stop-risk copy rules: an estimate is never framed as failure or trouble. */
+const BANNED = /risk of failure|likely to fail|in trouble/i;
+const noBannedWords = () => expect(BANNED.test(document.body.textContent ?? ""), "banned stop-risk wording is on the page").toBe(false);
+
 const noOldWords = () => {
   const text = document.body.textContent ?? "";
   for (const [name, re] of OLD) expect(re.test(text), `old wording "${name}" is on the page`).toBe(false);
@@ -223,4 +227,29 @@ test("Methods, with its not-yet-categorised lists, uses no old wording", async (
   // Methods keeps its own statistical wording (quoting what the map says), so only the retired
   // "sorted" names are checked on this page.
   expect(document.body.textContent).not.toMatch(/not yet sorted|unsorted names|Unclassified/i);
+});
+
+test("the stop-risk panel and the trial-page estimate never say failure or trouble", async () => {
+  stubFetch();
+  const a = render(
+    <MemoryRouter initialEntries={["/target/cd20"]}>
+      <Routes>
+        <Route path="/target/:slug" element={<TargetPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const panel = await screen.findByRole("region", { name: "Running trials, estimated chance of stopping early" });
+  for (const b of within(panel).getAllByRole("button", { name: /Main factors/ })) b.click();
+  await waitFor(() => expect(within(panel).getAllByRole("list", { name: "Main factors" }).length).toBeGreaterThan(0));
+  noBannedWords();
+  a.unmount();
+
+  renderAt(
+    <Routes>
+      <Route path="/trial/:nct" element={<TrialDetail />} />
+    </Routes>,
+    "/trial/NCT90000002",
+  );
+  await screen.findByRole("region", { name: "Estimated chance of stopping early" });
+  noBannedWords();
 });

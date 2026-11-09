@@ -44,6 +44,8 @@ from trialradar.normalize import normalize
 from trialradar.pipeline_figure.build import build_pipeline_doc
 from trialradar.pipeline_figure.io import read_figure_config
 from trialradar.relevance import filter_relevant
+from trialradar.risk.apply import build_risk_doc
+from trialradar.risk.artefacts import load as load_risk
 from trialradar.snapshot import (
     list_snapshots,
     promote_staged,
@@ -250,6 +252,31 @@ def _pipeline_figure(
     return doc, warnings
 
 
+def _stop_risk(
+    tables: Tables,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    figure: dict[str, Any] | None,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The stop-risk document (``risk.json``) for the day's running trials, plus warnings.
+
+    Optional (R19): disabled config gives no document and no warning; unreadable or
+    mismatched artefacts, or any other failure, give one ``stop_risk:`` warning and no
+    document, and the run continues."""
+    if not cfg.risk.enabled:
+        return None, []
+    for_day = day or (date.fromisoformat(figure["generated_for"]) if figure else date.today())
+    try:
+        with _stage("stop_risk", day=for_day.isoformat()) as info:
+            doc = build_risk_doc(tables, extras, cfg, load_risk(cfg.risk.dir), figure, for_day)
+            info["rows"] = len(doc.get("trials", ())) or len(doc["not_scored"])
+    except Exception as exc:  # noqa: BLE001 - the risk stage never fails the daily run
+        return None, [f"stop_risk: {_describe(exc)}"]
+    return doc, []
+
+
 def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
     with _stage("explorer_coords", **extra) as info:
         store.save_explorer_coords(coords)
@@ -411,6 +438,8 @@ def run(
         warnings += explorer_warnings
         figure, figure_warnings = _pipeline_figure(explorer, tables, cfg)
         warnings += figure_warnings
+        risk, risk_warnings = _stop_risk(tables, extras, cfg, figure, day=day)
+        warnings += risk_warnings
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
         warnings += graph_warnings
 
@@ -433,6 +462,7 @@ def run(
                 explorer=explorer,
                 mechanisms=graph,
                 pipeline=figure,
+                risk=risk,
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
@@ -577,8 +607,9 @@ def rebuild(
             tables, extras, cfg, aliases, dict, day, log_day=True
         )
         figure, figure_warnings = _pipeline_figure(explorer, tables, cfg, day=day)
+        risk, risk_warnings = _stop_risk(tables, extras, cfg, figure, day=day)
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
-        explorer_warnings = [*explorer_warnings, *figure_warnings, *graph_warnings]
+        explorer_warnings = [*explorer_warnings, *figure_warnings, *risk_warnings, *graph_warnings]
         if explorer_warnings:
             pending["warnings"] = json.dumps(
                 [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
@@ -596,6 +627,7 @@ def rebuild(
                 explorer=explorer,
                 mechanisms=graph,
                 pipeline=figure,
+                risk=risk,
             )
             info["rows"] = tables.trial.height
         if coords is not None:

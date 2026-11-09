@@ -1,0 +1,48 @@
+feature,kind,yes,no,text
+phase_1,phase,,,Phase {value} trial
+phase_2,phase,,,Phase {value} trial
+phase_3,phase,,,Phase {value} trial
+randomized,binary,Randomized allocation,Non-randomized allocation,
+masking_level,count,,,Blinding level: {value} of 4
+n_arms,count,,,Arms: {value}
+placebo_arm,binary,Has a placebo or sham arm,No placebo or sham arm,
+sponsor_industry,binary,Industry sponsor,Non-industry sponsor,
+sponsor_academic,binary,Non-commercial sponsor,Commercial sponsor,
+n_collaborators,count,,,Collaborators: {value}
+n_sites,count,,,Sites planned: {value}
+n_countries,count,,,Countries: {value}
+multi_region,binary,Sites span several world regions,Sites within one world region,
+n_primary_outcomes,count,,,Primary outcomes: {value}
+n_secondary_outcomes,count,,,Secondary outcomes: {value}
+n_conditions,count,,,Conditions listed: {value}
+cat_infections,category,Registry files it under: Infections,,
+cat_neoplasms,category,Registry files it under: Neoplasms,,
+cat_musculoskeletal_diseases,category,Registry files it under: Musculoskeletal Diseases,,
+cat_digestive_system_diseases,category,Registry files it under: Digestive System Diseases,,
+cat_stomatognathic_diseases,category,Registry files it under: Stomatognathic Diseases,,
+cat_respiratory_tract_diseases,category,Registry files it under: Respiratory Tract Diseases,,
+cat_otorhinolaryngologic_diseases,category,Registry files it under: Otorhinolaryngologic Diseases,,
+cat_nervous_system_diseases,category,Registry files it under: Nervous System Diseases,,
+cat_eye_diseases,category,Registry files it under: Eye Diseases,,
+cat_urogenital_diseases,category,Registry files it under: Urogenital Diseases,,
+cat_female_urogenital_diseases_and_pregnancy_complications,category,Registry files it under: Female Urogenital Diseases and Pregnancy Complications,,
+cat_pregnancy_complications,category,Registry files it under: Pregnancy Complications,,
+cat_cardiovascular_diseases,category,Registry files it under: Cardiovascular Diseases,,
+cat_hemic_and_lymphatic_diseases,category,Registry files it under: Hemic and Lymphatic Diseases,,
+cat_congenital_hereditary_and_neonatal_diseases_and_abnormalities,category,"Registry files it under: Congenital, Hereditary, and Neonatal Diseases and Abnormalities",,
+cat_skin_and_connective_tissue_diseases,category,Registry files it under: Skin and Connective Tissue Diseases,,
+cat_nutritional_and_metabolic_diseases,category,Registry files it under: Nutritional and Metabolic Diseases,,
+cat_endocrine_system_diseases,category,Registry files it under: Endocrine System Diseases,,
+cat_immune_system_diseases,category,Registry files it under: Immune System Diseases,,
+cat_disorders_of_environmental_origin,category,Registry files it under: Disorders of Environmental Origin,,
+cat_pathological_conditions_signs_and_symptoms,category,"Registry files it under: Pathological Conditions, Signs and Symptoms",,
+cat_occupational_diseases,category,Registry files it under: Occupational Diseases,,
+cat_chemically_induced_disorders,category,Registry files it under: Chemically-Induced Disorders,,
+cat_wounds_and_injuries,category,Registry files it under: Wounds and Injuries,,
+cat_mental_disorders,category,Registry files it under: Mental Disorders,,
+n_categories,count,,,Condition categories: {value}
+has_biological,binary,Includes a biological product,No biological product,
+n_experimental_interventions,count,,,Drug interventions: {value}
+sponsor_prior_n,sponsor,,,
+sponsor_prior_rate,sponsor,,,
+sponsor_few_prior,sponsor,,,

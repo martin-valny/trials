@@ -2,7 +2,7 @@
 
 **What's changing in clinical trials for a therapeutic area?** Trial Radar downloads the ClinicalTrials.gov registry once a day, compares it with the previous day, and publishes a field-level change feed (status changes, slipped primary-completion dates, enrollment swings, endpoint edits) as a static site. It runs on GitHub Actions and Pages for $0.
 
-> **Status: slice 1 of 6, plus the front door, the Explore map and the Approaches page.** The home page is a pipeline figure of MS and autoimmune-neurology drug targets (rows) by phase or disease (columns), with a company lens; each row opens a target page. Approaches (Figure 2) sorts every trial by how its treatment works, with a drug → target → pathway graph; the Explore map (Figure 1), the change feed and trial pages sit beside them. Drug mechanisms are real data from ChEMBL, pathways from Reactome. Open Targets genetic evidence and preprints are **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
+> **Status: slice 1 of 6, plus the front door, the Explore map, the Approaches page and the stop-risk estimates (Watchlist).** The home page is a pipeline figure of MS and autoimmune-neurology drug targets (rows) by phase or disease (columns), with a company lens; each row opens a target page. Approaches (Figure 2) sorts every trial by how its treatment works, with a drug → target → pathway graph; the Explore map (Figure 1), the change feed and trial pages sit beside them. Drug mechanisms are real data from ChEMBL, pathways from Reactome. Running drug trials carry an estimated chance of stopping early (see [Stop-risk estimates](#stop-risk-estimates)). Open Targets genetic evidence and preprints are **coming next** (see [Roadmap](#roadmap)). Default area: neuroimmunology.
 
 Live site: <https://martin-valny.github.io/trials/> · Architecture: [docs/architecture.md](docs/architecture.md)
 
@@ -18,11 +18,11 @@ A clinical-operations or competitive-intelligence lead wants to know *what chang
 | ClinicalTrials.gov saved-search alerts | Free, per-search email when a record changes | No field-level old→new diff, no notability, no feed across a whole area |
 | Clinical Trial Risk Tool | Scores risk from protocol documents | Different problem: it does not track registry changes over time |
 
-**What Trial Radar does not do:** it is not curated or analyst-reviewed, covers only ClinicalTrials.gov (not EU CTIS or other registries), has no history before the day it started running, and does not predict anything yet.
+**What Trial Radar does not do:** it is not curated or analyst-reviewed, covers only ClinicalTrials.gov (not EU CTIS or other registries), has no history before the day it started running, and its only prediction is the stop-risk estimate below: a statistical estimate that is often wrong.
 
 ## The front door: pipeline figure and target pages
 
-Routes: `/` the pipeline figure, `/target/:slug` a target page, `/approaches` (and `/approaches/:approach`; the old `/mechanisms/...` redirects), `/changes`, `/trials` (also the target of every "List these {n} trials →" link, with `?nct=…&from=…`), `/trial/:nct`, `/methods`. The nav is Pipeline · Approaches · Changes · Trials · Methods; `/explore` (the experimental similarity map) still works but is linked only from Methods. The pipeline figure has three arrangements: By phase, By disease and By year (`view=year`).
+Routes: `/` the pipeline figure, `/target/:slug` a target page, `/watchlist` the stop-risk watchlist, `/approaches` (and `/approaches/:approach`; the old `/mechanisms/...` redirects), `/changes`, `/trials` (also the target of every "List these {n} trials →" link, with `?nct=…&from=…`), `/trial/:nct`, `/methods`. The nav is Pipeline · Watchlist · Approaches · Changes · Trials · Methods; `/explore` (the experimental similarity map) still works but is linked only from Methods. The pipeline figure has three arrangements: By phase, By disease and By year (`view=year`).
 
 **The pipeline figure** (`/`) answers *what is being tried against which targets, by whom, and how far has it got?* One row per target class (CD20, FcRn, BTK, S1P receptor, CD19 CAR-T and so on, 28 in all, grouped into families), one dot per trial: advanced to a later phase, still running, stopped, finished with no follow-on, or status unknown. Columns are the phases or, under **By disease**, the diseases. A headline states a finding computed from the data (on the 2026-11-06 snapshot: "185 targeted-drug trials are running…"), with key numbers, a source line that says what is and is not in the figure, a **company lens** (pick Roche and the figure shows its trials and rows), up to four computed margin notes, and a "Mostly historical" tail. "Advanced" means only that the drug has a later-phase trial on the registry (the 1b rule: credited to the drug that moved on); it does not mean the drug worked. Real numbers on that snapshot: 693 of 2,987 trials sit in a row, 369 more targeted-drug trials sit in smaller classes. Under **By disease**, a short ink line along the bottom of a cell marks a target with a drug approved for that disease by any regulator (from ChEMBL, FDA labels and a small hand file, `config/approvals/`; see Methods).
 
@@ -43,6 +43,22 @@ Only registered ClinicalTrials.gov trials are in it: no preclinical programmes, 
 | `config/aliases/intervention.csv` | Also folds drug-name variants (ocr, ofatunumab and others) into one name pipeline-wide |
 
 A bad row stops the stage with `<file>:<line>: <problem>`; the run continues without `pipeline.json` and the front page shows a calm "not available" fallback (R19). To check coverage after a rebuild, run `uv run python scripts/pipeline_report.py <site_dir>` from `pipeline/`: it prints the row table, the "Other" stop-reason share, unlisted classes and sponsors (from the run warnings), comparator cases (a trial in two rows) and the size of `pipeline.json`, and exits 1 if it is missing or over 200 KB (it is about 178 KB on the real snapshot).
+
+## Stop-risk estimates
+
+**What it predicts.** For each running drug or biologic trial in Phase 1 to 3, the estimated chance that it stops early after it has started (registry status TERMINATED rather than COMPLETED), with a range and the typical rate for comparable trials. It shows on target pages (panel f), trial pages, the `/watchlist` page (all scored running trials ranked by estimate, with filters by disease, company and target) and in Methods (`/methods#stop-risk`, the model card). It is a statistical estimate from public registry data, not a statement about any sponsor or trial, and it is often wrong; every surface carries that note.
+
+**Training and test.** Trained on finished interventional drug and biologic trials of phase 1 to 3 started in 2008 or later (COMPLETED = 0, TERMINATED = 1; withdrawn, unknown and suspended trials left out), pulled 2008 to 2025 across the whole registry, not only this area: 81,655 labelled trials. The evaluation model is trained on starts up to 2015 and tested on starts 2016 to 2019 (19,782 trials, 3,392 stopped). Only facts known at the start are used: phase, design, sponsor and its earlier trials, sites and countries, outcome counts, MeSH disease categories. Enrollment is deliberately excluded (a finished trial's actual enrollment is small because it stopped), as are the stop reason, results, actual dates and the final status. The shipped model is the same recipe refit on trials started up to 2019 (later starts are biased toward early stops among the finished), and the typical rates come from the same window.
+
+**Accuracy, honestly.** On the held-out set the boosted model reaches AUC 0.682 (Brier 0.1348) against 0.567 (0.1420) for a logistic baseline, so it ranks a stopped trial above a completed one about 68 times in 100: better than chance, far from reliable. Without site and country features it still reaches 0.676, so those do not leak the label. On trials in this area only (141 trials, 29 stopped) the AUC was 0.602, but that sample is too small to say anything, and Methods shows it as "too few to judge". Each model is isotonic-calibrated, Methods plots predicted against observed stop rates on the held-out set (the calibration figure), and the range is the spread of 20 bootstrap refits placed around the estimate. A model that can be this wrong is shown next to the typical rate, never alone.
+
+**What is scored.** On the 2026-11-06 snapshot 237 running trials are scored and 440 are not (387 not phase 1 to 3, 22 whose primary completion is already reached, 19 with no drug or biologic, 12 with results posted). Estimates run from 1.5% to 42.8% with a median of 20.7%; 79 sit above the typical rate for their phase, 135 near it and 23 below. MeSH files Myasthenia Gravis under Paraneoplastic Syndromes, which climbs to Neoplasms; that path alone no longer counts as the Neoplasms category (2 scored trials keep it, both with a neoplasm among their conditions).
+
+**Text experiment.** Adding the trial's text (title, primary outcomes, eligibility) as TF-IDF or PubMedBERT features lifted AUC from about 0.685 to at most 0.701, short of the +0.03 bar set beforehand, and the gain came almost entirely from the eligibility text and looks like a proxy for era and sponsor style. Not adopted; the write-up is in [docs/superpowers/research/2026-11-09-stop-risk-text-experiment.md](docs/superpowers/research/2026-11-09-stop-risk-text-experiment.md).
+
+**The per_trial switch.** `risk.per_trial` in `config/area.yaml` (with `risk.enabled` and `risk.dir`). With `per_trial: false`, `risk.json` keeps only the per-target summaries, the Watchlist lists targets instead of trials, and trial pages show nothing; flip it if per-trial numbers should not be public. `enabled: false` skips the stage.
+
+**Where it lives.** The model and its card are committed under [`config/risk/`](config/risk/README.md) (`model.joblib`, `card.json`, `heldout.parquet`, `sponsor_history.csv`, hand-kept `factor_labels.csv`). They are made by hand with `pipeline/scripts/train_stop_risk.py` (needs network; nothing retrains automatically), and the daily `stop_risk` stage only scores. A failure there is a run warning and the site publishes without `risk.json` (R19). Spec: [docs/superpowers/specs/2026-11-09-stop-risk-model-design.md](docs/superpowers/specs/2026-11-09-stop-risk-model-design.md).
 
 ## The Explore map (Figure 1, experimental, not in the nav)
 
@@ -70,7 +86,7 @@ The graph is built by the pipeline with a seeded layout (`mechanisms.json`); pat
 
 ## How it works
 
-Daily: fetch → relevance filter → normalize → quality gate → diff → store → explorer layout → pipeline figure → mechanism graph → export → deploy. Besides the change feed, the export writes `explorer.json`, `mechanisms.json` and `pipeline.json` (the front page's only data file besides `meta.json`). Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
+Daily: fetch → relevance filter → normalize → quality gate → diff → store → explorer layout → pipeline figure → mechanism graph → stop risk → export → deploy. Besides the change feed, the export writes `explorer.json`, `mechanisms.json`, `pipeline.json` and `risk.json` (the front page's only data file besides `meta.json`). Raw snapshots are kept so the whole history can be rebuilt. Details and a diagram: [docs/architecture.md](docs/architecture.md).
 
 A change is **notable** when status changes, a primary endpoint changes, enrollment moves by 20% or more, or a primary-completion/completion date slips by 90 days or more (thresholds in `config/area.yaml`).
 
@@ -117,11 +133,11 @@ All data is public ClinicalTrials.gov registry data. It is **self-reported by sp
 - If a trial drops out of the registry response and returns, only an "added" row is recorded; field changes during its absence are not reported.
 - A partial registry response under the 25% drop threshold can still produce a burst of removed/added rows.
 - Mechanism coverage is partial (84.6% of drug-bearing trials fully mapped); trials with unmapped drugs show as "no known mechanism", and their names are listed under Unclassified › Not yet sorted on the Approaches page (or, when the trial also has a mapped drug and so sits in another approach, in the last Unclassified group, "Not yet sorted, in trials of other approaches").
-- Slice 1 has no AI and no prediction model: every value comes straight from the registry record or the committed ChEMBL mapping. The Explore layout is a deterministic dimensionality reduction of registry fields, and its success label is the proxy described above.
+- The only prediction is the stop-risk estimate (AUC 0.682 on held-out trials; see above); every other value comes straight from the registry record or the committed ChEMBL mapping. The Explore layout is a deterministic dimensionality reduction of registry fields, and its success label is the proxy described above.
 
 ## Evaluation
 
-_Added in later slices._ Planned: a labelled evaluation set for retrieval answers with citations, and a backtest for the termination-risk model. Nothing is claimed here until it is measured.
+_Added in later slices._ Planned: a labelled evaluation set for retrieval answers with citations, and the termination-risk model's held-out accuracy is reported above and on Methods (AUC 0.682); nothing else is claimed until it is measured.
 
 ## Roadmap
 
@@ -129,7 +145,7 @@ _Added in later slices._ Planned: a labelled evaluation set for retrieval answer
 2. Enrichment: drug→mechanism→target mapping from ChEMBL (done), approach bubbles and the drug → target → pathway graph (done), then Open Targets genetic evidence.
 3. Fuller frontend: landscape views, target pages.
 4. Preprints, retrieval Q&A with citations, evaluation set.
-5. Termination-risk model (with a historical backfill).
+5. Termination-risk model (done: stop-risk estimates and the Watchlist).
 6. Weekly human-approved briefing.
 
 ## Go-live status
