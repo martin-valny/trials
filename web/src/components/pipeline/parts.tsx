@@ -121,10 +121,10 @@ export function cellApproval(file: PipelineFile, state: FigureState, v: RowView,
 }
 
 /** The floor rule: a 2px ink line along the cell's bottom, with the same fact as visually hidden text. */
-export function Floor({ text }: { text: string }) {
+export function Floor({ text, onEnter, onLeave }: { text: string; onEnter?: (e: React.MouseEvent<HTMLElement>) => void; onLeave?: () => void }) {
   return (
     <>
-      <i className="floor" aria-hidden="true" title={text} />
+      <i className="floor" aria-hidden="true" onMouseEnter={onEnter} onMouseLeave={onLeave} />
       <span className="visually-hidden">{text}</span>
     </>
   );

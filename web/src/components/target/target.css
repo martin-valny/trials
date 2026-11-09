@@ -135,12 +135,9 @@ p.sec.empty-line { padding-bottom: 20px; }
 .dzl .rn em { display: inline; margin: 0; }
 .dzl .lad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .dzl .st { min-width: 0; }
-.dzl .st i { display: block; height: 6px; background: var(--pale); border-radius: 1px; }
+.dzl .st i { display: block; height: 6px; background: var(--ladder); border-radius: 1px; }
 .dzl .st i.was { background: var(--fam); }
 .dzl .st i.at { background: var(--ink); }
-:root[data-theme="dark"] .dzl .st i { background: #3d4147; }
-:root[data-theme="dark"] .dzl .st i.was { background: var(--fam); }
-:root[data-theme="dark"] .dzl .st i.at { background: var(--ink); }
 .dzl .st .ct { display: block; font-size: 11.5px; color: var(--muted); margin-top: 5px; min-height: 1.3em; line-height: 1.3; }
 .dzl .st .lb { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.2; }
 .dzl .none { margin: 0; font-size: 13px; color: var(--muted); }

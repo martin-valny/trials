@@ -573,7 +573,9 @@ describe("approvals", () => {
 
   it("hasApprovalData", () => {
     expect(hasApprovalData(f)).toBe(true);
-    expect(hasApprovalData({ ...f, rows: f.rows.map((r) => ({ ...r, ap: undefined })) })).toBe(false);
+    // The flag decides, not the rows: rows with lines but no flag are unavailable; the flag with no lines is available.
+    expect(hasApprovalData({ ...f, approvals: undefined })).toBe(false);
+    expect(hasApprovalData({ ...f, rows: f.rows.map((r) => ({ ...r, ap: undefined })) })).toBe(true);
   });
 
   it("diseaseLines order, counts and furthest", () => {

@@ -1,14 +1,14 @@
 /* The pipeline figure (front page). Tokens extend the Figure Plate's: the plate palette from explore.css plus
    the five mark colours. Red (orange in the dark theme) means "advanced to a later phase" and nothing else. */
 .pipeline, .target-page {
-  --ink: #111; --muted: #5b6268; --rule: #d6dadd; --pale: #e4e8eb; --plate: #fff; --red: #c8102e;
+  --ink: #111; --muted: #5b6268; --rule: #d6dadd; --pale: #e4e8eb; --ladder: #e4e8eb; --plate: #fff; --red: #c8102e;
   font-family: "Hanken Grotesk", system-ui, sans-serif; font-size: 13px; line-height: 1.5;
   font-feature-settings: "tnum" 1, "lnum" 1;
   color: var(--ink); background: var(--plate);
   max-width: 1440px; margin: 0 auto;
 }
 :root[data-theme="dark"] .pipeline, :root[data-theme="dark"] .target-page {
-  --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --pale: #2b2e33; --plate: #17191c; --red: #ff8a3d;
+  --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --pale: #2b2e33; --ladder: #3d4147; --plate: #17191c; --red: #ff8a3d;
 }
 /* The shared header adopts the plate's tokens, as it does on Explore. */
 :root:has(.pipeline), :root:has(.target-page) {
@@ -240,6 +240,9 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .cell.ap { padding-bottom: 12px; }
 .cell .floor { position: absolute; left: 6px; right: 6px; bottom: 4px; border-top: 2px solid var(--ink); pointer-events: auto; }
 .cell .floor::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
+/* Phone strip: no tooltip, so no hit area; the rule alone, with nothing reaching up into the marks. */
+.prow .strip .cell .floor { pointer-events: none; }
+.prow .strip .cell .floor::before { top: -4px; bottom: -1px; }
 .prow .strip .cell.ap { padding-bottom: 8px; }
 .prow .strip .cell .floor { left: 3px; right: 3px; bottom: 1px; }
 .floor-swatch { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }

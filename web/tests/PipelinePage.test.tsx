@@ -229,7 +229,7 @@ test("By disease: an approved cell has the floor rule and accessible text; withd
   expect(ms).toHaveClass("ap");
   expect(ms.querySelector(".floor")).toHaveAttribute("aria-hidden", "true");
   expect(ms).toHaveTextContent("Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
-  expect(ms.querySelector(".floor")).toHaveAttribute("title", "Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
+  expect(ms.querySelector(".floor")).not.toHaveAttribute("title");
   const nmosd = container.querySelector('[data-row="cd20"] [data-cell="NMOSD"]')!;
   expect(nmosd.querySelector(".floor")).not.toBeNull();
   expect(nmosd.querySelector(".nodot")).not.toBeNull();
@@ -288,4 +288,29 @@ test("on a phone the strip shows the floor rule in the same cell", async () => {
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+test("hovering the floor rule shows the figure's tooltip with the approval sentence", async () => {
+  stubFetch();
+  const { container } = renderPage("/?view=disease");
+  await screen.findByRole("heading", { level: 1 });
+  const floor = container.querySelector('[data-row="cd20"] [data-cell="MS"] .floor')!;
+  await userEvent.hover(floor);
+  expect(screen.getByRole("tooltip")).toHaveTextContent("Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
+  await userEvent.unhover(floor);
+  expect(screen.queryByRole("tooltip")).toBeNull();
+});
+
+test("the phone strip's floor is not interactive and its hit area stays inside the cell padding", () => {
+  const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  expect(css).toMatch(/\.prow \.strip \.cell \.floor \{ pointer-events: none; \}/);
+  expect(css).toMatch(/\.prow \.strip \.cell \.floor::before \{ top: -4px; bottom: -1px; \}/);
+});
+
+test("the ladder colour is a token with a dark value, not a hard-coded hex in target.css", () => {
+  const pipe = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  const target = readFileSync(resolve(__dirname, "../src/components/target/target.css"), "utf8");
+  expect([...pipe.matchAll(/--ladder:/g)]).toHaveLength(2);
+  expect(target).toMatch(/\.dzl \.st i \{[^}]*var\(--ladder\)/);
+  expect(target).not.toMatch(/#3d4147/);
 });

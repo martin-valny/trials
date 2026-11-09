@@ -308,6 +308,15 @@ test("panel e: a disease with no approvals reads None approved", async () => {
   expect(within(mg).getByText("None approved")).toBeInTheDocument();
 });
 
+test("panel e: a file read with zero approvals is not 'not available'", async () => {
+  const f = variant((p) => {
+    for (const r of p.rows) delete r.ap;
+  });
+  const e = await panelE("/target/cd20", f);
+  expect(within(e).queryByText(/Approval data not available/)).not.toBeInTheDocument();
+  expect(within(e).getAllByText("None approved").length).toBeGreaterThan(0);
+});
+
 test("?disease=MS marks the MS line only", async () => {
   const e = await panelE("/target/cd20?disease=MS");
   const cur = e.querySelectorAll('[aria-current="true"]');
@@ -318,6 +327,7 @@ test("?disease=MS marks the MS line only", async () => {
 test("a file without approval data says so once and has no approval column", async () => {
   const f = variant((p) => {
     for (const r of p.rows) delete r.ap;
+    delete p.approvals;
   });
   const e = await panelE("/target/cd20", f);
   expect(within(e).getByText(/Approval data not available/)).toBeInTheDocument();

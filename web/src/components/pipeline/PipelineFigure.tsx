@@ -166,7 +166,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                           onMouseLeave={() => setTip(null)}
                         />
                       )}
-                      {ap && <Floor text={ap} />}
+                      {ap && <Floor text={ap} onEnter={(e) => show(e.currentTarget, { head: ap })} onLeave={() => setTip(null)} />}
                     </div>
                   );
                 })}

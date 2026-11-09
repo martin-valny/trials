@@ -673,9 +673,9 @@ export function sourceText(a: PipelineApproval): string {
   return head ? `${head} · hand` : "hand";
 }
 
-/** True when any row carries approval data (older files have none). */
+/** True when the refresh read approvals.csv (even with no lines); false when the file was missing or bad. */
 export function hasApprovalData(f: PipelineFile): boolean {
-  return f.rows.some((r) => r.ap !== undefined);
+  return f.approvals === true;
 }
 
 export interface DiseaseLine {

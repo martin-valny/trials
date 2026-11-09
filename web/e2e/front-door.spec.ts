@@ -94,3 +94,48 @@ test("the target page has panel e, with a link to an approved drug", async ({ pa
   await expect(page.getByRole("heading", { name: "CD20 by disease" })).toBeVisible();
   await expect(page.getByRole("link", { name: "ocrelizumab" })).toBeVisible();
 });
+
+// The fixture has one sponsor-complete row, so the lens-miss and historical cases need a patched pipeline.json:
+// a third company, and CD19 with 12 stopped trials of it plus a current approval for MS.
+async function patchPipeline(page: Page) {
+  await page.route("**/data/pipeline.json", async (route) => {
+    const res = await route.fetch();
+    const f = await res.json();
+    f.sponsors.push({ kind: "industry", parent: "Other Co", raw: "Other Co" });
+    const cd19 = f.rows.find((r: { id: string }) => r.id === "cd19");
+    cd19.marks = Array.from({ length: 12 }, (_, i) => ({ c: 2, drug: "x", dz: ["MS"], n: `NCT9100000${i}`, s: "stop", sp: 2, y: 2015, y2: 2017 }));
+    cd19.ap = { MS: [{ d: "inebilizumab", src: ["hand"], url: "https://example.org/x" }] };
+    await route.fulfill({ response: res, json: f });
+  });
+}
+
+// Opacity is multiplicative down the tree, so the floor and every ancestor up to the row must each be 1.
+const opacities = (page: Page, sel: string) =>
+  page.locator(sel).evaluate((el) => {
+    const out: string[] = [];
+    for (let n: Element | null = el; n && !n.classList.contains("row"); n = n.parentElement) out.push(getComputedStyle(n).opacity);
+    return out;
+  });
+
+test("desktop: the floor rule stays fully opaque under a lens that misses the row", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await patchPipeline(page);
+  await page.goto("/#/?view=disease&company=Other%20Co");
+  const miss = page.locator('.row.miss[data-row="cd20"]');
+  await expect(miss).toHaveCount(1);
+  const ops = await opacities(page, '.row[data-row="cd20"] [data-cell="MS"] .floor');
+  expect(ops.length).toBeGreaterThan(1);
+  expect(ops.every((o) => o === "1")).toBe(true);
+  // Contrast: a mark in the same dimmed row is dimmed, so the check can fail.
+  expect(await page.locator('.row[data-row="cd20"] [data-cell="MS"] .m').first().evaluate((el) => getComputedStyle(el).opacity)).toBe("0.45");
+});
+
+test("desktop: the floor rule stays fully opaque in a Mostly historical row", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await patchPipeline(page);
+  await page.goto("/#/?view=disease");
+  await expect(page.locator('.row.hist[data-row="cd19"]')).toHaveCount(1);
+  const ops = await opacities(page, '.row[data-row="cd19"] [data-cell="MS"] .floor');
+  expect(ops.every((o) => o === "1")).toBe(true);
+  expect(await page.locator('.row[data-row="cd19"] [data-cell="MS"] .m').first().evaluate((el) => getComputedStyle(el).opacity)).toBe("0.62");
+});
