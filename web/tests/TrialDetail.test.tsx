@@ -143,7 +143,10 @@ test("trial page shows estimate and note", async () => {
   const sec = await screen.findByRole("region", { name: "Estimated chance of stopping early" });
   expect(sec).toHaveTextContent("Estimated chance of stopping early: 25% (3–25), typical 20% for phase 2 drug trials");
   expect(within(sec).getByRole("img", { name: "Estimated 25% (3–25); typical 20%" })).toBeInTheDocument();
-  expect(within(sec).getByRole("list", { name: "Main factors" })).toHaveTextContent("Few sites (1)");
+  const factors = within(sec).getByRole("list", { name: "Main factors" });
+  expect(factors).toHaveTextContent("Few sites (1)");
+  expect(factors).not.toHaveAttribute("aria-label");
+  expect(factors).toHaveAttribute("aria-labelledby");
   expect(within(sec).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
 });
 

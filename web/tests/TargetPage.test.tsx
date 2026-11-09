@@ -257,12 +257,15 @@ test("renders the risk panel with heading and rows", async () => {
   expect(panel).toHaveTextContent("CD20 · All diseases · 7 running. Tick = typical for phase 2 drug trials.");
   const rows = within(within(panel).getByRole("list", { name: "Running trials by estimate" })).getAllByRole("listitem");
   expect(rows).toHaveLength(7);
-  // Highest estimate first.
+  // Highest estimate first; a near-zero range never reads "(0–0)".
   expect(rows[0]).toHaveTextContent("65% (53–74)");
+  expect(rows.find((r) => r.textContent?.includes("NCT90000006"))).toHaveTextContent("<1% (0–<1)");
+  expect(panel.textContent).not.toContain("(0–0)");
   const row = rows.find((r) => r.textContent?.includes("NCT90000002"))!;
   expect(row).toHaveTextContent("example drug · Phase 2 · Example Pharma");
   expect(row).toHaveTextContent("25% (3–25)");
   expect(row).toHaveTextContent("typical 20%");
+  expect(row).toHaveTextContent("near typical 20%"); // its range (3–25) contains the typical rate
   expect(within(row).getByRole("img", { name: "Estimated 25% (3–25); typical 20%" })).toBeInTheDocument();
   expect(within(row).getByRole("link", { name: "NCT90000002" })).toHaveAttribute("href", "/trial/NCT90000002");
   const more = within(row).getByRole("button", { name: /Main factors/ });
@@ -274,6 +277,12 @@ test("renders the risk panel with heading and rows", async () => {
   expect(within(factors).getAllByRole("listitem")).toHaveLength(3);
   expect(factors).toHaveTextContent("Few sites (1)");
   expect(factors).toHaveTextContent("lowers");
+  expect(within(factors).queryByRole("link")).not.toBeInTheDocument();
+  expect(more).toHaveAttribute("aria-controls", factors.closest(".rk-why")!.id);
+  expect(within(row.querySelector(".rk-id") as HTMLElement).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(
+    "href",
+    "https://clinicaltrials.gov/study/NCT90000002",
+  );
   expect(within(panel).getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
   expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
 });

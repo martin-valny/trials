@@ -160,8 +160,10 @@ function TrialRisk({ nct, risk }: { nct: string; risk: RiskFile | null }) {
       </div>
       {r.factors.length > 0 && (
         <>
-          <p className="rk-fh">Main factors</p>
-          <RiskFactors factors={r.factors} />
+          <p className="rk-fh" id={`rk-fh-${nct}`}>
+            Main factors
+          </p>
+          <RiskFactors factors={r.factors} labelledBy={`rk-fh-${nct}`} />
         </>
       )}
       <RiskNote />

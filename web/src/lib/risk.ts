@@ -9,9 +9,14 @@ const NEAR = 0.03;
 
 export const formatPct = (p: number): string => (p < 0.005 ? "<1%" : `${Math.round(p * 100)}%`);
 
-export const formatRange = (lo: number, hi: number): string => `${Math.round(lo * 100)}–${Math.round(hi * 100)}`;
+/** One end of a range: exactly 0 is "0"; anything else under 0.5% is "<1", so a tiny range never reads as certainty. */
+const rangeEnd = (x: number): string => (x === 0 ? "0" : x < 0.005 ? "<1" : `${Math.round(x * 100)}`);
 
-export function vsTypical(p: number, typical: number): "above" | "near" | "below" {
+export const formatRange = (lo: number, hi: number): string => `${rangeEnd(lo)}–${rangeEnd(hi)}`;
+
+/** "near" when within ±0.03 of typical, or when the range [lo, hi] (if given) contains the typical rate. */
+export function vsTypical(p: number, typical: number, lo?: number, hi?: number): "above" | "near" | "below" {
+  if (lo !== undefined && hi !== undefined && lo <= typical && typical <= hi) return "near";
   const d = p - typical;
   // A small epsilon keeps a difference of exactly 0.03 "near" despite float error.
   if (Math.abs(d) <= NEAR + 1e-9) return "near";

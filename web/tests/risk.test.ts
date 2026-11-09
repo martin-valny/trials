@@ -16,10 +16,23 @@ describe("formatting", () => {
   it("formats a range with an en dash", () => {
     expect(formatRange(0.1, 0.29)).toBe("10–29");
   });
+  it("never shows a near-zero range as certainty", () => {
+    expect(formatRange(0, 0.004)).toBe("0–<1");
+    expect(formatRange(0, 0.024)).toBe("0–2");
+    expect(formatRange(0.002, 0.004)).toBe("<1–<1");
+    expect(formatRange(0, 0)).toBe("0–0");
+    expect(formatRange(0.028, 0.25)).toBe("3–25");
+  });
   it("compares with the typical rate", () => {
     expect(vsTypical(0.25, 0.19)).toBe("above");
     expect(vsTypical(0.2, 0.19)).toBe("near");
     expect(vsTypical(0.1, 0.19)).toBe("below");
+  });
+  it("is near typical whenever the range contains the typical rate", () => {
+    expect(vsTypical(0.25, 0.2, 0.028, 0.25)).toBe("near");
+    expect(vsTypical(0.1, 0.19, 0.05, 0.19)).toBe("near");
+    expect(vsTypical(0.34, 0.2, 0.21, 0.46)).toBe("above");
+    expect(vsTypical(0.05, 0.2, 0.01, 0.12)).toBe("below");
   });
   it("positions on the scale and clamps", () => {
     expect(scaleMax).toBe(0.6);

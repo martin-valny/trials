@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { markState } from "../../lib/pipeline";
 import { formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
@@ -92,6 +92,7 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
 
 function RiskRow({ row: { m, t }, file }: { row: Row; file: PipelineFile }) {
   const [open, setOpen] = useState(false);
+  const whyId = useId();
   const company = file.sponsors[m.sp]?.parent ?? "Unknown sponsor";
   return (
     <li className="rk-row">
@@ -101,8 +102,11 @@ function RiskRow({ row: { m, t }, file }: { row: Row; file: PipelineFile }) {
         </div>
         <div className="rk-id">
           <Link to={`/trial/${m.n}`}>{m.n}</Link>
+          <a href={`https://clinicaltrials.gov/study/${m.n}`} target="_blank" rel="noopener noreferrer">
+            ClinicalTrials.gov ↗
+          </a>
           {t.factors.length > 0 && (
-            <button type="button" className="rk-more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            <button type="button" className="rk-more" aria-expanded={open} aria-controls={whyId} onClick={() => setOpen((v) => !v)}>
               Main factors
             </button>
           )}
@@ -112,17 +116,12 @@ function RiskRow({ row: { m, t }, file }: { row: Row; file: PipelineFile }) {
       <div className="rk-est-t">
         <b>{formatPct(t.p)}</b> ({formatRange(t.lo, t.hi)})
         <small>
-          {vsTypical(t.p, t.typical)} typical {formatPct(t.typical)}
+          {vsTypical(t.p, t.typical, t.lo, t.hi)} typical {formatPct(t.typical)}
         </small>
       </div>
-      {open && (
-        <div className="rk-why">
-          <RiskFactors factors={t.factors} />
-          <a href={`https://clinicaltrials.gov/study/${m.n}`} target="_blank" rel="noopener noreferrer">
-            ClinicalTrials.gov ↗
-          </a>
-        </div>
-      )}
+      <div className="rk-why" id={whyId} hidden={!open}>
+        {open && <RiskFactors factors={t.factors} />}
+      </div>
     </li>
   );
 }
