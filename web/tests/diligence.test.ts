@@ -28,6 +28,10 @@ describe("diligenceKey / endpoint", () => {
     vi.stubEnv("VITE_DILIGENCE_URL", "");
     expect(diligenceEndpoint()).toBeNull();
   });
+  it("is offline when the env is undefined", () => {
+    vi.stubEnv("VITE_DILIGENCE_URL", undefined as unknown as string);
+    expect(diligenceEndpoint()).toBeNull();
+  });
   it("normalises the trailing slash", () => {
     vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api");
     expect(diligenceEndpoint()).toBe("https://x.test/api/");
@@ -125,9 +129,7 @@ describe("pollRun", () => {
     await vi.advanceTimersByTimeAsync(5000);
     const done = await p;
     expect(done.status).toBe("done");
-    expect(seen).toEqual([...Array.from({ length: record.steps.length }, (_, i) => i + 1)].slice(0, seen.length));
-    expect(new Set(seen).size).toBe(seen.length);
-    expect(seen[0]).toBe(1);
+    expect(seen).toEqual(Array.from({ length: record.steps.length }, (_, i) => i + 1));
     expect((f.mock.calls[0] as unknown as [string])[0]).toBe("https://x.test/api/runs/r1");
   });
   it("resolves on failed", async () => {
@@ -147,6 +149,25 @@ describe("pollRun", () => {
     const p = pollRun("r1", () => {});
     await vi.advanceTimersByTimeAsync(10000);
     expect((await p).status).toBe("done");
+  });
+  it("rejects immediately with not_found on 404", async () => {
+    const f = vi.fn(async () => new Response("", { status: 404 }));
+    vi.stubGlobal("fetch", f);
+    await expect(pollRun("r1", () => {})).rejects.toThrow("not_found");
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("a stalled fetch cannot outlive timeoutMs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_u: string, init?: RequestInit) =>
+          new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")))),
+      ),
+    );
+    const p = pollRun("r1", () => {}, { intervalMs: 1000, timeoutMs: 4000 });
+    const assertion = expect(p).rejects.toThrow("timeout");
+    await vi.advanceTimersByTimeAsync(5000);
+    await assertion;
   });
   it("rejects with timeout", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json(200, running(0))));
