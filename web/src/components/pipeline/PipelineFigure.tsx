@@ -156,7 +156,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                   const ms = sortCell(cellMarks(v, c.key, state, bins));
                   const ap = cellApproval(file, state, v, c.key);
                   return (
-                    <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key} data-tick={c.tick ? "" : undefined} title={ap ?? undefined}>
+                    <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key} data-tick={c.tick ? "" : undefined}>
                       {ms.map((m) => mark(m, v.row.id, c.key, 8))}
                       {ms.length === 0 && state.view === "disease" && (
                         <span

@@ -112,7 +112,6 @@ export function rowHref(v: RowView, s: FigureState): string {
   return `/target/${v.row.id}${s.disease ? `?${figureSearch({ ...s, company: null, sort: "run", view: "phase" })}` : ""}`;
 }
 
-
 /** By disease: the approval sentence for this row and disease column, or null (no rule). */
 export function cellApproval(file: PipelineFile, state: FigureState, v: RowView, col: number | string): string | null {
   if (state.view !== "disease") return null;
@@ -125,7 +124,7 @@ export function cellApproval(file: PipelineFile, state: FigureState, v: RowView,
 export function Floor({ text }: { text: string }) {
   return (
     <>
-      <i className="floor" aria-hidden="true" />
+      <i className="floor" aria-hidden="true" title={text} />
       <span className="visually-hidden">{text}</span>
     </>
   );

@@ -120,7 +120,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .past em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12px; order: 1; }
 .past::after { order: 2; }
 .row.hist > div, .prow.hist > div { opacity: .62; }
-.lensed .row.miss > div, .lensed .prow.miss > div { opacity: .45; }
+.lensed .row.miss > div:not(.cell), .lensed .prow.miss > div:not(.strip),
+.lensed .row.miss > .cell > :not(.floor), .lensed .prow.miss > .strip > .cell > :not(.floor) { opacity: .45; }
 
 .plate-empty { margin: 18px 40px 40px; padding: 28px 0; border-top: 1px solid var(--ink); font-size: 15px; color: var(--ink); }
 .plate-empty button { border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
@@ -236,7 +237,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 
 /* Approved for this disease (By disease): a 2px ink rule along the cell's floor. Ink, not red: red only means advanced. */
 .cell.ap { padding-bottom: 12px; }
-.cell .floor { position: absolute; left: 6px; right: 6px; bottom: 4px; border-top: 2px solid var(--ink); pointer-events: none; }
+.cell .floor { position: absolute; left: 6px; right: 6px; bottom: 4px; border-top: 2px solid var(--ink); pointer-events: auto; }
+.cell .floor::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
 .prow .strip .cell.ap { padding-bottom: 8px; }
 .prow .strip .cell .floor { left: 3px; right: 3px; bottom: 1px; }
 .floor-swatch { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }

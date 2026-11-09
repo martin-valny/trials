@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -227,7 +229,7 @@ test("By disease: an approved cell has the floor rule and accessible text; withd
   expect(ms).toHaveClass("ap");
   expect(ms.querySelector(".floor")).toHaveAttribute("aria-hidden", "true");
   expect(ms).toHaveTextContent("Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
-  expect(ms).toHaveAttribute("title", "Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
+  expect(ms.querySelector(".floor")).toHaveAttribute("title", "Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
   const nmosd = container.querySelector('[data-row="cd20"] [data-cell="NMOSD"]')!;
   expect(nmosd.querySelector(".floor")).not.toBeNull();
   expect(nmosd.querySelector(".nodot")).not.toBeNull();
@@ -246,14 +248,18 @@ test("By phase and By year draw no floor rule and no approved legend item", asyn
   }
 });
 
-test("the floor rule survives the company lens", async () => {
-  stubFetch();
-  const { container } = renderPage("/?view=disease&company=Example%20Pharma");
-  await screen.findByRole("button", { name: "Clear company lens" });
-  const floor = container.querySelector('[data-row="cd20"] [data-cell="MS"] .floor')!;
-  expect(floor).not.toBeNull();
-  expect(floor.getAttribute("style") ?? "").not.toMatch(/opacity/);
-  expect(floor.getAttribute("class")).toBe("floor");
+test("the lens dimming selectors exclude the floor rule", () => {
+  // jsdom applies no stylesheet, so read the CSS text: every rule that sets the lens .45 dimming must not reach .floor.
+  const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  const rules = [...css.matchAll(/([^{}]*\.lensed[^{}]*)\{[^}]*opacity:\s*\.45[^}]*\}/g)];
+  expect(rules.length).toBe(1);
+  const selectors = rules[0]![1]!.split(",").map((x) => x.trim());
+  for (const sel of selectors) {
+    // A selector that targets a cell as a whole would dim its floor; those must be cell-excluding or floor-excluding.
+    expect(sel).not.toMatch(/\.cell\s*$/);
+    expect(/:not\(\.floor\)|:not\(\.cell\)|:not\(\.strip\)/.test(sel)).toBe(true);
+  }
+  expect(selectors.filter((s) => s.includes(":not(.floor)"))).toHaveLength(2);
 });
 
 test("on a phone the strip shows the floor rule in the same cell", async () => {

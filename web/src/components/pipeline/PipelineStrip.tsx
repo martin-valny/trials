@@ -57,7 +57,7 @@ export function PipelineStrip({ items: all, cols, tracks, bins, asOf, sortCell, 
               {cols.map((c) => {
                 const ap = cellApproval(draw.file, draw.state, v, c.key);
                 return (
-                  <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key} title={ap ?? undefined}>
+                  <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key}>
                     {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, 6))}
                     {ap && <Floor text={ap} />}
                   </div>
