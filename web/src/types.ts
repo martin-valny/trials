@@ -370,3 +370,65 @@ export interface PipelineFile {
   trials: Record<string, PipelineTrialInfo>;
   unrowed: PipelineUnrowed[];
 }
+
+// ---------------------------------------------------------------- stop-risk (risk.json)
+
+export interface RiskMetrics {
+  auc: number;
+  brier: number;
+  n: number;
+  positives: number;
+  calibration: { p: number; observed: number; n: number }[];
+}
+
+export interface RiskModelInfo {
+  version: string;
+  trained_on: string;
+  shipped: "baseline" | "boosted";
+  shipped_reason: string;
+  metrics: {
+    baseline: RiskMetrics;
+    boosted: RiskMetrics;
+    boosted_no_sites: RiskMetrics;
+    in_area: RiskMetrics | null;
+  };
+  site_leak_flag: boolean;
+  split: { train_end: string; test: [string, string] };
+  features: string[];
+  excluded: string[];
+  typical: { phase: string; sponsor: string; rate: number; n: number }[];
+  n_train: number;
+  n_test: number;
+  per_trial: boolean;
+}
+
+export interface RiskFactor {
+  dir: "up" | "down";
+  label: string;
+}
+
+export interface RiskTrial {
+  p: number;
+  lo: number;
+  hi: number;
+  typical: number;
+  /** What the typical rate is taken over, e.g. "phase 2 drug trials". */
+  basis: string;
+  factors: RiskFactor[];
+}
+
+export interface RiskTargetSummary {
+  n: number;
+  median: number;
+  typical: number;
+}
+
+export interface RiskFile {
+  generated_for: string;
+  model: RiskModelInfo;
+  not_scored: Record<string, string>;
+  /** Absent when the area config turns per-trial estimates off. */
+  trials?: Record<string, RiskTrial>;
+  /** Per pipeline row id; absent when there is no pipeline figure. */
+  targets?: Record<string, { all: RiskTargetSummary; by_disease: Record<string, RiskTargetSummary> }>;
+}
