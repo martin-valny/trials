@@ -71,7 +71,14 @@ class _Ambiguous:
 _AMBIGUOUS = _Ambiguous()
 
 
-class ChemblClient:
+class JsonClient:
+    """Shared JSON-over-HTTP transport: on-disk cache, retry with backoff, optional recording.
+
+    Subclasses set ``error_class`` (raised on failure) and may override :meth:`_accepted_error`.
+    """
+
+    error_class: type[RuntimeError] = ChemblError
+
     def __init__(
         self,
         http: httpx.Client | None = None,
@@ -121,17 +128,24 @@ class ChemblClient:
                     try:
                         body = resp.json()
                     except ValueError as exc:
-                        raise ChemblError(f"GET {url}: response is not valid JSON") from exc
+                        raise self.error_class(f"GET {url}: response is not valid JSON") from exc
                     if not isinstance(body, dict):
-                        raise ChemblError(f"GET {url}: unexpected response body")
+                        raise self.error_class(f"GET {url}: unexpected response body")
                     return body
+                accepted = self._accepted_error(resp)
+                if accepted is not None:
+                    return accepted
                 failure = f"HTTP {resp.status_code}"
                 if resp.status_code != 429 and resp.status_code < 500:
-                    raise ChemblError(f"GET {url} failed: {failure}")
+                    raise self.error_class(f"GET {url} failed: {failure}")
             if attempt == MAX_RETRIES:
-                raise ChemblError(f"GET {url} failed after {MAX_RETRIES} retries: {failure}")
+                raise self.error_class(f"GET {url} failed after {MAX_RETRIES} retries: {failure}")
             self._sleep(self._backoff(attempt, resp))
         raise AssertionError("unreachable")
+
+    def _accepted_error(self, resp: httpx.Response) -> Json | None:
+        """A body to return instead of failing on a non-200 response (default: none)."""
+        return None
 
     def _get(self, path: str, params: dict[str, str | int] | None = None) -> Json:
         url = self._url(path, params)
@@ -151,6 +165,8 @@ class ChemblClient:
             )
         return body
 
+
+class ChemblClient(JsonClient):
     # --- API ---------------------------------------------------------------------
 
     def find_molecule(self, name: str) -> Json | None:
@@ -226,6 +242,29 @@ class ChemblClient:
             if not (isinstance(meta, dict) and meta.get("next")):
                 return rows
         raise ChemblError(f"mechanisms for {parent_id} exceeded {MAX_PAGES} pages")
+
+    def mechanisms_on_target(self, target_id: str) -> list[Json]:
+        """Every mechanism row recorded against the target ``target_id``."""
+        return self._paged("mechanism.json", "mechanisms", {"target_chembl_id": target_id})
+
+    def indications(self, parent_id: str) -> list[Json]:
+        """Every drug-indication row for ``parent_id`` (``mesh_heading``, ``efo_term``, ...)."""
+        return self._paged(
+            "drug_indication.json",
+            "drug_indications",
+            {"parent_molecule_chembl_id": parent_id},
+        )
+
+    def _paged(self, path: str, key: str, params: dict[str, str | int]) -> list[Json]:
+        rows: list[Json] = []
+        for page in range(MAX_PAGES):
+            body = self._get(path, {**params, "limit": PAGE_LIMIT, "offset": page * PAGE_LIMIT})
+            found = body.get(key)
+            rows += [r for r in found if isinstance(r, dict)] if isinstance(found, list) else []
+            meta = body.get("page_meta")
+            if not (isinstance(meta, dict) and meta.get("next")):
+                return rows
+        raise ChemblError(f"{path} for {params} exceeded {MAX_PAGES} pages")
 
     def target(self, target_id: str) -> Json:
         return self._get(f"target/{target_id}.json")

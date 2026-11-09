@@ -529,3 +529,34 @@ def test_unreadable_cache_entry_is_a_miss_and_is_rewritten(tmp_path: Path) -> No
     assert json.loads((tmp_path / cache_key(url)).read_text(encoding="utf-8")) == body
     assert [p.name for p in tmp_path.iterdir()] == [cache_key(url)]  # no temp files left
     assert c.target("T1") == body and calls == [1]
+
+
+def _paged_client(key: str, seen: list[httpx.Request]) -> ChemblClient:
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        first = request.url.params["offset"] == "0"
+        row = {"n": 1} if first else {"n": 2}
+        return httpx.Response(
+            200, json={key: [row], "page_meta": {"next": "more" if first else None}}
+        )
+
+    return ChemblClient(
+        http=httpx.Client(transport=httpx.MockTransport(handler)), sleep=lambda _s: None
+    )
+
+
+def test_mechanisms_on_target_pages() -> None:
+    seen: list[httpx.Request] = []
+    rows = _paged_client("mechanisms", seen).mechanisms_on_target("CHEMBL9")
+    assert rows == [{"n": 1}, {"n": 2}]
+    assert seen[0].url.path.endswith("/mechanism.json")
+    assert seen[0].url.params["target_chembl_id"] == "CHEMBL9"
+    assert seen[1].url.params["offset"] == "100"
+
+
+def test_indications_pages() -> None:
+    seen: list[httpx.Request] = []
+    rows = _paged_client("drug_indications", seen).indications("CHEMBL7")
+    assert rows == [{"n": 1}, {"n": 2}]
+    assert seen[0].url.path.endswith("/drug_indication.json")
+    assert seen[0].url.params["parent_molecule_chembl_id"] == "CHEMBL7"
