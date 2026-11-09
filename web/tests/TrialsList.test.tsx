@@ -110,15 +110,16 @@ test("?nct= narrows the list; unknown and duplicate ids are ignored and the coun
   expect(banner).toHaveTextContent("Showing 2 trials from CD20");
 });
 
-test("Clear removes the nct and from params and shows every trial", async () => {
+test("Clear removes the nct, from and disease params and shows every trial", async () => {
   stubFetch();
   renderWithWhere(`/trials?nct=${index.trials[0].nct_id}&from=CD20&disease=MS`);
   await screen.findByRole("table");
   expect(rows()).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent("Showing 1 trial from CD20 in Multiple sclerosis");
   await userEvent.click(screen.getByRole("button", { name: "Clear" }));
   expect(rows()).toHaveLength(index.trials.length);
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  expect(screen.getByTestId("where").textContent).toBe("/trials?disease=MS");
+  expect(screen.getByTestId("where").textContent).toBe("/trials");
 });
 
 test("a list with no known trials says so", async () => {
@@ -126,4 +127,64 @@ test("a list with no known trials says so", async () => {
   renderWithWhere("/trials?nct=NCT00000000&from=X");
   expect(await screen.findByText("None of these trials are in the current data.")).toBeInTheDocument();
   expect(screen.getByRole("status")).toHaveTextContent("Showing 0 trials from X");
+});
+
+// Two trials in MG, one of them also in MS, the rest in MS only.
+const withDz = () => {
+  const [a, b] = index.trials;
+  const trials = index.trials.map((t) =>
+    t === a ? { ...t, dz: ["MS", "MG"] } : t === b ? { ...t, dz: ["MG"] } : { ...t, dz: ["MS"] },
+  );
+  return { a, b, trials, stub: () => stubFetch({ "trials.json": { ...index, trials } }) };
+};
+
+test("?disease= alone keeps the trials in that disease and names it in the banner", async () => {
+  const { a, b, stub } = withDz();
+  stub();
+  renderWithWhere("/trials?disease=MG");
+  await screen.findByRole("table");
+  expect(ids().sort()).toEqual([a.nct_id, b.nct_id].sort());
+  expect(screen.getByRole("status")).toHaveTextContent(/^Showing 2 trials in Myasthenia gravis · Clear$/);
+});
+
+test("?disease= combines with ?nct=", async () => {
+  const { a, b, stub } = withDz();
+  stub();
+  renderWithWhere(`/trials?nct=${a.nct_id},${b.nct_id},${index.trials[2].nct_id}&from=CD20&disease=MS`);
+  await screen.findByRole("table");
+  expect(ids().sort()).toEqual([a.nct_id, index.trials[2].nct_id].sort());
+  expect(screen.getByRole("status")).toHaveTextContent("Showing 2 trials from CD20 in Multiple sclerosis");
+});
+
+test("?disease= with no trials says so; Clear shows every trial", async () => {
+  stubFetch();
+  renderWithWhere("/trials?disease=MG");
+  expect(await screen.findByText("No trials match these filters.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Clear" }));
+  expect(rows()).toHaveLength(index.trials.length);
+  expect(screen.getByTestId("where").textContent).toBe("/trials");
+});
+
+test("an unknown disease code filters nothing and the banner leaves out the disease", async () => {
+  stubFetch();
+  renderWithWhere(`/trials?nct=${index.trials[0].nct_id}&from=CD20&disease=ZZZ`);
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent(/^Showing 1 trial from CD20 · Clear$/);
+});
+
+test("an unknown disease code on its own shows every trial and no banner", async () => {
+  stubFetch();
+  renderWithWhere("/trials?disease=ZZZ");
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(index.trials.length);
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+test("if pipeline.json cannot be loaded the disease filter is skipped", async () => {
+  stubFetch({ "pipeline.json": 500 });
+  renderWithWhere("/trials?disease=MS");
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(index.trials.length);
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });

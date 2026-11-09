@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { loadTrials } from "../data";
+import { loadPipeline, loadTrials } from "../data";
 import { formatDate, formatValue } from "../lib/format";
 import type { TrialSummary } from "../types";
 
@@ -18,12 +18,20 @@ export function TrialsList() {
     return v === null ? null : new Set(v.split(",").filter(Boolean));
   }, [params]);
   const from = params.get("from");
+  const disease = params.get("disease");
+  // Disease labels come from pipeline.json, loaded only when a disease was handed over.
+  // undefined = still loading; null = unavailable. Either way an unknown code filters nothing.
+  const [diseases, setDiseases] = useState<{ code: string; label: string }[] | null | undefined>(
+    undefined,
+  );
+  const diseaseLabel = disease ? (diseases?.find((d) => d.code === disease)?.label ?? null) : null;
   const clearOnly = () =>
     setParams(
       (p) => {
         const next = new URLSearchParams(p);
         next.delete("nct");
         next.delete("from");
+        next.delete("disease");
         return next;
       },
       { replace: true },
@@ -41,15 +49,36 @@ export function TrialsList() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!disease) return;
+    let live = true;
+    loadPipeline()
+      .then((file) => live && setDiseases(file?.diseases ?? null))
+      .catch(() => live && setDiseases(null));
+    return () => {
+      live = false;
+    };
+  }, [disease]);
+  const diseaseLoading = Boolean(disease) && diseases === undefined;
+
   const all = useMemo(() => (result && "trials" in result ? result.trials : []), [result]);
-  const onlyN = useMemo(() => (only === null ? 0 : all.filter((t) => only.has(t.nct_id)).length), [all, only]);
+  // The handed-over list: ?nct= and (for a known code) ?disease=.
+  const scoped = useMemo(
+    () =>
+      all.filter(
+        (t) =>
+          (only === null || only.has(t.nct_id)) &&
+          (diseaseLabel === null || (t.dz ?? []).includes(disease ?? "")),
+      ),
+    [all, only, diseaseLabel, disease],
+  );
+  const onlyN = scoped.length;
   const statuses = useMemo(() => [...new Set(all.map((t) => t.overall_status))].sort(), [all]);
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return all
+    return scoped
       .filter(
         (t) =>
-          (only === null || only.has(t.nct_id)) &&
           (!status || t.overall_status === status) &&
           (!q ||
             [t.nct_id, t.title, t.lead_sponsor ?? ""].some((v) => v.toLowerCase().includes(q))),
@@ -59,13 +88,13 @@ export function TrialsList() {
           (b.last_change ?? "").localeCompare(a.last_change ?? "") ||
           a.nct_id.localeCompare(b.nct_id),
       );
-  }, [all, query, status, only]);
+  }, [scoped, query, status]);
 
   return (
     <section aria-labelledby="trials-heading">
       <h1 id="trials-heading">Trials</h1>
 
-      {result === null ? <p role="status">Loading trials…</p> : null}
+      {result === null || diseaseLoading ? <p role="status">Loading trials…</p> : null}
       {result && "error" in result ? (
         <p role="alert">Could not load trials: {result.error}</p>
       ) : null}
@@ -73,16 +102,16 @@ export function TrialsList() {
         <p>No trials are tracked yet.</p>
       ) : null}
 
-      {all.length > 0 && only !== null ? (
+      {all.length > 0 && !diseaseLoading && (only !== null || diseaseLabel !== null) ? (
         <p className="trials-only" role="status">
-          Showing {onlyN} {onlyN === 1 ? "trial" : "trials"}{from ? ` from ${from}` : ""} ·{" "}
+          Showing {onlyN} {onlyN === 1 ? "trial" : "trials"}{from ? ` from ${from}` : ""}{diseaseLabel ? ` in ${diseaseLabel}` : ""} ·{" "}
           <button type="button" className="text-button" onClick={clearOnly}>
             Clear
           </button>
         </p>
       ) : null}
 
-      {all.length > 0 ? (
+      {all.length > 0 && !diseaseLoading ? (
         <>
           <form className="filters" onSubmit={(e) => e.preventDefault()}>
             <label>
