@@ -204,6 +204,6 @@
   ],
   "max_start_year": 2025,
   "sponsor_floor": 5,
-  "n_train": 100,
+  "n_train": 300,
   "n_test": 100
 }

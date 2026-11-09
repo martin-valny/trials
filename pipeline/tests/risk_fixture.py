@@ -27,13 +27,31 @@ def _metrics(n: int, positives: int) -> Metrics:
 def write_fixture_artefacts(dir: Path) -> None:
     """Train a small boosted ensemble on random data and write a complete artefact set."""
     rng = np.random.default_rng(0)
-    n = 100
+    n = 300
     cols = list(FEATURES)
     x = rng.normal(size=(n, len(cols)))
     for c in ("phase_1", "phase_2", "phase_3", "sponsor_industry", "sponsor_academic"):
         x[:, cols.index(c)] = rng.integers(0, 2, n)
     x[:, cols.index("start_year")] = rng.integers(2008, 2016, n)
-    y = (rng.random(n) < 1 / (1 + np.exp(-(x[:, cols.index("n_sites")] - 1)))).astype(int)
+    # Small integer counts like the integration studies', so their rows differ and the
+    # estimates spread: more outcomes, arms and sites push the label up.
+    for c, hi in (
+        ("n_sites", 6),
+        ("n_secondary_outcomes", 12),
+        ("n_primary_outcomes", 4),
+        ("n_arms", 4),
+        ("n_conditions", 4),
+        ("n_countries", 4),
+    ):
+        x[:, cols.index(c)] = rng.integers(0, hi, n)
+    score = (
+        0.5 * x[:, cols.index("n_sites")]
+        + 0.6 * x[:, cols.index("n_secondary_outcomes")]
+        + 0.6 * x[:, cols.index("n_primary_outcomes")]
+        + 0.5 * x[:, cols.index("n_arms")]
+        - 7.0
+    )
+    y = (rng.random(n) < 1 / (1 + np.exp(-score))).astype(int)
     with threadpool_limits(1):
         ens = fit_ensemble("boosted", x, y, cols, n_boot=2)
     m = _metrics(100, 20)
