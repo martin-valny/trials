@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -37,3 +38,23 @@ def test_committed_metrics_reproduce() -> None:
 def test_committed_card_matches_model_version() -> None:
     loaded = artefacts.load(RISK_DIR)  # raises on a card/model version mismatch
     assert loaded.card.version.startswith("stop-risk-")
+
+
+def test_shipped_main_is_not_degenerate() -> None:
+    """The shipped ensemble's main (refit on all years) ranks the held-out trials.
+
+    It saw the test years, so its AUC there should be at least the eval model's; a flat
+    isotonic map once made it output one value for every trial while this card still passed.
+    """
+    loaded = artefacts.load(RISK_DIR)
+    heldout = pl.read_parquet(RISK_DIR / "heldout.parquet")
+    x = artefacts.feature_matrix(heldout.select(FEATURES))
+    y = heldout["label"].to_numpy()
+    p_ship = loaded.shipped.main.predict_proba(x)
+    p_eval = loaded.eval.main.predict_proba(x)
+    # Isotonic output is a step function: the healthy eval main gives ~60 levels on these
+    # rows and the shipped one ~100; the broken one gave 2.
+    assert len(np.unique(p_ship)) > 50
+    shipped_auc, eval_auc = metrics(y, p_ship)["auc"], metrics(y, p_eval)["auc"]
+    assert shipped_auc is not None and eval_auc is not None
+    assert shipped_auc >= eval_auc - 0.02

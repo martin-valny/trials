@@ -11,6 +11,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -77,8 +78,15 @@ def fit(
     idx = tuple(range(len(cols)))
     # ensemble=False keeps one booster refit on all rows (isotonic map learned on the 5 folds'
     # out-of-fold scores) instead of five, so 42 fitted members stay a few MB, not ~80.
+    # The folds must be shuffled: training rows arrive ordered by start year, so plain
+    # `cv=5` holds out whole year blocks whose out-of-fold scores carry no rank signal, and
+    # the isotonic map learned on them is flat over the refit booster's score range.
+    folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     est = CalibratedClassifierCV(
-        HistGradientBoostingClassifier(random_state=seed), method="isotonic", cv=5, ensemble=False
+        HistGradientBoostingClassifier(random_state=seed),
+        method="isotonic",
+        cv=folds,
+        ensemble=False,
     ).fit(X, y)
     booster = HistGradientBoostingClassifier(random_state=seed).fit(X, y) if explain else None
     return Fitted("boosted", est, idx, booster)

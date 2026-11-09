@@ -54,3 +54,23 @@ def test_ensemble_members_have_no_booster() -> None:
     ens = fit_ensemble("boosted", x, y, COLUMNS, n_boot=2)
     assert ens.main.booster is not None
     assert all(m.booster is None for m in ens.members)
+
+
+def test_boosted_calibration_survives_year_ordered_rows() -> None:
+    """The training frame is ordered by start year and the stop rate drifts by year.
+
+    Unshuffled CV folds are then whole year blocks, the out-of-fold scores carry no rank
+    signal, and the isotonic map learned on them goes flat: every prediction lands on one
+    plateau (the real-data bug where all 271 running trials got p = 0.149).
+    """
+    from sklearn.metrics import roc_auc_score
+
+    x, y = make_data(2000)
+    order = np.argsort(x[:, 5], kind="stable")
+    x, y = x[order], y[order]
+    late = x[:, 5] >= 2014
+    y = np.maximum(y, (np.random.default_rng(1).random(len(y)) < np.where(late, 0.5, 0)))
+    m = fit("boosted", x, y, COLUMNS, explain=False)
+    p = m.predict_proba(x)
+    assert len(np.unique(p.round(3))) > 20
+    assert roc_auc_score(y, p) > 0.7
