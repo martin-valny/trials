@@ -19,7 +19,7 @@ import polars as pl
 import sklearn
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from trialradar.risk.explain import FactorLabel
+from trialradar.risk.explain import KINDS, FactorLabel
 from trialradar.risk.features import FEATURES
 from trialradar.risk.model import Ensemble, Recipe
 
@@ -141,13 +141,35 @@ def save(
 
 
 def read_factor_labels(path: Path) -> dict[str, FactorLabel]:
-    """feature,up,down rows from the hand-kept label file."""
+    """feature,kind,yes,no,text rows from the hand-kept label file (see config/risk/README.md).
+
+    An unknown kind, or a kind missing the text it needs, is an error.
+    """
     try:
         with path.open(newline="") as fh:
             rows = list(csv.DictReader(fh))
     except OSError as exc:
         raise RiskArtefactError(f"cannot read {path.name}: {exc}") from exc
-    return {r["feature"]: FactorLabel(r["feature"], r["up"], r["down"]) for r in rows}
+    out: dict[str, FactorLabel] = {}
+    for r in rows:
+        try:
+            lab = FactorLabel(r["feature"], r["kind"], r["yes"], r["no"], r["text"])
+        except (KeyError, TypeError) as exc:
+            raise RiskArtefactError(
+                f"{path.name}: expected columns feature,kind,yes,no,text ({exc})"
+            ) from exc
+        need = {"count": ("text",), "phase": ("text",), "binary": ("yes", "no")}
+        if lab.kind not in KINDS:
+            raise RiskArtefactError(f"{path.name}: {lab.feature} has unknown kind {lab.kind!r}")
+        if lab.kind == "category":
+            need["category"] = ("yes",)
+        missing = [f for f in need.get(lab.kind, ()) if not getattr(lab, f)]
+        if missing:
+            raise RiskArtefactError(
+                f"{path.name}: {lab.feature} ({lab.kind}) needs {', '.join(missing)}"
+            )
+        out[lab.feature] = lab
+    return out
 
 
 def load(dir: Path) -> Loaded:

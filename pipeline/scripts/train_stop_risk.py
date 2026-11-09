@@ -9,8 +9,8 @@ Pulls finished phase 1-3 drug trials one start year at a time into ``<cache>/<ye
 normalizes them, builds start-time features, trains a baseline logistic model and a calibrated
 boosted model on starts up to 2015, evaluates both on starts 2016-2019 (plus a boosted model
 without site features, and the in-area subset), picks the shipped recipe by the fixed rule,
-refits it on all labelled trials started up to 2019 (later starts are mostly early stops) and
-writes the artefacts to ``--out``. Real registry data is never written, only the sponsor counts
+refits it on all labelled trials started up to 2019 (later starts are mostly early stops),
+takes the typical stop rates from the same trials, and writes the artefacts to ``--out``. Real registry data is never written, only the sponsor counts
 table and the held-out features.
 """
 
@@ -142,7 +142,8 @@ def _metrics(y: np.ndarray, p: np.ndarray) -> Metrics:
 
 
 def _typical(frame: pl.DataFrame) -> list[Typical]:
-    """Observed stop rates by phase label and sponsor class, over all labelled trials."""
+    """Observed stop rates by phase label and sponsor class over `frame`: the shipped refit's
+    trials (starts up to REFIT_END), since later finished starts are mostly early stops."""
     labelled = frame.with_columns(
         pl.col("phases")
         .list.eval(pl.element().str.slice(-1))
@@ -295,7 +296,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             baseline=m_base, boosted=m_boost, boosted_no_sites=m_nosite, in_area=in_area_m
         ),
         site_leak_flag=bool(m_boost.auc - m_nosite.auc > LEAK_DROP),
-        typical=_typical(frame),
+        typical=_typical(refit),
         max_start_year=int(refit["start_year"].max()),  # type: ignore[arg-type]
         sponsor_floor=SPONSOR_FLOOR,
         n_train=train.height,

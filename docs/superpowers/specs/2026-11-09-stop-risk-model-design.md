@@ -86,8 +86,8 @@ Excluded because they are set or changed at the end of a trial: `why_stopped`, r
 - Baseline: logistic regression on phase, sponsor class and start year.
 - Candidate: scikit-learn `HistGradientBoostingClassifier` (no new dependency), calibrated (isotonic or Platt on a calibration fold).
 - Ship the candidate only if its test AUC beats the baseline by a margin fixed before looking (proposal: 0.02) and calibration is no worse; otherwise ship the baseline and say so on Methods.
-- Range per trial: a bootstrap ensemble (proposal: 20 refits); the range is the 10th–90th percentile of the members' predictions.
-- Factors per trial: the top three contributions to that trial's score, faithful to the shipped model (coefficients times values for logistic; TreeSHAP or an equivalent exact method for boosting; a new dependency such as `shap` is acceptable if needed). Each factor is turned into plain words by a small hand-kept label file.
+- Range per trial: a bootstrap ensemble (proposal: 20 refits); the range is the members' 10th–90th percentile spread placed around the shipped estimate p: lo = p − (median − q10), hi = p + (q90 − median), clipped to [0, 1] (Ruling 11).
+- Factors per trial: the top three contributions to that trial's score, faithful to the shipped model (coefficients times values for logistic; TreeSHAP or an equivalent exact method for boosting; a new dependency such as `shap` is acceptable if needed). Each factor is turned into plain words by a small hand-kept label file. The words describe the trial's own value ("Sites planned: 112", "Phase 3 trial", "Registry files it under: Neoplasms"); the contribution's sign only sets raises/lowers (finish review, 2026-11-09).
 - Typical rate: the observed stop rate in the training set for the same phase (and sponsor class if it differs materially), shown next to every score.
 
 ### 6.4 Evaluation
@@ -112,7 +112,7 @@ scikit-learn is pinned to a minor version in `pyproject.toml`; the loader accept
 
 ### 6.6 `risk.json` (contract sketch)
 - `model`: version, trained date, test AUC (model and baseline), in-area AUC and n, calibration points, Brier, which model shipped and why, feature list, exclusions, `per_trial` (bool from config).
-- `trials`: per NCT, `p`, `lo`, `hi`, `typical`, `typical_basis` (e.g. "phase 3 drug trials"), `factors` (up to three: label, direction). When `per_trial` is false, this block is omitted.
+- `trials`: per NCT, `drug` (the figure row's canonical name, in registry casing when it is just the registered name lower-cased; else the first experimental drug or biologic as registered), `p`, `lo`, `hi`, `typical`, `typical_basis` (e.g. "phase 3 drug trials"), `factors` (up to three: label, direction). When `per_trial` is false, this block is omitted. Running-status trials that are finished in all but status (active, not recruiting with an actual primary completion date in the past, or results posted) go to `not_scored` with the reason "primary completion reached" / "results posted".
 - `targets`: per pipeline row (and per row × disease), counts of scored running trials, median `p` and the typical rate, so target-level summaries survive with the switch off.
 
 ## 7. Surfaces (web)

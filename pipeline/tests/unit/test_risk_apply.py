@@ -224,3 +224,104 @@ def test_degenerate_estimates_raise(loaded: artefacts.Loaded, cfg: AreaConfig) -
     flat = replace(loaded, shipped=replace(loaded.shipped, main=main))
     with pytest.raises(ValueError, match="degenerate"):
         _doc(flat, cfg, _many_running())
+
+
+def _with_names(tables: Tables, names: dict[str, list[tuple[str, str]]]) -> Tables:
+    rows = [
+        {"nct_id": n, "type": t, "name": nm, "name_normalized": nm.lower()}
+        for n, ivs in names.items()
+        for t, nm in ivs
+    ]
+    return Tables(
+        tables.trial,
+        tables.condition,
+        pl.DataFrame(rows, schema=SCHEMAS["intervention"]),
+        tables.sponsor,
+        tables.site,
+        tables.outcome,
+    )
+
+
+def test_drug_name_canonical_in_a_row_else_registry_casing(
+    loaded: artefacts.Loaded, cfg: AreaConfig
+) -> None:
+    """A row trial keeps the figure's canonical drug name, but takes the registry's own casing
+    when that name is just the registered one lower-cased (a code name such as RO7121932).
+    A trial in no row takes its first experimental drug or biologic as registered."""
+    from dataclasses import replace
+
+    ids = ["NCT00000001", "NCT00000002", "NCT00000003", "NCT00000004"]
+    tables = _with_names(
+        _tables([_trial(n, "RECRUITING", ["PHASE2"]) for n in ids]),
+        {
+            "NCT00000001": [("DRUG", "Rituximab 500 mg"), ("DRUG", "Placebo")],
+            "NCT00000002": [("DRUG", "Placebo"), ("BIOLOGICAL", "RO7121932")],
+            "NCT00000003": [("DRUG", "Placebo"), ("BIOLOGICAL", "KITE-363")],
+            "NCT00000004": [("BEHAVIORAL", "Diary"), ("DRUG", "Ocrelizumab IV")],
+        },
+    )
+    fig = {
+        "rows": [
+            {"id": "cd20", "marks": [{"n": "NCT00000001", "dz": [], "drug": "rituximab"}]},
+            {"id": "x", "marks": [{"n": "NCT00000002", "dz": [], "drug": "ro7121932"}]},
+        ]
+    }
+    extras = {
+        "NCT00000003": replace(empty_extras("NCT00000003"), experimental_drugs=("KITE-363",)),
+    }
+    doc = build_risk_doc(tables, extras, cfg, loaded, fig, DAY)
+    drugs = {n: doc["trials"][n]["drug"] for n in ids}
+    assert drugs == {
+        "NCT00000001": "rituximab",
+        "NCT00000002": "RO7121932",
+        "NCT00000003": "KITE-363",
+        "NCT00000004": "Ocrelizumab IV",
+    }
+
+
+def test_effectively_finished_running_trials_not_scored(
+    loaded: artefacts.Loaded, cfg: AreaConfig
+) -> None:
+    """Active, not recruiting with an actual primary completion date in the past, or any
+    running trial with results posted, is finished in all but status: listed, not scored."""
+    from dataclasses import replace
+
+    past, future = date(2025, 6, 1), date(2027, 1, 1)
+    trials = [
+        _trial(
+            "NCT00000001",
+            "ACTIVE_NOT_RECRUITING",
+            ["PHASE3"],
+            primary_completion_date=past,
+            primary_completion_date_type="ACTUAL",
+        ),
+        _trial(
+            "NCT00000002",
+            "ACTIVE_NOT_RECRUITING",
+            ["PHASE3"],
+            primary_completion_date=past,
+            primary_completion_date_type="ESTIMATED",
+        ),
+        _trial(
+            "NCT00000003",
+            "ACTIVE_NOT_RECRUITING",
+            ["PHASE3"],
+            primary_completion_date=future,
+            primary_completion_date_type="ESTIMATED",
+        ),
+        _trial("NCT00000004", "RECRUITING", ["PHASE2"]),
+        _trial(
+            "NCT00000005",
+            "RECRUITING",
+            ["PHASE2"],
+            primary_completion_date=past,
+            primary_completion_date_type="ACTUAL",
+        ),
+    ]
+    extras = {"NCT00000004": replace(empty_extras("NCT00000004"), has_results=True)}
+    doc = _doc(loaded, cfg, trials, extras=extras)
+    assert doc["not_scored"] == {
+        "NCT00000001": "primary completion reached",
+        "NCT00000004": "results posted",
+    }
+    assert set(doc["trials"]) == {"NCT00000002", "NCT00000003", "NCT00000005"}

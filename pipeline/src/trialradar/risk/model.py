@@ -94,7 +94,7 @@ def fit(
 
 @dataclass(frozen=True)
 class Ensemble:
-    """The shipped model (`main`) plus bootstrap refits for a 10th-90th percentile range."""
+    """The shipped model (`main`) plus bootstrap refits whose 10th-90th percentile spread gives the range."""
 
     recipe: Recipe
     columns: tuple[str, ...]
@@ -102,12 +102,20 @@ class Ensemble:
     members: tuple[Fitted, ...]
 
     def predict(self, X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """(p, lo, hi), each in [0, 1]; the band is widened so p is always inside."""
+        """(p, lo, hi), each in [0, 1].
+
+        p is the main model's estimate (the one the card's metrics measure). The range is the
+        members' spread placed around p: lo = p - (median - q10), hi = p + (q90 - median) of
+        the bootstrap members, clipped to [0, 1]. So p sits inside its range wherever the
+        members disagree on both sides, instead of on an edge as when the members' own
+        percentiles were widened to reach p.
+        """
         p = np.clip(self.main.predict_proba(X), 0.0, 1.0)
         draws = np.stack([m.predict_proba(X) for m in self.members])
-        lo = np.clip(np.percentile(draws, 10, axis=0), 0.0, 1.0)
-        hi = np.clip(np.percentile(draws, 90, axis=0), 0.0, 1.0)
-        return p, np.minimum(lo, p), np.maximum(hi, p)
+        q10, med, q90 = np.percentile(draws, [10, 50, 90], axis=0)
+        lo = np.clip(p - (med - q10), 0.0, 1.0)
+        hi = np.clip(p + (q90 - med), 0.0, 1.0)
+        return p, lo, hi
 
 
 def fit_ensemble(

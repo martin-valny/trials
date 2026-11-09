@@ -143,5 +143,19 @@ def test_factor_labels_cover_features() -> None:
     shown = [f for f in FEATURES if f not in HIDDEN_FEATURES]
     assert set(shown) <= set(labels)
     assert not HIDDEN_FEATURES & set(labels)  # a label for a hidden feature would be dead copy
-    assert all(labels[f].up for f in shown)
-    assert all(labels[f].down for f in shown if not f.startswith("cat_"))
+    assert all(labels[f].kind == "category" for f in shown if f.startswith("cat_"))
+    assert all(labels[f].kind == "sponsor" for f in shown if f.startswith("sponsor_prior"))
+    assert all(labels[f].kind == "phase" for f in ("phase_1", "phase_2", "phase_3"))
+
+
+def test_factor_labels_reject_unknown_kind_and_missing_text(tmp_path: Path) -> None:
+    bad = tmp_path / "factor_labels.csv"
+    bad.write_text("feature,kind,yes,no,text\nn_sites,size,,,\n")
+    with pytest.raises(artefacts.RiskArtefactError, match="unknown kind"):
+        artefacts.read_factor_labels(bad)
+    bad.write_text("feature,kind,yes,no,text\nrandomized,binary,Randomized,,\n")
+    with pytest.raises(artefacts.RiskArtefactError, match="needs no"):
+        artefacts.read_factor_labels(bad)
+    bad.write_text("feature,up,down\nn_sites,Many,Few\n")
+    with pytest.raises(artefacts.RiskArtefactError, match="expected columns"):
+        artefacts.read_factor_labels(bad)

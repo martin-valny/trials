@@ -183,3 +183,12 @@ def test_reason_and_leak_flag_match_card_metrics(trained: tuple[Path, Path]) -> 
     assert f"Brier {m.boosted.brier:.4f}" in card.shipped_reason
     assert f"{m.baseline.brier:.4f}" in card.shipped_reason
     assert card.site_leak_flag == (m.boosted.auc - m.boosted_no_sites.auc > script.LEAK_DROP)
+
+
+def test_typical_rates_use_the_refit_window(trained: tuple[Path, Path]) -> None:
+    """Typical rates count the same trials as the shipped refit (starts up to 2019): the
+    finished trials started later are mostly early stops and would inflate the rates."""
+    card = artefacts.load(trained[1]).card
+    by = {(t.phase, t.sponsor): t for t in card.typical}
+    assert by[("all", "all")].n == card.n_train + card.n_test
+    assert sum(by[(f"phase {k}", "all")].n for k in "123") == card.n_train + card.n_test

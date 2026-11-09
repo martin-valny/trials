@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from _risk_synth import COLUMNS, make_data, single_thread  # noqa: F401
 
-from trialradar.risk.model import fit, fit_ensemble
+from trialradar.risk.model import Ensemble, Fitted, fit, fit_ensemble
 
 
 def test_baseline_uses_only_baseline_features() -> None:
@@ -74,3 +74,48 @@ def test_boosted_calibration_survives_year_ordered_rows() -> None:
     p = m.predict_proba(x)
     assert len(np.unique(p.round(3))) > 20
     assert roc_auc_score(y, p) > 0.7
+
+
+class _Const:
+    """A stand-in estimator returning fixed probabilities for each row."""
+
+    def __init__(self, p: list[float]) -> None:
+        self.p = np.asarray(p)
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        return np.column_stack([1 - self.p, self.p])
+
+
+def _stub(main: list[float], members: list[list[float]]) -> Ensemble:
+    def f(p: list[float]) -> Fitted:
+        return Fitted("baseline", _Const(p), (0,))
+
+    return Ensemble("baseline", ("a",), f(main), tuple(f(m) for m in members))
+
+
+def test_range_is_the_members_spread_placed_around_p() -> None:
+    """Ruling 11: p from the main model; lo = p - (median - q10), hi = p + (q90 - median) of
+    the members, clipped to [0, 1]. p no longer sits on an edge when the members disagree."""
+    # 20 members at 0.30 .. 0.49 for row 0; the main model says 0.40 (above their median).
+    members = [[0.30 + 0.01 * i, 0.02 + 0.001 * i] for i in range(20)]
+    ens = _stub([0.40, 0.005], members)
+    draws = np.array(members)
+    med, q10, q90 = (np.percentile(draws, q, axis=0) for q in (50, 10, 90))
+    p, lo, hi = ens.predict(np.zeros((2, 1)))
+    np.testing.assert_allclose(p, [0.40, 0.005])
+    np.testing.assert_allclose(lo, np.clip(p - (med - q10), 0, 1))
+    np.testing.assert_allclose(hi, np.clip(p + (q90 - med), 0, 1))
+    assert lo[1] == 0.0  # clipped at 0
+
+
+def test_p_strictly_inside_range_when_members_disagree() -> None:
+    x, y = make_data(600)
+    ens = fit_ensemble("boosted", x, y, COLUMNS, n_boot=6)
+    p, lo, hi = ens.predict(x)
+    draws = np.stack([m.predict_proba(x) for m in ens.members])
+    med, q10, q90 = (np.percentile(draws, q, axis=0) for q in (50, 10, 90))
+    both = (med - q10 > 0) & (q90 - med > 0) & (p > 0) & (p < 1)
+    assert both.sum() > 100
+    assert ((lo[both] < p[both]) & (p[both] < hi[both])).all()
+    assert ((lo <= p) & (p <= hi)).all()
+    assert lo.min() >= 0 and hi.max() <= 1
