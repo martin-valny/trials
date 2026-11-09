@@ -17,14 +17,15 @@ from typing import Any
 from pydantic import ValidationError
 
 from diligence.config import AgentConfig
-from diligence.model import ModelClient, ModelResponse
-from diligence.prompts import MEMO_TOOL, SYSTEM_PROMPT
+from diligence.model import ModelClient, ModelResponse, ReplayMismatch
+from diligence.prompts import SYSTEM_PROMPT
 from diligence.tools.registry_of_tools import TOOL_SPECS, ToolContext, dispatch
 from diligence.types import Memo, RunRecord, Step, StepKind, ToolResult
 
 StepSink = Callable[[Step], None]
 
 MIN_FINAL_WRITER_TOKENS = 1500
+MIN_PLANNER_TOKENS = 1024
 _ID_KEYS = ("nct", "id", "pmid")
 _DRAFT_RECEIVED = "Draft received; write the final memo now"
 
@@ -274,22 +275,36 @@ class _Run:
             if (name := self.check_limits(tools=False)) is not None:
                 self.hit(name)
                 return draft
-            remaining = self.cfg.limits.max_output_tokens - self.tokens_out
-            resp = self.converse(self.cfg.models.planner, self.messages, TOOL_SPECS, remaining)
+            cap = self.cfg.limits.max_output_tokens
+            budget = min(max(cap - self.tokens_out, MIN_PLANNER_TOKENS), cap)
+            resp = self.converse(self.cfg.models.planner, self.messages, TOOL_SPECS, budget)
             content = resp.content or [{"text": "(no output)"}]
             self.messages.append({"role": "assistant", "content": content})
             uses = [b["toolUse"] for b in content if "toolUse" in b]
             if not uses:
                 return draft
             results: list[dict[str, Any]] = []
+            truncated = resp.stop_reason == "max_tokens"
             for use in uses:
-                if use["name"] == "submit_memo":
-                    draft, _ = _parse_memo(use.get("input"))
-                    results.append(_toolresult(use["toolUseId"], _DRAFT_RECEIVED))
+                if truncated:
+                    # The input may be cut off mid-JSON: never execute it.
+                    results.append(
+                        _toolresult(
+                            use["toolUseId"], "not run: the response was cut off", error=True
+                        )
+                    )
+                elif use["name"] == "submit_memo":
+                    draft, err = _parse_memo(use.get("input"))
+                    if draft is None:
+                        text = f"Draft was invalid ({err}); write the final memo now"
+                        results.append(_toolresult(use["toolUseId"], text, error=True))
+                    else:
+                        results.append(_toolresult(use["toolUseId"], _DRAFT_RECEIVED))
                 else:
                     results.append(self.run_tool(use))
             self.messages.append({"role": "user", "content": results})
-            if any(u["name"] == "submit_memo" for u in uses) or self.limit_name:
+            submitted = any(u["name"] == "submit_memo" for u in uses) and not truncated
+            if submitted or self.limit_name:
                 return draft
 
     def writer_messages(self, instruction: str) -> list[dict[str, Any]]:
@@ -314,7 +329,7 @@ class _Run:
         for attempt in range(2):
             budget = min(max(lim - self.tokens_out, MIN_FINAL_WRITER_TOKENS), lim)
             resp = self.converse(
-                self.cfg.models.writer, msgs, [MEMO_TOOL], budget, tool_choice="submit_memo"
+                self.cfg.models.writer, msgs, TOOL_SPECS, budget, tool_choice="submit_memo"
             )
             use = next(
                 (
@@ -329,15 +344,20 @@ class _Run:
                 self.emit("write", f"Memo written: {_plural(len(memo.sections), 'sentence')}")
                 return memo
             if attempt == 0:
-                msgs = [
-                    *msgs,
-                    {"role": "assistant", "content": resp.content or [{"text": "(no output)"}]},
-                ]
+                self.emit("note", "Memo invalid, retrying")
+                content = resp.content or [{"text": "(no output)"}]
+                msgs = [*msgs, {"role": "assistant", "content": content}]
                 fix = f"The memo was invalid ({err}). Call submit_memo again with a corrected memo."
-                if use:
-                    reply = [_toolresult(use["toolUseId"], fix, error=True)]
-                else:
-                    reply = [{"text": fix}]
+                reply: list[dict[str, Any]] = [
+                    _toolresult(
+                        b["toolUse"]["toolUseId"],
+                        fix if b["toolUse"] is use else "not run: submit_memo only, once",
+                        error=True,
+                    )
+                    for b in content
+                    if "toolUse" in b
+                ]
+                reply.append({"text": fix})
                 msgs.append({"role": "user", "content": reply})
         return None
 
@@ -350,6 +370,9 @@ class _Run:
             memo: Memo | None = draft
         else:
             memo = self.write()
+        if memo is None and draft is not None:
+            self.emit("note", "Writer failed twice; using the planner's draft memo")
+            memo = draft
         if memo is None:
             self.emit("error", "memo could not be produced")
             return None
@@ -372,10 +395,22 @@ def run_agent(
     label: str | None = None,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> RunRecord:
+    """Run the agent and return its record.
+
+    A failing model call (ClientError, timeout, ...) ends the run as status "failed" with an
+    `error` step naming only the exception class. ReplayMismatch is deliberately re-raised:
+    replay drift must fail CI loudly, not become a quiet failed run.
+    """
     stamp = "%Y-%m-%dT%H:%M:%SZ"
     started = now().strftime(stamp)
     run = _Run(req, cfg, model, ctx, sink, clock, label, data_date)
-    memo = run.execute()
+    try:
+        memo = run.execute()
+    except ReplayMismatch:
+        raise
+    except Exception as exc:  # noqa: BLE001 - a failed model call must still end the run cleanly
+        run.emit("error", f"model call failed: {type(exc).__name__}")
+        memo = None
     return RunRecord(
         run_id=run_id or uuid.uuid4().hex,
         target=req.target,
