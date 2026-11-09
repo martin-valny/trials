@@ -39,7 +39,9 @@ the same recipe refit on all labelled trials and scores live trials. A boosted m
 only if its test AUC is at least 0.02 above the logistic baseline and its Brier score is no
 worse; otherwise the baseline ships. The card records which, and why. A boosted fit without
 site and country features is also reported; if removing them costs more than 0.03 AUC the
-card sets `site_leak_flag` and Methods names them as a possible leak.
+card sets `site_leak_flag` and Methods names them as a possible leak. All of these numbers
+(baseline, boosted, boosted without sites, in-area) are bootstrap-ensemble metrics on the same
+held-out set, and the shipping reason and leak flag quote exactly the numbers in `card.json`.
 
 ## Files
 
@@ -59,8 +61,13 @@ track-record factor.
 
 ```sh
 cd pipeline
-uv run python scripts/train_stop_risk.py --cache .cache/stop-risk --out ../config/risk
+uv run python scripts/train_stop_risk.py --cache .cache/stop-risk --out ../config/risk --years 2008-2025
 ```
+
+**Stale cache:** a cached year is reused forever. Before a retrain, delete the cache file of
+the latest year (and any year still being backfilled by the registry), otherwise its trials
+stay frozen at the status they had when first pulled. The first run used `--years 2008-2025`
+(2026 is incomplete and unused: training and test only use finished trials).
 
 The pull goes one start year at a time into `<cache>/<year>.jsonl.gz` and skips years already
 cached, so an interrupted run resumes. `--offline` trains from the cache only. Review the

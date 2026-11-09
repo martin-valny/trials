@@ -39,7 +39,7 @@ from trialradar.risk.artefacts import EXCLUDED, Card, Metrics, Typical
 from trialradar.risk.evaluate import metrics
 from trialradar.risk.features import FEATURES, SITE_FEATURES, build
 from trialradar.risk.fields import RiskFields, risk_fields
-from trialradar.risk.model import Recipe, fit, fit_ensemble
+from trialradar.risk.model import Recipe, fit_ensemble
 from trialradar.risk.scope import LABELS, has_drug, in_phase_scope
 from trialradar.risk.sponsors import SPONSOR_FLOOR, aggregate, history_rows, prior_counts
 from trialradar.tables import SCHEMAS, Tables
@@ -230,12 +230,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     cols = list(FEATURES)
     keep = [i for i, c in enumerate(cols) if c not in SITE_FEATURES]
 
-    base = fit("baseline", xtr, ytr, cols)
-    boost = fit("boosted", xtr, ytr, cols, explain=False)
-    nosite = fit("boosted", xtr[:, keep], ytr, [cols[i] for i in keep], explain=False)
-    m_base = _metrics(yte, np.clip(base.predict_proba(xte), 0, 1))
-    m_boost = _metrics(yte, np.clip(boost.predict_proba(xte), 0, 1))
-    m_nosite = _metrics(yte, np.clip(nosite.predict_proba(xte[:, keep]), 0, 1))
+    # Every metric on the card (baseline, boosted, boosted without sites, shipped, in-area)
+    # comes from a bootstrap ensemble evaluated on the same held-out set, and the shipping
+    # decision, reason text and leak flag are computed from exactly those numbers.
+    ens_base = fit_ensemble("baseline", xtr, ytr, cols, n_boot=args.n_boot)
+    ens_boost = fit_ensemble("boosted", xtr, ytr, cols, n_boot=args.n_boot)
+    ens_nosite = fit_ensemble(
+        "boosted", xtr[:, keep], ytr, [cols[i] for i in keep], n_boot=args.n_boot
+    )
+    p_base, _, _ = ens_base.predict(xte)
+    p_boost, _, _ = ens_boost.predict(xte)
+    p_nosite, _, _ = ens_nosite.predict(xte[:, keep])
+    m_base = _metrics(yte, p_base)
+    m_boost = _metrics(yte, p_boost)
+    m_nosite = _metrics(yte, p_nosite)
 
     assert m_base.auc is not None and m_boost.auc is not None and m_nosite.auc is not None
     wins = m_boost.auc >= m_base.auc + MARGIN and m_boost.brier <= m_base.brier
@@ -248,18 +256,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"(AUC {m_base.auc:.3f}, Brier {m_base.brier:.4f}) by {MARGIN} AUC with no worse Brier, "
         "so the baseline ships"
     )
-
-    eval_ens = fit_ensemble(recipe, xtr, ytr, cols, n_boot=args.n_boot)
-    p_eval, _, _ = eval_ens.predict(xte)
-    m_shipped = _metrics(yte, p_eval)
+    eval_ens, p_eval = (ens_boost, p_boost) if wins else (ens_base, p_base)
     mask = test["in_area"].to_numpy()
     in_area_m = (
         _metrics(yte[mask], p_eval[mask]) if mask.any() and len(np.unique(yte[mask])) == 2 else None
     )
-    if recipe == "boosted":
-        m_boost = m_shipped
-    else:
-        m_base = m_shipped
 
     xall, yall = artefacts.feature_matrix(frame), frame["label"].to_numpy()
     shipped_ens = fit_ensemble(recipe, xall, yall, cols, n_boot=args.n_boot)

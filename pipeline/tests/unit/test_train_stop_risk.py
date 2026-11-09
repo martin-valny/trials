@@ -147,3 +147,15 @@ def test_fetch_year_writes_cache_atomically(tmp_path: Path) -> None:
         "NCT00000002",
     ]
     assert not list(tmp_path.glob("*.part"))
+
+
+def test_reason_and_leak_flag_match_card_metrics(trained: tuple[Path, Path]) -> None:
+    card = artefacts.load(trained[1]).card
+    m = card.metrics
+    assert m.baseline.auc is not None and m.boosted.auc is not None
+    assert m.boosted_no_sites.auc is not None
+    assert f"AUC {m.boosted.auc:.3f}" in card.shipped_reason
+    assert f"{m.baseline.auc:.3f}" in card.shipped_reason
+    assert f"Brier {m.boosted.brier:.4f}" in card.shipped_reason
+    assert f"{m.baseline.brier:.4f}" in card.shipped_reason
+    assert card.site_leak_flag == (m.boosted.auc - m.boosted_no_sites.auc > script.LEAK_DROP)
