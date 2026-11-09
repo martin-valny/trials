@@ -1,4 +1,17 @@
-# Runtime dependencies packaged into the Lambda (boto3 ships with the Python runtime).
-httpx
-pydantic>=2
-pyyaml
+# Pinned from uv.lock (boto3 ships with the Lambda runtime and is left out). Regenerate with:
+#   uv export --no-dev --no-hashes --no-emit-project --no-header --no-annotate \
+#     --no-emit-package boto3 --no-emit-package botocore --no-emit-package s3transfer \
+#     --no-emit-package jmespath --no-emit-package python-dateutil --no-emit-package six \
+#     --no-emit-package urllib3 >> requirements-lambda.txt   (keep this comment on top)
+annotated-types==0.8.0
+anyio==4.16.0
+certifi==2026.10.23
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+pydantic==2.14.3
+pydantic-core==2.50.4
+pyyaml==6.0.3
+typing-extensions==4.16.0
+typing-inspection==0.4.5

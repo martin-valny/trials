@@ -64,6 +64,19 @@ def test_function_shape(tpl: dict[str, Any]) -> None:
     assert fn(tpl)["Metadata"]["BuildMethod"] == "makefile"
 
 
+def test_async_invoke_never_retries(tpl: dict[str, Any]) -> None:
+    cfg = fn(tpl)["Properties"]["EventInvokeConfig"]
+    assert cfg["MaximumRetryAttempts"] == 0 and cfg["MaximumEventAgeInSeconds"] <= 60
+
+
+def test_explicit_public_url_permission(tpl: dict[str, Any]) -> None:
+    (perm,) = resources(tpl, "AWS::Lambda::Permission").values()
+    props = perm["Properties"]
+    assert props["Action"] == "lambda:InvokeFunction" and props["Principal"] == "*"
+    assert props["InvokedViaFunctionUrl"] is True
+    assert props["FunctionName"] == {"Ref": "DiligenceFunction"}
+
+
 def test_function_url_and_cors_use_the_parameter(tpl: dict[str, Any]) -> None:
     url = fn(tpl)["Properties"]["FunctionUrlConfig"]
     assert url["AuthType"] == "NONE"

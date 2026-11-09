@@ -85,6 +85,10 @@ Resources:
       Timeout: 120
       MemorySize: 512
       ReservedConcurrentExecutions: 2
+      # The self-invoke is async: never retry it (a retry would re-run Bedrock without quota).
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+        MaximumEventAgeInSeconds: 60
       LoggingConfig:
         LogGroup: !Ref DiligenceLogGroup
       FunctionUrlConfig:
@@ -123,6 +127,16 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:trial-radar-diligence
+
+  # Public function URLs need both lambda:InvokeFunctionUrl (SAM generates it) and, since 2025,
+  # lambda:InvokeFunction restricted to calls made through the URL.
+  DiligenceUrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DiligenceFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
 
 Outputs:
   FunctionUrl:

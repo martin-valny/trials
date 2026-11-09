@@ -9,6 +9,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -29,6 +30,7 @@ from diligence.types import RunRecord, Step
 
 SITE_CACHE_S = 600
 MAX_REASON = 500
+_SENTENCE_ID = re.compile(r"^s\d{1,4}$")
 _STAMP = "%Y-%m-%dT%H:%M:%SZ"
 _JSON = {"content-type": "application/json"}
 
@@ -224,10 +226,23 @@ def _post_flag(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
     if not all(isinstance(v, str) for v in (run_id, sentence_id, reason)):
         raise _Bad("run_id, sentence_id and reason must be strings")
     assert isinstance(run_id, str) and isinstance(sentence_id, str) and isinstance(reason, str)
+    if not _SENTENCE_ID.match(sentence_id):
+        raise _Bad("invalid sentence_id")
     if len(reason) > MAX_REASON:
         raise _Bad(f"reason is longer than {MAX_REASON} characters")
-    if deps.store.get_run(run_id) is None:
+    salt = os.environ.get("IP_SALT")
+    if not salt:
+        return _resp(500, {"error": "misconfigured"})
+    hashed = ip_hash(salt, str(event["requestContext"]["http"].get("sourceIp", "")))
+    if deps.store.take_flag_quota(hashed, deps.now().strftime("%Y-%m-%d")) != "ok":
+        return _resp(429, {"reason": "daily limit reached"})
+    record = deps.store.get_run(run_id)
+    if record is None:
         return _resp(404, {"error": "run not found"})
+    known = {s.id for s in record.memo.sections} if record.memo else set()
+    known |= {str(r.get("sentence_id")) for r in record.removed}
+    if sentence_id not in known:
+        raise _Bad("sentence_id not found in this run")
     deps.store.add_flag(run_id, sentence_id, reason)
     return _resp(204)
 
@@ -245,7 +260,11 @@ class _CostTracker:
     def converse(self, **kw: Any) -> ModelResponse:
         resp = self._inner.converse(**kw)
         price = self._cfg.prices.get(kw["model"])
-        if price:
+        if price is None:
+            print(
+                json.dumps({"event": "warning", "text": f"no price for {kw['model']}"}), flush=True
+            )
+        else:
             self.cost += (
                 resp.tokens_in * price.input_per_mtok + resp.tokens_out * price.output_per_mtok
             ) / 1e6
@@ -271,6 +290,12 @@ def _execute(run_id: str, deps: Deps) -> None:
     record = deps.store.get_run(run_id)
     if record is None or record.status != "running":
         return
+    if _seen_as(deps, record).status != "running":  # too old to start: do not spend on it
+        _fail(deps, run_id, "The run did not finish")
+        return
+    if not deps.store.claim_execution(run_id):  # an async retry or duplicate delivery
+        return
+    # Budget: max_seconds (config, 90) plus per-call timeouts stay below the Lambda Timeout (120).
     try:
         model = _CostTracker(deps.model_factory(deps.cfg.region), deps.cfg)
 

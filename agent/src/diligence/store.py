@@ -23,6 +23,8 @@ from diligence.types import RunRecord, Step
 
 STALE_AFTER_S = 150
 TTL_DAYS = 3
+FLAGS_PER_IP_PER_DAY = 20
+FLAGS_GLOBAL_PER_DAY = 500
 _STAMP = "%Y-%m-%dT%H:%M:%SZ"
 
 Quota = Literal["ok", "ip", "global"]
@@ -173,6 +175,21 @@ class Store:
         self._runs.delete_item(Key={"pk": f"run#{run_id}"})
         return str(existing["run_id"]), False
 
+    def claim_execution(self, run_id: str) -> bool:
+        """Mark a run as executing; only the first caller wins (async retries must not re-run)."""
+        try:
+            self._runs.update_item(
+                Key={"pk": f"run#{run_id}"},
+                UpdateExpression="SET executing_at = :t",
+                ConditionExpression="attribute_exists(pk) AND attribute_not_exists(executing_at)",
+                ExpressionAttributeValues={":t": int(self._now().timestamp())},
+            )
+            return True
+        except ClientError as exc:
+            if _failed(exc, _CONDITION_FAILED):
+                return False
+            raise
+
     def append_step(self, run_id: str, step: Step) -> None:
         self._runs.update_item(
             Key={"pk": f"run#{run_id}"},
@@ -232,14 +249,34 @@ class Store:
             ExpressionAttributeValues={":minus": -1, ":zero": 0},
         )
 
-    def take_quota(self, ip_hash: str, day: str) -> Quota:
-        daily = self.cfg.daily
-        if not self._bump(f"ip#{ip_hash}#{day}", day, daily.per_ip_runs_per_day):
+    def _take(
+        self, ip_pk: str, global_pk: str, day: str, ip_limit: int, global_limit: int
+    ) -> Quota:
+        if not self._bump(ip_pk, day, ip_limit):
             return "ip"
-        if not self._bump(f"global#{day}", day, daily.global_runs_per_day):
-            self._drop(f"ip#{ip_hash}#{day}")
+        if not self._bump(global_pk, day, global_limit):
+            self._drop(ip_pk)
             return "global"
         return "ok"
+
+    def take_quota(self, ip_hash: str, day: str) -> Quota:
+        daily = self.cfg.daily
+        return self._take(
+            f"ip#{ip_hash}#{day}",
+            f"global#{day}",
+            day,
+            daily.per_ip_runs_per_day,
+            daily.global_runs_per_day,
+        )
+
+    def take_flag_quota(self, ip_hash: str, day: str) -> Quota:
+        return self._take(
+            f"ip#{ip_hash}#flags#{day}",
+            f"global#flags#{day}",
+            day,
+            FLAGS_PER_IP_PER_DAY,
+            FLAGS_GLOBAL_PER_DAY,
+        )
 
     def refund_quota(self, ip_hash: str, day: str) -> None:
         """Give back a slot taken for a run that turned out not to be needed."""

@@ -3,7 +3,6 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 import boto3
@@ -25,7 +24,6 @@ NOW = datetime(2026, 11, 9, 12, 0, 0, tzinfo=UTC)
 ORIGIN = "https://martin-valny.github.io"
 SALT = "test-salt"
 IP = "203.0.113.7"
-TEMPLATE = Path(__file__).resolve().parents[1] / "template.yaml"
 
 
 class Site:
@@ -274,8 +272,6 @@ def test_cors_only_allowed_origin(env: Env) -> None:
     ok = env.post_run(headers={"origin": ORIGIN})
     assert ok["statusCode"] == 202
     assert not any(k.lower().startswith("access-control") for k in ok.get("headers", {}))
-    template = TEMPLATE.read_text()
-    assert "AllowOrigins" in template and "!Ref AllowedOrigin" in template
 
 
 def test_options_is_204_without_body(env: Env) -> None:
@@ -312,22 +308,27 @@ def test_running_past_150s_reads_as_failed(env: Env) -> None:
 # -- flags ----------------------------------------------------------------------------------------
 
 
-def test_flag_length_limit(env: Env) -> None:
+def done_run(env: Env) -> str:
     run_id = body_of(env.post_run())["run_id"]
-    ok = env.call("POST", "/flags", {"run_id": run_id, "sentence_id": "s1", "reason": "x" * 500})
-    assert ok["statusCode"] == 204
-    long = env.call("POST", "/flags", {"run_id": run_id, "sentence_id": "s1", "reason": "x" * 501})
-    assert long["statusCode"] == 400
+    env.execute(run_id)
+    return str(run_id)
+
+
+def flag(env: Env, run_id: str, sid: str = "s1", reason: str = "r", **kw: Any) -> dict[str, Any]:
+    return env.call(
+        "POST", "/flags", {"run_id": run_id, "sentence_id": sid, "reason": reason}, **kw
+    )
+
+
+def test_flag_length_limit(env: Env) -> None:
+    run_id = done_run(env)
+    assert flag(env, run_id, reason="x" * 500)["statusCode"] == 204
+    assert flag(env, run_id, reason="x" * 501)["statusCode"] == 400
 
 
 def test_flag_validation(env: Env) -> None:
-    run_id = body_of(env.post_run())["run_id"]
-    assert (
-        env.call("POST", "/flags", {"run_id": "nope", "sentence_id": "s", "reason": "r"})[
-            "statusCode"
-        ]
-        == 404
-    )
+    run_id = done_run(env)
+    assert flag(env, "nope")["statusCode"] == 404
     assert (
         env.call("POST", "/flags", {"run_id": run_id, "sentence_id": 3, "reason": "r"})[
             "statusCode"
@@ -343,13 +344,40 @@ def test_flag_validation(env: Env) -> None:
     assert env.call("POST", "/flags", "{")["statusCode"] == 400
 
 
+def test_flag_sentence_id_must_be_well_formed_and_in_the_run(env: Env) -> None:
+    run_id = done_run(env)
+    for bad in ("x1", "s", "s12345", "S1", "s1; drop", "../s1"):
+        assert flag(env, run_id, bad)["statusCode"] == 400
+    assert flag(env, run_id, "s99")["statusCode"] == 400  # well formed, not in this run
+    assert flag(env, run_id, "s1")["statusCode"] == 204
+
+
+def test_flag_quota_per_ip_and_global(env: Env, ddb: Any, cfg: AgentConfig) -> None:
+    run_id = done_run(env)
+    assert [flag(env, run_id)["statusCode"] for _ in range(20)] == [204] * 20
+    assert flag(env, run_id)["statusCode"] == 429
+    assert flag(env, run_id, ip="198.51.100.77")["statusCode"] == 204
+    keys = {i["pk"] for i in ddb.Table(cfg.tables.limits).scan()["Items"]}
+    assert f"ip#{ip_hash(SALT, IP)}#flags#2026-11-09" in keys and "global#flags#2026-11-09" in keys
+    ddb.Table(cfg.tables.limits).put_item(
+        Item={"pk": "global#flags#2026-11-09", "n": 500, "ttl": 9}
+    )
+    assert flag(env, run_id, ip="198.51.100.78")["statusCode"] == 429
+
+
+def test_flags_refused_without_ip_salt(env: Env, monkeypatch: pytest.MonkeyPatch) -> None:
+    run_id = done_run(env)
+    monkeypatch.delenv("IP_SALT")
+    assert flag(env, run_id)["statusCode"] == 500
+
+
 # -- privacy ----------------------------------------------------------------------------------------
 
 
 def test_ip_never_stored_raw(env: Env, ddb: Any, cfg: AgentConfig) -> None:
     run_id = body_of(env.post_run())["run_id"]
-    env.call("POST", "/flags", {"run_id": run_id, "sentence_id": "s", "reason": "r"})
     env.execute(run_id)
+    assert flag(env, run_id)["statusCode"] == 204
     seen = 0
     for name in (cfg.tables.runs, cfg.tables.limits, cfg.tables.flags):
         for item in ddb.Table(name).scan()["Items"]:
@@ -422,6 +450,48 @@ def test_execute_exception_finishes_failed(env: Env) -> None:
     assert rec is not None and rec.status == "failed"
     assert rec.steps[-1].kind == "error" and "RuntimeError" in rec.steps[-1].text
     assert env.store.running_for(env.key()) is None
+
+
+def test_second_execute_does_not_call_the_model(env: Env) -> None:
+    run_id = body_of(env.post_run())["run_id"]
+    calls: list[int] = []
+    inner = env.model
+    env.model = lambda: calls.append(1) or inner()
+    # Simulate an async retry delivered while the first execution is in flight.
+    assert env.store.claim_execution(run_id)
+    env.execute(run_id)
+    assert calls == []
+    rec = env.store.get_run(run_id)
+    assert rec is not None and rec.status == "running"
+
+
+def test_second_execute_after_finish_is_a_noop(env: Env) -> None:
+    run_id = done_run(env)
+    calls: list[int] = []
+    env.model = lambda: calls.append(1) or scripted_model()
+    env.execute(run_id)
+    assert calls == []
+
+
+def test_stale_run_is_not_executed(env: Env) -> None:
+    run_id = body_of(env.post_run())["run_id"]
+    calls: list[int] = []
+    env.model = lambda: calls.append(1) or scripted_model()
+    env.now = NOW + timedelta(seconds=151)
+    env.execute(run_id)
+    assert calls == []
+    rec = env.store.get_run(run_id)
+    assert rec is not None and rec.status == "failed"
+
+
+def test_missing_price_logs_a_warning(env: Env, capsys: pytest.CaptureFixture[str]) -> None:
+    env.cfg = env.cfg.model_copy(update={"prices": {}})
+    env.deps.cfg = env.cfg
+    run_id = body_of(env.post_run())["run_id"]
+    capsys.readouterr()
+    env.execute(run_id)
+    out = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.startswith("{")]
+    assert any(x.get("event") == "warning" and "no price" in x["text"] for x in out)
 
 
 def test_execute_unknown_run_is_a_noop(env: Env) -> None:

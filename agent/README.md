@@ -63,6 +63,9 @@ When the deploy finishes, the `FunctionUrl` output holds the endpoint (also show
 After the first deploy, create an AWS Budgets alarm for this account (the agent is capped at 30 runs
 a day, 3 per visitor, concurrency 2, but a budget alarm is the real backstop).
 
+Smoke test: `curl -i <FunctionUrl>runs/does-not-exist` should answer 404 with a JSON body. A 403
+`{"Message":"Forbidden"}` means the public-URL invoke permission is missing.
+
 Tear down everything with `sam delete`.
 
 Run `uv run pytest tests/test_template.py` for the template checks; `sam validate --lint` runs
