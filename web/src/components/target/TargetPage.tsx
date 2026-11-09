@@ -9,6 +9,7 @@ import "../pipeline/pipeline.css";
 import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
+import { TargetDiseases } from "./TargetDiseases";
 import { TargetStops } from "./TargetStops";
 import { TargetTimeline } from "./TargetTimeline";
 
@@ -200,6 +201,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
           </section>
         </>
       )}
+      <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
 
       <footer className="foot">
         <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>

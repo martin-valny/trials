@@ -242,3 +242,96 @@ test("List these trials link is singular for a one-trial row", async () => {
   expect(screen.getByRole("link", { name: "List this trial →" })).toBeInTheDocument();
   expect(screen.queryByText(/List these 1 trials/)).not.toBeInTheDocument();
 });
+
+const phoneMedia = () =>
+  vi.stubGlobal(
+    "matchMedia",
+    (query: string) =>
+      ({ matches: query.includes("max-width: 640px"), addEventListener: () => undefined, removeEventListener: () => undefined }) as unknown as MediaQueryList,
+  );
+
+async function panelE(route = "/target/cd20", file?: PipelineFile) {
+  stubFetch(file ? { "pipeline.json": file } : undefined);
+  renderPage(route);
+  const h = await screen.findByRole("heading", { name: "CD20 by disease" });
+  return h.closest("section") as HTMLElement;
+}
+
+test("panel e lists the diseases of CD20 in order, with the ladder", async () => {
+  const e = await panelE();
+  expect(within(e).getByText("e")).toBeInTheDocument();
+  const lines = [...e.querySelectorAll(".dzl")].map((l) => l.querySelector(".nm")?.textContent);
+  expect(lines).toEqual(["Multiple sclerosis", "NMOSD", "CIDP"]);
+  const ms = e.querySelectorAll(".dzl")[0] as HTMLElement;
+  expect(ms).toHaveTextContent("8");
+  expect(ms).toHaveTextContent("7 running");
+  const bars = [...ms.querySelectorAll(".st i")].map((i) => i.className);
+  expect(bars).toEqual(["was", "at", "", ""]);
+  expect(within(e).getByText("Approved for this disease")).toBeInTheDocument();
+});
+
+test("panel e MS line shows both approved drugs with links and sources", async () => {
+  const e = await panelE();
+  const ms = e.querySelectorAll(".dzl")[0] as HTMLElement;
+  const oc = within(ms).getByRole("link", { name: "ocrelizumab" });
+  expect(oc).toHaveAttribute("href", expect.stringContaining("dailymed"));
+  expect(oc).toHaveAttribute("target", "_blank");
+  expect(oc).toHaveAttribute("rel", "noreferrer");
+  expect(within(ms).getByRole("link", { name: "ofatumumab" })).toBeInTheDocument();
+  expect(within(ms).getAllByText("ChEMBL · FDA label")).toHaveLength(2);
+  expect(ms.querySelector(".apl")).toHaveClass("floored");
+});
+
+test("panel e: a disease with no trials still lists its hand approval", async () => {
+  const e = await panelE();
+  const nm = e.querySelectorAll(".dzl")[1] as HTMLElement;
+  expect(nm.querySelector(".tc span")).toHaveTextContent("0");
+  expect([...nm.querySelectorAll(".st i")].every((i) => i.className === "")).toBe(true);
+  expect(within(nm).getByRole("link", { name: "rituximab" })).toBeInTheDocument();
+  expect(within(nm).getByText("PMDA 2022 · hand")).toBeInTheDocument();
+});
+
+test("panel e withdrawn tag, no rule", async () => {
+  const e = await panelE();
+  const cidp = e.querySelectorAll(".dzl")[2] as HTMLElement;
+  expect(within(cidp).getByRole("link", { name: "obinutuzumab" })).toBeInTheDocument();
+  expect(within(cidp).getByText("withdrawn")).toBeInTheDocument();
+  expect(cidp.querySelector(".apl")).not.toHaveClass("floored");
+});
+
+test("panel e: a disease with no approvals reads None approved", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks[1]!.dz = ["MG"];
+  });
+  const e = await panelE("/target/cd20", f);
+  const mg = [...e.querySelectorAll(".dzl")].find((l) => l.querySelector(".nm")?.textContent === "Myasthenia gravis") as HTMLElement;
+  expect(within(mg).getByText("None approved")).toBeInTheDocument();
+});
+
+test("?disease=MS marks the MS line only", async () => {
+  const e = await panelE("/target/cd20?disease=MS");
+  const cur = e.querySelectorAll('[aria-current="true"]');
+  expect(cur).toHaveLength(1);
+  expect(cur[0]).toHaveTextContent("Multiple sclerosis");
+});
+
+test("a file without approval data says so once and has no approval column", async () => {
+  const f = variant((p) => {
+    for (const r of p.rows) delete r.ap;
+  });
+  const e = await panelE("/target/cd20", f);
+  expect(within(e).getByText(/Approval data not available/)).toBeInTheDocument();
+  expect(within(e).queryByText("None approved")).not.toBeInTheDocument();
+  expect(within(e).queryByText("Approved for this disease")).not.toBeInTheDocument();
+});
+
+test("panel e on a phone is one block per disease", async () => {
+  phoneMedia();
+  const e = await panelE();
+  const blocks = e.querySelectorAll(".dzp .dzl");
+  expect(blocks).toHaveLength(3);
+  expect(blocks[0]).toHaveTextContent("8 trials · 7 running");
+  expect(within(blocks[0] as HTMLElement).getAllByText("P1").length).toBe(1);
+  expect(within(blocks[0] as HTMLElement).getByRole("link", { name: "ocrelizumab" })).toBeInTheDocument();
+  expect(e.querySelector(".dzh")).toBeNull();
+});
