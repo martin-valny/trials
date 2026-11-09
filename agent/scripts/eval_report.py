@@ -118,8 +118,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, default=Path("eval/report.json"))
     args = ap.parse_args(argv)
     previous = json.loads(args.out.read_text()) if args.out.exists() else None
+    cfg = load_config()
     for path in sorted(args.recordings.glob("*.jsonl")):
-        assert_hash_current(path, load_config())
+        assert_hash_current(path, cfg)
     report = build_report(args.recordings, args.labels, previous)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2) + "\n")

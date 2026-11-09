@@ -6,15 +6,15 @@ from typing import Any
 
 import httpx
 import pytest
+import record_eval
 import yaml
 from eval_report import assert_hash_current, build_report, check_gates
 from eval_report import main as report_main
 from make_synthetic_recording import fixture_http, scripted_model
-from record_eval import PLACEHOLDER, record_pair
 from record_eval import main as record_main
+from record_eval import record_pair
 
-from diligence.config import load_config
-from diligence.loop import RunRequest, run_agent
+from diligence.config import AgentConfig, Models, Price, load_config
 from diligence.model import ReplayMismatch, ReplayModel, read_lines
 from diligence.recording import (
     RecordingTools,
@@ -146,13 +146,11 @@ def test_checker_agreement_from_labels(tmp_path: Path) -> None:
     rec = tmp_path / "recs"
     rec.mkdir()
     (rec / "cd20__MS.jsonl").write_text(SYNTHETIC.read_text())
-    verdicts = {v.sentence_id: v.verdict for v in stored_record(SYNTHETIC).verdicts}
-    ids = sorted(verdicts)
     labels = tmp_path / "labels.csv"
-    rows = [f"cd20__MS,{ids[0]},{verdicts[ids[0]]},m,\n", f"cd20__MS,{ids[1]},unsupported,m,\n"]
-    if verdicts[ids[1]] == "unsupported":
-        rows[1] = f"cd20__MS,{ids[1]},supported,m,\n"
-    labels.write_text("run,sentence_id,label,labeller,note\n" + "".join(rows))
+    # Synthetic verdicts: s1 supported, s2 partly. One label agrees, one does not.
+    labels.write_text(
+        "run,sentence_id,label,labeller,note\ncd20__MS,s1,supported,m,\ncd20__MS,s2,supported,m,\n"
+    )
     assert build_report(rec, labels, None)["checker_agreement"] == 0.5
 
 
@@ -247,18 +245,44 @@ def test_record_pair_offline(tmp_path: Path) -> None:
     assert published["target"] == "cd20" and published["status"] == "done"
 
 
+def _cfg_with(models: str, price: float) -> AgentConfig:
+    cfg = load_config()
+    ids = {k: f"{models}-{k}" for k in cfg.models.model_dump()}
+    return cfg.model_copy(
+        update={
+            "models": Models(**ids),
+            "prices": {i: Price(input_per_mtok=price, output_per_mtok=price) for i in ids.values()},
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    ("cfg", "word"),
+    [(_cfg_with("REPLACE_WITH_X", 1.0), "placeholder"), (_cfg_with("real", 0.0), "price")],
+)
 def test_record_eval_refuses_placeholders(
-    capsys: pytest.CaptureFixture[str], tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+    cfg: AgentConfig,
+    word: str,
 ) -> None:
-    assert PLACEHOLDER in load_config().models.writer  # shipped config still has placeholders
+    monkeypatch.setattr(record_eval, "load_config", lambda: cfg)
     code = record_main(["--pairs", str(AGENT / "eval" / "pairs.yaml"), "--out", str(tmp_path)])
     assert code == 2
-    assert "placeholder" in capsys.readouterr().err.lower()
+    assert word in capsys.readouterr().err.lower()
 
 
-def test_run_agent_default_dispatch_unchanged() -> None:
-    # dispatch_fn is optional; the real dispatcher remains the default.
-    import inspect
-
-    assert inspect.signature(run_agent).parameters["dispatch_fn"].default is None
-    assert RunRequest("a", "b")
+def test_report_recomputed_from_committed_recordings() -> None:
+    if not RECORDINGS:
+        pytest.skip("no recordings yet")
+    committed_path = AGENT / "eval" / "report.json"
+    assert committed_path.exists(), "recordings exist but eval/report.json was not committed"
+    committed = json.loads(committed_path.read_text())
+    fresh = build_report(AGENT / "eval" / "recordings", AGENT / "eval" / "labels.csv", committed)
+    assert check_gates(fresh) == []
+    assert committed["n_runs"] == len(RECORDINGS)
+    drop = {"generated_at"}
+    assert {k: v for k, v in committed.items() if k not in drop} == {
+        k: v for k, v in fresh.items() if k not in drop
+    }

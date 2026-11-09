@@ -284,3 +284,23 @@ def test_recording_records_and_passes_tool_choice(tmp_path: Path) -> None:
         model="m1", system="s", messages=MSG_A, tools=[], max_tokens=5, tool_choice="submit_memo"
     )
     assert got == _resp("one")
+
+
+@pytest.mark.parametrize(
+    ("field", "override"),
+    [
+        ("model", {"model": "m2"}),
+        ("system_hash", {"system": "other"}),
+        ("tools_hash", {"tools": [{"toolSpec": {"name": "x"}}]}),
+        ("tool_choice", {"tool_choice": "submit_memo"}),
+        ("max_tokens", {"max_tokens": 101}),
+    ],
+)
+def test_replay_checks_every_request_field(tmp_path: Path, field: str, override: dict) -> None:
+    path = tmp_path / "r.jsonl"
+    RecordingModel(FakeInner([_resp("one")]), path).converse(
+        model="m1", system="sys", messages=MSG_A, tools=[], max_tokens=100
+    )
+    args = {"model": "m1", "system": "sys", "messages": MSG_A, "tools": [], "max_tokens": 100}
+    with pytest.raises(ReplayMismatch, match=f"{field} differs.*re-record the evaluation"):
+        ReplayModel(path).converse(**{**args, **override})

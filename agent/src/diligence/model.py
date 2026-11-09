@@ -112,11 +112,13 @@ def _request_record(
     messages: list[dict[str, Any]],
     max_tokens: int,
     tool_choice: str | None,
+    tools: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
         "tool_choice": tool_choice,
         "model": model,
         "system_hash": _sha(system),
+        "tools_hash": _hash_json(tools),
         "messages_hash": _hash_json(messages),
         "max_tokens": max_tokens,
     }
@@ -150,7 +152,7 @@ class RecordingModel:
         line = {
             "kind": "model",
             "request": {
-                **_request_record(model, system, messages, max_tokens, tool_choice),
+                **_request_record(model, system, messages, max_tokens, tool_choice, tools),
                 "messages": messages,
             },
             "response": asdict(response),
@@ -190,13 +192,22 @@ class ReplayModel:
                 f"recording exhausted after {len(self._calls)} model calls; re-record the evaluation"
             )
         index, line = self._calls[self._next]
-        expected = line["request"]["messages_hash"]
-        got = _hash_json(messages)
-        if got != expected:
-            raise ReplayMismatch(
-                f"messages_hash differs at model call index {self._next} (file line {index}): "
-                f"expected {expected[:12]}, got {got[:12]}; re-record the evaluation"
-            )
+        want = line["request"]
+        got = _request_record(model, system, messages, max_tokens, tool_choice, tools)
+        for field in (
+            "model",
+            "system_hash",
+            "tools_hash",
+            "tool_choice",
+            "max_tokens",
+            "messages_hash",
+        ):
+            if got[field] != want.get(field):
+                detail = f"expected {str(want.get(field))[:12]}, got {str(got[field])[:12]}"
+                raise ReplayMismatch(
+                    f"{field} differs at model call index {self._next} (file line {index}): "
+                    f"{detail}; re-record the evaluation"
+                )
         self._next += 1
         r = line["response"]
         return ModelResponse(r["stop_reason"], r["content"], r["tokens_in"], r["tokens_out"])

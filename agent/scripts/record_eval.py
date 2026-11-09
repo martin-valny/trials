@@ -60,8 +60,11 @@ def record_pair(
         data_date=str(meta.get("generated_for", "")),
         label=row.get("label"),
     )
-    web_dir.mkdir(parents=True, exist_ok=True)
-    (web_dir / f"{name}.json").write_text(rec.model_dump_json(indent=1) + "\n")
+    if rec.status == "done":
+        web_dir.mkdir(parents=True, exist_ok=True)
+        (web_dir / f"{name}.json").write_text(rec.model_dump_json(indent=1) + "\n")
+    else:
+        print(f"warning: {name} ended {rec.status}; not published to the site", file=sys.stderr)
     return rec.cost_usd
 
 
@@ -74,10 +77,21 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     cfg = load_config()
-    if any(PLACEHOLDER in m for m in cfg.models.model_dump().values()):
+    model_ids = cfg.models.model_dump().values()
+    if any(PLACEHOLDER in m for m in model_ids):
         print(
             "config.yaml still has placeholder model IDs (REPLACE_WITH_...); "
             "set the Bedrock model IDs and prices first.",
+            file=sys.stderr,
+        )
+        return 2
+    if any(
+        (p := cfg.prices.get(m)) is None or (p.input_per_mtok == 0 and p.output_per_mtok == 0)
+        for m in model_ids
+    ):
+        print(
+            "config.yaml has a missing or zero price for a model; "
+            "enter the Bedrock prices first so costs are real.",
             file=sys.stderr,
         )
         return 2
@@ -120,7 +134,11 @@ def main(argv: list[str] | None = None) -> int:
             str(report),
         ]
     )
-    shutil.copyfile(report, WEB_DIR / "eval-report.json")
+    if code == 0:
+        WEB_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(report, WEB_DIR / "eval-report.json")
+    else:
+        print("report gates failed; eval-report.json not copied to the site", file=sys.stderr)
     return code
 
 
