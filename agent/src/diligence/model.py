@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import boto3
+from botocore.config import Config
 
 from diligence import prompts
 from diligence.config import AgentConfig
@@ -32,6 +33,7 @@ class ModelClient(Protocol):
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
         max_tokens: int,
+        tool_choice: str | None = None,
     ) -> ModelResponse: ...
 
 
@@ -61,7 +63,15 @@ def prompt_hash(cfg: AgentConfig) -> str:
 
 class BedrockModel:
     def __init__(self, region: str, client: Any | None = None) -> None:
-        self._client: Any = client or boto3.client("bedrock-runtime", region_name=region)
+        self._client: Any = client or boto3.client(
+            "bedrock-runtime",
+            region_name=region,
+            config=Config(
+                read_timeout=60,
+                connect_timeout=5,
+                retries={"max_attempts": 2, "mode": "standard"},
+            ),
+        )
 
     def converse(
         self,
@@ -71,6 +81,7 @@ class BedrockModel:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
         max_tokens: int,
+        tool_choice: str | None = None,
     ) -> ModelResponse:
         request: dict[str, Any] = {
             "modelId": model,
@@ -80,20 +91,30 @@ class BedrockModel:
         }
         if tools:
             request["toolConfig"] = {"tools": [*tools, _CACHE_POINT]}
+            if tool_choice:
+                request["toolConfig"]["toolChoice"] = {"tool": {"name": tool_choice}}
         out = self._client.converse(**request)
         usage = out.get("usage", {})
         return ModelResponse(
             stop_reason=out["stopReason"],
             content=out["output"]["message"]["content"],
-            tokens_in=usage.get("inputTokens", 0),
+            # Cached tokens are still input; count them toward the run's input budget.
+            tokens_in=usage.get("inputTokens", 0)
+            + usage.get("cacheReadInputTokens", 0)
+            + usage.get("cacheWriteInputTokens", 0),
             tokens_out=usage.get("outputTokens", 0),
         )
 
 
 def _request_record(
-    model: str, system: str, messages: list[dict[str, Any]], max_tokens: int
+    model: str,
+    system: str,
+    messages: list[dict[str, Any]],
+    max_tokens: int,
+    tool_choice: str | None,
 ) -> dict[str, Any]:
     return {
+        "tool_choice": tool_choice,
         "model": model,
         "system_hash": _sha(system),
         "messages_hash": _hash_json(messages),
@@ -116,14 +137,20 @@ class RecordingModel:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
         max_tokens: int,
+        tool_choice: str | None = None,
     ) -> ModelResponse:
         response = self._inner.converse(
-            model=model, system=system, messages=messages, tools=tools, max_tokens=max_tokens
+            model=model,
+            system=system,
+            messages=messages,
+            tools=tools,
+            max_tokens=max_tokens,
+            tool_choice=tool_choice,
         )
         line = {
             "kind": "model",
             "request": {
-                **_request_record(model, system, messages, max_tokens),
+                **_request_record(model, system, messages, max_tokens, tool_choice),
                 "messages": messages,
             },
             "response": asdict(response),
@@ -156,6 +183,7 @@ class ReplayModel:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
         max_tokens: int,
+        tool_choice: str | None = None,
     ) -> ModelResponse:
         if self._next >= len(self._calls):
             raise ReplayMismatch(

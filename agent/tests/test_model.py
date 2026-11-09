@@ -26,8 +26,16 @@ class FakeInner:
         self.responses = list(responses)
 
     def converse(
-        self, *, model: str, system: str, messages: list[dict], tools: list[dict], max_tokens: int
+        self,
+        *,
+        model: str,
+        system: str,
+        messages: list[dict],
+        tools: list[dict],
+        max_tokens: int,
+        tool_choice: str | None = None,
     ) -> ModelResponse:
+        self.last_tool_choice = tool_choice
         return self.responses.pop(0)
 
 
@@ -179,12 +187,100 @@ def test_prompts_contain_required_statements() -> None:
         "PPR",
         "CHEMBL",
         "FDA:",
-        "12",
         "not investment advice",
         "first message",
     ):
         assert needle in s
+    assert "12 calls" not in s
+    assert "Only section sentences carry `cites`" in s
     assert "submit_verdicts" in prompts.CHECKER_PROMPT or "verdict" in prompts.CHECKER_PROMPT
     schema = prompts.VERDICTS_TOOL["toolSpec"]["inputSchema"]["json"]
     item = schema["properties"]["verdicts"]["items"]
     assert item["properties"]["verdict"]["enum"] == ["supported", "partly", "unsupported"]
+
+
+def _stub_client() -> object:
+    return boto3.client(
+        "bedrock-runtime",
+        region_name="eu-central-1",
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+    )
+
+
+def test_bedrock_forced_tool_choice() -> None:
+    client = _stub_client()
+    tools = [prompts.MEMO_TOOL]
+    expected = {
+        "modelId": "m1",
+        "system": [{"text": "sys"}, {"cachePoint": {"type": "default"}}],
+        "messages": MSG_A,
+        "toolConfig": {
+            "tools": [*tools, {"cachePoint": {"type": "default"}}],
+            "toolChoice": {"tool": {"name": "submit_memo"}},
+        },
+        "inferenceConfig": {"maxTokens": 9},
+    }
+    reply = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "stopReason": "end_turn",
+        "usage": {"inputTokens": 1, "outputTokens": 1, "totalTokens": 2},
+        "metrics": {"latencyMs": 1},
+    }
+    with Stubber(client) as stub:  # type: ignore[arg-type]
+        stub.add_response("converse", reply, expected)
+        BedrockModel("eu-central-1", client=client).converse(
+            model="m1",
+            system="sys",
+            messages=MSG_A,
+            tools=tools,
+            max_tokens=9,
+            tool_choice="submit_memo",
+        )
+        stub.assert_no_pending_responses()
+
+
+def test_bedrock_counts_cache_tokens_as_input() -> None:
+    client = _stub_client()
+    reply = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "stopReason": "end_turn",
+        "usage": {
+            "inputTokens": 7,
+            "outputTokens": 3,
+            "totalTokens": 10,
+            "cacheReadInputTokens": 100,
+            "cacheWriteInputTokens": 20,
+        },
+        "metrics": {"latencyMs": 1},
+    }
+    with Stubber(client) as stub:  # type: ignore[arg-type]
+        stub.add_response("converse", reply)
+        got = BedrockModel("eu-central-1", client=client).converse(
+            model="m1", system="sys", messages=MSG_A, tools=[], max_tokens=5
+        )
+    assert (got.tokens_in, got.tokens_out) == (127, 3)
+
+
+def test_bedrock_default_client_has_timeouts_and_retries() -> None:
+    cfg = BedrockModel("eu-central-1")._client.meta.config
+    assert cfg.read_timeout == 60
+    assert cfg.connect_timeout == 5
+    assert cfg.retries["total_max_attempts"] == 3  # max_attempts=2 retries
+    assert cfg.retries["mode"] == "standard"
+
+
+def test_recording_records_and_passes_tool_choice(tmp_path: Path) -> None:
+    inner = FakeInner([_resp("one")])
+    rec = RecordingModel(inner, tmp_path / "r.jsonl")
+    rec.converse(
+        model="m1", system="s", messages=MSG_A, tools=[], max_tokens=5, tool_choice="submit_memo"
+    )
+    assert inner.last_tool_choice == "submit_memo"  # type: ignore[attr-defined]
+    line = json.loads((tmp_path / "r.jsonl").read_text())
+    assert line["request"]["tool_choice"] == "submit_memo"
+    replay = ReplayModel(tmp_path / "r.jsonl")
+    got = replay.converse(
+        model="m1", system="s", messages=MSG_A, tools=[], max_tokens=5, tool_choice="submit_memo"
+    )
+    assert got == _resp("one")

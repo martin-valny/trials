@@ -127,7 +127,7 @@ How to work
 - Gather evidence with the tools, starting with site_target (the site's own trial rows for the \
 target). Use the other tools to look at the trial registry, the target's drugs in ChEMBL, recent \
 literature and FDA labels. Plan your calls: the budget is the tool-call limit stated in the first \
-message (12 calls if none is stated). Stop gathering before it runs out and leave room to write.
+message. Stop gathering before it runs out and leave room to write.
 - If a tool returns an error or nothing, say so plainly in the memo where it matters and carry on \
 with what you have. Never fill a gap with remembered facts.
 - Finish by calling submit_memo exactly once. Do not write the memo as plain text.
@@ -158,6 +158,8 @@ followed by digits (ChEMBL), and FDA:<set id> (drug labels).
 - Use no other IDs. Never cite an ID you did not see in a tool result, and never guess one.
 - Every number, date, count and phase in a sentence must come from the sources it cites. If you \
 cannot cite a claim, leave it out.
+- Only section sentences carry `cites`; `read` and `would_change` are uncited summaries of cited \
+sentences, so everything they say must already be said, with a cite, in a section sentence.
 - Each sentence states one claim a reader can check against its cited sources. Do not combine \
 claims that need different sources in one sentence.
 
