@@ -42,6 +42,22 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ApprovalTerms(_Strict):
+    """Vocabulary that ties a condition to approval records: MeSH headings, (MeSH heading, EFO
+    term) pairs for EFO-only diseases, and plain label phrases for the label-text fallback."""
+
+    mesh: list[str] = []
+    efo: list[tuple[str, str]] = []
+    label_terms: list[str] = []
+
+    @model_validator(mode="after")
+    def _terms_not_blank(self) -> ApprovalTerms:
+        flat = [*self.mesh, *self.label_terms, *(t for pair in self.efo for t in pair)]
+        if any(not t.strip() for t in flat):
+            raise ValueError("approval terms must not be empty or whitespace-only")
+        return self
+
+
 class ConditionSpec(_Strict):
     label: str
     synonyms: list[str] = Field(min_length=1)
@@ -50,6 +66,7 @@ class ConditionSpec(_Strict):
     figure_order: int | None = (
         None  # position on the figure (1 first); unset sorts after, by config order
     )
+    approvals: ApprovalTerms | None = None  # vocabulary for the approved-for-disease join
 
     @field_validator("code")
     @classmethod
@@ -189,6 +206,7 @@ class AreaConfig(_Strict):
     pipeline_dir: Path = Path("pipeline")
     sponsors_dir: Path = Path("sponsors")
     stop_reasons: Path = Path("stop_reasons.csv")
+    approvals_dir: Path = Path("approvals")
     explorer: ExplorerConfig = ExplorerConfig()
 
     @field_validator("tracked_fields")
@@ -206,7 +224,7 @@ class AreaConfig(_Strict):
 
 def load_config(path: Path) -> AreaConfig:
     """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir``, ``approaches_dir``,
-    ``pipeline_dir``, ``sponsors_dir`` and ``stop_reasons`` resolve relative to the file."""
+    ``pipeline_dir``, ``sponsors_dir``, ``approvals_dir`` and ``stop_reasons`` resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -224,6 +242,7 @@ def load_config(path: Path) -> AreaConfig:
             "approaches_dir": (path.parent / cfg.approaches_dir).resolve(),
             "pipeline_dir": (path.parent / cfg.pipeline_dir).resolve(),
             "sponsors_dir": (path.parent / cfg.sponsors_dir).resolve(),
+            "approvals_dir": (path.parent / cfg.approvals_dir).resolve(),
             "stop_reasons": (path.parent / cfg.stop_reasons).resolve(),
         }
     )

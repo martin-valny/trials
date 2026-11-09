@@ -5,26 +5,50 @@ conditions:
     short: MS
     code: MS
     figure_order: 1
+    approvals:
+      mesh:
+        - Multiple Sclerosis
+        - Multiple Sclerosis, Chronic Progressive
+        - Multiple Sclerosis, Relapsing-Remitting
+      label_terms: ["multiple sclerosis"]
   - label: NMOSD
     synonyms: ["neuromyelitis optica", "NMOSD"]
     code: NMOSD
     figure_order: 3
+    approvals:
+      mesh: ["Neuromyelitis Optica"]
+      label_terms: ["neuromyelitis optica"]
   - label: MOGAD
     synonyms: ["MOG antibody disease", "MOGAD", "myelin oligodendrocyte glycoprotein"]
     code: MOGAD
     figure_order: 5
+    approvals:
+      mesh: []
+      label_terms: ["myelin oligodendrocyte glycoprotein antibody", "MOGAD"]
   - label: Myasthenia gravis
     synonyms: ["myasthenia gravis"]
     code: MG
     figure_order: 2
+    approvals:
+      mesh: ["Myasthenia Gravis"]
+      label_terms: ["myasthenia gravis"]
   - label: CIDP
     synonyms: ["chronic inflammatory demyelinating polyneuropathy", "CIDP"]
     code: CIDP
     figure_order: 4
+    approvals:
+      mesh: ["Polyradiculoneuropathy, Chronic Inflammatory Demyelinating"]
+      label_terms:
+        - chronic inflammatory demyelinating polyneuropathy
+        - chronic inflammatory demyelinating polyradiculoneuropathy
   - label: Autoimmune encephalitis
     synonyms: ["autoimmune encephalitis", "anti-NMDA receptor encephalitis", "limbic encephalitis"]
     code: AE
     figure_order: 6
+    approvals:
+      efo:
+        - ["Autoimmune Diseases of the Nervous System", "autoimmune encephalitis"]
+      label_terms: ["autoimmune encephalitis"]
 study_type: INTERVENTIONAL
 phases: [EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, NA]
 tracked_fields:
