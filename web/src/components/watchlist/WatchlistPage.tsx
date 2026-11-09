@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadTrials } from "../../data";
-import { formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
+import { aboveLine, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
 import { usePipelineFile } from "../../lib/useDisease";
 import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, RiskFile, TrialsIndex } from "../../types";
@@ -15,6 +15,8 @@ import "./watchlist.css";
 
 const n = (x: number): string => x.toLocaleString("en-US");
 const NONE = "none";
+/** Rows shown at first, and added by each "Show N more" (DESIGN.md's show-more pattern). */
+const PAGE = 50;
 
 /** trials.json: undefined while loading, null when missing or unreadable (rows then lack title and phase). */
 function useTrialsIndex(): TrialsIndex | null | undefined {
@@ -31,11 +33,12 @@ function useTrialsIndex(): TrialsIndex | null | undefined {
   return f;
 }
 
-function Head({ lede }: { lede?: string }) {
+function Head({ lede, claim }: { lede?: string; claim?: string }) {
   return (
     <header className="wl-head">
       <h1>Watchlist</h1>
       {lede ? <p className="wl-lede">{lede}</p> : null}
+      {claim ? <p className="wl-claim">{claim}</p> : null}
     </header>
   );
 }
@@ -115,9 +118,7 @@ function TrialList({
   const labels = useMemo(() => {
     const dz = new Map((pipeline?.diseases ?? []).map((d) => [d.code, d.label]));
     const rows = new Map((pipeline?.rows ?? []).map((r) => [r.id, r.label]));
-    const drug = new Map<string, string>();
-    for (const r of pipeline?.rows ?? []) for (const m of r.marks) if (!drug.has(m.n)) drug.set(m.n, m.drug);
-    return { dz, rows, drug };
+    return { dz, rows };
   }, [pipeline]);
 
   const options = useMemo(() => {
@@ -147,6 +148,12 @@ function TrialList({
     };
     return rankTrials(risk, filter, sort, pipeline, index);
   }, [risk, pipeline, index, sort, chosen]);
+
+  // The first PAGE rows, more on demand; any change of filters or sort (the query) starts over.
+  const [page, setPage] = useState({ qs, limit: PAGE });
+  const limit = page.qs === qs ? page.limit : PAGE;
+  const visible = shown.slice(0, limit);
+  const more = Math.min(PAGE, shown.length - visible.length);
 
   const update = (f: (p: URLSearchParams) => void) =>
     setParams(
@@ -187,7 +194,10 @@ function TrialList({
 
   return (
     <div className="explore watchlist rk">
-      <Head lede={`${n(total)} running drug ${total === 1 ? "trial" : "trials"}, ranked by estimated chance of stopping early.`} />
+      <Head
+        lede={`${n(total)} running drug ${total === 1 ? "trial" : "trials"}, ranked by estimated chance of stopping early.`}
+        claim={total > 0 ? aboveLine(countAbove(all), total) : undefined}
+      />
       <div className="wl-note">
         <RiskNote />
       </div>
@@ -265,11 +275,16 @@ function TrialList({
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r) => (
-                  <Row key={r.nct} r={r} drug={labels.drug.get(r.nct)} rowLabel={labels.rows} dzLabel={labels.dz} disease={oneDz} />
+                {visible.map((r) => (
+                  <Row key={r.nct} r={r} rowLabel={labels.rows} dzLabel={labels.dz} disease={oneDz} />
                 ))}
               </tbody>
             </table>
+            {more > 0 ? (
+              <button type="button" className="text-button wl-more" onClick={() => setPage({ qs, limit: limit + PAGE })}>
+                Show {n(more)} more, {n(shown.length)} {shown.length === 1 ? "trial" : "trials"}
+              </button>
+            ) : null}
           </>
         )}
       </div>
@@ -279,18 +294,18 @@ function TrialList({
 
 function Row({
   r,
-  drug,
   rowLabel,
   dzLabel,
   disease,
 }: {
   r: WatchRow;
-  drug: string | undefined;
   rowLabel: Map<string, string>;
   dzLabel: Map<string, string>;
   disease: string | null;
 }) {
-  const name = drug ?? r.title;
+  const [open, setOpen] = useState(false);
+  const whyId = useId();
+  const name = r.drug ?? r.title;
   const meta = [r.phase, r.company ?? "Unknown sponsor"].filter(Boolean).join(" · ");
   const q = disease ? `?disease=${encodeURIComponent(disease)}` : "";
   return (
@@ -337,8 +352,20 @@ function Row({
           </div>
         </div>
       </td>
-      <td className="wl-why" data-label="Main factors">
-        {r.factors.length > 0 ? <RiskFactors factors={r.factors} /> : <span className="wl-none">None listed</span>}
+      <td className="wl-why" data-label={r.factors.length > 0 ? undefined : "Main factors"}>
+        {r.factors.length > 0 ? (
+          <>
+            {/* A phone shows the factors on demand, as panel e does; wider screens always show them (CSS). */}
+            <button type="button" className="rk-more wl-why-btn" aria-expanded={open} aria-controls={whyId} onClick={() => setOpen((v) => !v)}>
+              Main factors
+            </button>
+            <div className="wl-why-in" id={whyId} data-open={open}>
+              <RiskFactors factors={r.factors} />
+            </div>
+          </>
+        ) : (
+          <span className="wl-none">None listed</span>
+        )}
       </td>
     </tr>
   );

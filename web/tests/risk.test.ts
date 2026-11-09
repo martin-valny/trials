@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPct, formatRange, rankTrials, scaleMax, scalePos, targetSummary, vsTypical } from "../src/lib/risk";
+import { aboveLine, countAbove, formatPct, formatRange, rankTrials, scaleMax, scalePos, targetSummary, vsTypical } from "../src/lib/risk";
 import type { PipelineFile, RiskFile, TrialsIndex } from "../src/types";
 import { readFixture } from "./helpers";
 
@@ -150,4 +150,23 @@ describe("targetSummary", () => {
 test("an estimate of exactly 0 or under 0.5% never reads as 0%", () => {
   expect(formatPct(0)).toBe("<1%");
   expect(formatPct(0.0049)).toBe("<1%");
+});
+
+describe("countAbove", () => {
+  it("counts rows above their typical rate, a range containing typical counting as near", () => {
+    const rows = [
+      { p: 0.5, lo: 0.4, hi: 0.6, typical: 0.2 },
+      { p: 0.24, lo: 0.1, hi: 0.3, typical: 0.2 },
+      { p: 0.24, lo: 0.235, hi: 0.25, typical: 0.2 },
+      { p: 0.1, lo: 0.05, hi: 0.12, typical: 0.2 },
+    ];
+    expect(countAbove(rows)).toBe(2);
+    expect(countAbove([])).toBe(0);
+  });
+  it("words the claim line for one and many", () => {
+    expect(aboveLine(2, 7)).toBe("2 of 7 sit above their phase's typical rate.");
+    expect(aboveLine(1, 1)).toBe("1 of 1 sits above their phase's typical rate.");
+    expect(aboveLine(1, 7, "CD20")).toBe("1 of 7 running CD20 trials sits above their phase's typical rate.");
+    expect(aboveLine(0, 1, "CD20")).toBe("0 of 1 running CD20 trial sit above their phase's typical rate.");
+  });
 });

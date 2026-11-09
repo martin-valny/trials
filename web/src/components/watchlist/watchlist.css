@@ -4,6 +4,8 @@
 .wl-head { padding: 28px 40px 0; }
 .wl-head h1 { margin: 0; font-size: clamp(30px, 3.2vw, 44px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
 .wl-lede { margin: 12px 0 0; font-size: 18px; line-height: 1.35; letter-spacing: -.01em; max-width: 62ch; text-wrap: balance; }
+/* The claim line: one data-derived sentence under the lede, quieter than it. */
+.wl-claim { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--muted); font-variant-numeric: tabular-nums; max-width: 62ch; }
 .wl-note { padding: 0 40px; }
 .wl-note .rk-note { margin-top: 10px; }
 
@@ -41,6 +43,9 @@
 .wl-none { color: var(--muted); font-weight: 400; }
 .wl-why .rk-factors { font-size: 12px; line-height: 1.35; }
 .wl-why .rk-factors li:first-child { padding-top: 0; }
+/* The factors' disclosure exists for a phone only; wider screens always show the factors. */
+.watchlist .wl-why-btn { display: none; }
+.watchlist .wl-more { margin-top: 14px; }
 
 /* Per-trial estimates off: target, count, median beside typical. */
 .wl-targets { max-width: 44rem; margin-top: 14px; }
@@ -62,6 +67,7 @@
   .wl-head { padding: 22px 16px 0; }
   .wl-head h1 { font-size: 30px; }
   .wl-lede { font-size: 16px; }
+  .wl-claim { font-size: 14px; }
   .wl-note { padding: 0 16px; }
   .wl-body { padding: 12px 16px 40px; }
   .watchlist .wl-reset { margin-left: 4px; }
@@ -80,8 +86,12 @@
   .wl-table td.wl-tgt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin-top: 2px; }
   .wl-table td.wl-tgt .wl-dz { margin-top: 0; }
   .wl-table td.wl-est { margin-top: 10px; padding: 0; }
-  .wl-table td.wl-why { margin-top: 10px; }
-  .wl-table td.wl-why::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
+  .wl-table td.wl-why { margin-top: 6px; }
+  .wl-table td.wl-why[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
+  /* Main factors behind the same disclosure panel e uses (risk.css .rk-more), a 44px target. */
+  .watchlist .wl-why-btn { display: inline-flex; min-height: 44px; }
+  .wl-why-in[data-open="false"] { display: none; }
+  .wl-why-in { padding-bottom: 2px; }
   .wl-est-in { grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0 16px; }
   .wl-targets th, .wl-targets td { padding-right: 12px; }
   .wl-targets .rk-est-t small { display: block; margin-left: 0; }

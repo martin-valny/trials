@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { markState } from "../../lib/pipeline";
-import { formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
+import { aboveLine, countAbove, formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
 import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, PipelineMark, RiskFile, RiskTrial } from "../../types";
 import { phaseText } from "../pipeline/TrialCard";
@@ -61,6 +61,7 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
     const bases = [...new Set(rows.map((r) => r.t.basis))];
     body = (
       <>
+        <p className="rk-claim">{aboveLine(countAbove(rows.map((r) => r.t)), rows.length, label)}</p>
         <p className="rk-sub">
           {label} · {dzLabel} · {n(rows.length)} running. Tick = typical for {bases.length === 1 ? bases[0] : "each trial's phase"}.
         </p>
@@ -98,7 +99,7 @@ function RiskRow({ row: { m, t }, file }: { row: Row; file: PipelineFile }) {
     <li className="rk-row">
       <div className="rk-who">
         <div className="rk-nm">
-          <b>{m.drug}</b> · {phaseText(m)} · {company}
+          <b>{t.drug ?? m.drug}</b> · {phaseText(m)} · {company}
         </div>
         <div className="rk-id">
           <Link to={`/trial/${m.n}`}>{m.n}</Link>

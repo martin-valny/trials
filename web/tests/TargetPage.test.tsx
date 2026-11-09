@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { axisStart } from "../src/components/target/TargetTimeline";
-import type { PipelineFile } from "../src/types";
+import type { PipelineFile, RiskFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
 function Where() {
@@ -258,24 +258,24 @@ test("renders the risk panel with heading and rows", async () => {
   const rows = within(within(panel).getByRole("list", { name: "Running trials by estimate" })).getAllByRole("listitem");
   expect(rows).toHaveLength(7);
   // Highest estimate first; a near-zero range never reads "(0–0)".
-  expect(rows[0]).toHaveTextContent("66% (66–71)");
+  expect(rows[0]).toHaveTextContent("66% (64–68)");
   expect(rows.find((r) => r.textContent?.includes("NCT90000006"))).toHaveTextContent("<1% (<1–<1)");
   expect(panel.textContent).not.toMatch(/\(0–/);
   const row = rows.find((r) => r.textContent?.includes("NCT90000002"))!;
-  expect(row).toHaveTextContent("example drug · Phase 2 · Example Pharma");
-  expect(row).toHaveTextContent("24% (5–24)");
-  expect(row).toHaveTextContent("typical 20%");
-  expect(row).toHaveTextContent("near typical 20%"); // its range (5–24) contains the typical rate
-  expect(within(row).getByRole("img", { name: "Estimated 24% (5–24); typical 20%" })).toBeInTheDocument();
+  // risk.json's drug name (registry casing) over the figure's lower-case name
+  expect(row).toHaveTextContent("Example Drug · Phase 2 · Example Pharma");
+  expect(row).toHaveTextContent("24% (24–25)");
+  expect(row).toHaveTextContent("above typical 20%");
+  expect(within(row).getByRole("img", { name: "Estimated 24% (24–25); typical 20%" })).toBeInTheDocument();
   expect(within(row).getByRole("link", { name: "NCT90000002" })).toHaveAttribute("href", "/trial/NCT90000002");
   const more = within(row).getByRole("button", { name: /Main factors/ });
   expect(more).toHaveAttribute("aria-expanded", "false");
-  expect(row).not.toHaveTextContent("Few sites (1)");
+  expect(row).not.toHaveTextContent("Sites planned: 1");
   await userEvent.click(more);
   expect(more).toHaveAttribute("aria-expanded", "true");
   const factors = within(row).getByRole("list", { name: "Main factors" });
   expect(within(factors).getAllByRole("listitem")).toHaveLength(3);
-  expect(factors).toHaveTextContent("Few sites (1)");
+  expect(factors).toHaveTextContent("Sites planned: 1");
   expect(factors).toHaveTextContent("lowers");
   expect(within(factors).queryByRole("link")).not.toBeInTheDocument();
   expect(more).toHaveAttribute("aria-controls", factors.closest(".rk-why")!.id);
@@ -321,4 +321,16 @@ test("panel absent without risk.json", async () => {
   await new Promise((r) => setTimeout(r, 0));
   expect(screen.queryByRole("heading", { name: RISK_H })).not.toBeInTheDocument();
   expect(screen.queryByText(/see Methods for accuracy/)).not.toBeInTheDocument();
+});
+
+test("panel e opens with a claim line counting trials above their typical rate", async () => {
+  const risk = readFixture<RiskFile>("risk.json");
+  for (const t of Object.values(risk.trials!)) Object.assign(t, { p: 0.2, lo: 0.15, hi: 0.25, typical: 0.2 });
+  Object.assign(risk.trials!.NCT90000004!, { p: 0.5, lo: 0.4, hi: 0.6 });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const claim = within(riskPanel()).getByText(/sits? above their phase's typical rate\.$/);
+  expect(claim).toHaveTextContent("1 of 7 running CD20 trials sits above their phase's typical rate.");
+  expect(claim.compareDocumentPosition(within(riskPanel()).getByText(/^CD20 · All diseases/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

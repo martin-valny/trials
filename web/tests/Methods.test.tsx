@@ -317,6 +317,10 @@ test("stop-risk: exclusions lead with enrollment; the comparison, text experimen
   expect(text).toMatch(/fewer than 5 earlier finished trials/);
   expect(text).toMatch(/Sponsor's earlier trials: k of n stopped early \(registry\)/);
   expect(text).toMatch(/10th to 90th percentile/);
+  expect(text).toMatch(/spread of 20 refits of the model on resampled training data .*placed around the estimate/);
+  expect(text).toMatch(/for running trials, the count is as of today/);
+  expect(text).toMatch(/Registry files it under/);
+  expect(text).toMatch(/actual primary completion date .*or with results posted, is finished in all but name/);
   expect(text).toMatch(/retrained by hand/);
   expect(text).toMatch(/withdrawn/i);
   expect(text).not.toMatch(/risk of failure|likely to fail|in trouble/i);

@@ -48,10 +48,10 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
   expect(order()).toEqual(["NCT90000004", "NCT90000005", "NCT90000099", "NCT90000002", "NCT90000008", "NCT90000006", "NCT90000007"]);
   const first = screen.getAllByRole("row")[1]!;
-  expect(first).toHaveTextContent("66% (66–71)");
+  expect(first).toHaveTextContent("66% (64–68)");
   expect(first).toHaveTextContent("above typical 20%");
-  expect(first).toHaveTextContent("Phase 2 · Example Pharma");
-  expect(within(first).getByRole("img", { name: "Estimated 66% (66–71); typical 20%" })).toBeInTheDocument();
+  expect(first).toHaveTextContent("Example Drug · Phase 2 · Example Pharma");
+  expect(within(first).getByRole("img", { name: "Estimated 66% (64–68); typical 20%" })).toBeInTheDocument();
   expect(within(first).getByRole("link", { name: "NCT90000004" })).toHaveAttribute("href", "/trial/NCT90000004");
   expect(within(first).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(
     "href",
@@ -61,7 +61,7 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   expect(first).toHaveTextContent("Multiple sclerosis");
   const factors = within(first).getByRole("list", { name: "Main factors" });
   expect(within(factors).getAllByRole("listitem")).toHaveLength(3);
-  expect(factors).toHaveTextContent("Few sites (1)");
+  expect(factors).toHaveTextContent("Sites planned: 1");
 });
 
 test("sort switch reorders by difference from typical and is in the URL", async () => {
@@ -191,4 +191,77 @@ test("never uses banned wording", async () => {
   const { container } = renderPage();
   await table();
   expect(container.textContent).not.toMatch(/risk of failure|likely to fail|in trouble/i);
+});
+
+test("a claim line under the lede counts trials above their typical rate", async () => {
+  const risk = riskVariant((r) => {
+    for (const t of Object.values(r.trials!)) Object.assign(t, { p: 0.2, lo: 0.15, hi: 0.25, typical: 0.2 });
+    Object.assign(r.trials!.NCT90000004!, { p: 0.5, lo: 0.4, hi: 0.6 });
+    Object.assign(r.trials!.NCT90000005!, { p: 0.4, lo: 0.3, hi: 0.5 });
+    // 0.24 beside 0.2 is above by the point rule, but its range contains 0.2: near, not above.
+    Object.assign(r.trials!.NCT90000099!, { p: 0.24, lo: 0.1, hi: 0.3 });
+  });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await table();
+  expect(screen.getByText("2 of 7 sit above their phase's typical rate.")).toBeInTheDocument();
+});
+
+test("the trial name is risk.json's drug name when given", async () => {
+  const risk = riskVariant((r) => {
+    r.trials!.NCT90000004!.drug = "RO7121932";
+  });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  await table();
+  expect(screen.getAllByRole("row")[1]).toHaveTextContent("RO7121932 · Phase 2 · Example Pharma");
+});
+
+/** The fixture's trials cloned to `n` rows (estimates descending, so NCT8xxxx0001 ranks first). */
+const manyTrials = (n: number): RiskFile =>
+  riskVariant((r) => {
+    const base = r.trials!.NCT90000004!;
+    r.trials = Object.fromEntries(
+      Array.from({ length: n }, (_, i) => [`NCT8${String(i + 1).padStart(7, "0")}`, { ...base, p: 0.6 - i * 0.004 }]),
+    );
+  });
+
+test("shows the first 50 rows, then reveals 50 more at a time; a new sort starts over", async () => {
+  stubFetch({ "risk.json": manyTrials(120) });
+  renderPage();
+  await table();
+  expect(order()).toHaveLength(50);
+  expect(order()[0]).toBe("NCT80000001");
+  await userEvent.click(screen.getByRole("button", { name: "Show 50 more, 120 trials" }));
+  expect(order()).toHaveLength(100);
+  await userEvent.click(screen.getByRole("button", { name: "Show 20 more, 120 trials" }));
+  expect(order()).toHaveLength(120);
+  expect(screen.queryByRole("button", { name: /^Show \d+ more/ })).not.toBeInTheDocument();
+  // the count reflects the whole filtered list, not the page
+  expect(screen.getByText("Showing 120 of 120 trials")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Above typical by most" }));
+  expect(order()).toHaveLength(50);
+});
+
+test("few rows: no show-more button", async () => {
+  stubFetch();
+  renderPage();
+  await table();
+  expect(screen.queryByRole("button", { name: /^Show \d+ more/ })).not.toBeInTheDocument();
+});
+
+test("each row's factors sit behind a Main factors disclosure (shown only on a phone)", async () => {
+  stubFetch();
+  renderPage();
+  await table();
+  const first = screen.getAllByRole("row")[1]!;
+  const btn = within(first).getByRole("button", { name: "Main factors" });
+  expect(btn).toHaveAttribute("aria-expanded", "false");
+  const box = document.getElementById(btn.getAttribute("aria-controls")!)!;
+  expect(box).toHaveAttribute("data-open", "false");
+  // on a desktop the list is in the page regardless; CSS hides it on a phone until opened
+  expect(within(box).getByRole("list", { name: "Main factors" })).toBeInTheDocument();
+  await userEvent.click(btn);
+  expect(btn).toHaveAttribute("aria-expanded", "true");
+  expect(box).toHaveAttribute("data-open", "true");
 });

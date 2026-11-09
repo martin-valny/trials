@@ -300,15 +300,22 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
             ))}
           </>
         ) : null}
-        . The range is the 10th to 90th percentile of the estimate over 20 refits of the model on resampled
-        training data; a wide range means the model is unsure. An estimate whose range includes the typical rate
-        reads as near typical. The listed factors are the three features that moved that trial&apos;s estimate most.
+        . The range is the spread of 20 refits of the model on resampled training data (their 10th to 90th
+        percentile), placed around the estimate; a wide range means the model is unsure. An estimate whose range
+        includes the typical rate reads as near typical. The listed factors are the three features that moved that
+        trial&apos;s estimate most; each states the trial&apos;s own value, and &ldquo;raises&rdquo; or
+        &ldquo;lowers&rdquo; says which way it moved the estimate. Disease categories follow the registry&apos;s own
+        filing (MeSH), which can differ from how a clinician would name the disease, so they read &ldquo;Registry
+        files it under&rdquo;. A trial still listed as running but already past an actual primary completion date
+        (active, not recruiting), or with results posted, is finished in all but name and gets no estimate.
         Start year is never listed as a factor: it shifts the estimate, but a recent trial&apos;s year is read as the
         last year the model was refitted on, so the year shown would not be the trial&apos;s own.
       </p>
       <p>
         The sponsor&apos;s history is shown as &ldquo;Sponsor&apos;s earlier trials: k of n stopped early
-        (registry)&rdquo;, counting only trials that finished before this one started. A sponsor with fewer than 5
+        (registry)&rdquo;. In training it counts only trials that finished before each trial started; for running
+        trials, the count is as of today, so it can include trials that finished after this one started. A sponsor
+        with fewer than 5
         earlier finished trials has too short a record: the model is told so and uses the average stop rate
         instead.
       </p>

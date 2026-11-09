@@ -410,6 +410,8 @@ export interface RiskFactor {
 }
 
 export interface RiskTrial {
+  /** Display name: the figure row's drug (registry casing where it is just the registered name), else the first registered drug or biologic. */
+  drug?: string;
   p: number;
   lo: number;
   hi: number;

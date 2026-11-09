@@ -23,11 +23,24 @@ export function vsTypical(p: number, typical: number, lo?: number, hi?: number):
   return d > 0 ? "above" : "below";
 }
 
+/** How many estimates sit above their typical rate ("above" by vsTypical, range included). */
+export function countAbove(rows: readonly { p: number; lo: number; hi: number; typical: number }[]): number {
+  return rows.filter((r) => vsTypical(r.p, r.typical, r.lo, r.hi) === "above").length;
+}
+
+/** The claim line: "2 of 7 sit above …", or with a target "2 of 7 running CD20 trials sit above …". */
+export function aboveLine(k: number, n: number, target?: string): string {
+  const of = target ? `${k} of ${n} running ${target} ${n === 1 ? "trial" : "trials"}` : `${k} of ${n}`;
+  return `${of} ${k === 1 ? "sits" : "sit"} above their phase's typical rate.`;
+}
+
 /** Position on the 0..scaleMax scale as 0..1, clamped. */
 export const scalePos = (p: number): number => Math.min(1, Math.max(0, p / scaleMax));
 
 export interface WatchRow {
   nct: string;
+  /** risk.json's display name, else the trial's first pipeline mark's drug; null when neither. */
+  drug: string | null;
   p: number;
   lo: number;
   hi: number;
@@ -60,6 +73,7 @@ function phaseLabel(phases: readonly string[]): string {
 }
 
 interface Placement {
+  drug: string;
   targets: string[];
   diseases: string[];
   company: string;
@@ -74,7 +88,7 @@ function placements(pipeline: PipelineFile | null): Map<string, Placement> {
     for (const m of row.marks) {
       let pl = out.get(m.n);
       if (!pl) {
-        pl = { targets: [], diseases: [], company: pipeline.sponsors[m.sp]?.parent ?? "" };
+        pl = { drug: m.drug, targets: [], diseases: [], company: pipeline.sponsors[m.sp]?.parent ?? "" };
         out.set(m.n, pl);
       }
       if (!pl.targets.includes(row.id)) pl.targets.push(row.id);
@@ -99,6 +113,7 @@ export function rankTrials(
     const summary = info.get(nct);
     return {
       nct,
+      drug: t.drug ?? pl?.drug ?? null,
       p: t.p,
       lo: t.lo,
       hi: t.hi,
