@@ -75,8 +75,10 @@ def fit(
         est.fit(X[:, list(idx)], y)
         return Fitted("baseline", est, idx)
     idx = tuple(range(len(cols)))
+    # ensemble=False keeps one booster refit on all rows (isotonic map learned on the 5 folds'
+    # out-of-fold scores) instead of five, so 42 fitted members stay a few MB, not ~80.
     est = CalibratedClassifierCV(
-        HistGradientBoostingClassifier(random_state=seed), method="isotonic", cv=5
+        HistGradientBoostingClassifier(random_state=seed), method="isotonic", cv=5, ensemble=False
     ).fit(X, y)
     booster = HistGradientBoostingClassifier(random_state=seed).fit(X, y) if explain else None
     return Fitted("boosted", est, idx, booster)
