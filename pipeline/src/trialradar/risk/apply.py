@@ -106,6 +106,22 @@ def _finished_reason(r: Mapping[str, Any], extra: StudyExtras | None, day: date)
     return None
 
 
+def _registry_casing(drug: str, names: list[str]) -> str:
+    """`drug` as a registered name spells it, when that spelling has capitals past the first
+    letter; else `drug` unchanged."""
+    for name in names:
+        folded = name.casefold()
+        if len(folded) != len(name):
+            continue  # casefold changed the length: positions would not line up
+        at = folded.find(drug)
+        if at < 0:
+            continue
+        spelled = name[at : at + len(drug)]
+        if any(c.isupper() for c in spelled[1:]):
+            return spelled
+    return drug
+
+
 def _drug_names(
     tables: Tables,
     extras: Mapping[str, StudyExtras],
@@ -115,8 +131,9 @@ def _drug_names(
     """A display name per trial: the figure's canonical drug name for a trial in a row (first
     row in figure order), else the first experimental drug or biologic as registered.
 
-    The figure's names are lower-case; when one is just a registered name lower-cased (a code
-    name such as RO7121932, or an unmapped name), the registry's own casing is used instead.
+    The figure's names are lower-case. When a registered name spells the same words with
+    capitals past the first letter (a code name: "RO7121932 IV" gives "RO7121932"), that
+    spelling is used; a plain leading capital ("Rituximab 500 mg") keeps the figure's name.
     """
     registered: dict[str, list[str]] = {}
     for nct in ids:
@@ -131,8 +148,7 @@ def _drug_names(
         for mark in row.get("marks", []):
             nct, drug = mark["n"], mark.get("drug")
             if nct in ids and nct not in out and drug:
-                same = [n for n in registered.get(nct, []) if n.strip().casefold() == drug]
-                out[nct] = same[0].strip() if same else drug
+                out[nct] = _registry_casing(drug, registered.get(nct, []))
     for nct in ids - set(out):
         if names := registered.get(nct):
             out[nct] = names[0].strip()

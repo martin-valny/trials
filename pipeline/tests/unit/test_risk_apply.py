@@ -246,24 +246,27 @@ def test_drug_name_canonical_in_a_row_else_registry_casing(
     loaded: artefacts.Loaded, cfg: AreaConfig
 ) -> None:
     """A row trial keeps the figure's canonical drug name, but takes the registry's own casing
-    when that name is just the registered one lower-cased (a code name such as RO7121932).
+    when the registered name spells it with capitals past the first letter (a code name such
+    as RO7121932, even inside "RO7121932 IV"); a plain capital ("Rituximab") stays lower-case.
     A trial in no row takes its first experimental drug or biologic as registered."""
     from dataclasses import replace
 
-    ids = ["NCT00000001", "NCT00000002", "NCT00000003", "NCT00000004"]
+    ids = ["NCT00000001", "NCT00000002", "NCT00000003", "NCT00000004", "NCT00000005"]
     tables = _with_names(
         _tables([_trial(n, "RECRUITING", ["PHASE2"]) for n in ids]),
         {
             "NCT00000001": [("DRUG", "Rituximab 500 mg"), ("DRUG", "Placebo")],
-            "NCT00000002": [("DRUG", "Placebo"), ("BIOLOGICAL", "RO7121932")],
+            "NCT00000002": [("DRUG", "Placebo"), ("BIOLOGICAL", "RO7121932 IV")],
             "NCT00000003": [("DRUG", "Placebo"), ("BIOLOGICAL", "KITE-363")],
             "NCT00000004": [("BEHAVIORAL", "Diary"), ("DRUG", "Ocrelizumab IV")],
+            "NCT00000005": [("BIOLOGICAL", "Efgartigimod PH20 (ARGX-113) SC")],
         },
     )
     fig = {
         "rows": [
             {"id": "cd20", "marks": [{"n": "NCT00000001", "dz": [], "drug": "rituximab"}]},
             {"id": "x", "marks": [{"n": "NCT00000002", "dz": [], "drug": "ro7121932"}]},
+            {"id": "y", "marks": [{"n": "NCT00000005", "dz": [], "drug": "efgartigimod ph20"}]},
         ]
     }
     extras = {
@@ -276,6 +279,7 @@ def test_drug_name_canonical_in_a_row_else_registry_casing(
         "NCT00000002": "RO7121932",
         "NCT00000003": "KITE-363",
         "NCT00000004": "Ocrelizumab IV",
+        "NCT00000005": "Efgartigimod PH20",
     }
 
 
