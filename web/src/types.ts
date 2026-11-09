@@ -316,6 +316,17 @@ export interface PipelineMark {
   via?: string;
 }
 
+export interface PipelineApproval {
+  /** Approved drug. */
+  d: string;
+  src: ("chembl" | "fda_label" | "hand")[];
+  url: string;
+  /** Absent: not withdrawn. */
+  wd?: boolean;
+  reg?: string;
+  y?: number;
+}
+
 export interface PipelineRow {
   id: string;
   label: string;
@@ -326,6 +337,8 @@ export interface PipelineRow {
   blurb?: string;
   related: string[];
   marks: PipelineMark[];
+  /** Disease code to approved drugs for that disease. Absent: no approval data for this row. */
+  ap?: Record<string, PipelineApproval[]>;
 }
 
 export interface PipelineFamily {

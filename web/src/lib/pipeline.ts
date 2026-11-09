@@ -1,7 +1,7 @@
 // The pipeline figure (pipeline.json): URL state, what a mark shows, row totals and sorting, the headline
 // and margin notes, and the target page's groupings. Pure functions over the PipelineFile, so the page
 // only reads their results (spec 2026-11-08 §7.1, §7.1a, §7.2).
-import type { MarkState, PipelineFile, PipelineMark, PipelineRow, SponsorKind } from "../types";
+import type { MarkState, PipelineApproval, PipelineFile, PipelineMark, PipelineRow, SponsorKind } from "../types";
 
 export const HISTORICAL_MAX_RUNNING = 1;
 export const HISTORICAL_MIN_TRIALS = 12;
@@ -642,4 +642,80 @@ export function rowForGene(f: PipelineFile, gene: string): PipelineRow | null {
 /** Every row the trial sits in, in figure order (a combination trial can sit in two). */
 export function rowsForTrial(f: PipelineFile, nct: string): PipelineRow[] {
   return f.rows.filter((r) => r.marks.some((m) => m.n === nct));
+}
+
+// ---------------------------------------------------------------- approvals
+
+/** The approvals recorded for this row in this disease ([] when none). */
+export function approvalsIn(row: PipelineRow, code: string): PipelineApproval[] {
+  return row.ap?.[code] ?? [];
+}
+
+/** The floor rule: some approval in the cell is not withdrawn. */
+export function floorRule(row: PipelineRow, code: string): boolean {
+  return approvalsIn(row, code).some((a) => !a.wd);
+}
+
+/** "Approved for {label}: {drug}, {drug}." over the non-withdrawn drugs; null when the floor rule is off. */
+export function approvalText(row: PipelineRow, code: string, label: string): string | null {
+  if (!floorRule(row, code)) return null;
+  const drugs = approvalsIn(row, code).filter((a) => !a.wd).map((a) => a.d);
+  return `Approved for ${label}: ${drugs.join(", ")}.`;
+}
+
+const SOURCE_LABEL: Record<"chembl" | "fda_label", string> = { chembl: "ChEMBL", fda_label: "FDA label" };
+
+/** Where an approval comes from: "ChEMBL · FDA label", or for a hand row "{reg} {y} · hand". */
+export function sourceText(a: PipelineApproval): string {
+  const auto = (["chembl", "fda_label"] as const).filter((s) => a.src.includes(s)).map((s) => SOURCE_LABEL[s]);
+  if (auto.length) return auto.join(" · ");
+  const head = [a.reg, a.y].filter((x) => x !== undefined && x !== "").join(" ");
+  return head ? `${head} · hand` : "hand";
+}
+
+/** True when any row carries approval data (older files have none). */
+export function hasApprovalData(f: PipelineFile): boolean {
+  return f.rows.some((r) => r.ap !== undefined);
+}
+
+export interface DiseaseLine {
+  code: string;
+  label: string;
+  trials: number;
+  running: number;
+  byPhase: [number, number, number, number];
+  furthest: 0 | 1 | 2 | 3 | 4;
+  approvals: PipelineApproval[];
+}
+
+/** One line per disease (in file order) where the row has a trial or an approval; trials counted once per NCT. */
+export function diseaseLines(f: PipelineFile, row: PipelineRow): DiseaseLine[] {
+  const lines: DiseaseLine[] = [];
+  for (const d of f.diseases) {
+    const seen = new Set<string>();
+    const byPhase: [number, number, number, number] = [0, 0, 0, 0];
+    let running = 0;
+    let furthest = 0;
+    for (const m of row.marks) {
+      if (!m.dz.includes(d.code) || seen.has(m.n)) continue;
+      seen.add(m.n);
+      if (markState(m, d.code) === "run") running++;
+      if (m.c >= 1 && m.c <= 4) {
+        byPhase[m.c - 1]!++;
+        furthest = Math.max(furthest, m.c);
+      }
+    }
+    const all = approvalsIn(row, d.code);
+    if (seen.size === 0 && all.length === 0) continue;
+    lines.push({
+      code: d.code,
+      label: d.label,
+      trials: seen.size,
+      running,
+      byPhase,
+      furthest: furthest as DiseaseLine["furthest"],
+      approvals: [...all.filter((a) => !a.wd), ...all.filter((a) => a.wd)],
+    });
+  }
+  return lines;
 }

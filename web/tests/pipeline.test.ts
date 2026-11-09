@@ -20,9 +20,15 @@ import {
   binOf,
   yearNotes,
   undatedCount,
+  approvalsIn,
+  floorRule,
+  approvalText,
+  sourceText,
+  hasApprovalData,
+  diseaseLines,
   type FigureState,
 } from "../src/lib/pipeline";
-import type { MarkState, PipelineFile, PipelineMark, PipelineRow } from "../src/types";
+import type { MarkState, PipelineApproval, PipelineFile, PipelineMark, PipelineRow } from "../src/types";
 import { columnsFor, columnTracks } from "../src/components/pipeline/parts";
 import { readFixture } from "./helpers";
 
@@ -523,5 +529,70 @@ describe("trialsLink", () => {
   });
   it("carries the disease when set", () => {
     expect(trialsLink(["NCT1"], "rare drug", "MS")).toBe("/trials?nct=NCT1&from=rare+drug&disease=MS");
+  });
+});
+
+describe("approvals", () => {
+  const f = readFixture<PipelineFile>("pipeline.json");
+  const cd20 = f.rows.find((r) => r.id === "cd20")!;
+  const withdrawnOnly: PipelineRow = { ...cd20, ap: { CIDP: cd20.ap!.CIDP! } };
+
+  it("approvalsIn returns [] when none", () => {
+    expect(approvalsIn(cd20, "MG")).toEqual([]);
+    expect(approvalsIn(f.rows.find((r) => r.ap === undefined)!, "MS")).toEqual([]);
+  });
+
+  it("floorRule false when all withdrawn", () => {
+    expect(floorRule(cd20, "MS")).toBe(true);
+    expect(floorRule(withdrawnOnly, "CIDP")).toBe(false);
+    expect(floorRule(cd20, "MG")).toBe(false);
+  });
+
+  it("approvalText lists non-withdrawn drugs", () => {
+    expect(approvalText(cd20, "MS", "multiple sclerosis")).toBe("Approved for multiple sclerosis: ocrelizumab, ofatumumab.");
+    expect(approvalText(withdrawnOnly, "CIDP", "CIDP")).toBeNull();
+    const mixed: PipelineRow = {
+      ...cd20,
+      ap: { X: [{ d: "a", src: ["chembl"], url: "u", wd: true }, { d: "b", src: ["chembl"], url: "u" }] },
+    };
+    expect(approvalText(mixed, "X", "x")).toBe("Approved for x: b.");
+  });
+
+  it("sourceText", () => {
+    const a = (p: Partial<PipelineApproval>): PipelineApproval => ({ d: "d", src: ["chembl"], url: "u", ...p });
+    expect(sourceText(a({ src: ["fda_label", "chembl"] }))).toBe("ChEMBL · FDA label");
+    expect(sourceText(a({ src: ["hand"], reg: "PMDA", y: 2022 }))).toBe("PMDA 2022 · hand");
+    expect(sourceText(a({ src: ["hand"], reg: "PMDA" }))).toBe("PMDA · hand");
+    expect(sourceText(a({ src: ["hand"] }))).toBe("hand");
+  });
+
+  it("hasApprovalData", () => {
+    expect(hasApprovalData(f)).toBe(true);
+    expect(hasApprovalData({ ...f, rows: f.rows.map((r) => ({ ...r, ap: undefined })) })).toBe(false);
+  });
+
+  it("diseaseLines order, counts and furthest", () => {
+    const lines = diseaseLines(f, cd20);
+    expect(lines.map((l) => l.code)).toEqual(["MS", "NMOSD", "CIDP"]);
+    const ms = lines[0]!;
+    expect(ms.trials).toBe(8);
+    expect(ms.byPhase).toEqual([0, 8, 0, 0]);
+    expect(ms.furthest).toBe(2);
+    expect(ms.running).toBe(cd20.marks.filter((m) => markState(m, "MS") === "run").length);
+    expect(ms.approvals.map((x) => x.d)).toEqual(["ocrelizumab", "ofatumumab"]);
+    expect(lines[1]).toMatchObject({ trials: 0, running: 0, byPhase: [0, 0, 0, 0], furthest: 0 });
+    expect(lines[2]!.approvals[0]!.wd).toBe(true);
+  });
+
+  it("diseaseLines counts a trial once per NCT and puts withdrawn approvals last", () => {
+    const m = cd20.marks[0]!;
+    const row: PipelineRow = {
+      ...cd20,
+      marks: [m, { ...m, c: 3 }],
+      ap: { [m.dz[0]!]: [{ d: "w", src: ["chembl"], url: "u", wd: true }, { d: "k", src: ["chembl"], url: "u" }] },
+    };
+    const line = diseaseLines(f, row)[0]!;
+    expect(line.trials).toBe(1);
+    expect(line.approvals.map((x) => x.d)).toEqual(["k", "w"]);
   });
 });
