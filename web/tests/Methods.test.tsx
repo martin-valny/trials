@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 import { Methods } from "../src/components/Methods";
-import type { ExplorerFile, ExplorerTrial, Meta } from "../src/types";
+import type { ExplorerFile, ExplorerTrial, Meta, RiskFile, RiskMetrics, RiskModelInfo } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
 test("methods lists conditions from meta and limitations", async () => {
@@ -190,4 +190,142 @@ test("the map statistic section points to the similarity map", async () => {
   const link = await screen.findByRole("link", { name: /Similarity map \(experimental\)/ });
   expect(link).toHaveAttribute("href", "/explore");
   expect(link.closest("section")).toHaveAttribute("id", "map-statistic");
+});
+
+// ---------------------------------------------------------------- stop-risk evaluation (spec 6.4, 7)
+
+const metric = (auc: number, brier: number, n: number, positives: number): RiskMetrics => ({
+  auc,
+  brier,
+  n,
+  positives,
+  calibration: [
+    { p: 0.05, observed: 0.06, n: n / 2 },
+    { p: 0.2, observed: 0.25, n: n / 2 },
+  ],
+});
+
+function riskFile(model: Partial<RiskModelInfo> = {}, metrics: Partial<RiskModelInfo["metrics"]> = {}): RiskFile {
+  const f = readFixture<RiskFile>("risk.json");
+  return {
+    ...f,
+    model: {
+      ...f.model,
+      trained_on: "2026-11-09",
+      shipped: "boosted",
+      shipped_reason: "boosted AUC 0.682 beats baseline 0.567 by at least 0.02",
+      n_train: 41564,
+      n_test: 19782,
+      ...model,
+      metrics: {
+        baseline: metric(0.567, 0.142, 19782, 3392),
+        boosted: metric(0.682, 0.1347, 19782, 3392),
+        boosted_no_sites: metric(0.675, 0.1351, 19782, 3392),
+        in_area: metric(0.539, 0.1648, 141, 29),
+        ...metrics,
+      },
+    },
+  };
+}
+
+const section = async (): Promise<HTMLElement> => {
+  const h = await screen.findByRole("heading", { name: "How good is the stop-risk model?" });
+  const s = h.closest("section") as HTMLElement;
+  expect(s).toHaveAttribute("id", "stop-risk");
+  return s;
+};
+
+test("stop-risk: the accuracy table renders each model's AUC and Brier from risk.json", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  const table = await within(s).findByRole("table", { name: /accuracy on later trials/i });
+  const rows = within(table).getAllByRole("row");
+  const text = rows.map((r) => r.textContent?.replace(/\s+/g, " ") ?? "");
+  expect(text.find((t) => /Baseline/.test(t))).toMatch(/19,782.*0\.567.*0\.142/);
+  expect(text.find((t) => /shipped/.test(t))).toMatch(/0\.682.*0\.135/);
+  expect(text.find((t) => /without site/.test(t))).toMatch(/0\.675/);
+  // n = 141 is shown, muted, but too few to judge on its own.
+  const area = text.find((t) => /this area/i.test(t))!;
+  expect(area).toMatch(/141/);
+  expect(area).toMatch(/0\.539/);
+  expect(area).toMatch(/too few to judge on its own/);
+  expect(s.textContent).toMatch(/41,564/);
+  expect(s.textContent).toMatch(/boosted AUC 0\.682 beats baseline 0\.567/);
+  expect(s.textContent).toMatch(/9 November 2026/);
+});
+
+test("stop-risk: in-area row says too few to judge when it is null or under 100", async () => {
+  stubFetch({ "risk.json": riskFile({}, { in_area: null }) });
+  const { unmount } = renderAt(<Methods />, "/methods#stop-risk");
+  let s = await section();
+  let row = (await within(s).findByRole("table")).querySelector("tr[data-row='in_area']") as HTMLElement;
+  expect(row.textContent).toMatch(/too few to judge/);
+  expect(row.textContent).not.toMatch(/0\.\d{3}/);
+  unmount();
+
+  stubFetch({ "risk.json": riskFile({}, { in_area: metric(0.9, 0.1, 60, 10) }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  s = await section();
+  row = (await within(s).findByRole("table")).querySelector("tr[data-row='in_area']") as HTMLElement;
+  expect(row.textContent).toMatch(/too few to judge/);
+  expect(row.textContent).not.toMatch(/0\.900/);
+});
+
+test("stop-risk: the site-leak sentence shows only when flagged", async () => {
+  stubFetch({ "risk.json": riskFile({ site_leak_flag: false }) });
+  const { unmount } = renderAt(<Methods />, "/methods#stop-risk");
+  let s = await section();
+  await within(s).findByRole("table");
+  expect(s.textContent).not.toMatch(/possible leak/);
+  expect(s.textContent).toMatch(/slightly flattering/);
+  unmount();
+
+  stubFetch({ "risk.json": riskFile({ site_leak_flag: true }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  s = await section();
+  await within(s).findByRole("table");
+  expect(s.textContent).toMatch(/possible leak/);
+});
+
+test("stop-risk: the calibration chart has an accessible description of every point", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  const chart = await within(s).findByRole("img", { name: /calibration/i });
+  expect(chart.tagName.toLowerCase()).toBe("svg");
+  expect(chart).toHaveAccessibleDescription(/predicted 5%, observed 6%.*predicted 20%, observed 25%/);
+  // The diagonal reference line.
+  expect(chart.querySelector("[data-ref='diagonal']")).not.toBeNull();
+});
+
+test("stop-risk: exclusions lead with enrollment; the comparison, text experiment and reading guide are there", async () => {
+  stubFetch({ "risk.json": riskFile({ excluded: ["why_stopped", "enrollment (actual enrollment is small because a trial stopped)"] }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  await within(s).findByRole("table");
+  const items = within(s.querySelector("[data-list='excluded']") as HTMLElement).getAllByRole("listitem");
+  expect(items[0]).toHaveTextContent(/enrollment/);
+  const text = (s.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/Elkin and Zhu/);
+  expect(text).toMatch(/Kavalci and Hartshorn/);
+  expect(within(s).getByRole("link", { name: /Kavalci and Hartshorn/ })).toHaveAttribute("href", "https://doi.org/10.1038/s41598-023-27416-7");
+  expect(within(s).getByRole("link", { name: /Elkin and Zhu/ })).toHaveAttribute("href", "https://doi.org/10.1038/s41598-021-82840-x");
+  expect(text).toMatch(/PubMedBERT/);
+  expect(text).toMatch(/fewer than 5 earlier finished trials/);
+  expect(text).toMatch(/Sponsor's earlier trials: k of n stopped early \(registry\)/);
+  expect(text).toMatch(/10th to 90th percentile/);
+  expect(text).toMatch(/retrained by hand/);
+  expect(text).toMatch(/withdrawn/i);
+  expect(text).not.toMatch(/risk of failure|likely to fail|in trouble/i);
+});
+
+test("stop-risk: without risk.json the section renders no numbers and says when estimates appear", async () => {
+  stubFetch({ "risk.json": 404 });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  expect(await within(s).findByText(/appear after the next update/)).toBeInTheDocument();
+  expect(within(s).queryByRole("table")).toBeNull();
+  expect(within(s).queryByRole("img")).toBeNull();
+  expect(s.textContent).not.toMatch(/\d\.\d{2}/);
 });

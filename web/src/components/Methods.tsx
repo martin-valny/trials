@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { kindTree, NOT_YET_SORTED, NOT_YET_SORTED_ELSEWHERE } from "../lib/approaches";
 import { trialsLink } from "../lib/pipeline";
-import { loadExplorer, loadMeta, loadPipeline } from "../data";
-import type { ExplorerFile, Meta, PipelineFile } from "../types";
+import { loadExplorer, loadMeta, loadPipeline, loadRisk } from "../data";
+import type { ExplorerFile, Meta, PipelineFile, RiskFile } from "../types";
+import { RiskMethods } from "./risk/RiskMethods";
 
 const REPO = "https://github.com/martin-valny/trials/blob/main/";
 
@@ -53,6 +54,8 @@ export function Methods() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [file, setFile] = useState<ExplorerFile | null>(null);
   const [pipeline, setPipeline] = useState<PipelineFile | null>(null);
+  // undefined while loading; null when the run shipped without risk.json.
+  const [risk, setRisk] = useState<RiskFile | null | undefined>(undefined);
   const method = file?.method ?? null;
 
   useEffect(() => {
@@ -67,6 +70,9 @@ export function Methods() {
     loadPipeline()
       .then((p) => live && setPipeline(p ?? null))
       .catch(() => undefined);
+    loadRisk()
+      .then((r) => live && setRisk(r ?? null))
+      .catch(() => live && setRisk(null));
     return () => {
       live = false;
     };
@@ -75,7 +81,7 @@ export function Methods() {
   const { hash } = useLocation();
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView?.();
-  }, [hash, meta, file, pipeline]);
+  }, [hash, meta, file, pipeline, risk]);
 
   return (
     <article>
@@ -122,6 +128,8 @@ export function Methods() {
           or finished, no follow-on rather than as a failure.
         </p>
       </section>
+
+      {risk === undefined ? null : <RiskMethods model={risk?.model ?? null} area={meta?.area ?? null} />}
 
       <section id="registry-only" aria-labelledby="registry-only-h">
         <h2 id="registry-only-h">Registered trials only</h2>

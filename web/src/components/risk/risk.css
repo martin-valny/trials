@@ -75,3 +75,40 @@
   .rk-id a { border-bottom: 0; text-decoration: underline dotted; text-underline-offset: 3px; }
   .rk-factors li { grid-template-columns: 4.25rem minmax(0, 1fr); padding: 4px 0; }
 }
+
+/* Methods, "How good is the stop-risk model?". Methods keeps the older palette (--fg --muted --line); the chart is
+   drawn plate-style: hairline axes, a dashed diagonal, ink points, 11px tabular tick labels. */
+.rk-m-scroll { overflow-x: auto; margin: 1rem 0 .5rem; }
+.rk-m-table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; width: 100%; max-width: 46rem; }
+.rk-m-table caption { text-align: left; font-weight: 700; font-size: 13px; padding-bottom: .4rem; }
+.rk-m-table th, .rk-m-table td { text-align: left; padding: .45rem .9rem .45rem 0; border-bottom: 1px solid var(--line); vertical-align: baseline; }
+.rk-m-table thead th { font-size: 12px; font-weight: 400; color: var(--muted); border-bottom-color: var(--fg); }
+.rk-m-table tbody th { font-weight: 400; }
+.rk-m-table td:nth-child(3), .rk-m-table td:nth-child(4),
+.rk-m-table thead th:nth-child(3), .rk-m-table thead th:nth-child(4) { text-align: right; padding-right: 0; padding-left: .9rem; }
+.rk-m-table tr[data-row="boosted"] th, .rk-m-table tr[data-row="baseline"] th { font-weight: 400; }
+.rk-m-table td.rk-m-few { text-align: right; padding-right: 0; }
+.rk-m-sub, .rk-m-few { color: var(--muted); font-size: 12px; }
+.rk-m-muted td { color: var(--muted); }
+.rk-m-note { font-size: 14px; color: var(--muted); max-width: 70ch; }
+
+.rk-m-fig { margin: 1.25rem 0 .5rem; max-width: 380px; }
+.rk-m-cal { display: block; width: 100%; height: auto; overflow: visible; }
+.rk-m-cal text { font: 11px "Hanken Grotesk", system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.rk-m-cal .rk-m-lab { font-size: 12px; fill: var(--fg); }
+.rk-m-tick line { stroke: var(--line); stroke-width: 1; }
+.rk-m-axis { stroke: var(--fg); stroke-width: 1; }
+.rk-m-diag { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.rk-m-line { fill: none; stroke: var(--fg); stroke-width: 1; opacity: .5; }
+.rk-m-pt { fill: var(--fg); }
+.rk-m-fig figcaption { font-size: 13px; color: var(--muted); margin-top: .35rem; line-height: 1.45; }
+@media (max-width: 640px) {
+  .rk-m-table { font-size: 13px; }
+  .rk-m-table th, .rk-m-table td { padding-right: .6rem; }
+}
+@media (max-width: 480px) {
+  /* On a phone the stopped count gives way so all four columns fit without scrolling. */
+  .rk-m-table .rk-m-sub { display: none; }
+  .rk-m-table td:nth-child(3), .rk-m-table td:nth-child(4),
+  .rk-m-table thead th:nth-child(3), .rk-m-table thead th:nth-child(4) { padding-left: .5rem; }
+}
