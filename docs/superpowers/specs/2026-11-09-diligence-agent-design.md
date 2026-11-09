@@ -1,6 +1,6 @@
 # Diligence agent ("Run diligence") — design
 
-Status: draft for Martin's approval, 2026-11-09. Pieces B and C of the AI roadmap merged into one project (A, the stop-risk model, is `2026-11-09-stop-risk-model-design.md`). Reopens HANDOFF §5.2 ("no AWS, no Bedrock") by Martin's decision on 2026-11-09.
+Status: approved by Martin, 2026-11-09. Pieces B and C of the AI roadmap merged into one project (A, the stop-risk model, is `2026-11-09-stop-risk-model-design.md`). Reopens HANDOFF §5.2 ("no AWS, no Bedrock") by Martin's decision on 2026-11-09.
 
 ## 1. Intent and why
 
@@ -14,7 +14,7 @@ Martin's framing (2026-11-09): it must be a **visible agent demonstration**, not
 - G1. A "Run diligence" action on each target page for its target and the page's disease filter (fixed request; the agent chooses its own follow-ups).
 - G2. A live, step-by-step trace on the page: plan, each tool call with a one-line result, follow-ups, writing, checking.
 - G3. A memo: what is being tried and by whom; track record of the target's drugs and class across **all** diseases (registry + approvals); recent literature (Europe PMC abstracts); competitive position incl. stop-risk estimates; a three-line Read (mechanism evidence, competitive position, open questions); an **explicit judgement** (favours / mixed / argues against further investment in this mechanism for this disease) with confidence (high / medium / low) and its reasons; "what would change this view".
-- G4. Every factual sentence cites an NCT id, a PMID or a ChEMBL id that the agent actually retrieved in that run; an automated checker verdicts each claim against its cited source and shows the verdict on the page.
+- G4. Every factual sentence cites an NCT id, a PMID, a ChEMBL id or an openFDA label id that the agent actually retrieved in that run; an automated checker verdicts each claim against its cited source and shows the verdict on the page.
 - G5. Cost control inside $100 of Bedrock credits: cached runs replayed for free, a daily cap, per-IP limits, per-run step and token caps, an AWS budget alarm.
 - G6. An offline evaluation that runs in CI on recorded runs, at $0, and fails on regressions.
 - G7. Reader feedback: "flag this claim", stored for Martin to review.
@@ -36,7 +36,7 @@ Martin's framing (2026-11-09): it must be a **visible agent demonstration**, not
 
 - The site stays static on GitHub Pages; the agent backend is the only server, on Martin's **personal** AWS account, region `eu-central-1` (Frankfurt), Claude models through Bedrock (EU cross-region inference profile if required for the chosen models).
 - Budget: $100 starter credits (check expiry in the console). Always-free services preferred: Lambda (incl. function URLs), DynamoDB, CloudWatch basic, Budgets.
-- Tools use only free public APIs plus the site's own published JSON: ClinicalTrials.gov API v2, ChEMBL REST, Europe PMC REST (all checked reachable with `Access-Control-Allow-Origin: *`; no keys).
+- Tools use only free public APIs plus the site's own published JSON: ClinicalTrials.gov API v2, ChEMBL REST, Europe PMC REST, openFDA (all checked reachable with `Access-Control-Allow-Origin: *`; no keys).
 - Deploys are run by Martin from his machine (an outward-facing action). Infrastructure is code in the repo; no console-only configuration.
 - Same honesty principles as the rest of the site: AI-written content labelled; proxies named; never claim unbuilt features.
 - Same process rules: never push from the agent session; subagent-driven development; no Workflow tool.
@@ -56,6 +56,7 @@ Martin's framing (2026-11-09): it must be a **visible agent demonstration**, not
 - Literature through free APIs, as cheap as possible (Europe PMC chosen over MCP servers or paid tools).
 - Oversight is on the page (per-claim checker verdicts, judgement gated on them, reader flags), not a pre-publication approval queue.
 - Approach 1.
+- Sources: our site data, ClinicalTrials.gov, ChEMBL, Europe PMC, plus openFDA drug labels in v1; EU registry, conference abstracts, news and genetics are not in v1.
 
 ## 6. The agent
 
@@ -67,10 +68,11 @@ Martin's framing (2026-11-09): it must be a **visible agent demonstration**, not
 
 ### 6.2 Tools (each returns compact JSON plus the IDs it retrieved)
 - `site_target(target, disease)`: the row's trials (phase, status, company, start/end, stop reason) from the published `pipeline.json` and trial files, and the row's mechanism chain.
-- `site_risk(target, disease)`: the row's scored running trials and summary from `risk.json`. If `risk.json` is missing or has no entry, it returns an empty result with a note and the memo says estimates were unavailable *(Claude's call)*. Build order: this project starts after the stop-risk work on `feat/stop-risk` is complete and builds on that branch.
+- `site_risk(target, disease)`: the row's scored running trials and summary from `risk.json`. If `risk.json` is missing or has no entry, it returns an empty result with a note and the memo says estimates were unavailable *(Claude's call)*. Build order: the stop-risk work is merged (local `main`, 28f6cef); this project builds on top of it.
 - `registry_search(intervention, condition?, status?)`: ClinicalTrials.gov API v2 search by drug name across all diseases; returns counts by status and phase plus up to 20 trials (NCT, title, condition, phase, status, why_stopped).
 - `chembl_drug(name)`: ChEMBL max phase, approved indications, mechanism.
-- `literature_search(query, since_year?)`: Europe PMC search; top N (proposal 8) abstracts, trimmed, with PMID, year, journal.
+- `literature_search(query, since_year?)`: Europe PMC search (covers all PubMed abstracts, PubMed Central and preprints); top N (proposal 8) abstracts, trimmed, with PMID, year, journal.
+- `fda_label(drug)`: openFDA drug label for an approved drug — boxed warning, warnings and precautions, indications — trimmed, with the label's set id as its citable ID (Martin, 2026-11-09). Reuse the openFDA client the approvals work already has in the pipeline where practical.
 - The agent decides queries and follow-ups (e.g. a stop reason mentioning a safety term triggers a class-safety literature search). The system prompt describes the memo sections, the citation rule and the judgement scale.
 
 ### 6.3 Memo format
@@ -96,7 +98,7 @@ Claude through Bedrock; model IDs in config. Proposal: a Sonnet-class model writ
 
 ## 8. Site (web)
 
-- Target page: a new panel "Diligence (AI agent)" with "Run diligence" (or "Recorded run, {date} · Run again"); the live trace as a vertical step list in the Figure Plate style (no chat bubbles, no spinners-as-decoration); the memo below with citation chips linking to CT.gov / PubMed / ChEMBL, per-sentence checker marks (with text, not colour only), the judgement block with its label, and "Flag" per sentence.
+- Target page: a new panel **g** "Diligence (AI agent)" (after approvals' panel e "By disease" and stop-risk's panel f) with "Run diligence" (or "Recorded run, {date} · Run again"); the live trace as a vertical step list in the Figure Plate style (no chat bubbles, no spinners-as-decoration); the memo below with citation chips linking to CT.gov / PubMed / ChEMBL, per-sentence checker marks (with text, not colour only), the judgement block with its label, and "Flag" per sentence.
 - Methods: a section on the agent (tools, limits, checker, evaluation results from the committed eval report, costs, what is AI-written, the models used).
 - Works at 375px, light and dark, keyboard reachable; premium finish review as for every UI change.
 
