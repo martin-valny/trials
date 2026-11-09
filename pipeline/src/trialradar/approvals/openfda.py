@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+import random
+import time
+from collections.abc import Callable
+from pathlib import Path
 
 import httpx
 
@@ -30,8 +33,19 @@ def _is_not_found(resp: httpx.Response) -> bool:
 class OpenFdaClient(JsonClient):
     error_class = OpenFdaError
 
-    def __init__(self, *args: Any, base_url: str = BASE_URL, **kwargs: Any) -> None:
-        super().__init__(*args, base_url=base_url, **kwargs)
+    def __init__(
+        self,
+        http: httpx.Client | None = None,
+        cache_dir: Path | None = None,
+        *,
+        base_url: str = BASE_URL,
+        record_dir: Path | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        rng: Callable[[float, float], float] = random.uniform,
+    ) -> None:
+        super().__init__(
+            http, cache_dir, base_url=base_url, record_dir=record_dir, sleep=sleep, rng=rng
+        )
 
     def _accepted_error(self, resp: httpx.Response) -> Json | None:
         # openFDA answers "no matches" with 404 NOT_FOUND; treat it as an empty result.

@@ -226,22 +226,7 @@ class ChemblClient(JsonClient):
 
     def mechanisms(self, parent_id: str) -> list[Json]:
         """Every mechanism row recorded against ``parent_id`` or any of its salts/forms."""
-        rows: list[Json] = []
-        for page in range(MAX_PAGES):
-            body = self._get(
-                "mechanism.json",
-                {
-                    "parent_molecule_chembl_id": parent_id,
-                    "limit": PAGE_LIMIT,
-                    "offset": page * PAGE_LIMIT,
-                },
-            )
-            found = body.get("mechanisms")
-            rows += [r for r in found if isinstance(r, dict)] if isinstance(found, list) else []
-            meta = body.get("page_meta")
-            if not (isinstance(meta, dict) and meta.get("next")):
-                return rows
-        raise ChemblError(f"mechanisms for {parent_id} exceeded {MAX_PAGES} pages")
+        return self._paged("mechanism.json", "mechanisms", {"parent_molecule_chembl_id": parent_id})
 
     def mechanisms_on_target(self, target_id: str) -> list[Json]:
         """Every mechanism row recorded against the target ``target_id``."""
