@@ -59,7 +59,7 @@ DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config.yaml"
 def load_config(path: Path | None = None) -> AgentConfig:
     """Load config. Precedence for the file: argument, DILIGENCE_CONFIG, bundled config.yaml.
 
-    SITE_BASE_URL and ALLOWED_ORIGIN environment variables override their fields.
+    SITE_BASE_URL, ALLOWED_ORIGIN and RUNS_TABLE/LIMITS_TABLE/FLAGS_TABLE override their fields.
     """
     if path is None:
         env_path = os.environ.get("DILIGENCE_CONFIG")
@@ -68,4 +68,7 @@ def load_config(path: Path | None = None) -> AgentConfig:
     for env, key in (("SITE_BASE_URL", "site_base_url"), ("ALLOWED_ORIGIN", "allowed_origin")):
         if value := os.environ.get(env):
             raw[key] = value
+    for env, key in (("RUNS_TABLE", "runs"), ("LIMITS_TABLE", "limits"), ("FLAGS_TABLE", "flags")):
+        if value := os.environ.get(env):
+            raw["tables"][key] = value
     return AgentConfig.model_validate(raw)

@@ -1,0 +1,4 @@
+# Runtime dependencies packaged into the Lambda (boto3 ships with the Python runtime).
+httpx
+pydantic>=2
+pyyaml

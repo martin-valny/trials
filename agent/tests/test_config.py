@@ -41,3 +41,11 @@ def test_unknown_key_rejected(tmp_path: Path) -> None:
     p.write_text(src + "bogus: 1\n")
     with pytest.raises(ValueError):
         load_config(p)
+
+
+def test_table_names_can_come_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RUNS_TABLE", "stack-runs")
+    monkeypatch.setenv("LIMITS_TABLE", "stack-limits")
+    monkeypatch.setenv("FLAGS_TABLE", "stack-flags")
+    t = load_config().tables
+    assert (t.runs, t.limits, t.flags) == ("stack-runs", "stack-limits", "stack-flags")
