@@ -3,7 +3,7 @@ import type { MarginNote } from "../../lib/pipeline";
 import { cellMarks, rowAccessibleName, type YearBin } from "../../lib/pipeline";
 import { Link } from "react-router-dom";
 import type { PipelineMark } from "../../types";
-import { RowCompanies, rowHref, type Col, type Draw, type Item } from "./parts";
+import { cellApproval, Floor, RowCompanies, rowHref, type Col, type Draw, type Item } from "./parts";
 
 interface Props {
   items: Item[];
@@ -54,11 +54,15 @@ export function PipelineStrip({ items: all, cols, tracks, bins, asOf, sortCell, 
               </span>
             </div>
             <div className="strip">
-              {cols.map((c) => (
-                <div key={c.key} className="cell" data-cell={c.key}>
-                  {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, 6))}
-                </div>
-              ))}
+              {cols.map((c) => {
+                const ap = cellApproval(draw.file, draw.state, v, c.key);
+                return (
+                  <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key} title={ap ?? undefined}>
+                    {sortCell(cellMarks(v, c.key, draw.state, bins)).map((m) => draw.mark(m, v.row.id, c.key, 6))}
+                    {ap && <Floor text={ap} />}
+                  </div>
+                );
+              })}
             </div>
             <div className="cos">
               <RowCompanies v={v} draw={draw} />

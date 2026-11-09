@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { COMPANIES_ON_ROW, figureSearch, type FigureState, type RowView, type YearBin } from "../../lib/pipeline";
+import { approvalText, COMPANIES_ON_ROW, figureSearch, type FigureState, type RowView, type YearBin } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark } from "../../types";
 
 const PHASE_COLS = [
@@ -112,3 +112,21 @@ export function rowHref(v: RowView, s: FigureState): string {
   return `/target/${v.row.id}${s.disease ? `?${figureSearch({ ...s, company: null, sort: "run", view: "phase" })}` : ""}`;
 }
 
+
+/** By disease: the approval sentence for this row and disease column, or null (no rule). */
+export function cellApproval(file: PipelineFile, state: FigureState, v: RowView, col: number | string): string | null {
+  if (state.view !== "disease") return null;
+  const code = String(col);
+  const label = file.diseases.find((d) => d.code === code)?.label ?? code;
+  return approvalText(v.row, code, label);
+}
+
+/** The floor rule: a 2px ink line along the cell's bottom, with the same fact as visually hidden text. */
+export function Floor({ text }: { text: string }) {
+  return (
+    <>
+      <i className="floor" aria-hidden="true" />
+      <span className="visually-hidden">{text}</span>
+    </>
+  );
+}

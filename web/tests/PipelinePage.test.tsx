@@ -218,3 +218,54 @@ test("By year source line counts trials without a start year", async () => {
   renderPage("/?view=year");
   expect(await screen.findByText(/1 trial without a start year is not drawn\./)).toBeInTheDocument();
 });
+
+test("By disease: an approved cell has the floor rule and accessible text; withdrawn-only has none", async () => {
+  stubFetch();
+  const { container } = renderPage("/?view=disease");
+  await screen.findByRole("heading", { level: 1 });
+  const ms = container.querySelector('[data-row="cd20"] [data-cell="MS"]')!;
+  expect(ms).toHaveClass("ap");
+  expect(ms.querySelector(".floor")).toHaveAttribute("aria-hidden", "true");
+  expect(ms).toHaveTextContent("Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
+  expect(ms).toHaveAttribute("title", "Approved for Multiple sclerosis: ocrelizumab, ofatumumab.");
+  const nmosd = container.querySelector('[data-row="cd20"] [data-cell="NMOSD"]')!;
+  expect(nmosd.querySelector(".floor")).not.toBeNull();
+  expect(nmosd.querySelector(".nodot")).not.toBeNull();
+  expect(container.querySelector('[data-row="cd20"] [data-cell="CIDP"] .floor')).toBeNull();
+  expect(container.querySelector('.legend [data-key="approved"]')).not.toBeNull();
+});
+
+test("By phase and By year draw no floor rule and no approved legend item", async () => {
+  stubFetch();
+  for (const route of ["/", "/?view=year"]) {
+    const { container, unmount } = renderPage(route);
+    await screen.findByRole("heading", { level: 1 });
+    expect(container.querySelector(".floor")).toBeNull();
+    expect(container.querySelector('[data-key="approved"]')).toBeNull();
+    unmount();
+  }
+});
+
+test("the floor rule survives the company lens", async () => {
+  stubFetch();
+  const { container } = renderPage("/?view=disease&company=Example%20Pharma");
+  await screen.findByRole("button", { name: "Clear company lens" });
+  const floor = container.querySelector('[data-row="cd20"] [data-cell="MS"] .floor')!;
+  expect(floor).not.toBeNull();
+  expect(floor.getAttribute("style") ?? "").not.toMatch(/opacity/);
+  expect(floor.getAttribute("class")).toBe("floor");
+});
+
+test("on a phone the strip shows the floor rule in the same cell", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch();
+    const { container } = renderPage("/?view=disease");
+    await screen.findByRole("heading", { level: 1 });
+    expect(container.querySelector(".pstrip")).not.toBeNull();
+    expect(container.querySelector('.prow[data-row="cd20"] [data-cell="MS"].ap .floor')).not.toBeNull();
+    expect(container.querySelector('.prow[data-row="cd20"] [data-cell="CIDP"] .floor')).toBeNull();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

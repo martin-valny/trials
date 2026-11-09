@@ -4,6 +4,7 @@ import { loadPipeline } from "../../data";
 import {
   companyOptions,
   figureSearch,
+  hasApprovalData,
   headline,
   marginNotes,
   parseFigureState,
@@ -102,6 +103,12 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
             {LEGEND_TEXT[s]}
           </span>
         ))}
+        {state.view === "disease" && hasApprovalData(file) && (
+          <span data-key="approved">
+            <i className="floor-swatch" aria-hidden="true" />
+            Approved for this disease
+          </span>
+        )}
         {state.view === "year" ? (
           <span className="legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
         ) : (

@@ -233,3 +233,10 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 @media (max-width: 1099px) {
   .grid { --tail: var(--stat); }
 }
+
+/* Approved for this disease (By disease): a 2px ink rule along the cell's floor. Ink, not red: red only means advanced. */
+.cell.ap { padding-bottom: 12px; }
+.cell .floor { position: absolute; left: 6px; right: 6px; bottom: 4px; border-top: 2px solid var(--ink); pointer-events: none; }
+.prow .strip .cell.ap { padding-bottom: 8px; }
+.prow .strip .cell .floor { left: 3px; right: 3px; bottom: 1px; }
+.floor-swatch { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }

@@ -14,7 +14,7 @@ import {
 } from "../../lib/pipeline";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { Mark } from "./Mark";
-import { columnsFor, columnTracks, layout, RowCompanies, rowHref, type Draw, type MarkSize } from "./parts";
+import { cellApproval, columnsFor, columnTracks, Floor, layout, RowCompanies, rowHref, type Draw, type MarkSize } from "./parts";
 import { PipelineStrip } from "./PipelineStrip";
 import { phaseText, TrialCard } from "./TrialCard";
 
@@ -154,8 +154,9 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                 </div>
                 {cols.map((c) => {
                   const ms = sortCell(cellMarks(v, c.key, state, bins));
+                  const ap = cellApproval(file, state, v, c.key);
                   return (
-                    <div key={c.key} className="cell" data-cell={c.key} data-tick={c.tick ? "" : undefined}>
+                    <div key={c.key} className={`cell${ap ? " ap" : ""}`} data-cell={c.key} data-tick={c.tick ? "" : undefined} title={ap ?? undefined}>
                       {ms.map((m) => mark(m, v.row.id, c.key, 8))}
                       {ms.length === 0 && state.view === "disease" && (
                         <span
@@ -165,6 +166,7 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                           onMouseLeave={() => setTip(null)}
                         />
                       )}
+                      {ap && <Floor text={ap} />}
                     </div>
                   );
                 })}
