@@ -16,11 +16,12 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from diligence.checker import apply_verdicts, deterministic_check, gate_judgement, model_check
 from diligence.config import AgentConfig
 from diligence.model import ModelClient, ModelResponse, ReplayMismatch
 from diligence.prompts import SYSTEM_PROMPT
 from diligence.tools.registry_of_tools import TOOL_SPECS, ToolContext, dispatch
-from diligence.types import Memo, RunRecord, Step, StepKind, ToolResult
+from diligence.types import Memo, RunRecord, Step, StepKind, ToolResult, Verdict
 
 StepSink = Callable[[Step], None]
 
@@ -101,11 +102,6 @@ def _add_sources(sources: dict[str, str], result: ToolResult) -> None:
             sources[rid] = prev + "\n" + text
 
 
-def _finish(memo: Memo, retrieved: set[str], sources: dict[str, str]) -> Memo:
-    """Seam for the checker: gets the validated memo, retrieved ids and per-id source text."""
-    return memo
-
-
 def _toolresult(use_id: str, payload: Any, error: bool = False) -> dict[str, Any]:
     block: dict[str, Any] = {"toolUseId": use_id}
     if isinstance(payload, str):
@@ -154,6 +150,10 @@ class _Run:
         self.limit_name: str | None = None
         self.retrieved: set[str] = set()
         self.sources: dict[str, str] = {}
+        self.verdicts: list[Verdict] = []
+        self.removed: list[dict[str, Any]] = []
+        self.judgement_shown = False
+        self.model_failed = False
         self._pend_in = 0
         self._pend_out = 0
 
@@ -190,14 +190,24 @@ class _Run:
         max_tokens: int,
         tool_choice: str | None = None,
     ) -> ModelResponse:
-        resp = self.model.converse(
-            model=model_id,
-            system=SYSTEM_PROMPT,
-            messages=copy.deepcopy(messages),
-            tools=tools,
-            max_tokens=max_tokens,
-            tool_choice=tool_choice,
-        )
+        try:
+            resp = self.model.converse(
+                model=model_id,
+                system=SYSTEM_PROMPT,
+                messages=copy.deepcopy(messages),
+                tools=tools,
+                max_tokens=max_tokens,
+                tool_choice=tool_choice,
+            )
+        except ReplayMismatch:
+            raise
+        except Exception:
+            self.model_failed = True
+            raise
+        self.account(resp, model_id)
+        return resp
+
+    def account(self, resp: ModelResponse, model_id: str) -> None:
         self.tokens_in += resp.tokens_in
         self.tokens_out += resp.tokens_out
         self._pend_in += resp.tokens_in
@@ -207,7 +217,6 @@ class _Run:
             self.cost += (
                 resp.tokens_in * price.input_per_mtok + resp.tokens_out * price.output_per_mtok
             ) / 1e6
-        return resp
 
     # -- limits ------------------------------------------------------------------------------
 
@@ -361,6 +370,38 @@ class _Run:
                 msgs.append({"role": "user", "content": reply})
         return None
 
+    def finish(self, memo: Memo) -> Memo:
+        """Check the memo: deterministic checks, model check, verdicts, judgement gate.
+
+        Runs after the run's caps (the checker is bounded per call); its usage counts in the
+        totals. A failing checker leaves sentences `partly` and the judgement withheld.
+        """
+        n = len(memo.sections)
+        memo, removed = deterministic_check(memo, self.retrieved, self.sources)
+        for r in removed:
+            self.emit("note", f"Removed {r['sentence_id']}: {r['reason']}")
+        verdicts: list[Verdict] = []
+        if memo.sections:
+            verdicts = model_check(
+                memo,
+                self.sources,
+                model=self.model,
+                model_id=self.cfg.models.checker,
+                on_response=lambda r: self.account(r, self.cfg.models.checker),
+            )
+        memo, unsupported = apply_verdicts(memo, verdicts)
+        removed += unsupported
+        kept = {s.id for s in memo.sections}
+        supported = sum(v.verdict == "supported" and v.sentence_id in kept for v in verdicts)
+        partly = sum(v.verdict == "partly" and v.sentence_id in kept for v in verdicts)
+        self.emit(
+            "check",
+            f"checking {n} claims … {supported} supported, {partly} partly, {len(removed)} removed",
+        )
+        self.verdicts, self.removed = verdicts, removed
+        self.judgement_shown = gate_judgement(memo, verdicts)
+        return memo
+
     def execute(self) -> Memo | None:
         self.emit("plan", f"Planning: {self.label or self.req.target} · {self.req.disease}")
         self.messages.append(self.first_message())
@@ -376,7 +417,7 @@ class _Run:
         if memo is None:
             self.emit("error", "memo could not be produced")
             return None
-        memo = _finish(memo, self.retrieved, self.sources)
+        memo = self.finish(memo)
         self.emit("done", "Done")
         return memo
 
@@ -397,8 +438,8 @@ def run_agent(
 ) -> RunRecord:
     """Run the agent and return its record.
 
-    A failing model call (ClientError, timeout, ...) ends the run as status "failed" with an
-    `error` step naming only the exception class. ReplayMismatch is deliberately re-raised:
+    Any failure ends the run as status "failed" with an `error` step naming only the exception
+    class ("model call failed" if it came from a planner/writer call, else "run failed"). ReplayMismatch is deliberately re-raised:
     replay drift must fail CI loudly, not become a quiet failed run.
     """
     stamp = "%Y-%m-%dT%H:%M:%SZ"
@@ -409,7 +450,8 @@ def run_agent(
     except ReplayMismatch:
         raise
     except Exception as exc:  # noqa: BLE001 - a failed model call must still end the run cleanly
-        run.emit("error", f"model call failed: {type(exc).__name__}")
+        label = "model call failed" if run.model_failed else "run failed"
+        run.emit("error", f"{label}: {type(exc).__name__}")
         memo = None
     return RunRecord(
         run_id=run_id or uuid.uuid4().hex,
@@ -422,6 +464,9 @@ def run_agent(
         finished_at=now().strftime(stamp),
         steps=run.steps,
         memo=memo,
+        verdicts=run.verdicts,
+        removed=run.removed,
+        judgement_shown=run.judgement_shown,
         models=cfg.models.model_dump(),
         tokens_in=run.tokens_in,
         tokens_out=run.tokens_out,

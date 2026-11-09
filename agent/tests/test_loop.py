@@ -108,6 +108,8 @@ def fake_results(name: str, args: dict[str, Any], ctx: ToolContext) -> ToolResul
 @pytest.fixture(autouse=True)
 def _fake_dispatch(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(loop, "dispatch", fake_results)
+    # The checker has its own tests (test_checker.py, test_loop_check.py).
+    monkeypatch.setattr(loop._Run, "finish", lambda self, memo: memo)
 
 
 @pytest.fixture
@@ -379,11 +381,11 @@ def test_sources_and_retrieved_ids_reach_finish_seam(
 ) -> None:
     seen: dict[str, Any] = {}
 
-    def finish(memo: Memo, retrieved: set[str], sources: dict[str, str]) -> Memo:
-        seen.update(retrieved=retrieved, sources=sources)
+    def finish(self: loop._Run, memo: Memo) -> Memo:
+        seen.update(retrieved=self.retrieved, sources=self.sources)
         return memo
 
-    monkeypatch.setattr(loop, "_finish", finish)
+    monkeypatch.setattr(loop._Run, "finish", finish)
     model = ScriptedModel(
         [
             resp(
@@ -578,3 +580,14 @@ def test_replay_mismatch_propagates(ctx: ToolContext) -> None:
 
     with pytest.raises(ReplayMismatch):
         run(ScriptedModel([drift]), ctx)
+
+
+def test_failure_label_is_honest(ctx: ToolContext, monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken(name: str, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
+        raise KeyError("secret")
+
+    monkeypatch.setattr(loop, "dispatch", broken)
+    rec, steps = run(ScriptedModel([resp([use("fda_label", {}, "a")])]), ctx)
+    assert rec.status == "failed"
+    assert steps[-1].text == "run failed: KeyError"
+    assert "secret" not in steps[-1].text
