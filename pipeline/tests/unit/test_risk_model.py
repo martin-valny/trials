@@ -47,3 +47,10 @@ def test_ensemble_deterministic_with_seed() -> None:
     b = fit_ensemble("baseline", x, y, COLUMNS, n_boot=4, seed=3).predict(x)
     for u, v in zip(a, b, strict=True):
         np.testing.assert_array_equal(u, v)
+
+
+def test_ensemble_members_have_no_booster() -> None:
+    x, y = make_data(600)
+    ens = fit_ensemble("boosted", x, y, COLUMNS, n_boot=2)
+    assert ens.main.booster is not None
+    assert all(m.booster is None for m in ens.members)

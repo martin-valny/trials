@@ -43,9 +43,20 @@ class Fitted:
 
 
 def fit(
-    recipe: Recipe, X: np.ndarray, y: np.ndarray, columns: Sequence[str], *, seed: int = 42
+    recipe: Recipe,
+    X: np.ndarray,
+    y: np.ndarray,
+    columns: Sequence[str],
+    *,
+    seed: int = 42,
+    explain: bool = True,
 ) -> Fitted:
-    """Fit one model. The baseline sees BASELINE_FEATURES only; a missing one is an error."""
+    """Fit one model. The baseline sees BASELINE_FEATURES only; a missing one is an error.
+
+    A boosted fit also keeps an uncalibrated booster for factor explanations unless
+    `explain` is False. That booster is a full-data refit while the calibrated predictor
+    averages 5 CV-fold boosters, so the factors are approximate.
+    """
     cols = list(columns)
     if X.shape[1] != len(cols):
         raise ValueError(f"X has {X.shape[1]} columns but {len(cols)} names were given")
@@ -67,7 +78,7 @@ def fit(
     est = CalibratedClassifierCV(
         HistGradientBoostingClassifier(random_state=seed), method="isotonic", cv=5
     ).fit(X, y)
-    booster = HistGradientBoostingClassifier(random_state=seed).fit(X, y)
+    booster = HistGradientBoostingClassifier(random_state=seed).fit(X, y) if explain else None
     return Fitted("boosted", est, idx, booster)
 
 
@@ -98,11 +109,14 @@ def fit_ensemble(
     n_boot: int = 20,
     seed: int = 42,
 ) -> Ensemble:
-    """Fit the main model on all rows and `n_boot` refits on bootstrap resamples."""
+    """Fit the main model on all rows and `n_boot` refits on bootstrap resamples.
+
+    Only `main` keeps a booster for explanations; the members need none.
+    """
     main = fit(recipe, X, y, columns, seed=seed)
     rng = np.random.default_rng(seed)
     members = []
     for i in range(n_boot):
         rows = rng.integers(0, len(y), len(y))
-        members.append(fit(recipe, X[rows], y[rows], columns, seed=seed + i + 1))
+        members.append(fit(recipe, X[rows], y[rows], columns, seed=seed + i + 1, explain=False))
     return Ensemble(recipe, tuple(columns), main, tuple(members))
