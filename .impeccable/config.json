@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/components/risk/risk.css"
+        ],
+        "createdAt": "2026-11-09T15:16:07.858Z",
+        "reason": "Claude triage: L24 .rk-range-end is a CSS border triangle (arrowhead for a range past the 60% axis end), not a side accent on a card"
+      }
+    ]
+  }
+}
