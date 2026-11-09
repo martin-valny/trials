@@ -191,3 +191,24 @@ test("the map statistic section points to the similarity map", async () => {
   expect(link).toHaveAttribute("href", "/explore");
   expect(link.closest("section")).toHaveAttribute("id", "map-statistic");
 });
+
+test("Methods explains what approved means for a disease", async () => {
+  stubFetch();
+  const { container } = renderAt(<Methods />, "/methods#approved");
+  const h = await screen.findByRole("heading", { name: "Approved for this disease" });
+  const section = h.closest("section") as HTMLElement;
+  expect(section).toHaveAttribute("id", "approved");
+  expect(section).toHaveAttribute("aria-labelledby", "approved-h");
+  expect(container.querySelector("#unrowed")!.nextElementSibling).toBe(section);
+  const text = (section.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/ChEMBL/);
+  expect(text).toMatch(/FDA drug labels/);
+  expect(text).toMatch(/hand file/);
+  expect(text).toMatch(/any regulator/);
+  expect(text).toMatch(/withdrawn/);
+  expect(text).toMatch(/not underlined/);
+  expect(text).toMatch(/MOGAD has no ChEMBL term/);
+  expect(text).toMatch(/“Approved use” column is a trial phase/);
+  expect(text).toMatch(/no success rate/);
+  expect(text).toMatch(/combination kits/i);
+});

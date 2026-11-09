@@ -83,3 +83,14 @@ test("no horizontal overflow on the front door and a target page at phone width"
     expect(await overflow(page), route).toBeLessThanOrEqual(0);
   }
 });
+
+test("By disease marks approved cells with a floor rule", async ({ page }) => {
+  await page.goto("/#/?view=disease");
+  await expect(page.locator(".cell.ap .floor").first()).toBeAttached();
+});
+
+test("the target page has panel e, with a link to an approved drug", async ({ page }) => {
+  await page.goto("/#/target/cd20");
+  await expect(page.getByRole("heading", { name: "CD20 by disease" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "ocrelizumab" })).toBeVisible();
+});

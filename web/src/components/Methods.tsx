@@ -228,6 +228,50 @@ export function Methods() {
         )}
       </section>
 
+      <section id="approved" aria-labelledby="approved-h">
+        <h2 id="approved-h">Approved for this disease</h2>
+        <p>
+          On the Pipeline under By disease, a short ink line along the bottom of a cell means a drug on
+          that target is approved for that disease, by any regulator, at any time. It is a fact about
+          the target, not about the company, so the company lens does not dim it. A drug withdrawn
+          from the market is still listed, with a &ldquo;withdrawn&rdquo; tag, but it is not
+          underlined: the line shows only where at least one approved drug is still on the market.
+        </p>
+        <p>
+          A drug counts for a target when it acts on the same target with the same action and the same
+          kind of molecule (antibody, small molecule, cell therapy and so on), so CAR-T and antibodies
+          on the same target stay apart. It counts even if no trial on the registry tests it.
+          Combination kits are not counted.
+        </p>
+        <p>Approval comes from three places, and a drug needs only one of them:</p>
+        <ul>
+          <li>
+            ChEMBL release ChEMBL_37 (1 May 2026): its drug indications at maximum phase 4, matched on
+            the disease&rsquo;s medical subject heading.
+          </li>
+          <li>
+            FDA drug labels from openFDA: the indications text of a label names the disease.
+          </li>
+          <li>
+            A short hand file for approvals neither finds. Each row names its regulator, year and
+            source document.
+          </li>
+        </ul>
+        <p>
+          The list is made by hand with <code>pipeline/scripts/fetch_approvals.py</code> and committed
+          under <code>config/approvals/</code>; the daily run never calls ChEMBL or openFDA, so a new
+          approval shows up after the next hand run. MOGAD has no ChEMBL term, so it is found only
+          through label text and the hand file, and nothing is approved for it yet. The
+          figure&rsquo;s &ldquo;Approved use&rdquo; column is a trial phase (Phase 4 trials), not this.
+        </p>
+        <p>
+          On a target page, panel e lists the same drugs for each disease next to the furthest phase
+          its trials reached. It shows no success rate, on purpose: approval is not a later-phase
+          trial, so classes with approved drugs would read as failures, because the Phase 3 trials
+          behind an approval have no later trial to advance to.
+        </p>
+      </section>
+
       <section id="map" aria-labelledby="map-h">
         <h2 id="map-h">How the map is made</h2>
         <p>

@@ -407,7 +407,7 @@
       "name": "Pipeline figure",
       "kind": "custom",
       "refersTo": "",
-      "description": "Front page (/). Lede: kicker, a computed headline (500, clamp 24-34px, max 22ch) with its first sentence in --run, three key numbers (30px/500: running --run, advanced red, companies with a running trial), a 12px source line. Controls: By phase | By disease segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select. Legend of five marks. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note. Family bands in 11px/700 uppercase --fam; the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks.",
+      "description": "Front page (/). Lede: kicker, a computed headline (500, clamp 24-34px, max 22ch) with its first sentence in --run, three key numbers (30px/500: running --run, advanced red, companies with a running trial), a 12px source line. Controls: By phase | By disease segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select. Legend of five marks. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note. Family bands in 11px/700 uppercase --fam; the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks. By disease only: a cell with an approved, not-withdrawn drug carries the floor rule (see Floor rule).",
       "html": "",
       "css": ""
     },
@@ -431,7 +431,23 @@
       "name": "Target page",
       "kind": "custom",
       "refersTo": "",
-      "description": "/target/:slug. Breadcrumb, 48px/600 class name with gene and family, a computed 19px lede and three key numbers, disease chips, then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (reason chips and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph).",
+      "description": "/target/:slug. Breadcrumb, 48px/600 class name with gene and family, a computed 19px lede and three key numbers, disease chips, then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (reason chips and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph). Panel e, '{Row} by disease', after panel d (see Panel e: by disease).",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Floor rule",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "By disease cells only (never By phase or By year): a 2px --ink rule along the bottom edge of a cell where a drug on the target is approved for the disease by any regulator and at least one such drug is not withdrawn. Inset 6px (3px on a phone strip); also drawn on an empty cell, above its pale dot. The tooltip title sits on the rule ('Approved for {disease}: {drugs}.') and the same text is visually hidden for assistive tech. The company lens never dims it. Key item: a short ink rule, 'a drug on this target is approved for this disease'.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Panel e: by disease",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Target page, after panel d: '{Row} by disease'. One line per disease with a trial or an approval, in figure order: disease, trial count and '{k} running' in --run, a four-step phase ladder (Phase 1, 2, 3, Approved use; furthest in ink, earlier in the family ink, later pale, counts beneath), then approved drugs (name linking to its source, source in muted small text, withdrawn last with a muted tag) under the same floor rule, or a muted 'None approved'. No success rate by design. Phone (<= 640px): one block per disease (name and counts, ladder, drugs). Without approval data: 'Approval data not available' in the header and the ladder only.",
       "html": "",
       "css": ""
     },

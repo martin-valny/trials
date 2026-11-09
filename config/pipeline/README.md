@@ -28,3 +28,5 @@ in each row (and once in the headline totals):
 
 Trials whose only experimental drug is a listed background drug still define their row. A trial
 of a listed background drug plus a drug that maps to no row has no mark (5 on this snapshot).
+
+Which drugs on a row are approved for which disease is kept apart, in `config/approvals/` (see its README).
