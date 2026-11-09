@@ -1,0 +1,187 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  diligenceEndpoint,
+  diligenceKey,
+  flagSentence,
+  isValidDisease,
+  loadRecorded,
+  pollRun,
+  renderable,
+  startRun,
+} from "../src/lib/diligence";
+import type { PipelineRow, RunRecord } from "../src/types";
+
+const record = JSON.parse(readFileSync(join(__dirname, "fixtures", "diligence", "cd20__MS.json"), "utf-8")) as RunRecord;
+const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status });
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
+
+describe("diligenceKey / endpoint", () => {
+  it("joins target and disease", () => expect(diligenceKey("cd20", "all")).toBe("cd20__all"));
+  it("is offline when the env is absent or empty", () => {
+    vi.stubEnv("VITE_DILIGENCE_URL", "");
+    expect(diligenceEndpoint()).toBeNull();
+  });
+  it("normalises the trailing slash", () => {
+    vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api");
+    expect(diligenceEndpoint()).toBe("https://x.test/api/");
+    vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api/");
+    expect(diligenceEndpoint()).toBe("https://x.test/api/");
+  });
+});
+
+describe("loadRecorded", () => {
+  it("fetches diligence/<key>.json under the base", async () => {
+    const f = vi.fn(async () => json(200, record));
+    vi.stubGlobal("fetch", f);
+    expect(await loadRecorded("cd20", "MS")).toEqual(record);
+    expect(f).toHaveBeenCalledWith(import.meta.env.BASE_URL + "diligence/cd20__MS.json");
+  });
+  it("is null on 404, bad JSON, or network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
+    expect(await loadRecorded("cd20", "MS")).toBeNull();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("<html>", { status: 200 })));
+    expect(await loadRecorded("cd20", "MS")).toBeNull();
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("down"))));
+    expect(await loadRecorded("cd20", "MS")).toBeNull();
+  });
+});
+
+describe("startRun", () => {
+  beforeEach(() => vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api"));
+  const call = (res: Response) => {
+    const f = vi.fn(async () => res);
+    vi.stubGlobal("fetch", f);
+    return f;
+  };
+  it("posts the body and maps 202", async () => {
+    const f = call(json(202, { run_id: "r1" }));
+    expect(await startRun("cd20", "MS", true)).toEqual({ run_id: "r1" });
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://x.test/api/runs");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ target: "cd20", disease: "MS", force: true });
+  });
+  it("maps 200 to a replay with stale", async () => {
+    call(json(200, { replay: record, stale: true }));
+    expect(await startRun("cd20", "MS", false)).toEqual({ replay: record, stale: true });
+  });
+  it("maps 429 to capped, with or without a latest run", async () => {
+    call(json(429, { latest: record, reason: "daily limit reached" }));
+    expect(await startRun("cd20", "MS", false)).toEqual({ capped: record });
+    call(json(429, { latest: null, reason: "daily limit reached" }));
+    expect(await startRun("cd20", "MS", false)).toEqual({ capped: null });
+  });
+  it("throws on 400, 5xx and network errors", async () => {
+    call(json(400, { error: "unknown target" }));
+    await expect(startRun("x", "all", false)).rejects.toThrow();
+    call(json(500, { error: "boom" }));
+    await expect(startRun("x", "all", false)).rejects.toThrow();
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("down"))));
+    await expect(startRun("x", "all", false)).rejects.toThrow();
+  });
+  it("throws when offline", async () => {
+    vi.stubEnv("VITE_DILIGENCE_URL", "");
+    await expect(startRun("x", "all", false)).rejects.toThrow();
+  });
+});
+
+describe("flagSentence", () => {
+  beforeEach(() => vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api/"));
+  it("posts to flags and resolves on 204", async () => {
+    const f = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", f);
+    await flagSentence("r1", "s1", "wrong");
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://x.test/api/flags");
+    expect(JSON.parse(init.body as string)).toEqual({ run_id: "r1", sentence_id: "s1", reason: "wrong" });
+  });
+  it("throws on 429", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(429, {})));
+    await expect(flagSentence("r1", "s1", "x")).rejects.toThrow();
+  });
+});
+
+describe("pollRun", () => {
+  beforeEach(() => {
+    vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api");
+    vi.useFakeTimers();
+  });
+  const step = (n: number) => ({ ...record.steps[0], n });
+  const running = (n: number): RunRecord => ({ ...record, status: "running", steps: Array.from({ length: n }, (_, i) => step(i + 1)) });
+
+  it("reports each new step once and resolves on done", async () => {
+    const queue = [json(200, running(1)), json(200, running(2)), json(200, { ...record, status: "done" })];
+    const f = vi.fn(async () => queue.shift() as Response);
+    vi.stubGlobal("fetch", f);
+    const seen: number[] = [];
+    const p = pollRun("r1", (s) => seen.push(s.n));
+    await vi.advanceTimersByTimeAsync(5000);
+    const done = await p;
+    expect(done.status).toBe("done");
+    expect(seen).toEqual([...Array.from({ length: record.steps.length }, (_, i) => i + 1)].slice(0, seen.length));
+    expect(new Set(seen).size).toBe(seen.length);
+    expect(seen[0]).toBe(1);
+    expect((f.mock.calls[0] as unknown as [string])[0]).toBe("https://x.test/api/runs/r1");
+  });
+  it("resolves on failed", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(200, { ...record, status: "failed" })));
+    const p = pollRun("r1", () => {});
+    await vi.advanceTimersByTimeAsync(10);
+    expect((await p).status).toBe("failed");
+  });
+  it("treats network errors, 429 and 5xx as transient", async () => {
+    const queue: Array<() => Promise<Response>> = [
+      () => Promise.reject(new TypeError("down")),
+      async () => json(429, {}),
+      async () => json(503, {}),
+      async () => json(200, { ...record, status: "done" }),
+    ];
+    vi.stubGlobal("fetch", vi.fn(async () => (queue.shift() as () => Promise<Response>)()));
+    const p = pollRun("r1", () => {});
+    await vi.advanceTimersByTimeAsync(10000);
+    expect((await p).status).toBe("done");
+  });
+  it("rejects with timeout", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(200, running(0))));
+    const p = pollRun("r1", () => {}, { intervalMs: 1000, timeoutMs: 5000 });
+    const assertion = expect(p).rejects.toThrow("timeout");
+    await vi.advanceTimersByTimeAsync(6000);
+    await assertion;
+  });
+});
+
+describe("renderable", () => {
+  it("groups sentences by section in order and builds the verdict map", () => {
+    const r = renderable(record);
+    expect(Object.keys(r.sections)).toEqual(["landscape", "track_record", "literature", "competition"]);
+    const total = Object.values(r.sections).reduce((n, s) => n + s.length, 0);
+    expect(total).toBe(record.memo!.sections.length);
+    expect(r.verdictBySentence.size).toBe(record.verdicts.length);
+    expect(r.removed).toEqual(record.removed);
+  });
+  it("trusts the backend gate", () => {
+    expect(renderable({ ...record, judgement_shown: true }).judgementShown).toBe(true);
+    expect(renderable({ ...record, judgement_shown: false }).judgementShown).toBe(false);
+  });
+  it("never shows a judgement without a memo", () => {
+    const r = renderable({ ...record, memo: null, judgement_shown: true });
+    expect(r.judgementShown).toBe(false);
+    expect(Object.values(r.sections).every((s) => s.length === 0)).toBe(true);
+  });
+});
+
+describe("isValidDisease", () => {
+  const row = { marks: [{ dz: ["MS"] }, { dz: ["SLE", "RA"] }] } as unknown as PipelineRow;
+  it("accepts all and diseases on a mark", () => {
+    expect(isValidDisease(row, "all")).toBe(true);
+    expect(isValidDisease(row, "SLE")).toBe(true);
+  });
+  it("rejects others", () => expect(isValidDisease(row, "NMO")).toBe(false));
+});

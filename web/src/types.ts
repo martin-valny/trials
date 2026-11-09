@@ -452,3 +452,72 @@ export interface RiskFile {
   /** Per pipeline row id; absent when there is no pipeline figure. */
   targets?: Record<string, { all: RiskTargetSummary; by_disease: Record<string, RiskTargetSummary> }>;
 }
+
+// ---- Diligence agent (mirrors agent/src/diligence/types.py) ----
+
+export type DiligenceSection = "landscape" | "track_record" | "literature" | "competition";
+export type DiligenceStepKind = "plan" | "tool" | "note" | "write" | "check" | "limit" | "error" | "done";
+
+export interface DiligenceStep {
+  n: number;
+  kind: DiligenceStepKind;
+  text: string;
+  tool: string | null;
+  ids: string[];
+  ms: number;
+  tokens_in: number;
+  tokens_out: number;
+}
+
+export interface DiligenceSentence {
+  id: string;
+  section: DiligenceSection;
+  text: string;
+  cites: string[];
+}
+
+export interface DiligenceJudgement {
+  stance: "favours" | "mixed" | "against";
+  confidence: "high" | "medium" | "low";
+  reasons: string[];
+}
+
+export interface DiligenceMemo {
+  sections: DiligenceSentence[];
+  read: string[];
+  judgement: DiligenceJudgement;
+  would_change: string[];
+}
+
+export interface DiligenceVerdict {
+  sentence_id: string;
+  verdict: "supported" | "partly" | "unsupported";
+  reason: string;
+}
+
+export interface DiligenceRemoved {
+  sentence_id: string;
+  text: string;
+  reason: string;
+}
+
+export interface RunRecord {
+  run_id: string;
+  target: string;
+  disease: string;
+  fingerprint: string;
+  agent_version: string;
+  status: "running" | "done" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  steps: DiligenceStep[];
+  memo: DiligenceMemo | null;
+  verdicts: DiligenceVerdict[];
+  removed: DiligenceRemoved[];
+  judgement_shown: boolean;
+  models: Record<string, unknown>;
+  tokens_in: number;
+  tokens_out: number;
+  cost_usd: number;
+  data_date: string;
+}
