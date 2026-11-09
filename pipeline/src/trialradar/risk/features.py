@@ -6,27 +6,28 @@ update date, site status. Only the columns named in this module are taken from t
 Sponsor class mapping: INDUSTRY -> sponsor_industry. NIH, FED, OTHER_GOV, OTHER and
 NETWORK/INDIV -> sponsor_academic (non-commercial). A missing or UNKNOWN class sets neither.
 Region: countries map to a fixed continent table; multi_region is 1 when sites span more
-than one continent (unmapped countries count as their own region).
+than one continent (unmapped countries are ignored).
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 
 import polars as pl
 
-from trialradar.risk.fields import RiskFields
+from trialradar.risk.fields import CATEGORIES, RiskFields
 from trialradar.risk.sponsors import SPONSOR_FLOOR
 from trialradar.tables import Tables
 
-__all__ = ["BRANCHES", "FEATURES", "SITE_FEATURES", "SPONSOR_FLOOR", "build"]
+__all__ = ["CATEGORY_COLUMNS", "FEATURES", "SITE_FEATURES", "SPONSOR_FLOOR", "build"]
 
-BRANCHES: tuple[str, ...] = (
-    "BC01", "BC02", "BC03", "BC04", "BC05", "BC06", "BC07", "BC08", "BC09", "BC10",
-    "BC11", "BC12", "BC13", "BC14", "BC15", "BC16", "BC17", "BC18", "BC19", "BC20",
-    "BC21", "BC22", "BC23", "BC26", "BC27",
-)  # fmt: skip
-"""CT.gov condition-browse branch abbreviations (BC = conditions tree)."""
+
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+
+
+CATEGORY_COLUMNS: tuple[str, ...] = tuple(f"cat_{_slug(c)}" for c in CATEGORIES)
 
 SITE_FEATURES: tuple[str, ...] = ("n_sites", "n_countries", "multi_region")
 
@@ -45,7 +46,8 @@ FEATURES: tuple[str, ...] = (
     "n_primary_outcomes",
     "n_secondary_outcomes",
     "n_conditions",
-    *(f"branch_{b}" for b in BRANCHES),
+    *CATEGORY_COLUMNS,
+    "n_categories",
     "has_biological",
     "n_experimental_interventions",
     "start_year",
@@ -124,14 +126,14 @@ def build(
 
     sites = tables.site.filter(pl.col("country").is_not_null())
     region = sites.with_columns(
-        pl.col("country").replace_strict(_CONTINENT, default=None).alias("_c")
-    ).with_columns(pl.coalesce("_c", pl.col("country")).alias("region"))
+        pl.col("country").replace_strict(_CONTINENT, default=None).alias("region")
+    )
     site_counts = (
         tables.site.group_by("nct_id").agg(pl.len().cast(pl.Int64).alias("n_sites"))
     ).join(
         region.group_by("nct_id").agg(
             pl.col("country").n_unique().cast(pl.Int64).alias("n_countries"),
-            (pl.col("region").n_unique() > 1).cast(pl.Int64).alias("multi_region"),
+            (pl.col("region").drop_nulls().n_unique() > 1).cast(pl.Int64).alias("multi_region"),
         ),
         on="nct_id",
         how="left",
@@ -154,13 +156,20 @@ def build(
             "n_arms": f.n_arms if f else None,
             "placebo_arm": int(f.placebo_arm) if f else 0,
         }
-        row.update({f"branch_{b}": int(bool(f and b in f.branches)) for b in BRANCHES})
+        row.update(
+            {
+                col: int(bool(f and cat in f.categories))
+                for col, cat in zip(CATEGORY_COLUMNS, CATEGORIES, strict=True)
+            }
+        )
+        row["n_categories"] = len(f.categories) if f else 0
         field_rows.append(row)
     schema: dict[str, pl.DataType | type] = {
         "nct_id": pl.Utf8,
         "n_arms": pl.Int64,
         "placebo_arm": pl.Int64,
-        **{f"branch_{b}": pl.Int64 for b in BRANCHES},
+        **{col: pl.Int64 for col in CATEGORY_COLUMNS},
+        "n_categories": pl.Int64,
     }
     field_frame = pl.DataFrame(field_rows, schema=schema).with_columns(pl.Series("nct_id", ids))
 

@@ -42,8 +42,17 @@ def test_build_never_reads_end_facts():
             "statusModule.primaryCompletionDateStruct": {"date": "2018-01", "type": "ACTUAL"},
             "statusModule.overallStatus": "TERMINATED",
             "statusModule.lastUpdatePostDateStruct": {"date": "2020-05-05"},
+            "contactsLocationsModule.locations": [
+                {
+                    "facility": "Example Hospital",
+                    "city": "Boston",
+                    "country": "United States",
+                    "status": "WITHDRAWN",
+                }
+            ],
         },
     )
+    b["hasResults"] = True
     assert _build([a]).equals(_build([b]))
 
 
@@ -107,3 +116,32 @@ def test_build_missing_everything():
     frame = features.build(tables, {}, counts)
     assert frame.height == 1
     assert list(frame.columns) == ["nct_id", *FEATURES]
+
+
+def test_category_outside_list_adds_nothing():
+    s = make_study("NCT00000001")
+    s["derivedSection"] = {
+        "conditionBrowseModule": {
+            "meshes": [{"term": "Multiple Sclerosis"}],
+            "ancestors": [{"term": "Neoplasms"}, {"term": "Something Unlisted"}],
+        }
+    }
+    frame = _build([s])
+    assert list(frame.columns) == ["nct_id", *FEATURES]
+    row = frame.row(0, named=True)
+    assert row["cat_neoplasms"] == 1
+    assert row["n_categories"] == 1
+
+
+def test_multi_region_ignores_unmapped_countries():
+    def locs(*countries):
+        return [
+            {"facility": "F", "city": "C", "country": c, "status": "RECRUITING"} for c in countries
+        ]
+
+    def mr(*countries):
+        s = make_study("NCT00000001", **{"contactsLocationsModule.locations": locs(*countries)})
+        return _build([s]).row(0, named=True)["multi_region"]
+
+    assert mr("United States", "Germany") == 1
+    assert mr("United States", "Narnia") == 0
