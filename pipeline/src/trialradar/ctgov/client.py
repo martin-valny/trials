@@ -89,7 +89,10 @@ class CtGovClient:
         return ts
 
     def iter_studies(self, cfg: AreaConfig) -> Iterator[dict[str, Any]]:
-        params = build_params(cfg)
+        return self.iter_query(build_params(cfg))
+
+    def iter_query(self, params: dict[str, str]) -> Iterator[dict[str, Any]]:
+        """Page through any ``/studies`` query, de-duplicated by NCT id."""
         studies: dict[str, dict[str, Any]] = {}
         seen_tokens: set[str] = set()
         page = 0

@@ -10,7 +10,9 @@ dependencies = [
     "pyyaml",
     "numpy>=2.5.4",
     "scipy>=1.18.1",
-    "scikit-learn>=1.9.1",
+    "scikit-learn>=1.9,<1.10",
+    "shap",
+    "joblib",
     "umap-learn>=0.5.12",
 ]
 
@@ -46,5 +48,5 @@ line-length = 100
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "scipy.*", "umap.*"]
+module = ["sklearn.*", "scipy.*", "umap.*", "shap.*", "joblib.*"]
 ignore_missing_imports = true

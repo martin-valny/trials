@@ -191,6 +191,14 @@ class ExplorerConfig(_Strict):
         return filled
 
 
+class RiskConfig(_Strict):
+    """The stop-risk model: whether it runs, per-trial scores, and where its files live."""
+
+    enabled: bool = True
+    per_trial: bool = True
+    dir: Path = Path("risk")
+
+
 class AreaConfig(_Strict):
     name: str
     conditions: list[ConditionSpec] = Field(min_length=1)
@@ -208,6 +216,7 @@ class AreaConfig(_Strict):
     stop_reasons: Path = Path("stop_reasons.csv")
     approvals_dir: Path = Path("approvals")
     explorer: ExplorerConfig = ExplorerConfig()
+    risk: RiskConfig = RiskConfig()
 
     @field_validator("tracked_fields")
     @classmethod
@@ -224,7 +233,7 @@ class AreaConfig(_Strict):
 
 def load_config(path: Path) -> AreaConfig:
     """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir``, ``approaches_dir``,
-    ``pipeline_dir``, ``sponsors_dir``, ``approvals_dir`` and ``stop_reasons`` resolve relative to the file."""
+    ``pipeline_dir``, ``sponsors_dir``, ``approvals_dir``, ``risk.dir`` and ``stop_reasons`` resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -244,5 +253,6 @@ def load_config(path: Path) -> AreaConfig:
             "sponsors_dir": (path.parent / cfg.sponsors_dir).resolve(),
             "approvals_dir": (path.parent / cfg.approvals_dir).resolve(),
             "stop_reasons": (path.parent / cfg.stop_reasons).resolve(),
+            "risk": cfg.risk.model_copy(update={"dir": (path.parent / cfg.risk.dir).resolve()}),
         }
     )

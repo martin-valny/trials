@@ -103,3 +103,7 @@ explorer:
     - usual care
     - no intervention
     - observation
+risk:
+  enabled: true
+  per_trial: true
+  dir: risk

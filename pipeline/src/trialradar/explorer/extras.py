@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from trialradar.config import AreaConfig
 from trialradar.relevance import condition_labels
+from trialradar.risk.fields import RiskFields, risk_fields
 from trialradar.textnorm import norm_text
 
 _DAYS_PER_YEAR = 365.25
@@ -48,6 +49,7 @@ class StudyExtras:
     fallback_interventions: tuple[ExperimentalIntervention, ...] = ()
     """Approach sorting only: every intervention (any type) of a trial whose arms include no
     EXPERIMENTAL arm (spec 2026-11-08 §6.3). Empty otherwise; never feeds drugs, pool or success."""
+    risk: RiskFields | None = None
 
 
 def empty_extras(nct_id: str) -> StudyExtras:
@@ -197,6 +199,7 @@ def _extras(study: dict[str, Any], cfg: AreaConfig) -> StudyExtras:
         condition_labels=tuple(condition_labels(study, cfg)),
         experimental_interventions=_experimental_interventions(arms),
         fallback_interventions=_fallback_interventions(arms),
+        risk=risk_fields(study),
     )
 
 

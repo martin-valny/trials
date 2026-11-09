@@ -249,3 +249,14 @@ def test_repo_area_has_approvals(cfg: AreaConfig) -> None:
     ae = by_code["AE"]
     assert ae is not None
     assert ae.efo == [("Autoimmune Diseases of the Nervous System", "autoimmune encephalitis")]
+
+
+def test_risk_config_defaults_and_resolves_dir(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data.pop("risk", None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    cfg = load_config(path)
+    assert cfg.risk.enabled is True
+    assert cfg.risk.per_trial is True
+    assert cfg.risk.dir == (tmp_path / "risk").resolve()
