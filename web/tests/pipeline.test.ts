@@ -507,6 +507,11 @@ describe("year binning and By year notes", () => {
     expect(notes([row("a", [...many(14, { y: 2005 })])]).has("a")).toBe(false);
     expect(notes([row("a", [...many(15, { y: 2005 }), ...many(2, { y: 2020, s: "run" })])]).has("a")).toBe(false);
   });
+  it("Fading needs no majority before 2012, only some trials before it", () => {
+    const mixed = [...many(9, { y: 2005, s: "fin" }), ...many(11, { y: 2015, s: "fin" })];
+    expect(notes([row("a", mixed)]).get("a")).toEqual({ kicker: "Fading", text: "9 trials before 2012; 0 running now." });
+    expect(notes([row("a", many(20, { y: 2015, s: "fin" }))]).has("a")).toBe(false);
+  });
   it("Longest run", () => {
     const ys = Array.from({ length: 20 }, (_, i) => 2003 + (i % 8) * 3).map((y) => mark({ y, s: "run" }));
     expect(notes([row("a", ys)]).get("a")).toEqual({ kicker: "Longest run", text: "Trials every few years since 2003." });

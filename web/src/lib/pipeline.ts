@@ -495,7 +495,7 @@ export function yearNotes(views: RowView[], s: FigureState, thisYear: number): M
     },
     {
       kicker: "Fading",
-      score: (v) => (v.run <= HISTORICAL_MAX_RUNNING && v.total >= FADING_MIN_TRIALS && before(v) > v.total / 2 ? before(v) : 0),
+      score: (v) => (v.run <= HISTORICAL_MAX_RUNNING && v.total >= FADING_MIN_TRIALS ? before(v) : 0),
       min: 1,
       text: (v) => `${n(before(v))} trials before ${FADING_BEFORE}; ${n(v.run)} running now.`,
     },
