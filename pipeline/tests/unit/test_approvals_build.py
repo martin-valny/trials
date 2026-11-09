@@ -389,3 +389,19 @@ def test_review_lines_clean_and_unique() -> None:
     )
     _, review2 = run([row("r", ("X",))], {"same": mapping("same", "C1", ("X",))}, chembl2)
     assert review2.one_source == ["r × MS: same — ChEMBL only"]
+
+
+def test_hyaluronidase_partner_ignored_but_multi_antibody_rejected() -> None:
+    text = "Indicated for multiple sclerosis."
+    cases = [
+        ("efgartigimod alfa", "EFGARTIGIMOD ALFA AND HYALURONIDASE (HUMAN RECOMBINANT)", True),
+        ("ocrelizumab", "OCRELIZUMAB AND HYALURONIDASE-OCSQ", True),
+        ("pertuzumab", "PERTUZUMAB, TRASTUZUMAB, AND HYALURONIDASE-ZZXF", False),
+        ("lidocaine", "LIDOCAINE, KENALOG, POVIDONE IODINE", False),
+        ("lidocaine", "LIDOCAINE HYDROCHLORIDE AND TRIAMCINOLONE", False),
+    ]
+    for name, generic, ok in cases:
+        mappings, chembl = one_drug_world(name)
+        fda = FakeFda({name: [label_of("S", text, generic)]})
+        items, _ = run([row("r", ("X",))], mappings, chembl, fda)
+        assert bool(items) is ok, generic

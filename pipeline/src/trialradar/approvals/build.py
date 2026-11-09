@@ -29,6 +29,8 @@ Json = dict[str, Any]
 DAILYMED = "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid="
 CHEMBL_CARD = "https://www.ebi.ac.uk/chembl/compound_report_card/"
 _HAND_OK = ("mapped", "manual")
+# a subcutaneous delivery enzyme, not an active ingredient: "x and hyaluronidase-abcd (...)"
+_HYALURONIDASE = re.compile(r"\s+and\s+hyaluronidase.*$", re.IGNORECASE)
 _BIOSIMILAR_SUFFIX = re.compile(r"-[a-z]{4}$")
 
 
@@ -150,7 +152,7 @@ def _candidates(row: FigureRow, seeds: set[str], look: _Lookups) -> set[str]:
 
 def _label_is_for(name: str, label: Json) -> bool:
     """A single-ingredient label for ``name`` (kits and combinations are not)."""
-    generic = str(label.get("generic_name") or "").casefold().strip()
+    generic = _HYALURONIDASE.sub("", str(label.get("generic_name") or "")).casefold().strip()
     if generic:
         if ";" in generic or "," in generic or " and " in generic:
             return False
