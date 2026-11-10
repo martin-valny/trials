@@ -4,6 +4,7 @@ import { kindTree, NOT_YET_SORTED, NOT_YET_SORTED_ELSEWHERE } from "../lib/appro
 import { trialsLink } from "../lib/pipeline";
 import { loadExplorer, loadMeta, loadPipeline, loadRisk } from "../data";
 import type { ExplorerFile, Meta, PipelineFile, RiskFile } from "../types";
+import { DiligenceMethods } from "./DiligenceMethods";
 import { RiskMethods } from "./risk/RiskMethods";
 
 const REPO = "https://github.com/martin-valny/trials/blob/main/";
@@ -130,6 +131,8 @@ export function Methods() {
       </section>
 
       {risk === undefined ? null : <RiskMethods model={risk?.model ?? null} area={meta?.area ?? null} />}
+
+      <DiligenceMethods />
 
       <section id="registry-only" aria-labelledby="registry-only-h">
         <h2 id="registry-only-h">Registered trials only</h2>

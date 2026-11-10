@@ -382,3 +382,104 @@ test("stop-risk: retraining names the shipped refit window; start year is not a 
   expect(s.textContent).toMatch(/refitted on all finished trials started up to 2019/);
   expect(s.textContent).toMatch(/start year is never listed as a factor/i);
 });
+
+// ---------------------------------------------------------------- diligence agent (R8)
+
+const evalReport = {
+  citation_validity: 1,
+  support_rate: 0.875,
+  checker_agreement: 0.9,
+  judgement_shown_rate: 0.6,
+  cost_usd_mean: 0.043,
+  seconds_mean: 52.4,
+  n_runs: 8,
+  models: { writer: "writer-model-x", planner: "planner-model-y", checker: "checker-model-z" },
+  agent_version: "0.1.0",
+  generated_at: "2026-11-12T10:00:00Z",
+  baseline: { citation_validity: 1, support_rate: 0.875, judgement_shown_rate: 0.6, cost_usd_mean: 0.043, seconds_mean: 52.4 },
+};
+
+function stubWithReport(report: unknown | null) {
+  const inner = stubFetch();
+  vi.stubGlobal("fetch", async (url: string) => {
+    if (String(url).endsWith("diligence/eval-report.json"))
+      return report === null ? new Response("", { status: 404 }) : new Response(JSON.stringify(report), { status: 200 });
+    return inner(url);
+  });
+}
+
+const diligence = async (): Promise<HTMLElement> => {
+  const h = await screen.findByRole("heading", { name: "How the diligence agent works" });
+  const s = h.closest("section") as HTMLElement;
+  expect(s).toHaveAttribute("id", "diligence");
+  return s;
+};
+
+test("diligence: metrics render from eval-report.json", async () => {
+  stubWithReport(evalReport);
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  await within(s).findByText(/8 recorded runs/);
+  const text = (s.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/Citation validity 100%/);
+  expect(text).toMatch(/Support rate 88%/);
+  expect(text).toMatch(/supported claims divided by all claims checked, including claims later removed/);
+  expect(text).toMatch(/Checker agreement 90%/);
+  expect(text).toMatch(/Claude-assisted labels/);
+  expect(text).toMatch(/spot-checks a sample/);
+  expect(text).toMatch(/Judgement shown in 60%/);
+  expect(text).toMatch(/\$0\.043/);
+  expect(text).toMatch(/52 seconds/);
+  expect(text).toMatch(/writer-model-x/);
+  expect(text).toMatch(/planner-model-y/);
+  expect(text).toMatch(/checker-model-z/);
+  expect(text).toMatch(/version 0\.1\.0/);
+  expect(text).toMatch(/12 November 2026/);
+  expect(text).not.toMatch(/Evaluation results are published with the first recorded evaluation/);
+});
+
+test("diligence: checker agreement null reads not yet labelled", async () => {
+  stubWithReport({ ...evalReport, checker_agreement: null });
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  await within(s).findByText(/8 recorded runs/);
+  expect(s.textContent).toMatch(/Checker agreement not yet labelled/);
+});
+
+test("diligence: no report gives the honest line and no numbers", async () => {
+  stubWithReport(null);
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  expect(await within(s).findByText("Evaluation results are published with the first recorded evaluation.")).toBeInTheDocument();
+  expect(s.textContent).not.toMatch(/Citation validity/);
+  expect(s.textContent).toMatch(/set at deployment/);
+  expect(s.textContent).not.toMatch(/\$\d/);
+});
+
+test("diligence: bad JSON is treated as absent", async () => {
+  const inner = stubFetch();
+  vi.stubGlobal("fetch", async (url: string) =>
+    String(url).endsWith("diligence/eval-report.json") ? new Response("<html>", { status: 200 }) : inner(url),
+  );
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  expect(await within(s).findByText(/published with the first recorded evaluation/)).toBeInTheDocument();
+});
+
+test("diligence: tools, limits, checks and the two approaches not used", async () => {
+  stubWithReport(null);
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  const text = (s.textContent ?? "").replace(/\s+/g, " ");
+  expect(text).toMatch(/Europe PMC covers all PubMed abstracts/);
+  expect(text).toMatch(/openFDA/);
+  expect(text).toMatch(/12 tool calls/);
+  expect(text).toMatch(/60,000 input and 4,000 output tokens/);
+  expect(text).toMatch(/90 seconds/);
+  expect(text).toMatch(/3 new runs per visitor per day/);
+  expect(text).toMatch(/30 per day overall/);
+  expect(text).toMatch(/untrusted/);
+  expect(text).toMatch(/re-record the evaluation/);
+  expect(text).toMatch(/Strands Agents/);
+  expect(text).toMatch(/Bedrock Agents/);
+});

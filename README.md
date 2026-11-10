@@ -60,6 +60,18 @@ A bad row stops the stage with `<file>:<line>: <problem>`; the run continues wit
 
 **Where it lives.** The model and its card are committed under [`config/risk/`](config/risk/README.md) (`model.joblib`, `card.json`, `heldout.parquet`, `sponsor_history.csv`, hand-kept `factor_labels.csv`). They are made by hand with `pipeline/scripts/train_stop_risk.py` (needs network; nothing retrains automatically), and the daily `stop_risk` stage only scores. A failure there is a run warning and the site publishes without `risk.json` (R19). Spec: [docs/superpowers/specs/2026-11-09-stop-risk-model-design.md](docs/superpowers/specs/2026-11-09-stop-risk-model-design.md).
 
+## Diligence agent
+
+**What.** On a target page (panel g) a Bedrock tool-use agent writes a cited diligence memo for one target in one disease, from the site's own data, ClinicalTrials.gov, ChEMBL, Europe PMC abstracts and openFDA drug labels. The request is fixed in v1. A deterministic check (every sentence cites, every cite was retrieved in the run, numbers appear in the cited sources) and a second model's verdicts decide what stays; unsupported sentences are removed and listed, and the judgement shows only when every reason behind it is supported. It is AI-written and says so.
+
+**Architecture.** The static site calls a Lambda function URL (`POST /runs`, `GET /runs/{id}`, `POST /flags`); the Lambda starts a run and invokes itself asynchronously to execute it, keeping runs, daily limits and reader flags in three DynamoDB tables, and calling Bedrock and the public APIs. Per run: 12 tool calls, 60k input and 4k output tokens, 90 s; 3 new runs per visitor and 30 per day overall.
+
+**Optional backend.** The site works without it: a committed recorded run is replayed, or the panel says the agent is offline. Recorded runs ship after the first evaluation; until then the panel shows no run. Nothing here is deployed by CI; Martin deploys with `sam deploy` (see [agent/README.md](agent/README.md)).
+
+**Where the code is.** `agent/` (`src/diligence/` loop, tools, checker, handler; `scripts/` evaluation; `template.yaml`), the web panel in `web/src/components/target/TargetDiligence.tsx`, the method in `/methods#diligence`. Spec: [docs/superpowers/specs/2026-11-09-diligence-agent-design.md](docs/superpowers/specs/2026-11-09-diligence-agent-design.md).
+
+**How CI evaluates it.** Recorded runs (`agent/eval/recordings/`) are replayed offline with no model and no network; `agent/scripts/eval_report.py` computes citation validity, support rate, checker agreement, judgement-shown rate, cost and time from them. Gates: citation validity 1.0 and support rate no lower than the baseline minus 0.05. A change to prompts, tool schemas or model IDs fails CI with "re-record the evaluation". Results appear on Methods once the first evaluation is recorded.
+
 ## The Explore map (Figure 1, experimental, not in the nav)
 
 The Trial map (`/explore`) draws every tracked trial as a dot on a single map, so you can see how the trials of an area group together. Dot size follows enrollment; colour can show outcome, phase, disease, drug mechanism, modality or approach (see the Approaches page below), and the same six can filter the map. Named clusters (HDBSCAN on the map) are labelled beside their dots. Select a dot for the trial's key facts, the start of its registry summary and links to its trial page and the registry record. A "Results posted" toggle keeps only trials with results on the registry. Two small panels beside the map show what the layout implies, in plain words; panel b can group success by disease, modality, mechanism or approach.
@@ -159,7 +171,7 @@ The scheduled run is designed to be unattended.
 
 ## Repository layout
 
-`pipeline/` Python package, tests, scripts · `web/` Vite + React app · `config/` area, thresholds, aliases, drug mechanisms, approaches, pipeline rows, sponsor parents, stop reasons · `.github/workflows/` CI and schedules · `docs/` architecture, specs, plans.
+`pipeline/` Python package, tests, scripts · `web/` Vite + React app · `agent/` diligence agent (optional backend, evaluation) · `config/` area, thresholds, aliases, drug mechanisms, approaches, pipeline rows, sponsor parents, stop reasons · `.github/workflows/` CI and schedules · `docs/` architecture, specs, plans.
 
 Branch protection: importable rulesets are in [`.github/rulesets/`](.github/rulesets/README.md).
 

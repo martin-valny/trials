@@ -42,6 +42,23 @@ After the pipeline figure and mechanism graph and before export, `pipeline._stop
 
 Training is never part of the run. `pipeline/scripts/train_stop_risk.py` is run by hand with network access: it pulls finished trials year by year into a cache, fits the baseline and the calibrated boosted ensembles, applies the ship rule (boosted ships only if AUC is 0.02 higher and Brier no worse), and writes the committed artefacts to `config/risk/`: `model.joblib` (about 7 MB), `card.json` (metrics, filter, features, exclusions, typical rates), `heldout.parquet`, `sponsor_history.csv`; `factor_labels.csv` is hand-kept. `tests/unit/test_risk_card.py` reloads the model and recomputes the card's numbers. See `config/risk/README.md`.
 
+## Diligence agent backend
+
+The one place outside the static model: an optional backend for the target page's diligence panel. The site works without it (recorded runs, or "offline"). `agent/template.yaml` describes it; Martin deploys it, CI never does.
+
+```mermaid
+flowchart LR
+    WEB[static site<br/>panel g] -->|POST /runs, GET /runs/id, POST /flags| URL[Lambda function URL]
+    URL --> L[Lambda<br/>start / poll / flags]
+    L -->|async self-invoke| X[Lambda execute<br/>agent loop + checker]
+    L <--> DDB[(DynamoDB<br/>runs, limits, flags)]
+    X <--> DDB
+    X --> BR[Bedrock<br/>writer, planner, checker]
+    X --> API[site JSON, ClinicalTrials.gov,<br/>ChEMBL, Europe PMC, openFDA]
+```
+
+A start request is validated, checked against the daily caps (3 per visitor, 30 overall; IPs kept only as salted hashes) and answered with a run id; the same request in flight returns the same id. The execute invocation runs the tool loop within the per-run limits and the checker, and writes the run record that polling reads. CI replays recorded runs without any model or network (`agent/tests/test_eval_replay.py`); the prompt hash gate fails with "re-record the evaluation".
+
 ## Principles
 
 - **Bad data never replaces good data.** A failed run leaves state, history and the site as they were. The raw snapshot is staged first and promoted only after the store write succeeds; data failures are quarantined as `*.failed.*`, which is never uploaded or replayed.
