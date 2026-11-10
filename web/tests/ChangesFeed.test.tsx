@@ -17,7 +17,10 @@ test("defaults to 7 days, notable only", async () => {
   expect(rows()).toHaveLength(notable.length);
   expect(notable.length).toBeGreaterThan(0);
   expect(notable.length).toBeLessThan(seven.changes.length);
-  expect(screen.getByRole("tab", { name: "7 days" })).toHaveAttribute("aria-selected", "true");
+  const group = screen.getByRole("group", { name: "Time window" });
+  expect(within(group).getAllByRole("button")).toHaveLength(3);
+  expect(within(group).getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(group).getByRole("button", { name: "30 days" })).toHaveAttribute("aria-pressed", "false");
   expect(fetch).toHaveBeenCalledWith(expect.stringContaining("changes/7d.json"));
 });
 
@@ -25,7 +28,10 @@ test("unchecking notable shows all", async () => {
   stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  await userEvent.click(screen.getByLabelText("Notable only"));
+  const toggle = screen.getByRole("button", { name: "Notable only" });
+  expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-pressed", "false");
   expect(rows()).toHaveLength(seven.changes.length);
 });
 
@@ -36,7 +42,9 @@ test("sponsor filter narrows rows", async () => {
   const sponsors = new Set(notable.map((c) => c.lead_sponsor));
   expect(sponsors.size).toBeGreaterThan(1);
   const [first] = [...sponsors] as string[];
-  await userEvent.selectOptions(screen.getByLabelText("Sponsor"), first);
+  await userEvent.click(screen.getByRole("button", { name: "Sponsor: all" }));
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: new RegExp(`^${first}`) }));
   expect(rows()).toHaveLength(notable.filter((c) => c.lead_sponsor === first).length);
 });
 
@@ -44,10 +52,12 @@ test("field filter options come from the data", async () => {
   stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  const options = within(screen.getByLabelText("Field")).getAllByRole("option");
+  await userEvent.click(screen.getByRole("button", { name: "Field: all" }));
+  const options = within(screen.getByRole("group", { name: "Field" })).getAllByRole("checkbox");
   const expected = new Set(seven.changes.map((c) => c.field));
-  expect(options).toHaveLength(expected.size + 1);
-  await userEvent.selectOptions(screen.getByLabelText("Field"), "Overall status");
+  expect(options).toHaveLength(expected.size);
+  await userEvent.click(screen.getByRole("button", { name: "Select none" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: /^Overall status/ }));
   expect(rows()).toHaveLength(1);
 });
 
@@ -55,7 +65,7 @@ test("switching window loads that window", async () => {
   const fetch = stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  await userEvent.click(screen.getByRole("tab", { name: "30 days" }));
+  await userEvent.click(screen.getByRole("button", { name: "30 days" }));
   await screen.findByRole("table");
   expect(fetch).toHaveBeenCalledWith(expect.stringContaining("changes/30d.json"));
 });
@@ -63,7 +73,7 @@ test("switching window loads that window", async () => {
 test("empty window shows message", async () => {
   stubFetch({ "changes/1d.json": { window_days: 1, generated_for: "2026-11-04", changes: [] } });
   renderAt(<ChangesFeed />);
-  await userEvent.click(screen.getByRole("tab", { name: "1 day" }));
+  await userEvent.click(screen.getByRole("button", { name: "1 day" }));
   expect(await screen.findByText("No changes in the last 1 day")).toBeInTheDocument();
 });
 
@@ -104,8 +114,21 @@ test("shows old and new values and the delta", async () => {
   await screen.findByRole("table");
   expect(screen.getByText("slipped 120 days")).toBeInTheDocument();
   expect(screen.getByText("Status changed")).toBeInTheDocument();
-  expect(screen.getByText("RECRUITING")).toBeInTheDocument();
-  expect(screen.getByText("TERMINATED")).toBeInTheDocument();
+  expect(screen.getByText("Recruiting")).toBeInTheDocument();
+  expect(screen.getByText("Terminated")).toBeInTheDocument();
+  expect(screen.queryByText("RECRUITING")).not.toBeInTheDocument();
+  expect(screen.getAllByText(/Detected 4 Nov 2026/).length).toBeGreaterThan(0);
+  expect(screen.queryByText(/2026-11-04/)).not.toBeInTheDocument();
+});
+
+test("the head states the counts for the window in view", async () => {
+  stubFetch();
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  expect(screen.getByRole("heading", { level: 1, name: "Changes" })).toBeInTheDocument();
+  expect(
+    screen.getByText(`${seven.changes.length} changes to tracked trials in the last 7 days; ${notable.length} notable.`),
+  ).toBeInTheDocument();
 });
 
 test("table is accessible: caption and column headers", async () => {
@@ -120,12 +143,13 @@ test("switching window resets sponsor and field filters", async () => {
   stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  await userEvent.selectOptions(screen.getByLabelText("Sponsor"), "Acme Biotech");
-  await userEvent.selectOptions(screen.getByLabelText("Field"), "Overall status");
-  await userEvent.click(screen.getByRole("tab", { name: "30 days" }));
+  await userEvent.click(screen.getByRole("button", { name: "Sponsor: all" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: /^Acme Biotech/ }));
+  expect(screen.getByRole("button", { name: /^Sponsor: \d of \d$/ })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "30 days" }));
   await screen.findByRole("table");
-  expect(screen.getByLabelText("Sponsor")).toHaveValue("");
-  expect(screen.getByLabelText("Field")).toHaveValue("");
+  expect(screen.getByRole("button", { name: "Sponsor: all" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Field: all" })).toBeInTheDocument();
 });
 
 test("a removed trial has no trial page link but keeps the source link", async () => {
@@ -134,7 +158,7 @@ test("a removed trial has no trial page link but keeps the source link", async (
   stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  await userEvent.click(screen.getByLabelText("Notable only")); // removed rows are never notable
+  await userEvent.click(screen.getByRole("button", { name: "Notable only" })); // removed rows are never notable
   const row = rows().find((r) => within(r).queryByText(removed!.nct_id))!;
   expect(within(row).queryByRole("link", { name: removed!.nct_id })).not.toBeInTheDocument();
   expect(within(row).getByRole("link", { name: /ClinicalTrials\.gov/ })).toHaveAttribute(

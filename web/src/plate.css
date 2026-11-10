@@ -29,3 +29,6 @@
   .contents-strip, .dstrip[data-state="loading"], .rk-all, .target-page .more-btn { display: none !important; }
   .rk-rows > .rk-row[hidden], .co[hidden], .stop-card[hidden] { display: grid !important; }
 }
+
+/* Legacy routes (Changes, Trials, Methods...) leave main's 72rem frame: the .page inside gives the gutters. */
+main:has(> .page) { max-width: none; width: 100%; margin: 0; padding: 0; }

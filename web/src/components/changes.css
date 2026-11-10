@@ -1,0 +1,70 @@
+/* Changes on the Figure Plate. The page root is ".page.explore.changes-page": .page gives the site's gutters and
+   explore.css the plate tokens and the dropdown/pill styles. Flat: hairlines and ink, no cards, no shadows.
+   Everything is scoped to .changes-page because TrialsList still uses the old table.changes rules. */
+.changes-page { background: none; flex: 0 0 auto; }
+.changes-page .ch-bar { margin-top: 16px; padding-bottom: 12px; }
+.changes-page .ch-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; font-size: var(--fs-ui); }
+.changes-page .ch-filters .segmented { margin-right: 12px; }
+.changes-page .ch-filters .dropdown-button, .changes-page .ch-filters .pill { line-height: 18px; }
+.changes-page .pill.narrowing { margin-left: 8px; }
+
+.changes-page .ch-empty { max-width: 60ch; font-size: var(--fs-read); line-height: 1.5; padding-top: 8px; }
+.changes-page .ch-empty p { margin: 0 0 8px; }
+.changes-page .ch-empty .muted { color: var(--muted); font-size: var(--fs-ui); }
+.changes-page [role="alert"], .changes-page [role="status"], .changes-page > section > p { font-size: var(--fs-read); }
+.changes-page > section { padding-bottom: 56px; }
+
+/* The table: hairline rows, 13px, tabular numbers; the head row closes with an ink rule. */
+.changes-page table.ch-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-ui); line-height: 1.4; font-variant-numeric: tabular-nums; }
+.changes-page table.ch-table th {
+  text-align: left; vertical-align: bottom; font-size: var(--fs-meta); font-weight: 400; color: var(--muted);
+  padding: 0 24px 6px 0; border: 0; border-bottom: 1px solid var(--ink);
+}
+.changes-page table.ch-table td { vertical-align: top; padding: 11px 24px 12px 0; border: 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
+.changes-page table.ch-table th:last-child, .changes-page table.ch-table td:last-child { padding-right: 0; }
+.changes-page table.ch-table th:nth-child(1) { width: 34%; }
+.changes-page table.ch-table th:nth-child(2) { width: 14%; }
+.changes-page table.ch-table th:nth-child(3) { width: 26%; }
+.changes-page table.ch-table th:nth-child(4) { width: 15%; }
+.changes-page table.ch-table th:nth-child(5) { width: 11%; }
+
+.changes-page .ch-nct { font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.changes-page a.ch-nct:hover { text-decoration-color: var(--ink); }
+.changes-page span.ch-nct { text-decoration: none; }
+.changes-page .ch-title, .changes-page .ch-sponsor, .changes-page .ch-date { color: var(--muted); }
+.changes-page .ch-title { margin-top: 2px; }
+.changes-page .ch-date { margin-top: 2px; font-size: var(--fs-meta); }
+.changes-page .old { color: var(--muted); text-decoration: line-through; }
+.changes-page .new { color: var(--ink); }
+.changes-page .delta { margin-top: 2px; font-weight: 700; color: var(--ink); }
+.changes-page .ch-src a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.changes-page .ch-src a:hover { text-decoration-color: var(--ink); }
+
+@media (max-width: 1099px) {
+  .changes-page table.ch-table th, .changes-page table.ch-table td { padding-right: 14px; }
+  .changes-page table.ch-table th:nth-child(5) { width: 13%; }
+}
+
+/* Phone: two lines per row, hairline between rows, no cards, no labels.
+   Line 1: NCT, field, change. Line 2: the title (muted), then why it is notable. */
+@media (max-width: 640px) {
+  .changes-page table.ch-table, .changes-page table.ch-table tbody { display: block; width: auto; max-width: 100%; }
+  .changes-page table.ch-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .changes-page table.ch-table tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 12px 0 13px; margin: 0; width: auto;
+    border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: none;
+  }
+  .changes-page table.ch-table td::before { content: none; display: none; }
+  .changes-page table.ch-table tr::after { content: ""; order: 4; flex: 0 0 100%; height: 0; }
+  .changes-page table.ch-table td { display: block; width: auto; padding: 0; border: 0; }
+  .changes-page table.ch-table td.ch-trial { display: contents; }
+  .changes-page .ch-nct { order: 1; }
+  .changes-page td.ch-field { order: 2; }
+  .changes-page td.ch-change { order: 3; flex: 1 1 8rem; min-width: 0; }
+  .changes-page .ch-title { order: 5; flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .changes-page td.ch-why { order: 6; flex: none; max-width: 45%; color: var(--ink); }
+  .changes-page .ch-sponsor, .changes-page .ch-date, .changes-page table.ch-table td.ch-src { display: none; }
+  .changes-page .delta { display: inline; margin: 0 0 0 8px; }
+}
+/* The caption is for screen readers; the old phone rule's 100% width plus the padding must not widen the page. */
+.changes-page table.ch-table caption { width: 1px; padding: 0; }
