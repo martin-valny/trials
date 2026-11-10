@@ -509,3 +509,91 @@ test("diligence: tools, limits, checks and the two approaches not used", async (
   expect(text).toMatch(/Strands Agents/);
   expect(text).toMatch(/Bedrock Agents/);
 });
+
+// ---------------------------------------------------------------- contents (design revision, spec 7)
+
+const CONTENTS = [
+  ["tracked", "What is tracked"],
+  ["changes", "How changes are detected"],
+  ["advanced", "Advanced to next phase"],
+  ["stop-risk", "How good is the stop-risk model?"],
+  ["diligence", "How the diligence agent works"],
+  ["registry-only", "Registered trials only"],
+  ["rows-and-companies", "How rows and companies are assigned"],
+  ["unrowed", "Drug classes not shown as a row"],
+  ["approved", "Approved for this disease"],
+  ["map", "How the map is made"],
+  ["limitations", "Limitations"],
+] as const;
+
+test("Methods: a contents nav lists every h2 in order, each h2 has an id inside its section", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  const { container } = renderAt(<Methods />, "/methods");
+  await screen.findByRole("heading", { name: "How good is the stop-risk model?" });
+  const nav = screen.getByRole("navigation", { name: "On this page" });
+  const links = within(nav).getAllByRole("link");
+  expect(links.map((l) => l.textContent)).toEqual(CONTENTS.map(([, name]) => name));
+  const h2s = [...container.querySelectorAll("h2")];
+  expect(h2s).toHaveLength(CONTENTS.length);
+  h2s.forEach((h, i) => {
+    const [slug] = CONTENTS[i]!;
+    expect(h.id, slug).toBe(`${slug}-h`);
+    expect(h).toHaveAttribute("tabindex", "-1");
+    expect(h.closest("section")).toHaveAttribute("id", slug);
+    expect(links[i]!.getAttribute("href")).toBe(`/methods?s=${slug}`);
+  });
+});
+
+test("Methods: the head sentence counts the trials from meta.json", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods");
+  const n = readFixture<Meta>("meta.json").trial_count;
+  expect(
+    await screen.findByText(
+      `How the ${n} trials are collected, compared, grouped and scored, and what each number on the site can and cannot tell you.`,
+    ),
+  ).toBeInTheDocument();
+});
+
+test("Methods: a contents link scrolls to its heading, focuses it and sets ?s=", async () => {
+  stubFetch();
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  scroll.mockClear();
+  await userEvent.click(within(screen.getByRole("navigation", { name: "On this page" })).getByRole("link", { name: "Limitations" }));
+  expect(scroll.mock.contexts[0]).toBe(document.getElementById("limitations-h"));
+  expect(document.activeElement).toBe(document.getElementById("limitations-h"));
+});
+
+test("Methods: ?s= on load scrolls to its section, again as the data arrives", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods?s=limitations");
+  await screen.findByRole("heading", { name: "How good is the stop-risk model?" });
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  expect(scroll.mock.calls.length).toBeGreaterThanOrEqual(2);
+  for (const ctx of scroll.mock.contexts) expect(ctx).toBe(document.getElementById("limitations"));
+});
+
+test("Methods: an old #stop-risk link still lands, and wins over ?s=", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods?s=limitations#stop-risk");
+  await section();
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  expect(scroll).toHaveBeenCalled();
+  for (const ctx of scroll.mock.contexts) expect(ctx).toBe(document.getElementById("stop-risk"));
+});
+
+test("Methods: an old #diligence link still lands", async () => {
+  stubWithReport(null);
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods#diligence");
+  await diligence();
+  expect(scroll.mock.contexts).toContain(document.getElementById("diligence"));
+});

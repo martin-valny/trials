@@ -127,3 +127,94 @@ test("a clicked panel stays current while the smooth scroll is still on its way,
     Element.prototype.getBoundingClientRect = realRect;
   }
 });
+
+// ---------------------------------------------------------------- the column variant (Methods)
+
+test("the column variant is a vertical list marked as such, and leaves --strip-h unset", () => {
+  render(
+    <MemoryRouter initialEntries={["/methods"]}>
+      <ContentsStrip items={ITEMS} label="On this page" orientation="column" />
+    </MemoryRouter>,
+  );
+  const nav = screen.getByRole("navigation", { name: "On this page" });
+  expect(nav).toHaveClass("contents-strip", "contents-column");
+  expect(document.documentElement.style.getPropertyValue("--strip-h")).toBe("");
+});
+
+test("the row variant still writes --strip-h", () => {
+  renderStrip();
+  expect(document.documentElement.style.getPropertyValue("--strip-h")).toMatch(/px$/);
+});
+
+test("an item's slug names it in the URL; the id is still what it scrolls to and focuses", async () => {
+  const items: ContentsItem[] = [
+    { id: "a-h", slug: "a", name: "First" },
+    { id: "b-h", slug: "b", name: "Second" },
+  ];
+  render(
+    <MemoryRouter initialEntries={["/methods"]}>
+      <ContentsStrip items={items} label="On this page" param="s" orientation="column" />
+      {items.map((i) => (
+        <h2 key={i.id} id={i.id} tabIndex={-1}>
+          {i.name}
+        </h2>
+      ))}
+      <Where />
+    </MemoryRouter>,
+  );
+  const link = screen.getByRole("link", { name: "Second" });
+  expect(link.getAttribute("href")).toBe("/methods?s=b");
+  await userEvent.click(link);
+  expect(scroll.mock.contexts[0]).toBe(document.getElementById("b-h"));
+  expect(document.activeElement).toBe(document.getElementById("b-h"));
+  expect(screen.getByTestId("where")).toHaveTextContent("?s=b");
+});
+
+test("with deepLink off, ?param= on load is left to the page: no scroll", () => {
+  render(
+    <MemoryRouter initialEntries={["/target/cd20?panel=f"]}>
+      <ContentsStrip items={ITEMS} label="Panels on this page" deepLink={false} />
+      {ITEMS.map((i) => (
+        <h2 key={i.id} id={i.id} tabIndex={-1}>
+          {i.name}
+        </h2>
+      ))}
+      <Where />
+    </MemoryRouter>,
+  );
+  expect(scroll).not.toHaveBeenCalled();
+  expect(screen.getByTestId("where")).toHaveTextContent("?panel=f");
+});
+
+test("in the column variant the reading line is measured from the top of the view, not from the list's foot", async () => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal("innerHeight", 800);
+  const tops: Record<string, number> = { pa: -100, pb: 300, pf: 900, pg: 1500 };
+  const realRect = Element.prototype.getBoundingClientRect;
+  Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, value: 10000 });
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    // The list itself is tall (a sticky column): its foot is far down the view.
+    const t = this.tagName === "NAV" ? 0 : (tops[this.id] ?? 0);
+    const h = this.tagName === "NAV" ? 700 : 20;
+    return { top: t, bottom: t + h, left: 0, right: 100, width: 100, height: h, x: 0, y: t, toJSON: () => ({}) } as DOMRect;
+  };
+  const frame = () => act(() => new Promise((r) => setTimeout(r, 30)));
+  try {
+    render(
+      <MemoryRouter initialEntries={["/methods"]}>
+        <ContentsStrip items={ITEMS} label="On this page" orientation="column" />
+        {ITEMS.map((i) => (
+          <h2 key={i.id} id={i.id} tabIndex={-1}>
+            {i.name}
+          </h2>
+        ))}
+      </MemoryRouter>,
+    );
+    await frame();
+    expect(screen.getByRole("link", { name: /Timeline/ })).toHaveAttribute("aria-current", "location");
+    expect(screen.getByRole("link", { name: /Companies/ })).not.toHaveAttribute("aria-current");
+  } finally {
+    Element.prototype.getBoundingClientRect = realRect;
+    delete (document.documentElement as unknown as Record<string, unknown>).scrollHeight;
+  }
+});

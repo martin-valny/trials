@@ -25,3 +25,25 @@
   .contents-strip ul { padding: 0 18px; gap: 0 18px; }
   .contents-strip a { align-items: center; min-height: 44px; padding: 0; }
 }
+
+/* The column variant (Methods): a vertical list on a hairline, the current section marked by a 2px ink rule on the
+   left. Not sticky itself: the page's column decides that. No sideways scroll, no pills. */
+.contents-column { position: static; z-index: auto; margin-top: 0; background: none; border-bottom: 0; }
+.contents-column ul { display: block; padding: 0; overflow: visible; border-left: 1px solid var(--rule); }
+.contents-column li { break-inside: avoid; }
+.contents-column a {
+  display: block; margin-left: -1px; padding: 5px 0 5px 14px; white-space: normal; text-wrap: pretty;
+  font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--muted);
+  border-bottom: 0; border-left: 2px solid transparent;
+}
+.contents-column a:hover { color: var(--ink); }
+.contents-column a[aria-current="location"] { color: var(--ink); border-left-color: var(--ink); }
+.contents-column a:focus-visible { outline-offset: 0; }
+.contents-column .cs-n { font-weight: 500; }
+@media (max-width: 1099px) {
+  .contents-column ul { padding: 0; }
+}
+@media (max-width: 640px) {
+  .contents-column ul { padding: 0; }
+  .contents-column a { display: flex; align-items: center; min-height: 40px; padding: 4px 0 4px 14px; }
+}

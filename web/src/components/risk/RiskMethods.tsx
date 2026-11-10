@@ -141,7 +141,7 @@ const MODEL_LABEL: Record<RiskModelInfo["shipped"], string> = {
 export function RiskMethods({ model, area }: { model: RiskModelInfo | null; area: string | null }) {
   return (
     <section id="stop-risk" aria-labelledby="stop-risk-h" className="rk-m">
-      <h2 id="stop-risk-h">How good is the stop-risk model?</h2>
+      <h2 id="stop-risk-h" tabIndex={-1}>How good is the stop-risk model?</h2>
       <p>
         Target pages, trial pages and the Watchlist show, for each running drug or biologic trial in Phase 1 to 3, an
         estimated chance that it will stop early. It is a statistical estimate from public registry data, not a

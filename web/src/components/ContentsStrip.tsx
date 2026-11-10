@@ -10,6 +10,8 @@ export interface ContentsItem {
   name: string;
   /** The panel's one computed number or word, muted; left out at phone width. */
   count?: string;
+  /** What the URL calls the item when it has no letter (Methods: the section's id); the id otherwise. */
+  slug?: string;
 }
 
 interface Props {
@@ -19,9 +21,13 @@ interface Props {
   param?: string;
   /** True while a panel that may yet render is still loading: a deep link to it is kept until it settles. */
   pending?: boolean;
+  /** "row" (default): one sticky line under a page head. "column": a vertical list for a sticky left column. */
+  orientation?: "row" | "column";
+  /** False when the page scrolls to ?param= on load itself (Methods, which also honours an old #fragment). */
+  deepLink?: boolean;
 }
 
-const key = (i: ContentsItem): string => i.letter ?? i.id;
+const key = (i: ContentsItem): string => i.letter ?? i.slug ?? i.id;
 
 /** Scroll a heading to the top (clear of the sticky strip, by its scroll-margin) and, when the visitor asked to go
  *  there (click or Enter), move focus to it. Smooth only when the visitor has not asked for less motion.
@@ -44,10 +50,10 @@ interface Lock {
 const SETTLE_MS = 150;
 
 /** Height of the strip, written to --strip-h on the root so headings (scroll-margin-top) and other sticky parts clear it. */
-function useStripHeight(ref: RefObject<HTMLElement | null>) {
+function useStripHeight(ref: RefObject<HTMLElement | null>, on: boolean) {
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !on) return;
     const root = document.documentElement.style;
     const write = () => root.setProperty("--strip-h", `${el.offsetHeight}px`);
     write();
@@ -57,12 +63,13 @@ function useStripHeight(ref: RefObject<HTMLElement | null>) {
       ro?.disconnect();
       root.removeProperty("--strip-h");
     };
-  }, [ref]);
+  }, [ref, on]);
 }
 
-/** The panel nearest the top: the last heading above a reading line just under the strip. At the foot of the page,
- *  where the last panels cannot reach the top, the last heading in view; a clicked panel stays current while in view. */
-function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>, clicked: RefObject<Lock | null>) {
+/** The panel nearest the top: the last heading above a reading line just under the strip (under the top of the view
+ *  for a column, which covers nothing above the prose). At the foot of the page, where the last panels cannot reach
+ *  the top, the last heading in view; a clicked panel stays current while in view. */
+function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>, clicked: RefObject<Lock | null>, column: boolean) {
   const [current, setCurrent] = useState<string | null>(null);
   const ids = items.map((i) => i.id).join(" ");
   useEffect(() => {
@@ -76,7 +83,7 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
     let lastScroll = 0;
     const measure = () => {
       frame = 0;
-      const top = strip.current?.getBoundingClientRect().bottom ?? 0;
+      const top = column ? 0 : (strip.current?.getBoundingClientRect().bottom ?? 0);
       const vh = window.innerHeight;
       const line = top + Math.max(24, (vh - top) * 0.25);
       const atFoot = window.scrollY + vh >= document.documentElement.scrollHeight - 2;
@@ -121,12 +128,13 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
       window.removeEventListener("resize", schedule);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [ids, strip, clicked]);
+  }, [ids, strip, clicked, column]);
   return current;
 }
 
-/** One sticky line of links to the panels on the page; the current one underlined. ?panel= deep-links to a panel. */
-export function ContentsStrip({ items, label, param = "panel", pending = false }: Props) {
+/** One sticky line of links to the panels on the page (or, as a column, a vertical list); the current one marked.
+ *  ?panel= deep-links to a panel. */
+export function ContentsStrip({ items, label, param = "panel", pending = false, orientation = "row", deepLink = true }: Props) {
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const phone = usePhone();
@@ -134,9 +142,10 @@ export function ContentsStrip({ items, label, param = "panel", pending = false }
   const list = useRef<HTMLUListElement>(null);
   const clicked = useRef<Lock | null>(null);
   // The deep link is read once, on the first render; it scrolls once, when its panel has rendered.
-  const wanted = useRef<string | null>(params.get(param));
-  useStripHeight(nav);
-  const current = useCurrent(items, nav, clicked);
+  const wanted = useRef<string | null>(deepLink ? params.get(param) : null);
+  const column = orientation === "column";
+  useStripHeight(nav, !column);
+  const current = useCurrent(items, nav, clicked, column);
 
   const value = params.get(param);
   const settle = useCallback(() => {
@@ -191,7 +200,7 @@ export function ContentsStrip({ items, label, param = "panel", pending = false }
   };
 
   return (
-    <nav className="contents-strip" aria-label={label} ref={nav}>
+    <nav className={column ? "contents-strip contents-column" : "contents-strip"} aria-label={label} ref={nav}>
       <ul ref={list}>
         {items.map((item) => (
           <li key={item.id}>

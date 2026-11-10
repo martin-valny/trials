@@ -95,7 +95,7 @@ export function DiligenceMethods() {
   const models = report ? Object.entries(report.models) : [];
   return (
     <section id="diligence" aria-labelledby="diligence-h">
-      <h2 id="diligence-h">How the diligence agent works</h2>
+      <h2 id="diligence-h" tabIndex={-1}>How the diligence agent works</h2>
       <p>
         On a target page, the agent writes a first-draft diligence memo for one target in one disease (or across all
         diseases) from public sources. In this version the request is fixed: the same memo structure every time. The memo
