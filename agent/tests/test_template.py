@@ -48,7 +48,14 @@ def fn(tpl: dict[str, Any]) -> dict[str, Any]:
 def test_transform_and_parameters(tpl: dict[str, Any]) -> None:
     assert tpl["Transform"] == "AWS::Serverless-2016-10-31"
     params = tpl["Parameters"]
-    assert set(params) >= {"AllowedOrigin", "IpSalt", "BedrockModelArns", "SiteBaseUrl"}
+    assert set(params) >= {
+        "AllowedOrigins",
+        "IpSalt",
+        "BedrockModelArns",
+        "SiteBaseUrl",
+        "ReservedConcurrency",
+    }
+    assert params["AllowedOrigins"]["Type"] == "CommaDelimitedList"
     assert params["IpSalt"]["NoEcho"] is True
     assert params["BedrockModelArns"]["Type"] == "CommaDelimitedList"
     assert "Default" not in params["IpSalt"]  # a salt is never committed
@@ -59,9 +66,30 @@ def test_function_shape(tpl: dict[str, Any]) -> None:
     assert (
         props["Runtime"] == "python3.12" and props["Handler"] == "diligence.handler.lambda_handler"
     )
-    assert props["Timeout"] == 120 and props["MemorySize"] == 512
-    assert props["ReservedConcurrentExecutions"] == 2
+    assert props["Timeout"] == 240 and props["MemorySize"] == 512
     assert fn(tpl)["Metadata"]["BuildMethod"] == "makefile"
+
+
+def test_timeouts_agree(tpl: dict[str, Any]) -> None:
+    """I5/R40: Lambda Timeout 240 s; a run is stale only after 270 s, so a run that starts
+    within START_DEADLINE_S of its creation always ends before it can be called stale."""
+    from diligence.store import RUN_TIMEOUT_S, STALE_AFTER_S, START_DEADLINE_S
+
+    timeout = fn(tpl)["Properties"]["Timeout"]
+    assert RUN_TIMEOUT_S == timeout == 240 and STALE_AFTER_S == 270
+    assert START_DEADLINE_S + RUN_TIMEOUT_S <= STALE_AFTER_S
+
+
+def test_reserved_concurrency_is_a_parameter(tpl: dict[str, Any]) -> None:
+    """I9/R44: default 2; 0 leaves the function unreserved (new accounts' quota of 10)."""
+    param = tpl["Parameters"]["ReservedConcurrency"]
+    assert param["Default"] == 2 and param["MinValue"] == 0
+    assert tpl["Conditions"]["ReserveConcurrency"] == {
+        "Fn::Not": [{"Fn::Equals": [{"Ref": "ReservedConcurrency"}, 0]}]
+    }
+    assert fn(tpl)["Properties"]["ReservedConcurrentExecutions"] == {
+        "Fn::If": ["ReserveConcurrency", {"Ref": "ReservedConcurrency"}, {"Ref": "AWS::NoValue"}]
+    }
 
 
 def test_async_invoke_never_retries(tpl: dict[str, Any]) -> None:
@@ -81,7 +109,7 @@ def test_function_url_and_cors_use_the_parameter(tpl: dict[str, Any]) -> None:
     url = fn(tpl)["Properties"]["FunctionUrlConfig"]
     assert url["AuthType"] == "NONE"
     cors = url["Cors"]
-    assert cors["AllowOrigins"] == [{"Ref": "AllowedOrigin"}]
+    assert cors["AllowOrigins"] == {"Ref": "AllowedOrigins"}  # R46: a list parameter
     assert sorted(cors["AllowMethods"]) == ["GET", "POST"]
     assert [h.lower() for h in cors["AllowHeaders"]] == ["content-type"]
 
@@ -89,7 +117,7 @@ def test_function_url_and_cors_use_the_parameter(tpl: dict[str, Any]) -> None:
 def test_environment(tpl: dict[str, Any]) -> None:
     env = fn(tpl)["Properties"]["Environment"]["Variables"]
     assert env["IP_SALT"] == {"Ref": "IpSalt"}
-    assert env["ALLOWED_ORIGIN"] == {"Ref": "AllowedOrigin"}
+    assert env["ALLOWED_ORIGIN"] == {"Fn::Join": [",", {"Ref": "AllowedOrigins"}]}
     assert env["SITE_BASE_URL"] == {"Ref": "SiteBaseUrl"}
     assert env["DILIGENCE_CONFIG"] == "/var/task/config.yaml"
     assert {"RUNS_TABLE", "LIMITS_TABLE", "FLAGS_TABLE"} <= set(env)
@@ -144,3 +172,32 @@ def test_sam_validate_lint() -> None:
         check=False,
     )
     assert out.returncode == 0, out.stdout + out.stderr
+
+
+def test_lambda_package_pins_the_locked_boto3() -> None:
+    """Minor 9: the package carries the tested botocore instead of the runtime's bundled one."""
+    import tomllib
+
+    lock = tomllib.loads((AGENT / "uv.lock").read_text())
+    locked = {p["name"]: p["version"] for p in lock["package"]}
+    reqs = dict(
+        line.split("==")
+        for line in (AGENT / "requirements-lambda.txt").read_text().splitlines()
+        if line and not line.startswith("#")
+    )
+    for name in ("boto3", "botocore", "httpx", "pydantic", "pyyaml"):
+        assert reqs[name] == locked[name]
+
+
+def test_site_build_passes_the_diligence_url() -> None:
+    """I8/R43: the Pages build reads the endpoint from the DILIGENCE_URL repo variable."""
+    daily = yaml.safe_load((AGENT.parent / ".github" / "workflows" / "daily.yml").read_text())
+    steps = [s for job in daily["jobs"].values() for s in job.get("steps", [])]
+    (build,) = [s for s in steps if s.get("name") == "Build site"]
+    assert build["env"]["VITE_DILIGENCE_URL"] == "${{ vars.DILIGENCE_URL }}"
+
+
+def test_sam_outputs_are_git_ignored() -> None:
+    """Minor 6: sam build output and the guided-deploy config never get committed."""
+    ignored = (AGENT.parent / ".gitignore").read_text().splitlines()
+    assert "agent/.aws-sam/" in ignored and "agent/samconfig.toml" in ignored

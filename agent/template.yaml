@@ -3,9 +3,11 @@ Transform: AWS::Serverless-2016-10-31
 Description: Trial Radar diligence agent backend (Lambda function URL, DynamoDB, Bedrock).
 
 Parameters:
-  AllowedOrigin:
-    Type: String
-    Description: Browser origin allowed to call the function URL (scheme + host, no path).
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Description: >-
+      Browser origins allowed to call the function URL (scheme + host, no path), comma
+      separated, e.g. https://martin-valny.github.io,http://localhost:4181 for a local check.
     Default: https://martin-valny.github.io
   IpSalt:
     Type: String
@@ -22,6 +24,17 @@ Parameters:
     Type: String
     Default: https://martin-valny.github.io/trials/data/
     Description: Base URL of the site's published JSON, with trailing slash.
+  ReservedConcurrency:
+    Type: Number
+    Default: 2
+    MinValue: 0
+    Description: >-
+      Reserved concurrent executions for the function; 0 reserves none. New accounts often have
+      a concurrency quota of 10, and Lambda refuses any reservation that leaves less than 10
+      unreserved, so use 0 there (the daily run caps still bound spend).
+
+Conditions:
+  ReserveConcurrency: !Not [!Equals [!Ref ReservedConcurrency, 0]]
 
 Globals:
   Function:
@@ -82,9 +95,11 @@ Resources:
       Handler: diligence.handler.lambda_handler
       Runtime: python3.12
       Architectures: [x86_64]
-      Timeout: 120
+      # Gathering is bounded by max_seconds (90, config.yaml); the writer and checker calls run
+      # after it. store.RUN_TIMEOUT_S mirrors this value and STALE_AFTER_S stays above it.
+      Timeout: 240
       MemorySize: 512
-      ReservedConcurrentExecutions: 2
+      ReservedConcurrentExecutions: !If [ReserveConcurrency, !Ref ReservedConcurrency, !Ref AWS::NoValue]
       # The self-invoke is async: never retry it (a retry would re-run Bedrock without quota).
       EventInvokeConfig:
         MaximumRetryAttempts: 0
@@ -94,8 +109,7 @@ Resources:
       FunctionUrlConfig:
         AuthType: NONE
         Cors:
-          AllowOrigins:
-            - !Ref AllowedOrigin
+          AllowOrigins: !Ref AllowedOrigins
           AllowMethods:
             - GET
             - POST
@@ -105,7 +119,7 @@ Resources:
         Variables:
           DILIGENCE_CONFIG: /var/task/config.yaml
           IP_SALT: !Ref IpSalt
-          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          ALLOWED_ORIGIN: !Join [",", !Ref AllowedOrigins]
           SITE_BASE_URL: !Ref SiteBaseUrl
           RUNS_TABLE: !Ref RunsTable
           LIMITS_TABLE: !Ref LimitsTable

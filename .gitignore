@@ -18,5 +18,9 @@ playwright-report/
 web/.shoot.cjs
 pipeline/.cache/
 
+# AWS SAM: build output and the config `sam deploy --guided` writes (stack, profile, parameters)
+agent/.aws-sam/
+agent/samconfig.toml
+
 # TypeScript incremental build info
 *.tsbuildinfo

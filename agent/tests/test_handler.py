@@ -165,6 +165,99 @@ def test_stale_replay_when_fingerprint_changed_takes_no_quota(env: Env) -> None:
     assert env.store.take_quota(ip_hash(SALT, IP), "2026-11-09") == "ok"  # untouched so far
 
 
+def test_stale_only_when_the_row_data_changed(env: Env) -> None:
+    """Minor 12: a latest run with the current fingerprint but an older agent version is not
+    "data has changed since"."""
+    fp = env.fingerprint()
+    run_id, _ = env.store.create_run(
+        cache_key("cd20", "MS", fp, "0.0.1"), NewRun("cd20", "MS", fp, "2026-11-01T00:00:00Z")
+    )
+    rec = RunRecord(
+        run_id=run_id,
+        target="cd20",
+        disease="MS",
+        fingerprint=fp,
+        agent_version="0.0.1",
+        status="done",
+        started_at="2026-11-01T00:00:00Z",
+        finished_at="2026-11-01T00:01:00Z",
+    )
+    env.store.finish(run_id, rec)
+    out = body_of(env.post_run())
+    assert out["replay"]["run_id"] == run_id and out["stale"] is False
+
+
+# -- GET /runs/latest (R45) -------------------------------------------------------------------------
+
+
+def get_latest(env: Env, query: dict[str, str] | None) -> dict[str, Any]:
+    event = {
+        "requestContext": {"http": {"method": "GET", "path": "/runs/latest", "sourceIp": IP}},
+        "rawPath": "/runs/latest",
+        "headers": {"origin": ORIGIN},
+        "queryStringParameters": query,
+    }
+    return lambda_handler(event, None, env.deps)
+
+
+def test_latest_returns_cached_run_without_quota_or_runs(env: Env) -> None:
+    """I10/R45: the panel asks this on mount; it never starts a run or takes quota."""
+    assert get_latest(env, {"target": "cd20", "disease": "MS"})["statusCode"] == 404
+    run_id = env.seed_done(env.fingerprint())
+    resp = get_latest(env, {"target": "cd20", "disease": "MS"})
+    assert resp["statusCode"] == 200
+    out = body_of(resp)
+    assert out["replay"]["run_id"] == run_id and out["stale"] is False
+    assert env.invoked == []
+    assert env.store.take_quota(ip_hash(SALT, IP), "2026-11-09") == "ok"  # quota untouched
+
+
+def test_latest_says_stale_when_the_fingerprint_changed(env: Env) -> None:
+    old = env.seed_done("old-fingerprint")
+    out = body_of(get_latest(env, {"target": "cd20", "disease": "MS"}))
+    assert out["replay"]["run_id"] == old and out["stale"] is True
+
+
+@pytest.mark.parametrize(
+    ("query", "status"),
+    [
+        (None, 400),
+        ({"target": "cd20"}, 400),
+        ({"target": "nope", "disease": "MS"}, 400),
+        ({"target": "cd20", "disease": "XX"}, 400),
+    ],
+)
+def test_latest_validates_the_pair(env: Env, query: dict[str, str] | None, status: int) -> None:
+    assert get_latest(env, query)["statusCode"] == status
+
+
+def test_latest_is_not_a_run_id(env: Env) -> None:
+    """GET /runs/latest is routed before GET /runs/{id}."""
+    env.seed_done(env.fingerprint())
+    assert get_latest(env, {"target": "cd20", "disease": "MS"})["statusCode"] == 200
+
+
+# -- origins and IPs ----------------------------------------------------------------------------------
+
+
+def test_any_listed_origin_is_allowed(env: Env) -> None:
+    """I11/R46: ALLOWED_ORIGIN may list several origins (e.g. localhost:4181 for a local check)."""
+    env.deps.cfg = env.cfg.model_copy(update={"allowed_origin": f"{ORIGIN},http://localhost:4181"})
+    local = env.call("GET", "/runs/missing", headers={"origin": "http://localhost:4181"})
+    site = env.call("GET", "/runs/missing", headers={"origin": ORIGIN})
+    other = env.call("GET", "/runs/missing", headers={"origin": "http://localhost:4173"})
+    assert (local["statusCode"], site["statusCode"], other["statusCode"]) == (404, 404, 403)
+
+
+def test_ipv6_hosts_share_their_64_prefix() -> None:
+    """Minor 17: rotating addresses inside one /64 count as one visitor; IPv4 is unchanged."""
+    a = ip_hash(SALT, "2001:db8:1:2::1")
+    b = ip_hash(SALT, "2001:db8:1:2:ffff:ffff:ffff:fffe")
+    c = ip_hash(SALT, "2001:db8:1:3::1")
+    assert a == b != c
+    assert ip_hash(SALT, "203.0.113.7") != ip_hash(SALT, "203.0.113.8")
+
+
 def test_force_reruns_a_done_key_once(env: Env) -> None:
     first = env.seed_done(env.fingerprint())
     resp = env.post_run({"target": "cd20", "disease": "MS", "force": True})
@@ -294,9 +387,12 @@ def test_get_run_404_and_running_steps(env: Env) -> None:
     assert got["status"] == "running" and got["steps"] == []
 
 
-def test_running_past_150s_reads_as_failed(env: Env) -> None:
+def test_running_past_270s_reads_as_failed(env: Env) -> None:
+    """I5/R40: stale only after 270 s (Lambda Timeout 240 s plus the start deadline)."""
     run_id = body_of(env.post_run())["run_id"]
-    env.now = NOW + timedelta(seconds=151)
+    env.now = NOW + timedelta(seconds=250)
+    assert body_of(env.call("GET", f"/runs/{run_id}"))["status"] == "running"
+    env.now = NOW + timedelta(seconds=271)
     got = body_of(env.call("GET", f"/runs/{run_id}"))
     assert got["status"] == "failed"
     assert got["steps"][-1]["kind"] == "error"
@@ -474,6 +570,26 @@ def test_second_execute_after_finish_is_a_noop(env: Env) -> None:
     env.model = lambda: calls.append(1) or scripted_model()
     env.execute(run_id)
     assert calls == []
+
+
+def test_run_older_than_start_deadline_is_not_executed(env: Env) -> None:
+    """A run picked up more than 30 s late could outlive STALE_AFTER_S, so it is not started."""
+    run_id = body_of(env.post_run())["run_id"]
+    calls: list[int] = []
+    env.model = lambda: calls.append(1) or scripted_model()
+    env.now = NOW + timedelta(seconds=31)
+    env.execute(run_id)
+    assert calls == []
+    rec = env.store.get_run(run_id)
+    assert rec is not None and rec.status == "failed"
+
+
+def test_run_within_start_deadline_is_executed(env: Env) -> None:
+    run_id = body_of(env.post_run())["run_id"]
+    env.now = NOW + timedelta(seconds=29)
+    env.execute(run_id)
+    rec = env.store.get_run(run_id)
+    assert rec is not None and rec.status == "done"
 
 
 def test_stale_run_is_not_executed(env: Env) -> None:

@@ -7,9 +7,9 @@ invoker, http client, model factory, clock) comes in through `Deps`, so tests ru
 
 import base64
 import hashlib
+import ipaddress
 import json
 import os
-import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -23,15 +23,14 @@ from diligence.config import AgentConfig, load_config
 from diligence.log import log_error, log_event
 from diligence.loop import RunRequest, run_agent
 from diligence.model import BedrockModel, ModelClient
-from diligence.store import STALE_AFTER_S, NewRun, Store, cache_key
+from diligence.store import STALE_AFTER_S, START_DEADLINE_S, NewRun, Store, cache_key
 from diligence.tools.http import ToolError, client, get_json
 from diligence.tools.registry_of_tools import ToolContext
 from diligence.tools.site import find_row, marks_for, row_fingerprint
-from diligence.types import RunRecord, Step
+from diligence.types import SENTENCE_ID_PATTERN, RunRecord, Step
 
 SITE_CACHE_S = 600
 MAX_REASON = 500
-_SENTENCE_ID = re.compile(r"^s\d{1,4}$")
 _STAMP = "%Y-%m-%dT%H:%M:%SZ"
 _JSON = {"content-type": "application/json"}
 
@@ -82,8 +81,19 @@ def default_deps() -> Deps:
 _DEFAULT: list[Deps] = []
 
 
+def _ip_key(ip: str) -> str:
+    """IPv4 as is; IPv6 by its /64, which one host or customer usually holds whole (Minor 17)."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        return str(ipaddress.ip_network(f"{addr}/64", strict=False))
+    return ip
+
+
 def ip_hash(salt: str, ip: str) -> str:
-    return hashlib.sha256((salt + ip).encode()).hexdigest()
+    return hashlib.sha256((salt + _ip_key(ip)).encode()).hexdigest()
 
 
 def _resp(status: int, body: Any = None) -> dict[str, Any]:
@@ -165,6 +175,47 @@ def _json_body(event: dict[str, Any]) -> dict[str, Any]:
 # -- routes -----------------------------------------------------------------------------------------------
 
 
+def _row_key(deps: Deps, target: str, disease: str) -> tuple[str, str]:
+    """Validate the pair against the site data; returns (fingerprint, cache key)."""
+    try:
+        pipeline = _site_json(deps, "pipeline.json", required=True)
+        risk = _site_json(deps, "risk.json", required=False)
+    except ToolError as exc:
+        raise _Bad("site data unavailable", 502) from exc
+    row = find_row(pipeline, target)
+    if row is None:
+        raise _Bad("unknown target")
+    if disease != "all" and not marks_for(row, disease):
+        raise _Bad("no trials for this target in that disease")
+    fingerprint = row_fingerprint(pipeline, risk, target, disease)
+    return fingerprint, cache_key(target, disease, fingerprint, deps.cfg.agent_version)
+
+
+def _known_run(deps: Deps, target: str, disease: str) -> dict[str, Any] | None:
+    """The cached run for the current row data, else the latest done run; `stale` says whether
+    the row's data changed since (an agent-version change alone is not stale, Minor 12)."""
+    fingerprint, key = _row_key(deps, target, disease)
+    cached = deps.store.get_cached(key)
+    if cached:
+        return {"replay": _record_json(cached), "stale": False}
+    latest = deps.store.latest_for(target, disease)
+    if latest:
+        return {"replay": _record_json(latest), "stale": latest.fingerprint != fingerprint}
+    return None
+
+
+def _get_latest(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
+    """GET /runs/latest?target=&disease=: read-only, no quota (R45)."""
+    query = event.get("queryStringParameters") or {}
+    target, disease = query.get("target"), query.get("disease")
+    if not isinstance(target, str) or not isinstance(disease, str) or not target or not disease:
+        raise _Bad("target and disease are required")
+    known = _known_run(deps, target, disease)
+    if known is None:
+        return _resp(404, {"error": "no run for this target and disease"})
+    return _resp(200, known)
+
+
 def _post_run(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
     body = _json_body(event)
     target, disease, force = body.get("target"), body.get("disease"), body.get("force", False)
@@ -172,26 +223,10 @@ def _post_run(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
         raise _Bad("target and disease must be strings; force must be a boolean")
     if not deps.configured:
         return _resp(503, {"error": "the agent is not configured"})
-    try:
-        pipeline = _site_json(deps, "pipeline.json", required=True)
-        risk = _site_json(deps, "risk.json", required=False)
-    except ToolError:
-        return _resp(502, {"error": "site data unavailable"})
-    row = find_row(pipeline, target)
-    if row is None:
-        raise _Bad("unknown target")
-    if disease != "all" and not marks_for(row, disease):
-        raise _Bad("no trials for this target in that disease")
-    fingerprint = row_fingerprint(pipeline, risk, target, disease)
-    key = cache_key(target, disease, fingerprint, deps.cfg.agent_version)
+    if not force and (known := _known_run(deps, target, disease)) is not None:
+        return _resp(200, known)
+    fingerprint, key = _row_key(deps, target, disease)
     store = deps.store
-    if not force:
-        cached = store.get_cached(key)
-        if cached:
-            return _resp(200, {"replay": _record_json(cached), "stale": False})
-        latest = store.latest_for(target, disease)
-        if latest:
-            return _resp(200, {"replay": _record_json(latest), "stale": True})
     if (existing := store.running_for(key)) is not None:
         return _resp(202, {"run_id": existing})
     salt = os.environ.get("IP_SALT")
@@ -232,7 +267,7 @@ def _post_flag(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
     if not all(isinstance(v, str) for v in (run_id, sentence_id, reason)):
         raise _Bad("run_id, sentence_id and reason must be strings")
     assert isinstance(run_id, str) and isinstance(sentence_id, str) and isinstance(reason, str)
-    if not _SENTENCE_ID.match(sentence_id):
+    if not SENTENCE_ID_PATTERN.fullmatch(sentence_id):
         raise _Bad("invalid sentence_id")
     if len(reason) > MAX_REASON:
         raise _Bad(f"reason is longer than {MAX_REASON} characters")
@@ -271,16 +306,26 @@ def _fail(deps: Deps, run_id: str, text: str) -> None:
     deps.store.finish(run_id, failed)
 
 
+def _age_s(deps: Deps, record: RunRecord) -> float:
+    try:
+        started = datetime.strptime(record.started_at, _STAMP).replace(tzinfo=UTC)
+    except ValueError:
+        return 0.0
+    return (deps.now() - started).total_seconds()
+
+
 def _execute(run_id: str, deps: Deps) -> None:
     record = deps.store.get_run(run_id)
     if record is None or record.status != "running":
         return
-    if _seen_as(deps, record).status != "running":  # too old to start: do not spend on it
+    if _age_s(deps, record) > START_DEADLINE_S:
+        # Too late to start: it could not finish before polls call it stale. Spend nothing.
         _fail(deps, run_id, "The run did not finish")
         return
     if not deps.store.claim_execution(run_id):  # an async retry or duplicate delivery
         return
-    # Budget: max_seconds (config, 90) plus per-call timeouts stay below the Lambda Timeout (120).
+    # Gathering stops at max_seconds (config, 90); the writer and checker calls run after it, each
+    # bounded by the Bedrock client timeouts. The Lambda Timeout (240 s) is the hard stop.
     try:
         model = deps.model_factory(deps.cfg.region)
 
@@ -343,13 +388,15 @@ def _route(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
     method, path = http["method"].upper(), http.get("path") or event.get("rawPath", "")
     headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
     origin = headers.get("origin")
-    if origin is not None and origin != deps.cfg.allowed_origin:
+    if origin is not None and origin not in deps.cfg.allowed_origins:
         return _resp(403, {"error": "origin not allowed"})
     if method == "OPTIONS":
         return _resp(204)
     parts = [p for p in path.split("/") if p]
     if method == "POST" and parts == ["runs"]:
         return _post_run(event, deps)
+    if method == "GET" and parts == ["runs", "latest"]:
+        return _get_latest(event, deps)
     if method == "GET" and len(parts) == 2 and parts[0] == "runs":
         return _get_run(parts[1], deps)
     if method == "POST" and parts == ["flags"]:

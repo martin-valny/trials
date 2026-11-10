@@ -21,7 +21,13 @@ from botocore.exceptions import ClientError
 from diligence.config import AgentConfig
 from diligence.types import RunRecord, Step
 
-STALE_AFTER_S = 150
+# Lambda Timeout in template.yaml (test_template checks they agree).
+RUN_TIMEOUT_S = 240
+# A run still "running" this long after it started is reported as failed (R40).
+STALE_AFTER_S = 270
+# The async execute refuses to start a run older than this, so every started run ends (or is
+# killed by the Lambda Timeout) before it can be reported stale.
+START_DEADLINE_S = STALE_AFTER_S - RUN_TIMEOUT_S
 TTL_DAYS = 3
 FLAGS_PER_IP_PER_DAY = 20
 FLAGS_GLOBAL_PER_DAY = 500
