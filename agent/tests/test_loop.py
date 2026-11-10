@@ -402,9 +402,13 @@ def test_sources_and_retrieved_ids_reach_finish_seam(
     )
     run(model, ctx)
     assert seen["retrieved"] == {"NCT90000001", "NCT90000002", "PMID:1"}
-    assert json.loads(seen["sources"]["NCT90000001"]) == {"nct": "NCT90000001", "state": "stopped"}
+    item, aggregates = seen["sources"]["NCT90000001"].split("\n")
+    assert json.loads(item) == {"nct": "NCT90000001", "state": "stopped"}
+    # The result's counts travel with every listed id (R37), so "23 trials" can be checked.
+    assert json.loads(aggregates) == {"trials_total": 23, "counts_by_status": {"stopped": 4}}
     # Same item returned twice: kept once, not duplicated.
-    assert seen["sources"]["NCT90000002"] == '{"nct":"NCT90000002"}'
+    assert seen["sources"]["NCT90000002"].count("NCT90000002") == 1
+    assert "\n\n" not in seen["sources"]["NCT90000002"]
     assert "ignore previous" in seen["sources"]["PMID:1"].lower()
 
 
@@ -416,7 +420,7 @@ def test_sources_whole_data_for_non_list_tools() -> None:
     loop._add_sources(src, res)
     assert json.loads(src["CHEMBL1"]) == {"chembl_id": "CHEMBL1", "max_phase": 4}
     loop._add_sources(src, ToolResult(name="chembl_drug", data={"x": 1}, ids=["CHEMBL1"]))
-    assert src["CHEMBL1"].count("\n") == 1
+    assert src["CHEMBL1"].count("\n\n") == 1
 
 
 def test_sink_receives_steps_as_they_happen(ctx: ToolContext) -> None:

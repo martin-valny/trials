@@ -79,3 +79,15 @@ def test_memo_duplicate_ids_rejected() -> None:
     }
     with pytest.raises(ValidationError):
         Memo.model_validate(memo)
+
+
+@pytest.mark.parametrize("sid", ["s1", "s12", "s9999"])
+def test_sentence_id_accepts_s_numbers(sid: str) -> None:
+    assert Sentence(id=sid, section="landscape", text="x", cites=[]).id == sid
+
+
+@pytest.mark.parametrize("sid", ["1", "L1", "landscape-1", "s", "s12345", "S1", "s1 "])
+def test_sentence_id_rejects_other_formats(sid: str) -> None:
+    """I1/R36: reader flags only accept s1..s9999, so the memo must use them."""
+    with pytest.raises(ValidationError):
+        Sentence(id=sid, section="landscape", text="x", cites=[])

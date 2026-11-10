@@ -12,13 +12,14 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from diligence.log import log_error
 from diligence.model import ModelClient, ModelResponse, ReplayMismatch
 from diligence.prompts import CHECKER_PROMPT, VERDICTS_TOOL
-from diligence.types import CITE_SEARCH_PATTERN, Memo, Sentence, Verdict
+from diligence.types import CITE_PATTERN, Memo, Sentence, Verdict
 
 BATCH_SIZE = 10
 CHECKER_MAX_TOKENS = 2000
-MAX_SOURCE_CHARS = 4000
+MAX_SOURCE_CHARS = 6000
 REMOVED_REFERENCE = "[reference removed]"
 NOT_CHECKED = "not checked: checker unavailable"
 NOT_CHECKED_MISSING = "not checked: no verdict returned"
@@ -31,7 +32,7 @@ _SOURCE_NUMBER = re.compile(r"(?<![\d.])" + _NUMBER)
 
 def _sentence_numbers(text: str) -> list[str]:
     """Numeric claims in a sentence, normalised; single-digit integers are ignored."""
-    stripped = CITE_SEARCH_PATTERN.sub(" ", text)
+    stripped = CITE_PATTERN.sub(" ", text)
     out: list[str] = []
     for m in _SENTENCE_NUMBER.finditer(stripped):
         tok = m.group(0).replace(",", "")
@@ -41,6 +42,17 @@ def _sentence_numbers(text: str) -> list[str]:
     return out
 
 
+def _percent_tokens(raw: str) -> set[str]:
+    """A source fraction 0 < x < 1 (a stop-risk p of 0.244) also supports "24%" and "24.4%"."""
+    try:
+        x = float(raw)
+    except ValueError:
+        return set()
+    if not 0 < x < 1:
+        return set()
+    return {str(round(x * 100)), f"{x * 100:.1f}"}
+
+
 def _source_numbers(text: str) -> set[str]:
     found: set[str] = set()
     for m in _SOURCE_NUMBER.finditer(text):
@@ -48,6 +60,8 @@ def _source_numbers(text: str) -> set[str]:
         found.add(raw.replace(",", ""))
         if "," in raw:  # "[412,500]" is two numbers as often as it is one
             found.update(p for p in re.split(r",", raw) if p)
+        else:
+            found |= _percent_tokens(raw)
     return found
 
 
@@ -63,7 +77,7 @@ def _without(memo: Memo, drop: set[str]) -> Memo:
 def deterministic_check(
     memo: Memo, retrieved: set[str], sources: dict[str, str]
 ) -> tuple[Memo, list[dict[str, Any]]]:
-    """Remove sentences that are uncited, cite something never retrieved, or carry a number
+    """Remove sentences that are uncited, cite or mention an ID never retrieved, or carry a number
     that none of their cited sources contain."""
     removed: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -73,12 +87,17 @@ def deterministic_check(
         duplicate = s.id in seen
         seen.add(s.id)
         missing = [c for c in s.cites if c not in retrieved]
+        # An ID written into the sentence text reaches the page too, so it must be retrieved.
+        mentioned = [m for m in dict.fromkeys(CITE_PATTERN.findall(s.text)) if m not in retrieved]
         if duplicate:
             removed.append(_removal(s, "duplicate sentence id"))
         elif not s.cites:
             removed.append(_removal(s, "no citation"))
         elif missing:
             removed.append(_removal(s, f"cites {', '.join(missing)}, not retrieved in this run"))
+        elif mentioned:
+            reason = f"mentions {', '.join(mentioned)}, not retrieved in this run"
+            removed.append(_removal(s, reason))
         else:
             nums = _sentence_numbers(s.text)
             if nums:
@@ -107,7 +126,7 @@ def scrub_summary_lines(memo: Memo, retrieved: set[str]) -> tuple[Memo, list[str
                 notes.append(f"Removed reference {m.group(0)} from {field} line {i}: not retrieved")
                 return REMOVED_REFERENCE
 
-            out.append(CITE_SEARCH_PATTERN.sub(repl, line))
+            out.append(CITE_PATTERN.sub(repl, line))
         return out
 
     new = memo.model_copy(
@@ -183,7 +202,8 @@ def model_check(
             parsed = _parse_verdicts(resp, batch)
         except ReplayMismatch:
             raise
-        except Exception:  # noqa: BLE001 - a broken checker must not end the run
+        except Exception as exc:  # noqa: BLE001 - a broken checker must not end the run
+            log_error("checker", exc)
             parsed = None
         for s in batch:
             if parsed is None:

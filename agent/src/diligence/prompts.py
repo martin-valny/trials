@@ -1,6 +1,9 @@
-"""Prompts and tool schemas. Task 3 adds the system and checker prompts."""
+"""Prompts and the model-facing tool schemas: system and checker prompts, submit_memo,
+ready_to_write and submit_verdicts."""
 
 from typing import Any
+
+from diligence.types import CITE_REGEX, SENTENCE_ID_REGEX
 
 # Converse toolSpec for the final memo; the input schema mirrors types.Memo.
 MEMO_TOOL: dict[str, Any] = {
@@ -20,7 +23,11 @@ MEMO_TOOL: dict[str, Any] = {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "id": {"type": "string"},
+                                "id": {
+                                    "type": "string",
+                                    "description": "s1, s2, s3, ... in order.",
+                                    "pattern": f"^{SENTENCE_ID_REGEX}$",
+                                },
                                 "section": {
                                     "type": "string",
                                     "enum": [
@@ -35,9 +42,7 @@ MEMO_TOOL: dict[str, Any] = {
                                     "type": "array",
                                     "items": {
                                         "type": "string",
-                                        "pattern": (
-                                            r"^(NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+)$"
-                                        ),
+                                        "pattern": f"^{CITE_REGEX}$",
                                     },
                                 },
                             },
@@ -73,6 +78,29 @@ MEMO_TOOL: dict[str, Any] = {
                     },
                 },
                 "required": ["sections", "read", "judgement", "would_change"],
+            }
+        },
+    }
+}
+
+# Converse toolSpec the planner calls when it has gathered enough; the writer then files the memo.
+READY_TOOL: dict[str, Any] = {
+    "toolSpec": {
+        "name": "ready_to_write",
+        "description": (
+            "Call once when you have gathered enough evidence (or the budget is nearly spent). "
+            "Do not draft the memo; another step writes it from this conversation."
+        ),
+        "inputSchema": {
+            "json": {
+                "type": "object",
+                "properties": {
+                    "notes": {
+                        "type": "string",
+                        "description": "A few lines: what was found, which IDs matter, what failed.",
+                    }
+                },
+                "required": ["notes"],
             }
         },
     }
@@ -130,10 +158,13 @@ literature and FDA labels. Plan your calls: the budget is the tool-call limit st
 message. Stop gathering before it runs out and leave room to write.
 - If a tool returns an error or nothing, say so plainly in the memo where it matters and carry on \
 with what you have. Never fill a gap with remembered facts.
-- Finish by calling submit_memo exactly once. Do not write the memo as plain text.
+- When you have enough evidence, call ready_to_write once with short notes. Do not draft the \
+memo while gathering; it is written in a final step, when submit_memo becomes available. When \
+asked to write it, call submit_memo exactly once. Never write the memo as plain text.
 
 The memo
-Write the memo as short sentences, each in one of four sections:
+Write the memo as short sentences, each in one of four sections. Number the sentence ids s1, \
+s2, s3, ... in order.
 1. landscape: what is being tested for this target in this disease (phases, statuses, sponsors, \
 mechanism, how crowded it is).
 2. track_record: what happened to this target's drugs and to the drug class, across all diseases \
@@ -155,7 +186,8 @@ Citation rule
 - Every sentence must cite at least one ID that a tool returned in this run. The formats are \
 NCT followed by 8 digits (trials), PMID:digits or PPR followed by digits (literature), CHEMBL \
 followed by digits (ChEMBL), and FDA:<set id> (drug labels).
-- Use no other IDs. Never cite an ID you did not see in a tool result, and never guess one.
+- Use no other IDs. Never cite an ID you did not see in a tool result, and never guess one. \
+Put IDs in `cites`, not in the sentence text.
 - Every number, date, count and phase in a sentence must come from the sources it cites. If you \
 cannot cite a claim, leave it out.
 - Only section sentences carry `cites`; `read` and `would_change` are uncited summaries of cited \

@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from diligence.checker import (
+    MAX_SOURCE_CHARS,
     apply_verdicts,
     deterministic_check,
     gate_judgement,
@@ -49,6 +50,23 @@ def test_unretrieved_cite_removed() -> None:
     ]
 
 
+def test_unretrieved_id_in_sentence_text_removed() -> None:
+    """C1/R35: an ID in the text reaches the page, so it must have been retrieved."""
+    memo = memo_of(
+        ("s1", "Unlike NCT99999999, this trial is running.", ["NCT90000001"]),
+        ("s2", "As NCT90000001 shows, it is running.", ["NCT90000001"]),
+    )
+    out, removed = deterministic_check(memo, {"NCT90000001"}, {"NCT90000001": "x"})
+    assert ids(out) == ["s2"]
+    assert removed == [
+        {
+            "sentence_id": "s1",
+            "text": "Unlike NCT99999999, this trial is running.",
+            "reason": "mentions NCT99999999, not retrieved in this run",
+        }
+    ]
+
+
 def test_uncited_sentence_removed() -> None:
     memo = memo_of(("s1", "Fine.", ["NCT90000001"]), ("s2", "Bare claim.", []))
     out, removed = deterministic_check(memo, {"NCT90000001"}, {})
@@ -87,6 +105,30 @@ def test_number_rules(text: str, source: str, kept: bool) -> None:
     retrieved = {cites[0]}
     out, _ = deterministic_check(memo, retrieved, {cites[0]: source})
     assert bool(out.sections) is kept
+
+
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        ("A 24% chance of stopping early.", True),  # round(0.244 * 100)
+        ("A 24.4% chance of stopping early.", True),  # one decimal
+        ("A 0.244 chance of stopping early.", True),
+        ("A 37% chance of stopping early.", False),
+        ("A 2440% chance of stopping early.", False),
+    ],
+)
+def test_percent_from_source_fraction(text: str, kept: bool) -> None:
+    """I2/R37: stop-risk p is a fraction; the memo may state it as a percent."""
+    memo = memo_of(("s1", text, ["NCT90000002"]))
+    src = {"NCT90000002": '{"nct":"NCT90000002","p":0.244,"lo":0.18,"hi":0.31}'}
+    out, _ = deterministic_check(memo, {"NCT90000002"}, src)
+    assert bool(out.sections) is kept
+
+
+def test_percent_tokens_only_for_fractions() -> None:
+    memo = memo_of(("s1", "About 50% of them.", ["NCT90000001"]))
+    out, _ = deterministic_check(memo, {"NCT90000001"}, {"NCT90000001": '{"n":5}'})
+    assert out.sections == []
 
 
 def test_numbers_checked_against_own_cites_only() -> None:
@@ -167,6 +209,17 @@ def test_model_check_failure_marks_batch_not_checked() -> None:
     assert out == [
         Verdict(sentence_id="s1", verdict="partly", reason="not checked: checker unavailable")
     ]
+
+
+def test_model_check_failure_is_logged_with_message(capsys: pytest.CaptureFixture[str]) -> None:
+    """I7/R42: the page says "not checked"; CloudWatch gets the class and the message."""
+    memo = memo_of(("s1", "One.", ["NCT90000001"]))
+    err = PermissionError("AccessDeniedException: not authorized to invoke model chk")
+    model_check(memo, {}, model=FakeChecker([err]), model_id="chk")
+    (line,) = [json.loads(x) for x in capsys.readouterr().out.splitlines()]
+    assert line["event"] == "error" and line["where"] == "checker"
+    assert line["type"] == "PermissionError"
+    assert "not authorized to invoke model chk" in line["message"]
 
 
 def test_model_check_unusable_output_marks_not_checked() -> None:
@@ -313,7 +366,7 @@ def test_batch_payload_dedupes_and_caps_sources() -> None:
     text = fake.calls[0]["messages"][0]["content"][0]["text"]
     payload = json.loads(text[text.index("{") :])
     assert [x["id"] for x in payload["sources"]] == ["NCT90000001"]
-    assert len(payload["sources"][0]["text"]) == 4000
+    assert len(payload["sources"][0]["text"]) == MAX_SOURCE_CHARS
     assert [x["sentence_id"] for x in payload["sentences"]] == ["s1", "s2"]
     assert payload["sentences"][0]["sentence"] == "One."
 

@@ -5,10 +5,12 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, model_validator
 
-# Citable ID formats; the checker reuses these.
-CITE_PATTERN = re.compile(r"(?:NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+)")
-# Same formats, unanchored, for finding IDs inside free text.
-CITE_SEARCH_PATTERN = re.compile(CITE_PATTERN.pattern)
+# Citable ID formats, as one regex source shared by the types, the memo schema and the checker.
+CITE_REGEX = r"(?:NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+)"
+CITE_PATTERN = re.compile(CITE_REGEX)
+# Memo sentence ids: s1, s2, ... (reader flags address sentences by this id).
+SENTENCE_ID_REGEX = r"s\d{1,4}"
+SENTENCE_ID_PATTERN = re.compile(SENTENCE_ID_REGEX)
 
 
 def _check_cite(value: str) -> str:
@@ -18,6 +20,15 @@ def _check_cite(value: str) -> str:
 
 
 CiteId = Annotated[str, AfterValidator(_check_cite)]
+
+
+def _check_sentence_id(value: str) -> str:
+    if not SENTENCE_ID_PATTERN.fullmatch(value):
+        raise ValueError(f"sentence id must be s1, s2, ... (got {value!r})")
+    return value
+
+
+SentenceId = Annotated[str, AfterValidator(_check_sentence_id)]
 
 Stance = Literal["favours", "mixed", "against"]
 Confidence = Literal["high", "medium", "low"]
@@ -45,7 +56,7 @@ class Step(BaseModel):
 
 
 class Sentence(BaseModel):
-    id: str
+    id: SentenceId
     section: Section
     text: str
     # May be empty at schema level; the checker removes uncited sentences.

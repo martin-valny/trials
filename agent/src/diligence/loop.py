@@ -87,8 +87,18 @@ def _compact(value: Any) -> str:
     return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
 
 
+def _aggregates(data: dict[str, Any]) -> dict[str, Any]:
+    """The result's top-level non-list fields: totals, counts, summaries, notes."""
+    return {k: v for k, v in data.items() if not isinstance(v, list)}
+
+
 def _add_sources(sources: dict[str, str], result: ToolResult) -> None:
-    """Record, per retrieved id, the compact JSON of the item (or whole result) that carries it."""
+    """Record, per retrieved id, the source text the checker reads for it.
+
+    For a list tool that is the compact JSON of the item carrying the id plus the result's
+    top-level counts and summaries (so "99 trials" or a stop-risk summary citing any listed trial
+    can be checked); otherwise the whole result.
+    """
     for rid in result.ids:
         text: str | None = None
         for value in result.data.values():
@@ -102,11 +112,13 @@ def _add_sources(sources: dict[str, str], result: ToolResult) -> None:
                 break
         if text is None:
             text = _compact(result.data)
+        elif agg := _aggregates(result.data):
+            text += "\n" + _compact(agg)
         prev = sources.get(rid)
         if prev is None:
             sources[rid] = text
-        elif text not in prev.split("\n"):
-            sources[rid] = prev + "\n" + text
+        elif text not in prev.split("\n\n"):
+            sources[rid] = prev + "\n\n" + text
 
 
 def _toolresult(use_id: str, payload: Any, error: bool = False) -> dict[str, Any]:
