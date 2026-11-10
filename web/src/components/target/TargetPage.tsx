@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { diligenceKey } from "../../lib/diligence";
 import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, trialsLink } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
 import { usePhone } from "../../lib/useMediaQuery";
@@ -9,6 +10,7 @@ import "../pipeline/pipeline.css";
 import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
+import { TargetDiligence } from "./TargetDiligence";
 import { TargetDiseases } from "./TargetDiseases";
 import { TargetRisk } from "./TargetRisk";
 import { TargetStops } from "./TargetStops";
@@ -204,6 +206,13 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       )}
       <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
       {marks.length > 0 && <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
+      <TargetDiligence
+        key={diligenceKey(row.id, disease ?? "all")}
+        row={row}
+        disease={disease}
+        label={row.label}
+        diseaseLabel={disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases"}
+      />
 
       <footer className="foot">
         <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
