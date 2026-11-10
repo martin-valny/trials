@@ -158,3 +158,13 @@ describe("diligence strip", () => {
     expect(within(strip()!).getByRole("button", { name: "Run again →" })).toBeInTheDocument();
   });
 });
+
+test("from 1100px the strip reserves one line and its fixed label sits inline after the action", () => {
+  const css = readFileSync(join(__dirname, "..", "src", "components", "target", "target.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const wide = /@media \(min-width: 1100px\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+  expect(/\.dstrip\s*\{([^}]*)\}/.exec(wide)?.[1]).toMatch(/min-height:\s*20px/);
+  expect(/\.dstrip-label\s*\{([^}]*)\}/.exec(wide)?.[1]).toMatch(/display:\s*inline/);
+  // Below 1100px the reserve for the label's own line stays.
+  const base = /(^|\n)\.dstrip\s*\{([^}]*)\}/.exec(css)?.[2] ?? "";
+  expect(base).toMatch(/min-height:\s*42px/);
+});

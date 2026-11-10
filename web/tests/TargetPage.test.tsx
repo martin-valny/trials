@@ -87,6 +87,14 @@ test("below 1100px the disease chips scroll sideways and keep the selected one i
     }),
   ];
   Element.prototype.scrollTo = scrollTo as unknown as typeof Element.prototype.scrollTo;
+  const realStyle = window.getComputedStyle;
+  protos.push(
+    vi.spyOn(window, "getComputedStyle").mockImplementation((el: Element) => {
+      const cs = realStyle(el);
+      if (el.classList.contains("dzs")) Object.defineProperty(cs, "paddingLeft", { value: "24px" });
+      return cs;
+    }) as never,
+  );
   try {
     renderPage("/target/cd20?disease=MG");
     await screen.findByRole("heading", { level: 1 });
@@ -95,7 +103,8 @@ test("below 1100px the disease chips scroll sideways and keep the selected one i
     expect(group.closest(".thead")).toBeNull();
     await waitFor(() => expect(scrollTo).toHaveBeenCalled());
     expect(scrollTo.mock.contexts.at(-1)).toBe(group);
-    expect((scrollTo.mock.calls.at(-1)![0] as ScrollToOptions).left).toBeGreaterThan(0);
+    // The chip lands one gutter in: the scroller's own padding-left (24px here), not a hard-coded phone gutter.
+    expect((scrollTo.mock.calls.at(-1)![0] as ScrollToOptions).left).toBe(480 - 24);
   } finally {
     for (const s of protos) s.mockRestore();
     delete (Element.prototype as { scrollTo?: unknown }).scrollTo;
@@ -621,4 +630,19 @@ test("capped lists in b, c and f keep their hidden rows in the page, for print",
   expect(cards.filter((c) => c.hidden)).toHaveLength(3);
   await userEvent.click(screen.getByRole("button", { name: "Show all 9" }));
   expect(cards.filter((c) => c.hidden)).toHaveLength(0);
+});
+
+/** The body of target.css's `@media (min-width: 1100px)` block, and of its phone block, comments stripped. */
+function targetCss() {
+  const css = readFileSync(join(__dirname, "..", "src", "components", "target", "target.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const block = (q: string) => new RegExp(`@media \\(${q}\\) \\{([\\s\\S]*?)\\n\\}`).exec(css)?.[1] ?? "";
+  return { wide: block("min-width: 1100px"), phone: block("max-width: 640px") };
+}
+
+test("the lede is balanced on a 100ch measure at 1100px and up, and avoids a widow on a phone", () => {
+  const { wide, phone } = targetCss();
+  const lede = (b: string) => /\.thead \.tl\s*\{([^}]*)\}/.exec(b)?.[1] ?? "";
+  expect(lede(wide)).toMatch(/max-width:\s*100ch/);
+  expect(lede(wide)).toMatch(/text-wrap:\s*balance/);
+  expect(lede(phone)).toMatch(/text-wrap:\s*pretty/);
 });

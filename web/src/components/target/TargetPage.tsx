@@ -255,7 +255,9 @@ function DiseaseChips({ counts, disease, onPick }: { counts: { code: string; n: 
     const on = el?.querySelector<HTMLElement>(".dz.on");
     if (!el || !on || el.scrollWidth <= el.clientWidth) return;
     const left = on.offsetLeft - el.offsetLeft;
-    if (left < el.scrollLeft || left + on.offsetWidth > el.scrollLeft + el.clientWidth) el.scrollTo?.({ left: Math.max(0, left - 18) });
+    // Land the chip one gutter in: the scroller's own padding-left is the page gutter at this width.
+    const gutter = parseFloat(window.getComputedStyle(el).paddingLeft) || 0;
+    if (left < el.scrollLeft || left + on.offsetWidth > el.scrollLeft + el.clientWidth) el.scrollTo?.({ left: Math.max(0, left - gutter) });
   }, [disease]);
   return (
     <div className="dzs" role="group" aria-label="Diseases" ref={box}>

@@ -14,8 +14,6 @@
 .thead .tl { font-size: var(--fs-lede); line-height: 1.35; font-weight: 400; letter-spacing: -.01em; margin: 12px 0 0; max-width: 46ch; }
 .thead .tl em { font-style: normal; color: var(--red); }
 .thead .tl .runw { color: var(--run); }
-/* From 1100px the chips share the title row, so the lede takes the full width: one line for most targets. */
-@media (min-width: 1100px) { .thead .tl { max-width: none; } }
 
 /* The diligence strip: one quiet line under the lede, spanning the header (spec section 5). Plate tokens only, never red. */
 /* Every state reserves the read state's height (sentence lines + the label's line), so nothing below moves when the state changes. */
@@ -113,6 +111,13 @@ p.sec.empty-line { padding-bottom: 20px; }
 .sk-chart { height: 360px; opacity: .6; }
 .target-page .tip b, .target-page .tip span { color: var(--plate); }
 
+@media (min-width: 1100px) {
+  /* The chips share the title row, so the lede takes a wider measure, balanced when it wraps. */
+  .thead .tl { max-width: 100ch; text-wrap: balance; }
+  /* The strip reserves one line: the fixed label sits inline after the action (a long read line may wrap and grow). */
+  .dstrip { min-height: 20px; }
+  .dstrip-label { display: inline-block; margin: 0 0 0 18px; line-height: 20px; }
+}
 @media (max-width: 1099px) {
   .crumb, .thead, .dzs, .sec { padding-left: 24px; padding-right: 24px; }
   .two { gap: 32px; }
@@ -127,7 +132,7 @@ p.sec.empty-line { padding-bottom: 20px; }
   .thead { padding: 8px 18px 0; }
   .thead h1 { font-size: 34px; }
   .thead h1 small { display: block; margin: 6px 0 0; font-size: var(--fs-ui); }
-  .thead .tl { font-size: var(--fs-read); margin-top: 10px; }
+  .thead .tl { font-size: var(--fs-read); margin-top: 10px; text-wrap: pretty; }
   .dstrip { margin-top: 10px; min-height: 62px; }
   .dzs { padding: 10px 18px 4px; }
   .sec { padding: 28px 18px 0; }
