@@ -11,6 +11,8 @@
 .trials-page .tr-count { margin: 14px 0 10px; font-size: var(--fs-ui); font-variant-numeric: tabular-nums; color: var(--ink); }
 
 .trials-page table.tr-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-ui); line-height: 1.4; font-variant-numeric: tabular-nums; }
+/* The caption is for screen readers; the shared phone rule's 100% width plus padding must not widen the page. */
+.trials-page table.tr-table caption { width: 1px; padding: 0; }
 .trials-page table.tr-table th {
   text-align: left; vertical-align: bottom; font-size: var(--fs-meta); font-weight: 400; color: var(--muted);
   padding: 0 24px 6px 0; border: 0; border-bottom: 1px solid var(--ink);
@@ -60,7 +62,8 @@
   .trials-page .tr-nct { order: 1; }
   .trials-page td.tr-status { order: 2; }
   .trials-page td.tr-phase { order: 3; color: var(--muted); }
-  .trials-page .tr-title { order: 5; flex: 1 1 100%; min-width: 0; margin: 0; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .trials-page .tr-sponsor, .trials-page table.tr-table td.tr-date { display: none; }
+  .trials-page .tr-title { order: 5; flex: 1 1 0; min-width: 0; margin: 0; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .trials-page .tr-sponsor, .trials-page table.tr-table td.tr-date:not(:last-child) { display: none; }
+  /* The last change closes line 2; the title truncates to make room. */
+  .trials-page table.tr-table td.tr-date:last-child { order: 6; flex: none; color: var(--muted); font-size: var(--fs-meta); }
 }
-.trials-page table.tr-table caption { width: 1px; padding: 0; }

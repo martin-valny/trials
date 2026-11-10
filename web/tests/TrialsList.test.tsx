@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 import { TrialsList } from "../src/components/TrialsList";
 import type { TrialsIndex } from "../src/types";
 import { render } from "@testing-library/react";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, useLocation, useSearchParams } from "react-router-dom";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
 function Where() {
@@ -18,6 +18,15 @@ const renderWithWhere = (route: string) =>
       <Where />
     </MemoryRouter>,
   );
+
+function ScopeSwap({ n }: { n: string }) {
+  const [, setParams] = useSearchParams();
+  return (
+    <button type="button" onClick={() => setParams({ nct: n })}>
+      swap scope
+    </button>
+  );
+}
 
 const index = readFixture<TrialsIndex>("trials.json");
 const rows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
@@ -227,7 +236,10 @@ test("search covers trials beyond the first page", async () => {
 });
 
 test("changing the query or the status filter returns to 50 rows", async () => {
-  stubFetch({ "trials.json": many(120) });
+  // 240 trials: every one RECRUITING except the last 30 COMPLETED, so the remaining set after a status pick is > 100.
+  const base = many(240);
+  const trials = base.trials.map((t, i) => ({ ...t, overall_status: i < 210 ? "RECRUITING" : "COMPLETED" }));
+  stubFetch({ "trials.json": { ...base, trials } });
   renderAt(<TrialsList />);
   await screen.findByRole("table");
   await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
@@ -239,9 +251,28 @@ test("changing the query or the status filter returns to 50 rows", async () => {
   await userEvent.clear(screen.getByLabelText("Search"));
   expect(rows()).toHaveLength(50);
   await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  expect(rows()).toHaveLength(100);
   await userEvent.click(screen.getByRole("button", { name: "Status: all" }));
-  await userEvent.click(within(screen.getByRole("group", { name: "Status" })).getAllByRole("checkbox")[0]);
-  expect(rows().length).toBeLessThanOrEqual(50);
+  const group = within(screen.getByRole("group", { name: "Status" }));
+  await userEvent.click(group.getAllByRole("checkbox").find((c) => /^Completed/.test(c.getAttribute("aria-label") ?? c.closest("label")?.textContent ?? ""))!);
+  expect(screen.getByText("Showing 50 of 210 trials")).toBeInTheDocument();
+  expect(rows()).toHaveLength(50);
+});
+
+test("changing the ?nct= scope returns to 50 rows", async () => {
+  stubFetch({ "trials.json": many(240) });
+  render(
+    <MemoryRouter initialEntries={["/trials?nct=" + many(240).trials.slice(0, 150).map((t) => t.nct_id).join(",")]}>
+      <TrialsList />
+      <ScopeSwap n={many(240).trials.slice(0, 120).map((t) => t.nct_id).join(",")} />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("table");
+  await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  expect(rows()).toHaveLength(100);
+  await userEvent.click(screen.getByRole("button", { name: "swap scope" }));
+  expect(screen.getByText("Showing 50 of 120 trials")).toBeInTheDocument();
+  expect(rows()).toHaveLength(50);
 });
 
 test("status reads as words with a mark, phases and dates as people write them", async () => {
