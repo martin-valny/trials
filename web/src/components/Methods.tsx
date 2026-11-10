@@ -32,6 +32,9 @@ const CONTENTS: readonly (readonly [slug: string, name: string])[] = [
   ["limitations", "Limitations"],
 ];
 
+/** Keys that scroll the page: pressing one ends the re-scroll to an arrival target. */
+const SCROLL_KEYS = new Set(["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "]);
+
 /** Rows shown per group before "Show all". */
 const LIST_ROWS = 10;
 
@@ -100,13 +103,31 @@ export function Methods() {
   }, []);
 
   // Arriving by link: an old #fragment (other pages link to /methods#stop-risk) wins over the contents' own ?s=.
-  // Either is scrolled to again as each data file lands and moves the page, until the visitor picks another section.
+  // Either is scrolled to again as each data file lands and moves the page, until the visitor picks another section
+  // or scrolls by hand (wheel, touch or a scrolling key): from then on the page is theirs.
   const { hash } = useLocation();
   const [params] = useSearchParams();
   const s = params.get("s");
   const [arrival, setArrival] = useState<string | null>(() => s);
   if (arrival !== null && s !== arrival) setArrival(null);
-  const target = hash ? hash.slice(1) : arrival;
+  const [handScrolled, setHandScrolled] = useState(false);
+  const arrivedAt = hash ? hash.slice(1) : arrival;
+  const target = handScrolled ? null : arrivedAt;
+  useEffect(() => {
+    if (!target) return;
+    const mine = () => setHandScrolled(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (SCROLL_KEYS.has(e.key)) mine();
+    };
+    window.addEventListener("wheel", mine, { passive: true });
+    window.addEventListener("touchstart", mine, { passive: true });
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("wheel", mine);
+      window.removeEventListener("touchstart", mine);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [target]);
   useEffect(() => {
     if (target) document.getElementById(target)?.scrollIntoView?.();
   }, [target, meta, file, pipeline, risk]);
@@ -127,12 +148,12 @@ export function Methods() {
         sentence={`How the ${n}trials are collected, compared, grouped and scored, and what each number on the site can and cannot tell you.`}
       />
       <div className="methods-body">
-        <aside className="methods-toc">
+        <div className="methods-toc">
           <p className="methods-toc-h" aria-hidden="true">
             On this page
           </p>
           <ContentsStrip items={items} label="On this page" param="s" orientation="column" pending={risk === undefined} deepLink={false} />
-        </aside>
+        </div>
         <article className="methods">
           <section id="tracked" aria-labelledby="tracked-h">
             <h2 id="tracked-h" tabIndex={-1}>What is tracked</h2>
@@ -622,7 +643,10 @@ export function Methods() {
                 Trials that list only an abbreviation (for example a two-letter acronym) as their condition are missed.
               </li>
               <li>History starts on the first day of tracking; earlier changes are not reconstructed.</li>
-              <li>No AI is used in this version; every value comes from the registry record.</li>
+              <li>
+                The only AI-written text on the site is the diligence agent&apos;s memo on target pages, labelled as such;
+                every other value comes from the registry record or is computed from it.
+              </li>
             </ul>
           </section>
         </article>

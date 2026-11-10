@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 import { Methods } from "../src/components/Methods";
@@ -596,4 +596,63 @@ test("Methods: an old #diligence link still lands", async () => {
   renderAt(<Methods />, "/methods#diligence");
   await diligence();
   expect(scroll.mock.contexts).toContain(document.getElementById("diligence"));
+});
+
+test("Methods: Limitations names the one AI-written text instead of saying no AI is used", async () => {
+  stubFetch();
+  const { container } = renderAt(<Methods />, "/methods");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  const lim = container.querySelector("#limitations") as HTMLElement;
+  expect(lim.textContent).not.toMatch(/No AI is used in this version/);
+  expect(
+    within(lim).getByText(
+      "The only AI-written text on the site is the diligence agent's memo on target pages, labelled as such; every other value comes from the registry record or is computed from it.",
+    ),
+  ).toBeInTheDocument();
+});
+
+test("Methods: the contents nav is not wrapped in an unnamed landmark", async () => {
+  stubFetch();
+  renderAt(<Methods />, "/methods");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  expect(screen.queryByRole("complementary")).toBeNull();
+  expect(screen.getByRole("navigation", { name: "On this page" })).toBeInTheDocument();
+});
+
+test("Methods: after the visitor scrolls by wheel, a late data file no longer pulls the page back", async () => {
+  const inner = stubFetch();
+  let release: () => void = () => undefined;
+  const late = new Promise<void>((r) => (release = r));
+  vi.stubGlobal("fetch", async (url: string) => {
+    if (String(url).endsWith("explorer.json")) await late;
+    return inner(url);
+  });
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods#map");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  expect(scroll).toHaveBeenCalled();
+  fireEvent.wheel(window, { deltaY: 120 });
+  scroll.mockClear();
+  release();
+  expect(await screen.findByText(/min_cluster_size 25/)).toBeInTheDocument();
+  expect(scroll).not.toHaveBeenCalled();
+});
+
+test("Methods: without a visitor scroll, a late data file re-scrolls to the arrival", async () => {
+  const inner = stubFetch();
+  let release: () => void = () => undefined;
+  const late = new Promise<void>((r) => (release = r));
+  vi.stubGlobal("fetch", async (url: string) => {
+    if (String(url).endsWith("explorer.json")) await late;
+    return inner(url);
+  });
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderAt(<Methods />, "/methods?s=limitations");
+  await screen.findByText(readFixture<Meta>("meta.json").conditions[0]);
+  scroll.mockClear();
+  release();
+  await screen.findByText(/min_cluster_size 25/);
+  expect(scroll.mock.contexts).toContain(document.getElementById("limitations"));
 });
