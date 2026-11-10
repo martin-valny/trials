@@ -1,34 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadPipeline, loadTrials } from "../data";
-import { formatDate, phasesLabel, statusLabel } from "../lib/format";
+import { formatDate, markState, phasesLabel, statusLabel } from "../lib/format";
 import { useShowMore } from "../lib/useShowMore";
-import type { MarkState, TrialSummary } from "../types";
+import type { TrialSummary } from "../types";
 import { MultiSelect, type MultiSelectOption } from "./explore/MultiSelect";
 import { PageHead } from "./PageHead";
 import "./explore/explore.css";
 import "./trials.css";
 
 const n = (x: number): string => x.toLocaleString("en-US");
-
-/** The plate mark for a registry status: running ring, stopped dot, finished pale dot, unknown dashed. */
-function markState(status: string): MarkState {
-  switch (status) {
-    case "RECRUITING":
-    case "ACTIVE_NOT_RECRUITING":
-    case "NOT_YET_RECRUITING":
-    case "ENROLLING_BY_INVITATION":
-      return "run";
-    case "TERMINATED":
-    case "WITHDRAWN":
-    case "SUSPENDED":
-      return "stop";
-    case "COMPLETED":
-      return "fin";
-    default:
-      return "unk";
-  }
-}
 
 /** A small drawn magnifier, hairline ink, set inside the find pill. */
 function FindGlyph() {

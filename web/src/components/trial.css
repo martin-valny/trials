@@ -1,12 +1,13 @@
 /* The trial page on the Figure Plate: flat, hairlines and ink, no cards or tinted boxes. Root is
    ".page.explore.trial-page" (.page gives the gutters, explore.css the plate tokens). */
 .trial-page { padding-bottom: 56px; }
-.trial-head h1 { font-size: 28px; line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
+.page-head.trial-head h1 { font-size: 28px; line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
 .trial-head .page-head-crumb a { color: var(--muted); text-underline-offset: 3px; }
 .trial-head .page-head-crumb a:hover { color: var(--ink); }
 .trial-head .page-head-sentence { margin-top: 6px; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--muted); }
 .trial-head .page-head-sentence a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
 .trial-head .page-head-sentence a:hover { text-decoration-color: var(--ink); }
+.trial-empty { margin: 0; font-size: var(--fs-body); color: var(--muted); }
 .trial-missing { font-size: var(--fs-read); }
 
 /* Facts: muted sentence-case terms, two columns from 900px. */
@@ -14,7 +15,7 @@
 .trial-facts > div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0 12px; }
 .trial-facts dt { color: var(--muted); }
 .trial-facts dd { margin: 0; overflow-wrap: anywhere; }
-@media (min-width: 900px) { .trial-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .trial-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .trial-facts > .wide { grid-column: 1 / -1; } }
 @media (max-width: 640px) { .trial-facts > div { grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0 10px; } }
 
 /* Section headings: plain 13px/700 over an ink rule. */

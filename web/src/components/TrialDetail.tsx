@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadTrial } from "../data";
-import { fieldLabel, formatAgeRange, formatDate, formatValue, phasesLabel, sexLabel, statusLabel } from "../lib/format";
+import { fieldLabel, formatAgeRange, formatDate, formatValue, markState, phasesLabel, sexLabel, statusLabel } from "../lib/format";
 import { formatPct, formatRange } from "../lib/risk";
 import { useRisk } from "../lib/useRisk";
 import type { DateInfo, RiskFile, TrialFile } from "../types";
@@ -59,9 +59,14 @@ export function TrialDetail() {
 
   const t = current.trial;
   const timeline = t.changes.filter((c) => TIMELINE_FIELDS.has(c.field));
-  const facts: [string, string][] = [
-    ["Status", statusLabel(t.overall_status)],
-    ...(t.why_stopped ? [["Why stopped", t.why_stopped] as [string, string]] : []),
+  const facts: [string, ReactNode][] = [
+    [
+      "Status",
+      <>
+        <i className={`tr-mark ${markState(t.overall_status)}`} aria-hidden="true" />
+        {statusLabel(t.overall_status)}
+      </>,
+    ],
     ["Phase", phasesLabel(t.phases)],
     ["Lead sponsor", t.lead_sponsor ?? "—"],
     [
@@ -76,6 +81,7 @@ export function TrialDetail() {
     ["Conditions", formatValue("conditions", t.conditions)],
     ["Interventions", t.interventions.map((i) => i.name).join(", ") || "—"],
     ["Sites", `${t.site_count} ${t.site_count === 1 ? "site" : "sites"} in ${t.countries.length} ${t.countries.length === 1 ? "country" : "countries"}`],
+    ...(t.why_stopped ? [["Why stopped", t.why_stopped] as [string, ReactNode]] : []),
   ];
 
   const e = t.eligibility;
@@ -104,7 +110,7 @@ export function TrialDetail() {
 
       <dl className="trial-facts">
         {facts.map(([k, v]) => (
-          <div key={k}>
+          <div key={k} className={k === "Why stopped" ? "wide" : undefined}>
             <dt>{k}</dt>
             <dd>{v}</dd>
           </div>
@@ -131,12 +137,12 @@ export function TrialDetail() {
 
       <h2>Timeline</h2>
       {timeline.length === 0 ? (
-        <p>No status or date changes recorded since tracking began.</p>
+        <p className="trial-empty">No status or date changes recorded since tracking began.</p>
       ) : (
         <ol className="trial-timeline">
           {timeline.map((c) => (
             <li key={`${c.field}|${c.detected_date}|${String(c.new_value)}`}>
-              <strong>{c.detected_date}</strong> — {fieldLabel(c.field)}:{" "}
+              <strong>{formatDate({ date: c.detected_date, precision: "day", type: null })}</strong> — {fieldLabel(c.field)}:{" "}
               {formatValue(c.field, c.old_value)} → {formatValue(c.field, c.new_value)}
             </li>
           ))}
@@ -145,7 +151,7 @@ export function TrialDetail() {
 
       <h2>Change history</h2>
       {t.changes.length === 0 ? (
-        <p>No changes recorded since tracking began.</p>
+        <p className="trial-empty">No changes recorded since tracking began.</p>
       ) : (
         <ChangeTable items={t.changes} />
       )}

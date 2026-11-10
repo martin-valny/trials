@@ -1,4 +1,4 @@
-import type { DateInfo, Outcome } from "../types";
+import type { DateInfo, Outcome, MarkState } from "../types";
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DASH = "—";
@@ -162,3 +162,22 @@ export function formatAgeRange(min: number | null, max: number | null): string {
 
 const SEX: Record<string, string> = { ALL: "All sexes", FEMALE: "Female only", MALE: "Male only" };
 export const sexLabel = (s: string): string => SEX[s] ?? s;
+
+/** The plate mark for a registry status: running ring, stopped dot, finished pale dot, unknown dashed. */
+export function markState(status: string): MarkState {
+  switch (status) {
+    case "RECRUITING":
+    case "ACTIVE_NOT_RECRUITING":
+    case "NOT_YET_RECRUITING":
+    case "ENROLLING_BY_INVITATION":
+      return "run";
+    case "TERMINATED":
+    case "WITHDRAWN":
+    case "SUSPENDED":
+      return "stop";
+    case "COMPLETED":
+      return "fin";
+    default:
+      return "unk";
+  }
+}

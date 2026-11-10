@@ -32,11 +32,11 @@
 
 /* The plate mark beside the status word: ring running, dot stopped, pale dot finished, dashed unknown. */
 .trials-page .tr-status { white-space: normal; }
-.trials-page .tr-mark { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; box-sizing: border-box; vertical-align: 0; }
-.trials-page .tr-mark.run { border: 1.6px solid var(--run); }
-.trials-page .tr-mark.stop { background: var(--stop); }
-.trials-page .tr-mark.fin { background: var(--fin); }
-.trials-page .tr-mark.unk { border: 1.2px dashed var(--unk); }
+.tr-mark { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; box-sizing: border-box; vertical-align: 0; }
+.tr-mark.run { border: 1.6px solid var(--run); }
+.tr-mark.stop { background: var(--stop); }
+.tr-mark.fin { background: var(--fin); }
+.tr-mark.unk { border: 1.2px dashed var(--unk); }
 
 .trials-page .tr-more { margin-top: 14px; }
 

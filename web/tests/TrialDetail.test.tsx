@@ -48,9 +48,10 @@ test("timeline lists status and date changes newest first", async () => {
   const heading = await screen.findByRole("heading", { name: "Timeline" });
   const items = within(heading.nextElementSibling as HTMLElement).getAllByRole("listitem");
   expect(items).toHaveLength(2); // sponsor change is not a timeline field
-  expect(items[0]).toHaveTextContent("2026-11-04");
+  expect(items[0]).toHaveTextContent("4 Nov 2026");
+  expect(items[0]).not.toHaveTextContent("2026-11-04");
   expect(items[0]).toHaveTextContent("Primary completion date");
-  expect(items[1]).toHaveTextContent("2026-10-01");
+  expect(items[1]).toHaveTextContent("1 Oct 2026");
 });
 
 test("full change history table", async () => {
@@ -58,6 +59,7 @@ test("full change history table", async () => {
   show();
   const table = await screen.findByRole("table");
   expect(within(table).getByText(/All recorded changes \(1\)/)).toBeInTheDocument();
+  expect(within(table).getByText("4 Nov 2026")).toBeInTheDocument();
   expect(within(table).getByText("slipped 120 days")).toBeInTheDocument();
   expect(within(table).getByText("Date moved by 90 days or more")).toBeInTheDocument();
 });
@@ -214,4 +216,15 @@ test("why stopped is a plain fact, not a callout", async () => {
   expect(dt.tagName).toBe("DT");
   expect(dt.nextElementSibling).toHaveTextContent("Sponsor decision");
   expect(container.querySelector(".callout")).toBeNull();
+});
+
+test("status fact carries a plate mark beside the word, hidden from AT", async () => {
+  stubFetch();
+  const { container } = show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  const dd = screen.getByText("Status").nextElementSibling as HTMLElement;
+  const mark = dd.querySelector("i.tr-mark");
+  expect(mark).toHaveAttribute("aria-hidden", "true");
+  expect(dd).toHaveTextContent(statusLabel(trial.overall_status));
+  expect(container.querySelector(".trial-empty")).toBeNull();
 });
