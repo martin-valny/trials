@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-08T23:00:00Z",
+  "generatedAt": "2026-11-10T23:00:00Z",
   "title": "Design System: Trial Radar",
   "extensions": {
     "colorMeta": {
@@ -188,9 +188,55 @@
         "role": "neutral",
         "displayName": "Family band ink, dark (--fam)",
         "canonical": "#7a8ea5"
+      },
+      "ladder": {
+        "role": "neutral",
+        "displayName": "Ladder",
+        "canonical": "#e4e8eb"
+      },
+      "dark-ladder": {
+        "role": "neutral",
+        "displayName": "Ladder (dark)",
+        "canonical": "#3d4147"
       }
     },
     "typographyMeta": {
+      "scale-meta": {
+        "displayName": "Meta (--fs-meta)",
+        "purpose": "12/1.45: captions, notes, sub-lines, column heads, the freshness note, the diligence strip's label. The floor for text."
+      },
+      "scale-ui": {
+        "displayName": "UI (--fs-ui)",
+        "purpose": "13/1.4: controls and pills, table cells, panel headings (700), the contents strip, the diligence strip, company names."
+      },
+      "scale-body": {
+        "displayName": "Body (--fs-body)",
+        "purpose": "14/1.5: panel prose, stop reasons, memo text, trial-page facts."
+      },
+      "scale-reading": {
+        "displayName": "Reading (--fs-read)",
+        "purpose": "15/1.6: Methods prose, PageHead sentences, the target lede on a phone."
+      },
+      "scale-lede": {
+        "displayName": "Lede (--fs-lede)",
+        "purpose": "19/1.35: the target-page lede (desktop), Methods h2."
+      },
+      "display-front": {
+        "displayName": "Display: front door",
+        "purpose": "Front-door headline 30px/500, 1.15, -0.018em, max 42ch (24px on a phone)."
+      },
+      "display-target": {
+        "displayName": "Display: target title",
+        "purpose": "Target-page title 40px/600, line-height 1, -0.03em (34px on a phone)."
+      },
+      "display-page": {
+        "displayName": "Display: page head",
+        "purpose": "Shared PageHead title 34px/600, 1.1, -0.02em (28px on a phone): Watchlist, Changes, Trials, Methods."
+      },
+      "display-trial": {
+        "displayName": "Display: trial title",
+        "purpose": "Trial-page title 28px/600, 1.15, balanced wrap."
+      },
       "plate-title": {
         "displayName": "Plate title",
         "purpose": "Figure 1 | claim; bold lead, regular rest."
@@ -217,7 +263,7 @@
       },
       "pill": {
         "displayName": "Pill",
-        "purpose": "Control text."
+        "purpose": "Control text, 13px (the UI step)."
       },
       "canvas-label": {
         "displayName": "Canvas label",
@@ -225,7 +271,7 @@
       },
       "canvas-numeral": {
         "displayName": "Canvas numeral",
-        "purpose": "Phone (<=640px): 800 11px ink numerals on a 3px plate halo, keyed under the canvas: 1-6 at Explore's cluster anchors, 1-n beside Figure 2's top-level pathways."
+        "purpose": "Phone (<=640px): 800 11px ink numerals on a 3px plate halo, keyed under the canvas: 1-6 at Explore's cluster anchors, 1-n beside Figure 2's top-level pathways. One of the allowed 11px exceptions to the 12px floor."
       },
       "header-note": {
         "displayName": "Header note",
@@ -263,6 +309,10 @@
       {
         "name": "phone",
         "value": "640px"
+      },
+      {
+        "name": "wide",
+        "value": "1100px"
       }
     ]
   },
@@ -407,7 +457,7 @@
       "name": "Pipeline figure",
       "kind": "custom",
       "refersTo": "",
-      "description": "Front page (/). Lede: kicker, a computed headline (500, clamp 24-34px, max 22ch) with its first sentence in --run, three key numbers (30px/500: running --run, advanced red, companies with a running trial), a 12px source line. Controls: By phase | By disease segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select. Legend of five marks. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note. Family bands in 11px/700 uppercase --fam; the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks. By disease only: a cell with an approved, not-withdrawn drug carries the floor rule (see Floor rule).",
+      "description": "Front page (/). Lede: a 12px/700 uppercase kicker on its own line (hidden on a phone), a computed headline (500, 30px/1.15, max 42ch, two lines at 1280; 24px on a phone) with its first sentence in --run, and two key numbers (30px/500: advanced in red, companies with a running trial; one inline line on a phone). No running key: the headline says it. One 12px source line ('693 of 2,987 trials test a targeted drug in these 28 classes. Registered trials only. How rows are built →'), the full caveat opening the footer, and under it the diligence line (see Front-door diligence line); on a phone both lines follow the figure. Controls: By phase | By disease | By year segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select; from 1100px the legend (.p-legend, five marks) sits at the right of the Sort line. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note; column heads 12px/700. Family bands in 11px/700 uppercase --fam (an allowed 11px exception); the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and 12px kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks. By disease only: a cell with an approved, not-withdrawn drug carries the floor rule (see Floor rule).",
       "html": "",
       "css": ""
     },
@@ -431,7 +481,7 @@
       "name": "Target page",
       "kind": "custom",
       "refersTo": "",
-      "description": "/target/:slug. Breadcrumb, 48px/600 class name with gene and family, a computed 19px lede and three key numbers, disease chips, then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (reason chips and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph). Panel e, '{Row} by disease', after panel d (see Panel e: by disease).",
+      "description": "/target/:slug. Breadcrumb, then the head: 40px/600 class name (34px phone) with gene and family; from 1100px the disease chips at the right of the title row (below that one sideways-scrolling line under the head); one computed 19px lede that is the only place the running/advanced/stopped counts appear (no key numbers); the diligence strip (see Diligence strip); the contents strip (see Contents strip). Then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (full reason pills on a hairline border and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph), e by disease, f stop chance (8 rows then 'Show all'), g diligence (AI agent).",
       "html": "",
       "css": ""
     },
@@ -471,7 +521,7 @@
       "name": "Target panel f (stop risk)",
       "kind": "custom",
       "refersTo": "",
-      "description": "Sixth lettered section on a target page (f, after By disease): a computed claim line, then one row per scored running trial (highest estimate first) with the scale, the estimate against typical in words, and up to three factors (a bare-text disclosure on a phone). Respects the disease chip; target summary only when per_trial is off.",
+      "description": "Sixth lettered section on a target page (f, after By disease): a computed claim line counting every scored running trial, then the 8 highest estimates and a text button 'Show all N running trials' (focus moves to the first new row; print shows all), each row with the scale, the estimate against typical in words, and up to three factors (a bare-text disclosure on a phone). Respects the disease chip; target summary only when per_trial is off.",
       "html": "",
       "css": ""
     },
@@ -479,7 +529,7 @@
       "name": "Watchlist (/watchlist)",
       "kind": "custom",
       "refersTo": "",
-      "description": "Toolbar of Disease, Company and Target multi-selects plus a sort (estimate or difference from typical), a claim line, the standing note and a table of scored running trials with the scale. 50 rows and a 'Show N more' button; filters and sort in the URL; factors as a phone disclosure.",
+      "description": "PageHead 'Watchlist' with one computed sentence ('237 running drug trials, ranked by estimated chance of stopping early; 79 sit above their phase's typical rate.'), then the toolbar of Disease, Company and Target multi-selects plus a sort (estimate or difference from typical), the standing note directly under the filters (12px, full contrast), and a table of scored running trials with the scale. 50 rows and a 'Show N more' button; filters and sort in the URL; factors as a phone disclosure.",
       "html": "",
       "css": ""
     },
@@ -487,7 +537,7 @@
       "name": "Trial-page estimate block",
       "kind": "custom",
       "refersTo": "",
-      "description": "Under the status block: 'Estimated chance of stopping early: N% (range), typical M% for phase X', the scale with its axis, the factors and the standing note. Nothing when the trial is not scored or per_trial is off.",
+      "description": "Under the trial page's facts: 'Estimated chance of stopping early: N% (range), typical M% for phase X', the scale with its axis, the factors and the standing note. Nothing when the trial is not scored or per_trial is off.",
       "html": "",
       "css": ""
     },
@@ -498,11 +548,83 @@
       "description": "SVG of estimated chance against observed share stopped, one ink point per tenth of the held-out trials, hairline axes and a dashed diagonal for a perfect match, beside a metrics table; in-area metric shown as 'too few to judge' under 300 trials.",
       "html": "",
       "css": ""
+    },
+    {
+      "name": "Page head",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead.tsx / page-head.css: one head for Watchlist, Approaches, Changes, Trials, the trial page and Methods. Optional crumb (12px muted), h1 34px/600 (28px phone), at most one computed 15px sentence (max 72ch), an optional aside at the right of the title row from 1100px. 24px under the site header, on .page's 40px (16px phone) gutters. Front door and target pages build their own heads to the same rules.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Contents strip",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "ContentsStrip.tsx / contents-strip.css. Row orientation on target pages: a sticky <nav aria-label='Panels on this page'> under the head, one plain-text link per rendered panel ('a Timeline · b Companies 8 · c Stops 7 · d Mechanism · e Diseases 6 · f Stop chance 10 above · g Diligence not run'; letter 800, name 500, number 400 muted, 13px), current panel aria-current='location' with a 2px ink underline, hairline below, never pills. Click/Enter scrolls (smooth only without reduced motion), focuses the panel heading and sets ?panel= (replace); ?panel= deep links scroll without moving focus and are dropped when the panel does not render. Phone: letter and name only, one sideways-scrolling line, 44px items. Column orientation on Methods: <nav aria-label='On this page'>, a 16rem sticky list on a hairline from 1100px (current = 2px ink left rule), a wrapped block at the top below that, ?s= param. Hidden in print.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Diligence strip",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "DiligenceStrip.tsx: one 13px muted line in the target head, under the lede, sharing panel g's run state. States: intro (what the agent does + 'Run diligence →', or ' Offline at the moment.' + 'How it works →'), running ('AI diligence running · 12 s' + 'Follow it →'), read ('AI read: {stance} · {confidence} confidence · {n} of {m} claims supported · Recorded {date}', withheld judgement never shows a stance, tails for stale data, a failed latest run or the daily cap + 'Read the memo →'), failed ('Run again →'), capped, hidden (no trials in the disease), loading (a pale bar at the final height). Fixed label 'AI judgement from public data, not investment advice' (12px/700 ink) whenever a stance or memo shows: on its own line below 1100px, inline after the action from 1100px. Phone copy: 'AI diligence: a cited memo from public sources, checked claim by claim.' Reserved height 20px (>=1100px), 42px (641-1099px), 62px (phone). Plate tokens only, never red or orange.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Front-door diligence line",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Under the front-door source line, 12px muted: 'An AI agent drafts a checked diligence memo on each target page.' then 'See an example: CD20 in MS →' (to /target/cd20?disease=MS&panel=g) once the recorded example run ships, else 'How it works →' to /methods#diligence. On a phone it follows the figure with the source line.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Changes (/changes)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead with '{n} changes to tracked trials in the last 7 days; {k} notable.' One filter line: time window segmented pill (1 / 7 / 30 days, selected solid ink), Sponsor and Field dropdown pills with counts, 'Notable only' narrowing pill. Hairline table (13px, tabular; head 12px muted over an ink rule): trial, field, change (old struck through in muted, new in ink, 'slipped N days' in 700), why notable, source. Phone: two lines per row, no cards.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trials (/trials)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead with '2,987 tracked trials, most recently changed first.' Find pill and a Status dropdown pill with counts; 'Showing 50 of 2,987 trials', 50 rows, 'Show 50 more, N trials'. Columns: trial (NCT 700, title, sponsor muted), status mark and word, phase, primary completion, last change. Phone: two lines per trial. The ?nct= banner keeps its behaviour.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial page (/trial/:nct)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead: crumb 'Trials / NCT…', title 28px/600, one 13px muted line 'NCT… · View on ClinicalTrials.gov ↗'. Facts as a two-column list from 900px (muted sentence-case terms, 14px values; Status with the plate mark). Then the estimate block and plainly headed sections (13px/700 over an ink rule): Summary, Timeline, Change history.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Methods (/methods)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead 'Methods' with one sentence. From 1100px a sticky contents column (see Contents strip) beside the prose; below, the contents as a block on top. Prose 15px/1.6 at a 29.4rem measure (lines at most 75 characters); h2 19px/700 over an ink rule, h3 15px/700. Stop-risk and diligence sections keep their figures and tables.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Registry words and dates",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "lib/format.ts: statusLabel (Recruiting; Active, not recruiting; Completed; Terminated; Withdrawn; Unknown), phasesLabel (Phase 1, Phase 1/2, … 'No phase' for NA), one date format '6 Nov 2026' (month and year without a day), status shown with the plate mark beside the word. Used by Changes, Trials, the trial page and Methods.",
+      "html": "",
+      "css": ""
     }
   ],
   "narrative": {
     "northStar": "The Figure Plate",
-    "overview": "The Explore page is Figure 1 of a paper: a flat white plate with lettered panels a-d, a toolbar set as the figure's legend line above it, a one-line figure key under panel a's heading, panel d under an ink rule, hairline rules, Hanken Grotesk only, and one red reserved for succeeded trials. The Mechanisms page (/mechanisms/:approach) is Figure 2 on the same plate: an approach rail (a), a canvas (b) that is a drug-target-pathway graph for Targeted drugs and a typeset group-kind tree for every other approach, and a side panel (c). Dark mode (a manual System/Light/Dark choice in the header) is a Dark slide with orange in red's place. Governs the Explore and Mechanisms routes; other routes are not yet restyled.",
+    "overview": "Every route is a figure of a paper on one flat white plate: hairline rules, bold lowercase panel letters, Hanken Grotesk only on a six-step type scale (12/13/14/15/19 plus display sizes; 12px floor), one token set on :root in plate.css, and one red reserved for success ('advanced' on the front door). The front door is a pipeline figure whose rows open target pages (lettered panels a-g under a sticky contents strip, with an AI diligence strip in the head); Approaches is Figure 2 (rail, graph or tree, side panel); Watchlist, Changes, Trials, the trial page and Methods share one page head and the plate's pills, dropdowns and hairline tables. Dark mode (a manual System/Light/Dark choice in the header) is a Dark slide with orange in red's place. Explore keeps its own styles on the shared tokens.",
     "keyCharacteristics": [
       "White plate, near-black ink, hairline rules; flat",
       "Red means succeeded and nothing else",
@@ -510,7 +632,8 @@
       "Pills for all controls, in a two-line toolbar above the plate",
       "Canvas starts still; Play turns it slowly",
       "Approaches without a molecular target are a tree, never a graph",
-      "Filters light the graph up instead of hiding it"
+      "Filters light the graph up instead of hiding it",
+      "Target pages: every panel on one scroll, found from a sticky contents strip"
     ],
     "rules": [
       {
@@ -543,14 +666,15 @@
       "Do separate regions with 1px rules: ink above panel d, hairline under the toolbar and elsewhere.",
       "Do keep controls as pills: solid ink when chosen or narrowing; a dropdown at rest shows only its name on a hairline; ink border and ': value' in 700 once it narrows.",
       "Do size dots by capped square-root enrollment and encode unknown by ring shape.",
-      "Do honour both schemes via tokens."
+      "Do honour both schemes via tokens.",
+      "Do keep text at 12px or larger (11px only for family bands, scale axis labels and canvas numerals) and open every page with one head: title, at most one computed sentence, 24px under the site header."
     ],
     "donts": [
       "Don't use red (or dark-mode orange) for anything but succeeded data.",
       "Don't add shadows, glows, gradients or card chrome to panels.",
       "Don't reorder the layout into filters-left / canvas-centre / details-right.",
-      "Don't claim the rest of the site follows this system.",
-      "Don't read 'advanced' as 'worked', fade running trials, or hand-write a headline or margin note on the front door."
+      "Don't read 'advanced' as 'worked', fade running trials, or hand-write a headline or margin note on the front door.",
+      "Don't hide a panel behind a tab, picker or toggle; don't state a fact twice in a head or put a caveat between the title and the data."
     ]
   }
 }
