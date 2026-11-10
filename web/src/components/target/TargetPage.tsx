@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { diligenceKey } from "../../lib/diligence";
 import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, trialsLink } from "../../lib/pipeline";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
 import { usePhone } from "../../lib/useMediaQuery";
@@ -108,132 +107,132 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   }, []);
 
   return (
-    <DiligenceRunProvider key={diligenceKey(row.id, disease ?? "all")} row={row} disease={disease}>
-    <div className="target-page" ref={root}>
-      <nav className="crumb" aria-label="Breadcrumb">
-        <Link to={back}>Pipeline</Link> / {family}
-      </nav>
-      <header className="thead">
-        <div>
-          <h1>
-            {row.label}
-            <small>
-              {row.gene ? `gene ${row.gene} · ` : ""}
-              {family}
-              {format ? ` · ${format}` : ""}
-            </small>
-          </h1>
-          {marks.length === 0 ? (
-            <p className="tl">No {row.label} trials{disease ? ` in ${disease}` : ""}.</p>
-          ) : (
-            <p className="tl">
-              <span className="runw">{lede.head}</span>
-              {lede.tail}
-              <em>{lede.adv}</em>
-              {lede.rest.slice(lede.adv.length)}
-            </p>
+    <DiligenceRunProvider row={row} disease={disease}>
+      <div className="target-page" ref={root}>
+        <nav className="crumb" aria-label="Breadcrumb">
+          <Link to={back}>Pipeline</Link> / {family}
+        </nav>
+        <header className="thead">
+          <div>
+            <h1>
+              {row.label}
+              <small>
+                {row.gene ? `gene ${row.gene} · ` : ""}
+                {family}
+                {format ? ` · ${format}` : ""}
+              </small>
+            </h1>
+            {marks.length === 0 ? (
+              <p className="tl">No {row.label} trials{disease ? ` in ${disease}` : ""}.</p>
+            ) : (
+              <p className="tl">
+                <span className="runw">{lede.head}</span>
+                {lede.tail}
+                <em>{lede.adv}</em>
+                {lede.rest.slice(lede.adv.length)}
+              </p>
+            )}
+          </div>
+          {marks.length > 0 && (
+          <div className="keys" role="group" aria-label="Key numbers">
+            <div className="key">
+              <b className="k-run">{n(stats.run)}</b>
+              <span>still running</span>
+            </div>
+            <div className="key">
+              <b className="k-adv">{n(stats.adv)}</b>
+              <span>advanced</span>
+            </div>
+            <div className="key">
+              <b>{n(stats.stop)}</b>
+              <span>stopped</span>
+            </div>
+          </div>
           )}
+        </header>
+        <div className="dzs" role="group" aria-label="Diseases">
+          {counts.map((d) => (
+            <button
+              key={d.code}
+              type="button"
+              className={`dz${d.code === disease ? " on" : ""}`}
+              aria-pressed={d.code === disease}
+              onClick={() => setParams(figureSearch({ ...DEFAULT_FIGURE_STATE, disease: d.code === disease ? null : d.code }), { replace: true })}
+            >
+              {d.code}
+              <b>{n(d.n)}</b>
+            </button>
+          ))}
         </div>
-        {marks.length > 0 && (
-        <div className="keys" role="group" aria-label="Key numbers">
-          <div className="key">
-            <b className="k-run">{n(stats.run)}</b>
-            <span>still running</span>
-          </div>
-          <div className="key">
-            <b className="k-adv">{n(stats.adv)}</b>
-            <span>advanced</span>
-          </div>
-          <div className="key">
-            <b>{n(stats.stop)}</b>
-            <span>stopped</span>
-          </div>
-        </div>
-        )}
-      </header>
-      <div className="dzs" role="group" aria-label="Diseases">
-        {counts.map((d) => (
-          <button
-            key={d.code}
-            type="button"
-            className={`dz${d.code === disease ? " on" : ""}`}
-            aria-pressed={d.code === disease}
-            onClick={() => setParams(figureSearch({ ...DEFAULT_FIGURE_STATE, disease: d.code === disease ? null : d.code }), { replace: true })}
-          >
-            {d.code}
-            <b>{n(d.n)}</b>
-          </button>
-        ))}
-      </div>
 
-      {marks.length === 0 ? (
-        <p className="sec empty-line">
-          No {row.label} trials in {disease}.{" "}
-          <Link to={`/target/${row.id}`} replace>
-            Show all diseases →
-          </Link>
-        </p>
-      ) : (
-        <>
-          <section className="sec" aria-labelledby="pa">
-            <div className="sec-h">
-              <span className="ltr" aria-hidden="true">a</span>
-              <h2 id="pa">Every {row.label} trial over time, by drug</h2>
-              <p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>
-            </div>
-            <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
-          </section>
-          <section className="sec two" aria-label="Companies and stops">
-            <div role="group" aria-labelledby="pb">
+        {marks.length === 0 ? (
+          <p className="sec empty-line">
+            No {row.label} trials in {disease}.{" "}
+            <Link to={`/target/${row.id}`} replace>
+              Show all diseases →
+            </Link>
+          </p>
+        ) : (
+          <>
+            <section className="sec" aria-labelledby="pa">
               <div className="sec-h">
-                <span className="ltr" aria-hidden="true">b</span>
-                <h2 id="pb">Who is working on {row.label}</h2>
-                <p>by parent company</p>
+                <span className="ltr" aria-hidden="true">a</span>
+                <h2 id="pa">Every {row.label} trial over time, by drug</h2>
+                <p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>
               </div>
-              <TargetCompanies file={file} marks={marks} disease={disease} onOpen={onOpen} />
-            </div>
-            <div role="group" aria-labelledby="pc">
-              <div className="sec-h">
-                <span className="ltr" aria-hidden="true">c</span>
-                <h2 id="pc">What stopped, and why</h2>
-                <p>{n(stats.stop)} {stats.stop === 1 ? "trial" : "trials"}</p>
+              <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
+            </section>
+            <section className="sec two" aria-label="Companies and stops">
+              <div role="group" aria-labelledby="pb">
+                <div className="sec-h">
+                  <span className="ltr" aria-hidden="true">b</span>
+                  <h2 id="pb">Who is working on {row.label}</h2>
+                  <p>by parent company</p>
+                </div>
+                <TargetCompanies file={file} marks={marks} disease={disease} onOpen={onOpen} />
               </div>
-              <TargetStops file={file} label={row.label} marks={marks} onOpen={onOpen} />
-            </div>
-          </section>
-          <section className="sec" aria-label="How it works">
-            <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} />
-          </section>
-        </>
-      )}
-      <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
-      {marks.length > 0 && <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
-      <TargetDiligence
-        row={row}
-        disease={disease}
-        label={row.label}
-        diseaseLabel={disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases"}
-      />
-
-      <footer className="foot">
-        <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
-        {ncts.length > 0 && (
-          <Link to={trialsLink(ncts, row.label, disease)}>List {ncts.length === 1 ? "this trial" : `these ${n(ncts.length)} trials`} →</Link>
+              <div role="group" aria-labelledby="pc">
+                <div className="sec-h">
+                  <span className="ltr" aria-hidden="true">c</span>
+                  <h2 id="pc">What stopped, and why</h2>
+                  <p>{n(stats.stop)} {stats.stop === 1 ? "trial" : "trials"}</p>
+                </div>
+                <TargetStops file={file} label={row.label} marks={marks} onOpen={onOpen} />
+              </div>
+            </section>
+            <section className="sec" aria-label="How it works">
+              <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} />
+            </section>
+          </>
         )}
-      </footer>
-
-      {open && (
-        <TrialCard
-          nct={open.nct}
-          file={file}
-          rowId={row.id}
+        <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
+        {marks.length > 0 && <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
+        <TargetDiligence
+          row={row}
           disease={disease}
-          onClose={close}
-          variant={phone ? "sheet" : "popover"}
-          style={phone ? undefined : { left: open.x, top: open.y, transform: open.flip ? "translateY(-100%)" : undefined }}
+          label={row.label}
+          diseaseLabel={disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases"}
         />
-      )}
-    </div>
+
+        <footer className="foot">
+          <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
+          {ncts.length > 0 && (
+            <Link to={trialsLink(ncts, row.label, disease)}>List {ncts.length === 1 ? "this trial" : `these ${n(ncts.length)} trials`} →</Link>
+          )}
+        </footer>
+
+        {open && (
+          <TrialCard
+            nct={open.nct}
+            file={file}
+            rowId={row.id}
+            disease={disease}
+            onClose={close}
+            variant={phone ? "sheet" : "popover"}
+            style={phone ? undefined : { left: open.x, top: open.y, transform: open.flip ? "translateY(-100%)" : undefined }}
+          />
+        )}
+      </div>
     </DiligenceRunProvider>
   );
 }
