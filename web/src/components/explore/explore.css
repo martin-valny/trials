@@ -1,20 +1,13 @@
 /* The Figure Plate: a white plate with panels a-d. Dark theme (html[data-theme=dark]) is the "Dark slide". */
 .explore {
-  --ink: #111; --muted: #5b6268; --rule: #d6dadd; --red: #c8102e; --pale: #e4e8eb; --plate: #fff;
   font-family: "Hanken Grotesk", system-ui, sans-serif;
   color: var(--ink);
   background: var(--plate);
   display: flex; flex-direction: column;
   flex: 1 1 auto;
 }
-:root[data-theme="dark"] .explore { --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --red: #ff8a3d; --pale: #2b2e33; --plate: #17191c; }
 
 /* The plate takes over the page: full width, and the shared header adopts its tokens. */
-:root:has(.explore) {
-  --bg: #fff; --fg: #111; --muted: #5b6268; --line: #d6dadd; --accent: #111; --ok: #3b4a57;
-  scrollbar-color: #a9b2b9 #fff;
-}
-:root[data-theme="dark"]:has(.explore) { --bg: #17191c; --fg: #eceae4; --muted: #9b9d9f; --line: #34373c; --accent: #eceae4; --ok: #9b9d9f; scrollbar-color: #4a4e54 #17191c; }
 :root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
 /* The page is a column filling the viewport; the plate takes whatever the header leaves. */
 #root:has(.explore) { min-height: 100dvh; display: flex; flex-direction: column; }
@@ -69,7 +62,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore a:hover { text-decoration-color: var(--ink); }
 
 .explore button {
-  font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate);
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate);
   border: 1px solid var(--muted); border-radius: 999px; padding: 4px 10px; cursor: pointer;
 }
 .explore button:hover { border-color: var(--ink); }
@@ -105,7 +98,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .panel-switch .segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; border-radius: 13px; }
 }
 /* Under the count of a group below min_group: quiet words, not a sentence in place of the bar. */
-.bar-few { display: block; font-size: 11px; line-height: 1.15; color: var(--muted); white-space: nowrap; }
+.bar-few { display: block; font-size: 12px; line-height: 1.15; color: var(--muted); white-space: nowrap; }
 .panel-note + .panel-note { margin-top: -6px; }
 .flow { list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; gap: 10px; height: 150px; }
 .flow li { flex: 0 1 68px; min-width: 0; display: flex; flex-direction: column; font-size: 12px; text-align: center; }
@@ -139,8 +132,8 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .explore .pill.narrowing[aria-pressed="true"] .pill-n { color: var(--plate); }
 
 /* A trial list handed over by another page (?nct=): one ink line under the toolbar, cleared by a word. */
-.explore-only { margin: 0; padding: 10px 40px 0; font-size: 12.5px; line-height: 1.4; color: var(--ink); }
-.explore .explore-only .text-button { font-size: 12.5px; margin-left: 4px; }
+.explore-only { margin: 0; padding: 10px 40px 0; font-size: 13px; line-height: 1.4; color: var(--ink); }
+.explore .explore-only .text-button { font-size: 13px; margin-left: 4px; }
 @media (max-width: 640px) { .explore-only { padding: 8px 16px 0; } }
 
 /* The short sticky line for a selected trial exists only on narrow screens. */
@@ -201,7 +194,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .bar-n { grid-area: n; }
   .bar-k { grid-area: k; min-width: 3.6rem; text-align: right; }
   .bar-track { grid-area: track; }
-  .flow li { font-size: 11px; }
+  .flow li { font-size: 12px; }
   .explore-message { padding: 16px; }
   .selected-bar { padding: 8px 16px; }
 }
@@ -214,7 +207,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 }
 .explore .plate-control {
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 8px; font-size: 12.5px; font-weight: 500; line-height: 1.2;
+  padding: 5px 8px; font-size: 13px; font-weight: 500; line-height: 1.2;
   color: var(--ink); background: transparent; border-color: transparent;
 }
 .explore .plate-control:hover { border-color: var(--rule); }
@@ -223,7 +216,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
    in ink, the others muted until hovered. Never a filled pill, never red. */
 .explore .label-switch {
   display: inline-flex; align-items: baseline; padding: 5px 8px;
-  font-size: 12.5px; font-weight: 500; line-height: 1.2; color: var(--muted); white-space: nowrap;
+  font-size: 13px; font-weight: 500; line-height: 1.2; color: var(--muted); white-space: nowrap;
 }
 .label-switch-k { margin-right: 7px; }
 .label-switch-sep { margin: 0 5px; }
@@ -372,7 +365,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .toolbar {
   position: relative;
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
-  padding: 10px 40px 12px; font-size: 12.5px; color: var(--muted);
+  padding: 10px 40px 12px; font-size: 13px; color: var(--muted);
 }
 /* A hairline under the controls, inside the gutters, so they read as the figure's legend line. */
 .toolbar::after { content: ""; position: absolute; left: 40px; right: 40px; bottom: 0; height: 1px; background: var(--rule); pointer-events: none; }
@@ -385,7 +378,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 /* Find: a pill with a drawn magnifier inside its left edge. */
 .tb-find { position: relative; }
 .tb-find input {
-  font: inherit; font-size: 12.5px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
   border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px 4px 28px; width: 12.5rem; line-height: 18px;
 }
 .tb-find input:hover { border-color: var(--ink); }
@@ -468,7 +461,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   .toolbar .tb-find { width: 100%; }
   .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
   .toolbar::after { left: 16px; right: 16px; }
-  .tb-find input { width: 100%; box-sizing: border-box; font-size: 16px; } /* 16px: no iOS zoom on focus */
+  .tb-find input { width: 100%; box-sizing: border-box; font-size: 1rem; } /* 16px: no iOS zoom on focus */
   /* Six colour modes do not fit one phone line: the split pill becomes a three-by-two block spanning
      the line, the same hairline frame with softer corners, its parts sharing the width. */
   .toolbar .tb-colour { width: 100%; display: flex; align-items: flex-start; }

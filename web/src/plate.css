@@ -1,0 +1,24 @@
+/* The one token set. Every page reads these; the Figure Plate's palette, the pipeline marks and the type scale.
+   Red (orange in the dark theme) means "advanced to a later phase" and nothing else. */
+:root {
+  --plate: #fff; --ink: #111; --muted: #5b6268; --rule: #d6dadd; --pale: #e4e8eb; --ladder: #e4e8eb; --red: #c8102e;
+  /* Pipeline marks: running (blue), stopped, finished, unknown; the family band ink. */
+  --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb; --fam: #62758a;
+  /* Type scale: size / line-height. 12px is the floor for text. */
+  --fs-meta: 12px; --lh-meta: 1.45;
+  --fs-ui: 13px; --lh-ui: 1.4;
+  --fs-body: 14px; --lh-body: 1.5;
+  --fs-read: 15px; --lh-read: 1.6;
+  --fs-lede: 19px; --lh-lede: 1.35;
+  --fs-brand: 17px;
+  scrollbar-color: #a9b2b9 #fff;
+}
+:root[data-theme="dark"] {
+  --plate: #17191c; --ink: #eceae4; --muted: #9b9d9f; --rule: #34373c; --pale: #2b2e33; --ladder: #3d4147; --red: #ff8a3d;
+  --run: #8da3d6; --stop: #eceae4; --fin: #50575f; --unk: #6a7178; --fam: #7a8ea5;
+  scrollbar-color: #4a4e54 #17191c;
+}
+
+/* The page frame: full width, capped, with the site's gutters. */
+.page { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+@media (max-width: 640px) { .page { padding-left: 16px; padding-right: 16px; } }

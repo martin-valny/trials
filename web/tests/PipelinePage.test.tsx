@@ -307,7 +307,7 @@ test("the phone strip's floor is not interactive", () => {
 });
 
 test("the ladder colour is a token with a dark value, not a hard-coded hex in target.css", () => {
-  const pipe = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  const pipe = readFileSync(resolve(__dirname, "../src/plate.css"), "utf8");
   const target = readFileSync(resolve(__dirname, "../src/components/target/target.css"), "utf8");
   expect([...pipe.matchAll(/--ladder:/g)]).toHaveLength(2);
   expect(target).toMatch(/\.dzl \.st i \{[^}]*var\(--ladder\)/);

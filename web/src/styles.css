@@ -1,15 +1,14 @@
 :root {
-  --bg: #fff; --fg: #1a1d21; --muted: #5a6370; --line: #d9dde3; --accent: #0b5cad;
+  /* Legacy names, kept until the older pages move onto the plate tokens (plate.css): they alias them. */
+  --bg: var(--plate); --fg: var(--ink); --line: var(--rule); --accent: var(--ink);
   --ok: #1d6b3a; --warn-bg: #fff3cd; --warn-fg: #6b4e00; --card: #f6f8fa;
-  /* Pipeline marks: running (blue), stopped, finished, unknown; the family band ink; the live dot. */
-  --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb; --fam: #62758a; --live: #2f9e6b; --brand-dot: #c8102e;
+  --live: #2f9e6b; --brand-dot: #c8102e;
   color-scheme: light;
 }
 /* The theme is a choice (System, Light, Dark) resolved onto <html data-theme> before first paint. */
 :root[data-theme="dark"] {
-  --bg: #14171a; --fg: #e8eaed; --muted: #9aa3ad; --line: #2e343b; --accent: #6cb0f5;
   --ok: #6fcf97; --warn-bg: #3d3200; --warn-fg: #ffd866; --card: #1b1f23;
-  --run: #8da3d6; --stop: #eceae4; --fin: #50575f; --unk: #6a7178; --fam: #7a8ea5; --live: #4fbf8b; --brand-dot: #ff8a3d;
+  --live: #4fbf8b; --brand-dot: #ff8a3d;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -18,7 +17,7 @@ a { color: var(--accent); }
 main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .site-header { position: relative; display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center;
   padding: .75rem 1rem; border-bottom: 1px solid var(--line); }
-.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; letter-spacing: -.01em; text-decoration: none; color: var(--fg); }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: var(--fs-brand); letter-spacing: -.01em; text-decoration: none; color: var(--fg); }
 .brand svg { display: block; }
 .brand-dot { fill: var(--brand-dot); }
 /* Brand left, nav right; the freshness badge sits between them (DOM order stays brand, nav, badge). */

@@ -3,7 +3,7 @@
    come from explore.css (the page root is ".explore.watchlist.rk"). No colours of its own. */
 .wl-head { padding: 28px 40px 0; }
 .wl-head h1 { margin: 0; font-size: clamp(30px, 3.2vw, 44px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
-.wl-lede { margin: 12px 0 0; font-size: 18px; line-height: 1.35; letter-spacing: -.01em; max-width: 62ch; text-wrap: balance; }
+.wl-lede { margin: 12px 0 0; font-size: 19px; line-height: 1.35; letter-spacing: -.01em; max-width: 62ch; text-wrap: balance; }
 /* The claim line: one data-derived sentence under the lede, quieter than it. */
 .wl-claim { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--muted); font-variant-numeric: tabular-nums; max-width: 62ch; }
 .wl-note { padding: 0 40px; }
@@ -25,7 +25,7 @@
 .wl-c-tgt { width: 15%; }
 .wl-c-est { width: 31%; }
 .wl-c-why { width: 27%; }
-.wl-table th { text-align: left; vertical-align: bottom; font-size: 11px; font-weight: 400; color: var(--muted); padding: 0 24px 6px 0; border-bottom: 1px solid var(--ink); }
+.wl-table th { text-align: left; vertical-align: bottom; font-size: 12px; font-weight: 400; color: var(--muted); padding: 0 24px 6px 0; border-bottom: 1px solid var(--ink); }
 .wl-table td { vertical-align: top; padding: 11px 24px 12px 0; border-bottom: 1px solid var(--rule); }
 .wl-table th:last-child, .wl-table td:last-child { padding-right: 0; }
 .wl-th-t { display: block; margin-bottom: 4px; }
@@ -46,7 +46,7 @@
 /* The factors' disclosure exists for a phone only; wider screens always show the factors. */
 .watchlist .wl-why-btn { display: none; }
 /* explore.css pills every button under .explore; the disclosure keeps panel f's bare text look (risk.css .rk-more). */
-.watchlist .wl-why-btn, .watchlist .wl-why-btn:hover { border: 0; border-radius: 0; background: none; padding: 0; font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.watchlist .wl-why-btn, .watchlist .wl-why-btn:hover { border: 0; border-radius: 0; background: none; padding: 0; font-size: 12px; font-weight: 600; color: var(--ink); }
 .watchlist .wl-more { margin-top: 14px; }
 
 /* Per-trial estimates off: target, count, median beside typical. */
@@ -68,7 +68,7 @@
 @media (max-width: 640px) {
   .wl-head { padding: 22px 16px 0; }
   .wl-head h1 { font-size: 30px; }
-  .wl-lede { font-size: 16px; }
+  .wl-lede { font-size: 15px; }
   .wl-claim { font-size: 14px; }
   .wl-note { padding: 0 16px; }
   .wl-body { padding: 12px 16px 40px; }
@@ -89,7 +89,7 @@
   .wl-table td.wl-tgt .wl-dz { margin-top: 0; }
   .wl-table td.wl-est { margin-top: 10px; padding: 0; }
   .wl-table td.wl-why { margin-top: 6px; }
-  .wl-table td.wl-why[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); }
+  .wl-table td.wl-why[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 12px; color: var(--muted); }
   /* Main factors behind the same disclosure panel f uses (risk.css .rk-more), a 44px target. */
   .watchlist .wl-why-btn { display: inline-flex; min-height: 44px; }
   .wl-why-in[data-open="false"] { display: none; }
