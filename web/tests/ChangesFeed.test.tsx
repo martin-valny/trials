@@ -194,6 +194,8 @@ test("every row keeps a source link, removed trials included, with no phone-only
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
   await userEvent.click(screen.getByRole("button", { name: "Notable only" }));
+  expect(seven.changes.some((c) => c.title === null)).toBe(true);
+  expect(rows().some((r) => within(r).queryByRole("link", { name: /^NCT\d+$/ }) === null)).toBe(true); // a removed trial is listed
   for (const row of rows()) {
     const src = within(row).getByRole("link", { name: /ClinicalTrials\.gov record for NCT\d+/ });
     expect(src.closest("td")).not.toHaveClass("ch-why-none");
@@ -220,4 +222,25 @@ test("registry codes read as words: phases and enrollment type", async () => {
   for (const t of ["Phase 2", "Phase 1/2", "Early phase 1", "Phase 3", "Estimated", "Actual"])
     expect(screen.getByText(t)).toBeInTheDocument();
   expect(screen.queryByText(/PHASE|ESTIMATED|ACTUAL/)).not.toBeInTheDocument();
+});
+
+test("names are not sentence-cased: sponsor, conditions, drug codes stay as written", async () => {
+  const mk = (field: string, o: unknown, n: unknown) => ({
+    ...seven.changes[0], nct_id: "NCT00000002", field, old_value: o, new_value: n, notable: true, lead_sponsor: "NIH",
+  });
+  stubFetch({
+    "changes/7d.json": {
+      ...seven,
+      changes: [
+        mk("lead_sponsor", "NIAID", "NIH"),
+        mk("conditions", ["MS"], ["NMOSD", "CIDP"]),
+        mk("interventions", ["AZD1234"], ["AZD1234", "BIIB059"]),
+      ],
+    },
+  });
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  for (const t of ["NIAID", "NMOSD, CIDP", "AZD1234", "AZD1234, BIIB059"]) expect(screen.getByText(t)).toBeInTheDocument();
+  expect(screen.getAllByText("NIH").length).toBeGreaterThan(0);
+  expect(screen.queryByText(/Nih|Nmosd|Cidp|Azd/)).not.toBeInTheDocument();
 });

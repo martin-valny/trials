@@ -2,15 +2,14 @@ import { Link } from "react-router-dom";
 import { fieldLabel, formatDate, formatDelta, formatValue, phaseLabel, phasesLabel, reasonLabel, statusLabel } from "../lib/format";
 import type { ChangeItem } from "../types";
 
-/** An ALL_CAPS_WITH_UNDERSCORES registry code. */
-const isCode = (v: unknown): v is string => typeof v === "string" && /^[A-Z][A-Z0-9_]+$/.test(v);
+/** Tracked fields whose values are registry enums (TRACKED_FIELDS in the pipeline); every other field's values are names and stay as written. */
+const ENUM_FIELDS = new Set(["overall_status", "enrollment_type"]);
 
-/** A registry value as a person reads it: codes as words ("Recruiting", "Phase 2", "Actual"), dates as "6 Nov 2026". */
+/** A registry value as a person reads it: enums as words ("Recruiting", "Phase 2", "Actual"), dates as "6 Nov 2026". */
 function valueText(field: string, v: unknown): string {
   if (field === "phases" && Array.isArray(v) && v.every((x) => typeof x === "string")) return phasesLabel(v as string[]);
   if (field === "phase" && typeof v === "string") return phaseLabel(v);
-  if (isCode(v)) return statusLabel(v); // known statuses by name, any other code in sentence case
-  if (Array.isArray(v) && v.length > 0 && v.every(isCode)) return v.map(statusLabel).join(", ");
+  if (ENUM_FIELDS.has(field) && typeof v === "string") return statusLabel(v);
   return formatValue(field, v);
 }
 
@@ -31,7 +30,7 @@ export function ChangeRow({ item }: { item: ChangeItem }) {
         <div className="ch-title">{item.title ?? "No longer in the registry results"}</div>
         {item.lead_sponsor ? <div className="ch-sponsor">{item.lead_sponsor}</div> : null}
         {/* Phone only (line 2): the table's Detected line is hidden there. */}
-        <span className="ch-when" aria-hidden="true">{detected.replace(/ \d{4}$/, "")}</span>
+        <span className="ch-when">{detected.replace(/ \d{4}$/, "")}</span>
       </td>
       <td data-label="Field" className="ch-field">
         {fieldLabel(item.field)}
