@@ -3,6 +3,10 @@ import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceSt
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
 
+/** The front door's example: a recorded run it links to in panel g (agent/eval/pairs.yaml). Panel g's own offline link
+ * points to CD20 across all diseases (TargetDiligence's EXAMPLE). */
+export const EXAMPLE = { target: "cd20", disease: "MS", label: "CD20 in MS" } as const;
+
 export const diligenceKey = (target: string, disease: string): string => `${target}__${disease}`;
 
 /** The agent API base (always with a trailing slash); null when the site is built without one (offline). */

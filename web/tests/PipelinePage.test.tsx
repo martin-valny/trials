@@ -313,3 +313,23 @@ test("the ladder colour is a token with a dark value, not a hard-coded hex in ta
   expect(target).toMatch(/\.dzl \.st i \{[^}]*var\(--ladder\)/);
   expect(target).not.toMatch(/#3d4147/);
 });
+
+test("front door: without a recorded example the diligence line points to how it works", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const line = await screen.findByText(/An AI agent drafts a checked diligence memo on each target page\./);
+  expect(line.textContent).toBe("An AI agent drafts a checked diligence memo on each target page. How it works →");
+  expect(within(line).getByRole("link", { name: "How it works →" })).toHaveAttribute("href", "/methods#diligence");
+  expect(line.textContent).not.toMatch(/New:/);
+});
+
+test("front door: with the example recorded, the line links to it in panel g", async () => {
+  const rec = JSON.parse(readFileSync(resolve(__dirname, "fixtures", "diligence", "cd20__MS.json"), "utf-8")) as unknown;
+  stubFetch({ "/diligence/cd20__MS.json": rec });
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const link = await screen.findByRole("link", { name: "See an example: CD20 in MS →" });
+  expect(link).toHaveAttribute("href", "/target/cd20?disease=MS&panel=g");
+  expect(link.parentElement!.textContent).toBe("An AI agent drafts a checked diligence memo on each target page. See an example: CD20 in MS →");
+});

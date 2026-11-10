@@ -14,6 +14,7 @@ import {
   type Headline,
   undatedCount,
 } from "../../lib/pipeline";
+import { EXAMPLE, loadRecorded } from "../../lib/diligence";
 import { usePhone } from "../../lib/useMediaQuery";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { FigureControls } from "./FigureControls";
@@ -95,6 +96,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
       <p className="source">
         <Source text={source} />
       </p>
+      <DiligenceLine />
       <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change} />
       <div className="legend" role="group" aria-label="Legend">
         {LEGEND.map((s) => (
@@ -171,6 +173,30 @@ function HeadlineText({ h }: { h: Headline }) {
     );
   }
   return <>{h.text.lead + h.text.rest}</>;
+}
+
+/** The front door's one line about the diligence agent: it links to the example run once that recording ships, else to Methods. */
+function DiligenceLine() {
+  const [example, setExample] = useState(false);
+  useEffect(() => {
+    let on = true;
+    void loadRecorded(EXAMPLE.target, EXAMPLE.disease).then((rec) => {
+      if (on) setExample(rec !== null);
+    });
+    return () => {
+      on = false;
+    };
+  }, []);
+  return (
+    <p className="source dg-line">
+      An AI agent drafts a checked diligence memo on each target page.{" "}
+      {example ? (
+        <Link to={`/target/${EXAMPLE.target}?${new URLSearchParams({ disease: EXAMPLE.disease, panel: "g" })}`}>See an example: {EXAMPLE.label} →</Link>
+      ) : (
+        <Link to="/methods#diligence">How it works →</Link>
+      )}
+    </p>
+  );
 }
 
 const SEE_ALL = "see all in Approaches";

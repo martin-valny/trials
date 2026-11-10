@@ -79,7 +79,9 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
     <section className="sec dg" aria-labelledby="pg" aria-busy={d.phase === "loading" || undefined}>
       <div className="sec-h">
         <span className="ltr" aria-hidden="true">g</span>
-        <h2 id="pg">Diligence (AI agent)</h2>
+        <h2 id="pg" tabIndex={-1}>
+          Diligence (AI agent)
+        </h2>
         <p>
           {label} · {diseaseLabel}
         </p>

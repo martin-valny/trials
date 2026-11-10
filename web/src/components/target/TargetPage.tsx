@@ -10,6 +10,7 @@ import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
 import { DiligenceRunProvider } from "./DiligenceRunContext";
+import { DiligenceStrip } from "./DiligenceStrip";
 import { TargetDiligence } from "./TargetDiligence";
 import { TargetDiseases } from "./TargetDiseases";
 import { TargetRisk } from "./TargetRisk";
@@ -133,6 +134,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               </p>
             )}
           </div>
+          <DiligenceStrip onGo={goToDiligence} />
           {marks.length > 0 && (
           <div className="keys" role="group" aria-label="Key numbers">
             <div className="key">
@@ -235,6 +237,15 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       </div>
     </DiligenceRunProvider>
   );
+}
+
+/** Scroll to panel g and put focus on its heading; smooth only when the visitor has not asked for less motion. */
+function goToDiligence() {
+  const el = document.getElementById("pg");
+  if (!el) return;
+  const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches === true;
+  el.scrollIntoView?.({ block: "start", behavior: smooth ? "smooth" : "auto" });
+  el.focus({ preventScroll: true });
 }
 
 function Skeleton() {
