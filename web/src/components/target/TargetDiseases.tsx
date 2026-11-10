@@ -48,7 +48,7 @@ export function TargetDiseases({ file, row, disease, phone }: { file: PipelineFi
     <section className="sec" aria-labelledby="pe">
       <div className="sec-h pe-h">
         <span className="ltr" aria-hidden="true">e</span>
-        <h2 id="pe">{row.label} by disease</h2>
+        <h2 id="pe" tabIndex={-1}>{row.label} by disease</h2>
         <p>
           <span className="cap">furthest phase reached by trials on the registry{withAp ? " · approved for the disease, by any regulator" : ""}</span>
           {!withAp && <span className="na"> · Approval data not available</span>}

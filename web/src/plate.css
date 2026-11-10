@@ -22,3 +22,10 @@
 /* The page frame: full width, capped, with the site's gutters. */
 .page { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
 @media (max-width: 640px) { .page { padding-left: 16px; padding-right: 16px; } }
+
+/* Print: the page as a figure on paper. The contents strip is a screen aid; capped lists print in full;
+   the diligence strip's empty loading line holds space on screen only. */
+@media print {
+  .contents-strip, .dstrip[data-state="loading"], .rk-all, .target-page .more-btn { display: none !important; }
+  .rk-rows > .rk-row[hidden], .co[hidden], .stop-card[hidden] { display: grid !important; }
+}

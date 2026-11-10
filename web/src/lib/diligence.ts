@@ -259,3 +259,24 @@ export function stripView(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "
     tail: r.failed ? "failed" : r.capped ? "capped" : null,
   };
 }
+
+/** Panel g's word in the contents strip: "recorded 9 Nov", "not run", "running" or "offline"; null while loading or with no trials. */
+export function contentsWord(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">): string | null {
+  const v = stripView(r);
+  switch (v.kind) {
+    case "read": {
+      const rec = r.shown!.rec;
+      const d = new Date(rec.finished_at ?? rec.started_at);
+      return Number.isNaN(d.getTime()) ? "recorded" : `recorded ${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+    }
+    case "intro":
+      return v.action === "run" ? "not run" : "offline";
+    case "running":
+      return "running";
+    case "failed":
+    case "capped":
+      return "not run";
+    default:
+      return null;
+  }
+}

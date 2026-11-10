@@ -18,11 +18,11 @@ interface Props {
 export function TargetCompanies({ file, marks, disease, onOpen }: Props) {
   const [all, setAll] = useState(false);
   const list = targetCompanies(file, marks);
-  const shown = all ? list : list.slice(0, COMPANIES_ON_TARGET);
   return (
     <div>
-      {shown.map((c) => (
-        <div className="co" key={c.parent}>
+      {list.map((c, i) => (
+        // Past the cap the lines stay in the page, hidden, so print shows every one.
+        <div className="co" key={c.parent} hidden={!all && i >= COMPANIES_ON_TARGET}>
           <div className="co-nm">
             {c.parent === OTHER ? c.parent : <Link to={`/?${figureSearch({ ...DEFAULT_FIGURE_STATE, company: c.parent, disease })}`}>{c.parent}</Link>}
             <small>{[...new Map(c.drugs.map((d) => [normKey(d), d])).values()].slice(0, DRUGS_SHOWN).join(", ")}</small>

@@ -1,7 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { axisStart } from "../src/components/target/TargetTimeline";
 import type { PipelineFile, RiskFile } from "../src/types";
@@ -462,4 +462,105 @@ test("without per-trial scores, a disease whose summary was left out says too fe
   renderPage("/target/cd20?disease=MS");
   await screen.findByRole("heading", { level: 2, name: RISK_H });
   expect(riskPanel()).toHaveTextContent("Too few running trials to summarise.");
+});
+
+// ---------------------------------------------------------------- the contents strip and deep links
+const realScroll = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = realScroll;
+});
+const contents = () => screen.getByRole("navigation", { name: "Panels on this page" });
+const letters = () => within(contents()).getAllByRole("link").map((l) => l.querySelector(".cs-l")?.textContent);
+
+test("CD20, all diseases: the strip lists a to g, b's number is the companies panel's line count", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  expect(letters()).toEqual(["a", "b", "c", "d", "e", "f", "g"]);
+  const link = (name: RegExp) => within(contents()).getByRole("link", { name });
+  expect(link(/Companies/)).toHaveTextContent(`Companies ${container.querySelectorAll(".co").length}`);
+  expect(link(/Stops/)).toHaveTextContent("Stops 1");
+  expect(link(/Diseases/)).toHaveTextContent(`Diseases ${container.querySelectorAll(".dzt .dzl").length}`);
+  expect(link(/Stop chance/)).toHaveTextContent(/Stop chance \d+ above$/);
+  expect(link(/Diligence/).textContent).toMatch(/^g Diligence( recorded \d{1,2} [A-Z][a-z]{2}| not run| running| offline)?$/);
+  for (const l of within(contents()).getAllByRole("link")) {
+    const id = l.getAttribute("href")!.match(/panel=([a-g])/)![1];
+    expect(document.getElementById(`p${id}`), id).not.toBeNull();
+  }
+});
+
+test("a disease with no trials on the target lists only e and g", async () => {
+  stubFetch();
+  renderPage("/target/cd20?disease=MOGAD");
+  await screen.findByRole("heading", { level: 1 });
+  await screen.findByRole("heading", { level: 2, name: "CD20 by disease" });
+  expect(letters()).toEqual(["e", "g"]);
+});
+
+test("panel f shows the 8 highest estimates, then all of them on Show all", async () => {
+  const f = variant((p) => {
+    const base = p.rows[0]!.marks.find((m) => m.n === "NCT90000002")!;
+    for (let i = 0; i < 4; i++) p.rows[0]!.marks.push({ ...base, n: `NCT9100001${i}` });
+  });
+  const risk = readFixture<RiskFile>("risk.json");
+  for (let i = 0; i < 4; i++) risk.trials![`NCT9100001${i}`] = { ...risk.trials!.NCT90000002!, p: 0.3 + i / 100 };
+  stubFetch({ "pipeline.json": f, "risk.json": risk });
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  const list = () => within(riskPanel()).getByRole("list", { name: "Running trials by estimate" });
+  const rows = () => within(list()).getAllByRole("listitem");
+  expect(rows()).toHaveLength(8);
+  expect(rows()[0]).toHaveTextContent("66%");
+  expect(riskPanel()).toHaveTextContent(/of 11 running CD20 trials/);
+  const more = within(riskPanel()).getByRole("button", { name: "Show all 11 running trials" });
+  await userEvent.click(more);
+  expect(rows()).toHaveLength(11);
+  expect(within(riskPanel()).queryByRole("button", { name: /^Show all/ })).not.toBeInTheDocument();
+});
+
+test("panel f with 8 or fewer trials has no Show all", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  expect(within(riskPanel()).queryByRole("button", { name: /^Show all/ })).not.toBeInTheDocument();
+});
+
+test("?panel=f on a target without risk data drops the param", async () => {
+  stubFetch({ "risk.json": 404 });
+  Element.prototype.scrollIntoView = vi.fn();
+  renderPage("/target/cd20?disease=MS&panel=f");
+  await screen.findByRole("heading", { level: 1 });
+  await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent(/^\/target\/cd20\?disease=MS$/));
+  expect(screen.queryByRole("heading", { level: 2, name: RISK_H })).not.toBeInTheDocument();
+});
+
+test("?panel=f scrolls to panel f once it has loaded, and a disease chip keeps the param", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks[1]!.dz = ["MG"];
+  });
+  stubFetch({ "pipeline.json": f });
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderPage("/target/cd20?panel=f");
+  await screen.findByRole("heading", { level: 2, name: RISK_H });
+  await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1));
+  expect(scroll.mock.contexts[0]).toBe(document.getElementById("pf"));
+  await userEvent.click(screen.getByRole("button", { name: /^MG\s*1$/ }));
+  expect(screen.getByTestId("where")).toHaveTextContent("/target/cd20?disease=MG&panel=f");
+  expect(scroll).toHaveBeenCalledTimes(1);
+});
+
+test("capped lists in b, c and f keep their hidden rows in the page, for print", async () => {
+  const f = variant((p) => {
+    const stop = p.rows[0]!.marks.find((m) => m.s === "stop")!;
+    for (let i = 0; i < 8; i++) p.rows[0]!.marks.push({ ...stop, n: `NCT9200001${i}` });
+  });
+  stubFetch({ "pipeline.json": f });
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const cards = [...container.querySelectorAll<HTMLElement>(".stop-card")];
+  expect(cards).toHaveLength(9);
+  expect(cards.filter((c) => c.hidden)).toHaveLength(3);
+  await userEvent.click(screen.getByRole("button", { name: "Show all 9" }));
+  expect(cards.filter((c) => c.hidden)).toHaveLength(0);
 });

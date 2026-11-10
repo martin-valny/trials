@@ -20,8 +20,9 @@
 .dstrip-go:hover, .dstrip a:hover { text-decoration-color: var(--ink); }
 .dstrip-label { display: block; margin: 2px 0 0; font-size: var(--fs-meta); line-height: 20px; font-weight: 700; color: var(--ink); }
 .dstrip[data-state="loading"]::before { content: ""; display: block; height: 10px; width: min(60ch, 70%); margin-top: 5px; border-radius: 2px; background: var(--pale); }
-#pg { scroll-margin-top: 16px; }
-#pg:focus:not(:focus-visible) { outline: none; }
+/* Panel headings are the contents strip's targets (tabIndex -1): they land clear of the sticky strip. */
+.sec-h [tabindex="-1"] { scroll-margin-top: calc(var(--strip-h, 0px) + 16px); }
+.sec-h [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
 .target-page .key b { display: block; }
 
 .dzs { display: flex; gap: 6px; padding: 16px 40px 0; flex-wrap: wrap; }
@@ -57,6 +58,7 @@ p.sec.empty-line { padding-bottom: 20px; }
 .tl-list li span { color: var(--muted); }
 
 /* b. companies */
+.co[hidden], .stop-card[hidden] { display: none; }
 .co { display: grid; grid-template-columns: 130px minmax(0, 1fr) 84px; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--rule); }
 .co .co-nm { font-weight: 600; font-size: 13px; }
 .co .co-nm a { text-decoration: none; border-bottom: 1px dotted var(--muted); }

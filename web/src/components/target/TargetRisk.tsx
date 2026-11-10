@@ -2,7 +2,6 @@ import { useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { markState } from "../../lib/pipeline";
 import { MIN_SUMMARY_N, aboveLine, countAbove, formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
-import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, PipelineMark, RiskFile, RiskTrial } from "../../types";
 import { phaseText } from "../pipeline/TrialCard";
 import { RiskFactors } from "../risk/RiskFactors";
@@ -11,7 +10,12 @@ import { RiskAxis, RiskScale } from "../risk/RiskScale";
 
 const n = (x: number): string => x.toLocaleString("en-US");
 
+/** Rows shown before "Show all": the highest estimates (spec section 4, shorter long panels). */
+export const RISK_SHOWN = 8;
+
 interface Props {
+  /** risk.json as the page loaded it: undefined while loading, null when absent. */
+  risk: RiskFile | null | undefined;
   rowId: string;
   disease?: string | null;
   /** The page's pipeline file, row label and marks (already narrowed to the disease, one per trial). */
@@ -20,27 +24,30 @@ interface Props {
   marks: PipelineMark[];
 }
 
-interface Row {
+export interface Row {
   m: PipelineMark;
   t: RiskTrial;
 }
 
+/** The running trials with a per-trial estimate, highest first; empty when risk.json carries no per-trial block. */
+export function riskRows(risk: RiskFile, marks: PipelineMark[], disease: string | null): Row[] {
+  const trials = risk.trials;
+  if (!trials) return [];
+  return marks
+    .filter((m) => trials[m.n] && markState(m, disease) === "run")
+    .map((m) => ({ m, t: trials[m.n]! }))
+    .sort((a, b) => b.t.p - a.t.p || a.m.n.localeCompare(b.m.n));
+}
+
 /** Panel f: each running trial's estimated chance of stopping early against the typical rate. Absent without risk.json. */
-export function TargetRisk(props: Props) {
-  const risk = useRisk();
+export function TargetRisk({ risk, ...props }: Props) {
   if (!risk) return null;
   return <Panel {...props} risk={risk} />;
 }
 
-function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { risk: RiskFile }) {
-  const rows: Row[] = useMemo(() => {
-    const trials = risk.trials;
-    if (!trials) return [];
-    return marks
-      .filter((m) => trials[m.n] && markState(m, disease) === "run")
-      .map((m) => ({ m, t: trials[m.n]! }))
-      .sort((a, b) => b.t.p - a.t.p || a.m.n.localeCompare(b.m.n));
-  }, [risk, marks, disease]);
+function Panel({ rowId, disease = null, file, label, marks, risk }: Omit<Props, "risk"> & { risk: RiskFile }) {
+  const [all, setAll] = useState(false);
+  const rows: Row[] = useMemo(() => riskRows(risk, marks, disease), [risk, marks, disease]);
   const dzLabel = disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases";
   const empty = <p className="empty-line">No running trials with an estimate{disease ? " for this disease" : ""}.</p>;
 
@@ -74,10 +81,16 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
           <span>Estimate</span>
         </div>
         <ul className="rk-rows" aria-label="Running trials by estimate">
-          {rows.map((r) => (
-            <RiskRow key={r.m.n} row={r} file={file} />
+          {rows.map((r, i) => (
+            // Rows past the first eight stay in the page, hidden, so print can show every one.
+            <RiskRow key={r.m.n} row={r} file={file} hidden={!all && i >= RISK_SHOWN} />
           ))}
         </ul>
+        {!all && rows.length > RISK_SHOWN && (
+          <button type="button" className="more-btn rk-all" onClick={() => setAll(true)}>
+            Show all {n(rows.length)} running trials
+          </button>
+        )}
       </>
     );
   }
@@ -86,7 +99,9 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
     <section className="sec rk" aria-labelledby="pf">
       <div className="sec-h">
         <span className="ltr" aria-hidden="true">f</span>
-        <h2 id="pf">Running trials, estimated chance of stopping early</h2>
+        <h2 id="pf" tabIndex={-1}>
+          Running trials, estimated chance of stopping early
+        </h2>
       </div>
       {body}
       <RiskNote />
@@ -94,12 +109,12 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Props & { ri
   );
 }
 
-function RiskRow({ row: { m, t }, file }: { row: Row; file: PipelineFile }) {
+function RiskRow({ row: { m, t }, file, hidden }: { row: Row; file: PipelineFile; hidden: boolean }) {
   const [open, setOpen] = useState(false);
   const whyId = useId();
   const company = file.sponsors[m.sp]?.parent ?? "Unknown sponsor";
   return (
-    <li className="rk-row">
+    <li className="rk-row" hidden={hidden}>
       <div className="rk-who">
         <div className="rk-nm">
           <b>{t.drug ?? m.drug}</b> · {phaseText(m)} · {company}

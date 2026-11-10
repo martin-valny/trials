@@ -88,7 +88,9 @@ export function TargetChain({ file, row, marks, disease, phone = false }: Props)
     <>
       <div className="sec-h">
         <span className="ltr" aria-hidden="true">d</span>
-        <h3>How it works</h3>
+        <h3 id="pd" tabIndex={-1}>
+          How it works
+        </h3>
         {graphLink && !phone && <p>{graphLink}</p>}
       </div>
       <div className="chain" role="group" aria-label="Mechanism chain">

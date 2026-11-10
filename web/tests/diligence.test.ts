@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   diligenceEndpoint,
   claimCounts,
+  contentsWord,
   diligenceKey,
   flagSentence,
   isValidDisease,
@@ -338,5 +339,25 @@ describe("stripView", () => {
   it("failed or capped without a run", () => {
     expect(stripView({ ...base, failed: true })).toEqual({ kind: "failed" });
     expect(stripView({ ...base, capped: true })).toEqual({ kind: "capped" });
+  });
+});
+
+describe("contentsWord (panel g in the contents strip)", () => {
+  const base = { phase: "ready" as const, shown: null, capped: false, failed: false, valid: true, online: true, elapsed: 0 };
+  const shown = { rec: record, source: "recorded" as const, stale: false, fresh: false };
+  it("a recorded run reads 'recorded' and its day and month", () =>
+    expect(contentsWord({ ...base, shown })).toBe(`recorded ${new Date(record.finished_at ?? record.started_at).getUTCDate()} Nov`));
+  it("no run reads 'not run' online and 'offline' otherwise", () => {
+    expect(contentsWord(base)).toBe("not run");
+    expect(contentsWord({ ...base, online: false })).toBe("offline");
+  });
+  it("a failed or capped attempt with nothing shown reads 'not run'", () => {
+    expect(contentsWord({ ...base, failed: true })).toBe("not run");
+    expect(contentsWord({ ...base, capped: true })).toBe("not run");
+  });
+  it("running", () => expect(contentsWord({ ...base, phase: "running" })).toBe("running"));
+  it("no word while loading or with no trials", () => {
+    expect(contentsWord({ ...base, phase: "loading" })).toBeNull();
+    expect(contentsWord({ ...base, valid: false })).toBeNull();
   });
 });

@@ -23,7 +23,6 @@ export function TargetStops({ file, label, marks, onOpen }: Props) {
   const [all, setAll] = useState(false);
   const { groups, showGroups, stops } = stopSummary(file, marks);
   if (stops.length === 0) return <p className="empty-line">No {label} trial has stopped.</p>;
-  const shown = all ? stops : stops.slice(0, STOPS_SHOWN);
   return (
     <div>
       {showGroups && groups.length > 0 && (
@@ -35,8 +34,9 @@ export function TargetStops({ file, label, marks, onOpen }: Props) {
           ))}
         </div>
       )}
-      {shown.map((m) => (
-        <div className="stop-card" key={m.n + m.drug}>
+      {stops.map((m, i) => (
+        // Past the cap the cards stay in the page, hidden, so print shows every one.
+        <div className="stop-card" key={m.n + m.drug} hidden={!all && i >= STOPS_SHOWN}>
           <Mark m={plain(m)} state="stop" />
           <div>
             <button type="button" className="q" onClick={(e) => onOpen(m.n, e.currentTarget)}>

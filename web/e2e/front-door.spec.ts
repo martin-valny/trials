@@ -143,3 +143,26 @@ test("desktop: the floor rule stays fully opaque in a Mostly historical row", as
   expect(ops.every((o) => o === "1")).toBe(true);
   expect(await page.locator('.row[data-row="cd19"] [data-cell="MS"] .m').first().evaluate((el) => getComputedStyle(el).opacity)).toBe("0.62");
 });
+
+test("?panel=f lands on panel f, below the sticky contents strip", async ({ page }) => {
+  await page.goto("/#/target/cd20?panel=f");
+  const h = page.getByRole("heading", { name: "Running trials, estimated chance of stopping early" });
+  await expect(h).toBeInViewport();
+  const strip = page.getByRole("navigation", { name: "Panels on this page" });
+  const [s, t] = await Promise.all([strip.boundingBox(), h.boundingBox()]);
+  expect(t!.y).toBeGreaterThanOrEqual(s!.y + s!.height);
+});
+
+test("keyboard: Enter on the strip's g link puts focus on panel g's heading", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "keyboard");
+  await page.goto("/#/target/cd20");
+  const g = page.getByRole("navigation", { name: "Panels on this page" }).getByRole("link", { name: /^g Diligence/ });
+  await expect(g).toBeVisible();
+  // Tab from the strip's first link along to g.
+  await page.getByRole("navigation", { name: "Panels on this page" }).getByRole("link").first().focus();
+  for (let i = 0; i < 10 && !(await g.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
+  await expect(g).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#pg")).toBeFocused();
+  await expect(page).toHaveURL(/panel=g/);
+});

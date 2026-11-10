@@ -1,7 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { DEFAULT_FIGURE_STATE, figureSearch, markState, normKey, parseFigureState, trialsLink } from "../../lib/pipeline";
+import { contentsWord } from "../../lib/diligence";
+import { DEFAULT_FIGURE_STATE, diseaseLines, figureSearch, markState, normKey, parseFigureState, targetCompanies, trialsLink } from "../../lib/pipeline";
+import { countAbove } from "../../lib/risk";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
+import { useRisk } from "../../lib/useRisk";
+import { ContentsStrip, scrollToPanel, type ContentsItem } from "../ContentsStrip";
 import { usePhone } from "../../lib/useMediaQuery";
 import { usePipeline } from "../pipeline/PipelinePage";
 import { TrialCard } from "../pipeline/TrialCard";
@@ -9,11 +13,11 @@ import "../pipeline/pipeline.css";
 import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
-import { DiligenceRunProvider } from "./DiligenceRunContext";
+import { DiligenceRunProvider, useDiligence } from "./DiligenceRunContext";
 import { DiligenceStrip } from "./DiligenceStrip";
 import { TargetDiligence } from "./TargetDiligence";
 import { TargetDiseases } from "./TargetDiseases";
-import { TargetRisk } from "./TargetRisk";
+import { TargetRisk, riskRows } from "./TargetRisk";
 import { TargetStops } from "./TargetStops";
 import { TargetTimeline } from "./TargetTimeline";
 
@@ -57,7 +61,8 @@ function ledeParts(run: number, total: number, groups: number, adv: number, stop
 
 function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; disease: string | null }) {
   const phone = usePhone();
-  const [, setParams] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const risk = useRisk();
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const close = useCallback(() => setOpen(null), []);
@@ -97,6 +102,23 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   const format = row.sub.split(" · ").filter((p) => p !== row.gene).join(" · ");
   const ncts = [...new Set(marks.map((m) => m.n))];
   const lede = ledeParts(stats.run, ncts.length, stats.groups, stats.adv, stats.stop);
+  // The contents strip: one item per panel that renders, with the same numbers the panels compute (spec section 4).
+  const items: ContentsItem[] = useMemo(() => {
+    const out: ContentsItem[] = [];
+    if (marks.length > 0) {
+      out.push({ id: "pa", letter: "a", name: "Timeline" });
+      out.push({ id: "pb", letter: "b", name: "Companies", count: n(targetCompanies(file, marks).length) });
+      out.push({ id: "pc", letter: "c", name: "Stops", count: n(stats.stop) });
+      out.push({ id: "pd", letter: "d", name: "Mechanism" });
+    }
+    const lines = diseaseLines(file, row).length;
+    if (lines > 0) out.push({ id: "pe", letter: "e", name: "Diseases", count: n(lines) });
+    if (marks.length > 0 && risk) {
+      const scored = riskRows(risk, marks, disease);
+      out.push({ id: "pf", letter: "f", name: "Stop chance", count: scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above` : undefined });
+    }
+    return out;
+  }, [file, row, marks, stats.stop, risk, disease]);
   const back = disease ? `/?${figureSearch({ ...DEFAULT_FIGURE_STATE, disease })}` : "/";
 
   const onOpen = useCallback((nct: string, el: Element) => {
@@ -159,13 +181,14 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               type="button"
               className={`dz${d.code === disease ? " on" : ""}`}
               aria-pressed={d.code === disease}
-              onClick={() => setParams(figureSearch({ ...DEFAULT_FIGURE_STATE, disease: d.code === disease ? null : d.code }), { replace: true })}
+              onClick={() => setParams(chipSearch(d.code === disease ? null : d.code, params.get("panel")), { replace: true })}
             >
               {d.code}
               <b>{n(d.n)}</b>
             </button>
           ))}
         </div>
+        <PageContents items={items} pending={marks.length > 0 && risk === undefined} />
 
         {marks.length === 0 ? (
           <p className="sec empty-line">
@@ -179,7 +202,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
             <section className="sec" aria-labelledby="pa">
               <div className="sec-h">
                 <span className="ltr" aria-hidden="true">a</span>
-                <h2 id="pa">Every {row.label} trial over time, by drug</h2>
+                <h2 id="pa" tabIndex={-1}>Every {row.label} trial over time, by drug</h2>
                 <p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>
               </div>
               <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
@@ -188,7 +211,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               <div role="group" aria-labelledby="pb">
                 <div className="sec-h">
                   <span className="ltr" aria-hidden="true">b</span>
-                  <h2 id="pb">Who is working on {row.label}</h2>
+                  <h2 id="pb" tabIndex={-1}>Who is working on {row.label}</h2>
                   <p>by parent company</p>
                 </div>
                 <TargetCompanies file={file} marks={marks} disease={disease} onOpen={onOpen} />
@@ -196,7 +219,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               <div role="group" aria-labelledby="pc">
                 <div className="sec-h">
                   <span className="ltr" aria-hidden="true">c</span>
-                  <h2 id="pc">What stopped, and why</h2>
+                  <h2 id="pc" tabIndex={-1}>What stopped, and why</h2>
                   <p>{n(stats.stop)} {stats.stop === 1 ? "trial" : "trials"}</p>
                 </div>
                 <TargetStops file={file} label={row.label} marks={marks} onOpen={onOpen} />
@@ -208,7 +231,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
           </>
         )}
         <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
-        {marks.length > 0 && <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
+        {marks.length > 0 && <TargetRisk risk={risk} rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
         <TargetDiligence
           row={row}
           disease={disease}
@@ -239,13 +262,21 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   );
 }
 
-/** Scroll to panel g and put focus on its heading; smooth only when the visitor has not asked for less motion. */
-function goToDiligence() {
-  const el = document.getElementById("pg");
-  if (!el) return;
-  const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches === true;
-  el.scrollIntoView?.({ block: "start", behavior: smooth ? "smooth" : "auto" });
-  el.focus({ preventScroll: true });
+/** The header strip's actions go to panel g with the contents strip's scroller, so the heading clears the sticky strip. */
+const goToDiligence = () => scrollToPanel("pg");
+
+/** A disease chip's search: the figure state for the disease, keeping the contents strip's ?panel=. */
+function chipSearch(disease: string | null, panel: string | null): string {
+  const q = new URLSearchParams(figureSearch({ ...DEFAULT_FIGURE_STATE, disease }));
+  if (panel) q.set("panel", panel);
+  return q.toString();
+}
+
+/** The contents strip with panel g, whose word comes from the shared diligence run. */
+function PageContents({ items, pending }: { items: ContentsItem[]; pending: boolean }) {
+  const word = contentsWord(useDiligence());
+  const all = useMemo(() => [...items, { id: "pg", letter: "g", name: "Diligence", count: word ?? undefined }], [items, word]);
+  return <ContentsStrip items={all} label="Panels on this page" pending={pending} />;
 }
 
 function Skeleton() {
