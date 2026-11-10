@@ -6,6 +6,10 @@
   grid-template-areas: "crumb" "title" "sentence" "aside";
   padding: 24px 40px 0;
 }
+/* Inside a .page frame (legacy routes) the frame gives the gutters, so the head adds none of its own. */
+.page > .page-head { padding-left: 0; padding-right: 0; }
+/* On a legacy route the head opens <main>, whose own top padding would double the 24px gap from the site header. */
+main:has(> .page:first-child > .page-head:first-child), main:has(> .page-head:first-child) { padding-top: 0; }
 .page-head-crumb { grid-area: crumb; margin: 0 0 8px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
 .page-head h1 { grid-area: title; min-width: 0; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
 .page-head-sentence {
@@ -20,5 +24,6 @@
 }
 @media (max-width: 640px) {
   .page-head { padding: 24px 16px 0; }
+  .page > .page-head { padding-left: 0; padding-right: 0; }
   .page-head h1 { font-size: 28px; }
 }

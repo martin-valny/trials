@@ -96,7 +96,10 @@ export function MechanismsPage() {
   if (s.state === "loading") {
     return (
       <div className="explore mechanisms" aria-busy="true">
-        <div className="plate-title skeleton-line" aria-hidden="true" />
+        {/* The title's place in the same page head the ready page uses, so nothing shifts when it loads. */}
+        <header className="page-head" aria-hidden="true">
+          <div className="skeleton-line page-head-skeleton" />
+        </header>
         <div className="mech-plate">
           <div className="rail skeleton-block" aria-hidden="true" />
         </div>

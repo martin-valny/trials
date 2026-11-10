@@ -69,6 +69,12 @@ test("the Figure 2 title sits in the shared page head", async () => {
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 });
 
+test("while loading, the title's place is held in the same page head", () => {
+  stubFetch();
+  const { container } = renderPage("/approaches/targeted");
+  expect(container.querySelector("header.page-head .page-head-skeleton")).not.toBeNull();
+});
+
 test("an unknown or missing approach goes to Targeted drugs", async () => {
   stubFetch();
   renderPage("/approaches/bogus");
