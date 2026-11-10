@@ -39,7 +39,7 @@
 |---|---|
 | `web/src/plate.css` (new) | `:root` plate tokens (light, dark), type-scale variables, base link/focus styles, `.page` column, print rules. Imported once in `main.tsx` after `styles.css`. |
 | `web/src/styles.css` | Shared header/nav/theme only; legacy tokens and legacy table/form rules removed by the end of Task 11. |
-| `web/src/lib/format.ts` | Add `statusLabel`, `phasesLabel`; `phaseLabel("NA")` stays "Not applicable". |
+| `web/src/lib/format.ts` | Add `statusLabel`, `phasesLabel` (NA → "No phase", spec §7); `phaseLabel("NA")` stays "Not applicable" for Explore. |
 | `web/src/lib/diligence.ts` | Add pure `stripLine(view)` and `claimCounts(rec)`. |
 | `web/src/lib/useDiligenceRun.ts` (new) | The state machine now inside `TargetDiligence.tsx`, unchanged in behaviour. |
 | `web/src/components/target/DiligenceRunContext.tsx` (new) | Provider so the strip (header) and panel g share one hook instance. |
@@ -97,7 +97,7 @@
   expect(phasesLabel(["PHASE2", "PHASE3"])).toBe("Phase 2/3");
   expect(phasesLabel(["PHASE3"])).toBe("Phase 3");
   expect(phasesLabel(["EARLY_PHASE1"])).toBe("Early phase 1");
-  expect(phasesLabel(["NA"])).toBe("Not applicable");
+  expect(phasesLabel(["NA"])).toBe("No phase"); // spec §7; phaseLabel("NA") stays "Not applicable" for Explore
   expect(phasesLabel([])).toBe("—");
   ```
 - [ ] **Step 2: Run** `npx vitest run tests/format.test.ts` → FAIL (not exported).
