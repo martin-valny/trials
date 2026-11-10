@@ -10,6 +10,7 @@ import "../pipeline/pipeline.css";
 import "./target.css";
 import { TargetChain } from "./TargetChain";
 import { TargetCompanies } from "./TargetCompanies";
+import { DiligenceRunProvider } from "./DiligenceRunContext";
 import { TargetDiligence } from "./TargetDiligence";
 import { TargetDiseases } from "./TargetDiseases";
 import { TargetRisk } from "./TargetRisk";
@@ -107,6 +108,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   }, []);
 
   return (
+    <DiligenceRunProvider key={diligenceKey(row.id, disease ?? "all")} row={row} disease={disease}>
     <div className="target-page" ref={root}>
       <nav className="crumb" aria-label="Breadcrumb">
         <Link to={back}>Pipeline</Link> / {family}
@@ -207,7 +209,6 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
       <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
       {marks.length > 0 && <TargetRisk rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
       <TargetDiligence
-        key={diligenceKey(row.id, disease ?? "all")}
         row={row}
         disease={disease}
         label={row.label}
@@ -233,6 +234,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
         />
       )}
     </div>
+    </DiligenceRunProvider>
   );
 }
 

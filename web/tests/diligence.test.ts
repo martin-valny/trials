@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   diligenceEndpoint,
+  claimCounts,
   diligenceKey,
   flagSentence,
   isValidDisease,
@@ -12,6 +13,7 @@ import {
   pollRun,
   renderable,
   startRun,
+  stripView,
 } from "../src/lib/diligence";
 import type { PipelineRow, RunRecord } from "../src/types";
 
@@ -275,4 +277,66 @@ describe("isValidDisease", () => {
     expect(isValidDisease(row, "SLE")).toBe(true);
   });
   it("rejects others", () => expect(isValidDisease(row, "NMO")).toBe(false));
+});
+
+describe("claimCounts", () => {
+  it("counts supported verdicts and all judged sentences", () => {
+    expect(claimCounts(record)).toEqual({ n: 3, m: 6 });
+  });
+});
+
+describe("stripView", () => {
+  const shown = (over: Partial<{ rec: RunRecord; fresh: boolean; stale: boolean }> = {}) => ({
+    rec: record,
+    source: "backend" as const,
+    stale: false,
+    fresh: false,
+    ...over,
+  });
+  const base = { phase: "ready" as const, shown: null, capped: false, failed: false, valid: true, online: true, elapsed: 0 };
+
+  it("is hidden when the pair has no trials", () => expect(stripView({ ...base, valid: false })).toEqual({ kind: "hidden" }));
+  it("loading", () => expect(stripView({ ...base, phase: "loading" })).toEqual({ kind: "loading" }));
+  it("intro online runs, offline points to methods", () => {
+    expect(stripView(base)).toEqual({ kind: "intro", action: "run" });
+    expect(stripView({ ...base, online: false })).toEqual({ kind: "intro", action: "methods" });
+  });
+  it("running shows whole seconds", () => expect(stripView({ ...base, phase: "running", elapsed: 12400 })).toEqual({ kind: "running", seconds: 12 }));
+  it("a shown run with a judgement reads the stance", () => {
+    expect(stripView({ ...base, shown: shown() })).toEqual({
+      kind: "read",
+      stance: "mixed",
+      confidence: "low",
+      n: 3,
+      m: 6,
+      when: "Recorded 9 Nov 2026",
+      stale: false,
+      tail: null,
+    });
+  });
+  it("a withheld judgement has no stance or confidence", () => {
+    const v = stripView({ ...base, shown: shown({ rec: { ...record, judgement_shown: false } }) });
+    expect(v).toMatchObject({ kind: "read", stance: null, confidence: null });
+  });
+  it("maps every stance to its words", () => {
+    const rec = (stance: "favours" | "mixed" | "against"): RunRecord => ({ ...record, memo: { ...record.memo!, judgement: { ...record.memo!.judgement, stance } } });
+    const stance = (s: "favours" | "mixed" | "against") => (stripView({ ...base, shown: shown({ rec: rec(s) }) }) as { stance: string }).stance;
+    expect(stance("favours")).toBe("favours further investment");
+    expect(stance("against")).toBe("argues against further investment");
+  });
+  it("a null memo has no stance", () => {
+    expect(stripView({ ...base, shown: shown({ rec: { ...record, memo: null } }) })).toMatchObject({ stance: null, confidence: null });
+  });
+  it("fresh and stale", () => {
+    expect(stripView({ ...base, shown: shown({ fresh: true }) })).toMatchObject({ when: "New run, 9 Nov 2026" });
+    expect(stripView({ ...base, shown: shown({ stale: true }) })).toMatchObject({ stale: true });
+  });
+  it("tails after a failed or capped attempt", () => {
+    expect(stripView({ ...base, shown: shown(), failed: true })).toMatchObject({ kind: "read", tail: "failed" });
+    expect(stripView({ ...base, shown: shown(), capped: true })).toMatchObject({ kind: "read", tail: "capped" });
+  });
+  it("failed or capped without a run", () => {
+    expect(stripView({ ...base, failed: true })).toEqual({ kind: "failed" });
+    expect(stripView({ ...base, capped: true })).toEqual({ kind: "capped" });
+  });
 });

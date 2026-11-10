@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { SECTION_ORDER, diligenceEndpoint, flagSentence, isValidDisease, loadLatest, loadRecorded, pollRun, renderable, startRun } from "../../lib/diligence";
+import { SECTION_ORDER, flagSentence, formatRunDate, loadRecorded, renderable } from "../../lib/diligence";
+import type { Shown } from "../../lib/useDiligenceRun";
+import { useDiligence } from "./DiligenceRunContext";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
 import "./diligence.css";
 
 /** Shown verbatim with every judgement, withheld or not (spec §2, anti-goals). */
 export const FIXED_LABEL = "AI judgement from public data, not investment advice";
+
+export { formatRunDate };
 
 /** Where "a recorded example" points when this page has no run and no agent. The first evaluation pair (agent/eval/pairs.yaml). */
 export const EXAMPLE = { target: "cd20", disease: "all", label: "CD20" };
@@ -33,12 +37,6 @@ const FLAG_MAX = 500;
 
 const n = (x: number): string => x.toLocaleString("en-US");
 
-/** "2026-11-09T12:00:00Z" -> "9 Nov 2026", as the rest of the site writes dates. */
-export function formatRunDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-}
-
 const seconds = (ms: number): string => (ms < 10000 ? `${(ms / 1000).toFixed(1)} s` : `${Math.round(ms / 1000)} s`);
 
 /** A citable ID's source page; null for an ID in no known format (then it is shown as text, not a link). */
@@ -52,24 +50,6 @@ export function citeHref(id: string): { href: string; site: string } | null {
   return null;
 }
 
-interface Shown {
-  rec: RunRecord;
-  /** "recorded": committed with the site (cannot be flagged); "backend": a replay or a run from the agent API. */
-  source: "recorded" | "backend";
-  stale: boolean;
-  /** Started by this visitor just now (not a replay). */
-  fresh: boolean;
-}
-
-interface State {
-  phase: "loading" | "ready" | "running";
-  shown: Shown | null;
-  /** Steps of the attempt in progress, or of one that ended without a run to show. */
-  attempt: DiligenceStep[] | null;
-  notice: string | null;
-  /** The daily limit was reached: no more runs are offered on this visit. */
-  capped: boolean;
-}
 
 interface Props {
   row: PipelineRow;
@@ -82,131 +62,21 @@ interface Props {
 /** Panel g: the diligence agent. Shows a recorded run, or runs the agent live and streams its trace, then the checked memo. */
 export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
   const dz = disease ?? "all";
-  const valid = isValidDisease(row, dz);
-  const online = diligenceEndpoint() !== null;
-  const [s, setS] = useState<State>({ phase: valid ? "loading" : "ready", shown: null, attempt: null, notice: null, capped: false });
-  const committed = useRef<RunRecord | null>(null);
-  const alive = useRef(true);
-  const poll = useRef<AbortController | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-  const [lastText, setLastText] = useState("");
+  const d = useDiligence();
+  const { valid, online, elapsed, lastText, canRun, run } = d;
 
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-      poll.current?.abort(); // a target or disease change remounts the panel (keyed), so this covers both
-    };
-  }, []);
-
-  // Online, the backend's cached run (newer) is asked for first; the committed recording is the fallback (spec §7).
-  useEffect(() => {
-    if (!valid) return;
-    let on = true;
-    void Promise.all([loadRecorded(row.id, dz), online ? loadLatest(row.id, dz) : Promise.resolve(null)]).then(([rec, latest]) => {
-      if (!on) return;
-      committed.current = rec;
-      const shown: Shown | null = latest
-        ? { rec: latest.replay, source: "backend", stale: latest.stale, fresh: false }
-        : rec
-          ? { rec, source: "recorded", stale: false, fresh: false }
-          : null;
-      setS((p) => ({ ...p, phase: "ready", shown }));
-    });
-    return () => {
-      on = false;
-    };
-  }, [row.id, dz, valid, online]);
-
-  // A plain clock while the agent works (no decorative spinner).
-  useEffect(() => {
-    if (s.phase !== "running") return;
-    const t0 = Date.now();
-    const id = setInterval(() => setElapsed(Date.now() - t0), 1000);
-    return () => clearInterval(id);
-  }, [s.phase]);
-
-  const run = useCallback(
-    async (force: boolean) => {
-      const before = s.shown;
-      const fail = (notice: string, partial: DiligenceStep[] | null) =>
-        setS({ phase: "ready", notice, shown: before, attempt: before ? null : partial, capped: false });
-      setElapsed(0);
-      setLastText("");
-      setS({ phase: "running", shown: before, attempt: [], notice: null, capped: false });
-      let res;
-      try {
-        res = await startRun(row.id, dz, force);
-      } catch {
-        if (alive.current) fail(`The diligence agent could not be reached.${before ? " Showing the recorded run." : ""}`, null);
-        return;
-      }
-      if (!alive.current) return;
-      if ("replay" in res) {
-        setS({ phase: "ready", notice: null, attempt: null, capped: false, shown: { rec: res.replay, source: "backend", stale: res.stale, fresh: false } });
-        return;
-      }
-      if ("capped" in res) {
-        const latest: Shown | null = res.capped
-          ? { rec: res.capped, source: "backend", stale: false, fresh: false }
-          : committed.current
-            ? { rec: committed.current, source: "recorded", stale: false, fresh: false }
-            : null;
-        setS({
-          phase: "ready",
-          notice: latest
-            ? "Daily limit reached — showing the latest recorded run"
-            : "Daily limit reached — no recorded run is available yet. Try again tomorrow.",
-          attempt: null,
-          shown: latest,
-          capped: true,
-        });
-        return;
-      }
-      const steps: DiligenceStep[] = [];
-      poll.current?.abort();
-      const ctl = new AbortController();
-      poll.current = ctl;
-      try {
-        const rec = await pollRun(res.run_id, (step) => {
-          if (!alive.current) return;
-          steps.push(step);
-          // The step number makes two identical texts in a row distinct, so each is announced.
-          setLastText(`Step ${step.n}: ${step.text}`);
-          setS((p) => ({ ...p, attempt: [...steps] }));
-        }, { signal: ctl.signal });
-        if (!alive.current) return;
-        setS({ phase: "ready", notice: null, attempt: null, capped: false, shown: { rec, source: "backend", stale: false, fresh: true } });
-      } catch (e) {
-        if (!alive.current || ctl.signal.aborted) return;
-        const msg = e instanceof Error ? e.message : "";
-        const then = before ? " Showing the recorded run." : " Try again later.";
-        fail(
-          msg === "timeout"
-            ? `The run did not finish.${then}`
-            : msg === "not_found"
-              ? `The run could not be found.${then}`
-              : `The diligence agent could not be reached.${then}`,
-          [...steps],
-        );
-      }
-    },
-    [row.id, dz, s.shown],
-  );
-
-  const shown = s.phase === "running" ? null : s.shown;
-  const trace = s.phase === "running" || (s.attempt && !shown) ? (s.attempt ?? []) : (shown?.rec.steps ?? null);
-  const canRun = online && valid && s.phase === "ready" && !s.capped;
+  const shown = d.phase === "running" ? null : d.shown;
+  const trace = d.phase === "running" || (d.attempt && !shown) ? (d.attempt ?? []) : (shown?.rec.steps ?? null);
 
   let status: string | null = null;
-  if (s.phase === "running") status = `Running · ${Math.floor(elapsed / 1000)} s`;
+  if (d.phase === "running") status = `Running · ${Math.floor(elapsed / 1000)} s`;
   else if (shown) {
     const date = formatRunDate(shown.rec.finished_at ?? shown.rec.started_at);
     status = shown.fresh ? `New run, ${date}` : `Recorded run, ${date}${shown.stale ? " · data has changed since" : ""}`;
   }
 
   return (
-    <section className="sec dg" aria-labelledby="pg" aria-busy={s.phase === "loading" || undefined}>
+    <section className="sec dg" aria-labelledby="pg" aria-busy={d.phase === "loading" || undefined}>
       <div className="sec-h">
         <span className="ltr" aria-hidden="true">g</span>
         <h2 id="pg">Diligence (AI agent)</h2>
@@ -217,7 +87,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
 
       {!valid ? (
         <p className="empty-line">No trials on this target in {dz}</p>
-      ) : s.phase === "loading" ? (
+      ) : d.phase === "loading" ? (
         <p className="dg-wait">Looking for a recorded run…</p>
       ) : (
         <>
@@ -225,22 +95,22 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
             <div className="dg-bar">
               {status && <p className="dg-status">{status}</p>}
               {canRun && (
-                <button type="button" className="dg-run" onClick={() => void run(s.shown !== null)}>
-                  {s.shown ? "Run again" : "Run diligence"}
+                <button type="button" className="dg-run" onClick={() => void run(d.shown !== null)}>
+                  {d.shown ? "Run again" : "Run diligence"}
                 </button>
               )}
             </div>
           )}
-          {s.notice && (
+          {d.notice && (
             <p className="dg-notice" role="status">
-              {s.notice}
+              {d.notice}
             </p>
           )}
-          {!shown && !trace && !s.capped && <Intro online={online} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
+          {!shown && !trace && !d.capped && <Intro online={online} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
           {trace && (
-            <div className={`dg-grid${shown?.rec.memo || s.phase === "running" ? "" : " solo"}`}>
-              <Trace steps={trace} running={s.phase === "running"} />
-              {s.phase === "running" ? (
+            <div className={`dg-grid${shown?.rec.memo || d.phase === "running" ? "" : " solo"}`}>
+              <Trace steps={trace} running={d.phase === "running"} />
+              {d.phase === "running" ? (
                 <div className="dg-memo">
                   <h3 className="dg-h">Memo</h3>
                   <p className="dg-pending">The memo appears here once the agent has written it and checked each claim.</p>
@@ -254,7 +124,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
         </>
       )}
       <p className="visually-hidden" aria-live="polite" data-testid="dg-live">
-        {s.phase === "running" ? lastText : ""}
+        {d.phase === "running" ? lastText : ""}
       </p>
     </section>
   );

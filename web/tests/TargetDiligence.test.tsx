@@ -4,6 +4,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { DiligenceRunProvider } from "../src/components/target/DiligenceRunContext";
 import { FIXED_LABEL, TargetDiligence } from "../src/components/target/TargetDiligence";
 import * as lib from "../src/lib/diligence";
 import type { DiligenceStep, PipelineFile, PipelineRow, RunRecord } from "../src/types";
@@ -32,7 +33,9 @@ const online = () => m.diligenceEndpoint.mockReturnValue("https://agent.test/");
 function renderPanel(disease: string | null = "MS") {
   return render(
     <MemoryRouter initialEntries={["/target/cd20"]}>
-      <TargetDiligence row={row} disease={disease} label="CD20" diseaseLabel={disease === "MS" ? "Multiple sclerosis" : "All diseases"} />
+      <DiligenceRunProvider key={disease ?? "all"} row={row} disease={disease}>
+        <TargetDiligence row={row} disease={disease} label="CD20" diseaseLabel={disease === "MS" ? "Multiple sclerosis" : "All diseases"} />
+      </DiligenceRunProvider>
     </MemoryRouter>,
   );
 }

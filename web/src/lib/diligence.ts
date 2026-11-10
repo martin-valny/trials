@@ -1,3 +1,4 @@
+import type { DiligenceRun } from "./useDiligenceRun";
 import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../types";
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
@@ -194,4 +195,61 @@ export function renderable(record: RunRecord): Renderable {
 /** "all", or a disease that at least one mark of the row carries. */
 export function isValidDisease(row: PipelineRow, disease: string): boolean {
   return disease === "all" || row.marks.some((m) => m.dz.includes(disease));
+}
+
+/** "2026-11-09T12:00:00Z" -> "9 Nov 2026", as the rest of the site writes dates. */
+export function formatRunDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+/** n = sentences the checker supported; m = sentences it judged (verdicts plus sentences removed). */
+export function claimCounts(rec: RunRecord): { n: number; m: number } {
+  return { n: rec.verdicts.filter((v) => v.verdict === "supported").length, m: rec.verdicts.length + rec.removed.length };
+}
+
+export type StripView =
+  | { kind: "hidden" }
+  | { kind: "loading" }
+  | { kind: "intro"; action: "run" | "methods" }
+  | { kind: "running"; seconds: number }
+  | {
+      kind: "read";
+      stance: string | null;
+      confidence: string | null;
+      n: number;
+      m: number;
+      when: string;
+      stale: boolean;
+      tail: "failed" | "capped" | null;
+    }
+  | { kind: "failed" }
+  | { kind: "capped" };
+
+const STRIP_STANCE = { favours: "favours further investment", mixed: "mixed", against: "argues against further investment" } as const;
+
+/** What the header strip shows for a run state (spec section 5). */
+export function stripView(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">): StripView {
+  if (!r.valid) return { kind: "hidden" };
+  if (r.phase === "loading") return { kind: "loading" };
+  if (r.phase === "running") return { kind: "running", seconds: Math.round(r.elapsed / 1000) };
+  if (!r.shown) {
+    if (r.failed) return { kind: "failed" };
+    if (r.capped) return { kind: "capped" };
+    return { kind: "intro", action: r.online ? "run" : "methods" };
+  }
+  const { rec, fresh, stale } = r.shown;
+  const j = rec.judgement_shown && rec.memo ? rec.memo.judgement : null;
+  const date = formatRunDate(rec.finished_at ?? rec.started_at);
+  const { n, m } = claimCounts(rec);
+  return {
+    kind: "read",
+    stance: j ? STRIP_STANCE[j.stance] : null,
+    confidence: j ? j.confidence : null,
+    n,
+    m,
+    when: fresh ? `New run, ${date}` : `Recorded ${date}`,
+    stale,
+    tail: r.failed ? "failed" : r.capped ? "capped" : null,
+  };
 }
