@@ -9,9 +9,32 @@ import {
   isStale,
   outcomeLabel,
   phaseLabel,
+  phasesLabel,
   reasonLabel,
+  statusLabel,
   treatmentLabel,
 } from "../src/lib/format";
+
+describe("registry words", () => {
+  test("statusLabel", () => {
+    expect(statusLabel("RECRUITING")).toBe("Recruiting");
+    expect(statusLabel("ACTIVE_NOT_RECRUITING")).toBe("Active, not recruiting");
+    expect(statusLabel("NOT_YET_RECRUITING")).toBe("Not yet recruiting");
+    expect(statusLabel("ENROLLING_BY_INVITATION")).toBe("Enrolling by invitation");
+    expect(statusLabel("COMPLETED")).toBe("Completed");
+    expect(statusLabel("TERMINATED")).toBe("Terminated");
+    expect(statusLabel("UNKNOWN")).toBe("Unknown");
+    expect(statusLabel("SOMETHING_NEW")).toBe("Something new"); // fallback: sentence case
+  });
+  test("phasesLabel", () => {
+    expect(phasesLabel(["PHASE1", "PHASE2"])).toBe("Phase 1/2");
+    expect(phasesLabel(["PHASE2", "PHASE3"])).toBe("Phase 2/3");
+    expect(phasesLabel(["PHASE3"])).toBe("Phase 3");
+    expect(phasesLabel(["EARLY_PHASE1"])).toBe("Early phase 1");
+    expect(phasesLabel(["NA"])).toBe("No phase"); // spec §7; phaseLabel("NA") stays "Not applicable" for Explore
+    expect(phasesLabel([])).toBe("—");
+  });
+});
 
 describe("formatValue", () => {
   test("month vs day precision", () => {

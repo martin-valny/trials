@@ -97,6 +97,34 @@ export function phaseLabel(p: string | null): string {
   return m ? `Phase ${m[1]}` : p;
 }
 
+/** Plain registry phase list: ["PHASE1", "PHASE2"] -> "Phase 1/2"; ["NA"] -> "No phase"; [] -> "—". */
+export function phasesLabel(phases: string[]): string {
+  if (phases.length === 0) return DASH;
+  if (phases.every((p) => p === "NA")) return "No phase";
+  const numbered = phases.map((p) => /^PHASE(\d)$/.exec(p)?.[1]);
+  if (phases.length === 2 && numbered[0] && numbered[1]) return `Phase ${numbered[0]}/${numbered[1]}`;
+  return phases.map(phaseLabel).join(", ");
+}
+
+const STATUS: Record<string, string> = {
+  RECRUITING: "Recruiting",
+  ACTIVE_NOT_RECRUITING: "Active, not recruiting",
+  NOT_YET_RECRUITING: "Not yet recruiting",
+  ENROLLING_BY_INVITATION: "Enrolling by invitation",
+  COMPLETED: "Completed",
+  TERMINATED: "Terminated",
+  WITHDRAWN: "Withdrawn",
+  SUSPENDED: "Suspended",
+  UNKNOWN: "Unknown",
+};
+
+/** Registry overall status: "NOT_YET_RECRUITING" -> "Not yet recruiting"; unlisted values fall back to sentence case. */
+export function statusLabel(s: string): string {
+  if (Object.prototype.hasOwnProperty.call(STATUS, s)) return STATUS[s] as string;
+  const t = s.replace(/_/g, " ").toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 /** Registry intervention type in sentence case: "DIETARY_SUPPLEMENT" -> "Dietary supplement". */
 export function treatmentLabel(t: string): string {
   const s = t.replace(/_/g, " ").toLowerCase();
