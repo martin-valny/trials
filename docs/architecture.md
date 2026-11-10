@@ -48,7 +48,7 @@ The one place outside the static model: an optional backend for the target page'
 
 ```mermaid
 flowchart LR
-    WEB[static site<br/>panel g] -->|POST /runs, GET /runs/id, POST /flags| URL[Lambda function URL]
+    WEB[static site<br/>panel g] -->|GET /runs/latest, POST /runs, GET /runs/id, POST /flags| URL[Lambda function URL]
     URL --> L[Lambda<br/>start / poll / flags]
     L -->|async self-invoke| X[Lambda execute<br/>agent loop + checker]
     L <--> DDB[(DynamoDB<br/>runs, limits, flags)]
@@ -57,7 +57,7 @@ flowchart LR
     X --> API[site JSON, ClinicalTrials.gov,<br/>ChEMBL, Europe PMC, openFDA]
 ```
 
-A start request is validated, checked against the daily caps (set in `agent/config.yaml`; IPs kept only as salted hashes) and answered with a run id; the same request in flight returns the same id. The execute invocation runs the tool loop within the per-run limits and the checker, and writes the run record that polling reads. CI replays recorded runs without any model or network (`agent/tests/test_eval_replay.py`); the prompt hash gate fails with "re-record the evaluation".
+On page view the panel asks `GET /runs/latest` (read-only, no quota) for a cached run and falls back to the committed recording. A start request is validated, checked against the daily caps (set in `agent/config.yaml`; IPs kept only as salted hashes) and answered with a run id; the same request in flight returns the same id. The execute invocation runs the tool loop within the per-run limits, then the writer and the checker, and writes the run record that polling reads; the Lambda Timeout is the hard stop, and a run still "running" after `STALE_AFTER_S` (`agent/src/diligence/store.py`) reads as failed. CI replays recorded runs, clock readings included, without any model or network (`agent/tests/test_eval_replay.py`); the prompt hash gate fails with "re-record the evaluation".
 
 ## Principles
 
