@@ -1,10 +1,13 @@
 """Recording and replay of whole runs: model I/O, tool results, and the final record.
 
 One JSONL per run: a `meta` line, `model` lines (written by RecordingModel), `tool` lines in call
-order, and a closing `result` line holding the RunRecord. CI replays them offline.
+order, `clock` lines (every reading the loop took, relative to the first), and a closing `result`
+line holding the RunRecord. CI replays them offline, feeding the clock readings back so a run that
+hit its time limit replays the same way (R41).
 """
 
 import json
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -69,6 +72,39 @@ class ReplayTools:
         return ToolResult.model_validate(line["result"])
 
 
+class RecordingClock:
+    """Clock wrapper that appends each reading (seconds since the first) as a `kind: clock` line."""
+
+    def __init__(self, inner: Callable[[], float], path: Path) -> None:
+        self._inner, self._path = inner, path
+        self._t0: float | None = None
+
+    def __call__(self) -> float:
+        now = self._inner()
+        if self._t0 is None:
+            self._t0 = now
+        t = now - self._t0
+        append_line(self._path, {"kind": "clock", "t": t})
+        return t
+
+
+class ReplayClock:
+    """Returns the recorded clock readings in order; one reading too many is a replay mismatch."""
+
+    def __init__(self, path: Path) -> None:
+        self._readings = [float(x["t"]) for x in read_lines(path) if x.get("kind") == "clock"]
+        self._next = 0
+
+    def __call__(self) -> float:
+        if self._next >= len(self._readings):
+            raise ReplayMismatch(
+                f"clock read {self._next + 1} times, recorded {len(self._readings)}; {_RERECORD}"
+            )
+        t = self._readings[self._next]
+        self._next += 1
+        return t
+
+
 def meta_of(path: Path) -> dict[str, Any]:
     first = read_lines(path)[0]
     if first.get("kind") != "meta":
@@ -101,7 +137,7 @@ def _offline_ctx() -> ToolContext:
 
 
 def replay_run(path: Path, cfg: AgentConfig, sink: StepSink | None = None) -> RunRecord:
-    """Re-run the agent from a recording (model, tools and clock all fixed). No network."""
+    """Re-run the agent from a recording (model, tools and clock readings replayed). No network."""
     meta = meta_of(path)
     return run_agent(
         RunRequest(target=meta["target"], disease=meta["disease"]),
@@ -109,7 +145,7 @@ def replay_run(path: Path, cfg: AgentConfig, sink: StepSink | None = None) -> Ru
         model=ReplayModel(path),
         ctx=_offline_ctx(),
         sink=sink or (lambda _s: None),
-        clock=lambda: 0.0,
+        clock=ReplayClock(path),
         run_id="replay",
         fingerprint=meta["fingerprint"],
         data_date=meta["data_date"],
@@ -148,7 +184,6 @@ def record_run(
             "recorded_at": now().strftime("%Y-%m-%dT%H:%M:%SZ"),
         },
     )
-    kwargs: dict[str, Any] = {"clock": clock} if clock else {}
     rec = run_agent(
         req,
         cfg=cfg,
@@ -160,7 +195,7 @@ def record_run(
         label=label,
         now=now,
         dispatch_fn=RecordingTools(dispatch_fn, path),
-        **kwargs,
+        clock=RecordingClock(clock or time.monotonic, path),
     )
     append_line(path, {"kind": "result", "record": rec.model_dump()})
     return rec

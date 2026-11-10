@@ -82,16 +82,19 @@ def prompt_hash(cfg: AgentConfig) -> str:
     return _sha("\x00".join(parts))
 
 
+def bedrock_client_config() -> Config:
+    """Timeouts and retries for every bedrock-runtime client (Lambda and record_eval)."""
+    return Config(
+        read_timeout=60,
+        connect_timeout=5,
+        retries={"max_attempts": 2, "mode": "standard"},
+    )
+
+
 class BedrockModel:
     def __init__(self, region: str, client: Any | None = None) -> None:
         self._client: Any = client or boto3.client(
-            "bedrock-runtime",
-            region_name=region,
-            config=Config(
-                read_timeout=60,
-                connect_timeout=5,
-                retries={"max_attempts": 2, "mode": "standard"},
-            ),
+            "bedrock-runtime", region_name=region, config=bedrock_client_config()
         )
 
     def converse(
@@ -147,12 +150,32 @@ def _request_record(
     }
 
 
+def _without_cache_points(message: dict[str, Any]) -> dict[str, Any]:
+    return {**message, "content": [b for b in message["content"] if "cachePoint" not in b]}
+
+
+def _shared_prefix(prev: list[dict[str, Any]], messages: list[dict[str, Any]]) -> int:
+    """How many leading messages equal the previous request's (cache points ignored)."""
+    n = 0
+    for a, b in zip(prev, messages, strict=False):
+        if _without_cache_points(a) != _without_cache_points(b):
+            break
+        n += 1
+    return n
+
+
 class RecordingModel:
-    """Wraps a client and appends each call as a `kind: model` JSONL line."""
+    """Wraps a client and appends each call as a `kind: model` JSONL line.
+
+    The request's messages are stored as a delta to keep recordings small: `messages_prefix` is how
+    many leading messages equal the previous request's (cache points ignored) and
+    `messages_tail` holds the rest. Replay compares `messages_hash`, which covers all of them.
+    """
 
     def __init__(self, inner: ModelClient, path: Path) -> None:
         self._inner = inner
         self._path = path
+        self._prev: list[dict[str, Any]] = []
 
     def converse(
         self,
@@ -172,11 +195,14 @@ class RecordingModel:
             max_tokens=max_tokens,
             tool_choice=tool_choice,
         )
+        prefix = _shared_prefix(self._prev, messages)
+        self._prev = messages
         line = {
             "kind": "model",
             "request": {
                 **_request_record(model, system, messages, max_tokens, tool_choice, tools),
-                "messages": messages,
+                "messages_prefix": prefix,
+                "messages_tail": messages[prefix:],
             },
             "response": asdict(response),
         }

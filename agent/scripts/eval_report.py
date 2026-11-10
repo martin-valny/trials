@@ -24,6 +24,7 @@ METRICS = (
     "seconds_mean",
 )
 SUPPORT_TOLERANCE = 0.05
+UNRETRIEVED_REASON = "not retrieved in this run"
 _STAMP = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -69,12 +70,18 @@ def _agreement(labels: Path, verdicts: dict[tuple[str, str], str]) -> float | No
 def build_report(recordings: Path, labels: Path, previous: dict[str, Any] | None) -> dict[str, Any]:
     runs = [(p, *_load(p)) for p in sorted(recordings.glob("*.jsonl"))]
     cites = valid = supported = checked = shown = 0
+    written = unretrieved = 0
     verdict_by_sentence: dict[tuple[str, str], str] = {}
     for path, _meta, rec, retrieved in runs:
         if rec.memo:
             for sentence in rec.memo.sections:
                 cites += len(sentence.cites)
                 valid += sum(c in retrieved for c in sentence.cites)
+        # Before the check: sentences the deterministic check removed for an unretrieved ID.
+        written += (len(rec.memo.sections) if rec.memo else 0) + len(rec.removed)
+        unretrieved += sum(
+            str(r.get("reason", "")).endswith(UNRETRIEVED_REASON) for r in rec.removed
+        )
         checked += len(rec.verdicts)
         supported += sum(v.verdict == "supported" for v in rec.verdicts)
         shown += rec.judgement_shown
@@ -82,7 +89,9 @@ def build_report(recordings: Path, labels: Path, previous: dict[str, Any] | None
             verdict_by_sentence[(path.stem, v.sentence_id)] = v.verdict
     n = len(runs)
     report: dict[str, Any] = {
+        # After the check this is 1.0 by construction; unretrieved_removal_rate is the model's own rate.
         "citation_validity": valid / cites if cites else (1.0 if n else None),
+        "unretrieved_removal_rate": unretrieved / written if written else None,
         "support_rate": supported / checked if checked else None,
         "checker_agreement": _agreement(labels, verdict_by_sentence),
         "judgement_shown_rate": shown / n if n else None,

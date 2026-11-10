@@ -15,12 +15,15 @@ from record_eval import main as record_main
 from record_eval import record_pair
 
 from diligence.config import AgentConfig, Models, Price, load_config
+from diligence.loop import RunRequest
 from diligence.model import ReplayMismatch, ReplayModel, read_lines
 from diligence.recording import (
     RecordingTools,
+    ReplayClock,
     ReplayTools,
     comparable,
     meta_of,
+    record_run,
     replay_run,
     stored_record,
 )
@@ -55,6 +58,68 @@ def test_synthetic_exercises_the_checker() -> None:
     rec = stored_record(SYNTHETIC)
     assert {v.verdict for v in rec.verdicts} == {"supported", "partly", "unsupported"}
     assert len(rec.removed) >= 1 and rec.status == "done" and rec.judgement_shown
+
+
+def test_synthetic_keeps_a_summary_count_and_a_percent_from_p() -> None:
+    """I2/R37 in CI: "14" comes from site_risk's summary, "24%" from p 0.244."""
+    rec = stored_record(SYNTHETIC)
+    assert rec.memo is not None
+    kept = {s.id: s.text for s in rec.memo.sections}
+    assert "s5" in kept and "14 trials" in kept["s5"] and "24%" in kept["s5"]
+    assert all(r["sentence_id"] != "s5" for r in rec.removed)
+
+
+class _Ticking:
+    """A clock that jumps forward 50 s on every reading."""
+
+    def __init__(self) -> None:
+        self.t = 1000.0
+
+    def __call__(self) -> float:
+        self.t += 50.0
+        return self.t
+
+
+def test_time_limited_run_replays(tmp_path: Path) -> None:
+    """I6/R41: the recorded clock readings are fed back, so the time limit replays the same."""
+    path = tmp_path / "slow.jsonl"
+    http = fixture_http()
+    rec = record_run(
+        path,
+        req=RunRequest("cd20", "MS"),
+        cfg=load_config(),
+        model=scripted_model(),
+        ctx=ToolContext(http=http, base_url="https://example.test/data/"),
+        fingerprint="fp",
+        data_date="2026-11-04",
+        label="CD20",
+        clock=_Ticking(),
+    )
+    assert any(s.kind == "limit" and "time" in s.text for s in rec.steps)
+    clocks = [x["t"] for x in read_lines(path) if x["kind"] == "clock"]
+    assert clocks[0] == 0.0 and clocks == sorted(clocks)
+    replayed = replay_run(path, load_config())
+    assert comparable(replayed) == comparable(stored_record(path))
+
+
+def test_replay_clock_exhaustion_is_a_mismatch(tmp_path: Path) -> None:
+    path = tmp_path / "c.jsonl"
+    path.write_text(json.dumps({"kind": "clock", "t": 0.0}) + "\n")
+    clock = ReplayClock(path)
+    assert clock() == 0.0
+    with pytest.raises(ReplayMismatch, match="re-record the evaluation"):
+        clock()
+
+
+def test_model_lines_store_messages_as_a_delta() -> None:
+    """Minor 16: each model line stores only the messages the previous request did not have."""
+    lines = [x for x in read_lines(SYNTHETIC) if x["kind"] == "model"]
+    planner2, writer = lines[1]["request"], lines[2]["request"]
+    assert "messages" not in planner2
+    assert lines[0]["request"]["messages_prefix"] == 0
+    assert planner2["messages_prefix"] >= 1 and writer["messages_prefix"] >= 3
+    total = sum(len(json.dumps(x["request"]["messages_tail"])) for x in lines)
+    assert total < len(SYNTHETIC.read_text())
 
 
 def test_replay_tools_mismatch_and_exhaustion(tmp_path: Path) -> None:
@@ -118,7 +183,7 @@ def test_recording_layout() -> None:
         "recorded_at",
     } <= set(lines[0])
     kinds = {x["kind"] for x in lines}
-    assert kinds == {"meta", "model", "tool", "result"}
+    assert kinds == {"meta", "model", "tool", "clock", "result"}
     assert len(ReplayModel(SYNTHETIC)._calls) >= 4  # planner, writer and checker calls
 
 
@@ -135,6 +200,7 @@ def test_report_from_synthetic(tmp_path: Path) -> None:
     assert report["n_runs"] == 1
     assert report["citation_validity"] == 1.0
     assert report["support_rate"] == pytest.approx(0.6)  # 3 of 5 checked
+    assert report["unretrieved_removal_rate"] == 0.0  # Minor 15: the before-check rate
     assert report["judgement_shown_rate"] == 1.0
     assert report["checker_agreement"] is None
     assert report["baseline"]["support_rate"] == report["support_rate"]
@@ -286,3 +352,52 @@ def test_report_recomputed_from_committed_recordings() -> None:
     assert {k: v for k, v in committed.items() if k not in drop} == {
         k: v for k, v in fresh.items() if k not in drop
     }
+
+
+def test_record_all_continues_past_a_failing_pair(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Minor 18: an unknown row (or an HTTP error) skips that pair; the rest are kept."""
+    cfg = load_config().model_copy(update={"site_base_url": "https://example.test/data/"})
+    out, web = tmp_path / "eval" / "recordings", tmp_path / "web"
+
+    class Two:
+        """Two scripted runs back to back (the bad pair never reaches the model)."""
+
+        def __init__(self) -> None:
+            self.models = [scripted_model()]
+
+        def converse(self, **kw: Any) -> Any:
+            return self.models[0].converse(**kw)
+
+    pairs = [{"target": "nope", "disease": "MS"}, {"target": "cd20", "disease": "MS"}]
+    code = record_eval.record_all(
+        pairs, cfg=cfg, model=Two(), http=fixture_http(), out_dir=out, web_dir=web
+    )
+    assert code == 1
+    assert (out / "cd20__MS.jsonl").exists() and not (out / "nope__MS.jsonl").exists()
+    assert (tmp_path / "eval" / "report.json").exists()
+    err = capsys.readouterr().err
+    assert "nope/MS: FAILED (ValueError" in err and "1 pair(s) failed" in err
+
+
+def test_record_eval_bedrock_client_has_timeouts() -> None:
+    from diligence.model import bedrock_client_config
+
+    c = bedrock_client_config()
+    assert (c.read_timeout, c.connect_timeout) == (60, 5)
+    assert c.retries == {"max_attempts": 2, "mode": "standard"}
+
+
+def test_unretrieved_removal_rate_counts_removed_sentences(tmp_path: Path) -> None:
+    lines = read_lines(SYNTHETIC)
+    rec = lines[-1]["record"]
+    rec["removed"].append(
+        {"sentence_id": "s9", "text": "x", "reason": "cites PMID:1, not retrieved in this run"}
+    )
+    recs = tmp_path / "recs"
+    recs.mkdir()
+    (recs / "a.jsonl").write_text("".join(json.dumps(x) + "\n" for x in lines))
+    report = build_report(recs, tmp_path / "none.csv", previous=None)
+    written = len(rec["memo"]["sections"]) + len(rec["removed"])
+    assert report["unretrieved_removal_rate"] == pytest.approx(1 / written)

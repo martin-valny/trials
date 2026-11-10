@@ -19,7 +19,7 @@ import yaml
 
 from diligence.config import AgentConfig, load_config
 from diligence.loop import RunRequest
-from diligence.model import BedrockModel, ModelClient
+from diligence.model import BedrockModel, ModelClient, bedrock_client_config
 from diligence.recording import record_run
 from diligence.tools.http import client
 from diligence.tools.registry_of_tools import ToolContext
@@ -104,41 +104,63 @@ def main(argv: list[str] | None = None) -> int:
     import boto3
 
     session = boto3.Session(profile_name=args.profile) if args.profile else boto3.Session()
-    model = BedrockModel(cfg.region, client=session.client("bedrock-runtime", cfg.region))
-    http = client()
-    total = 0.0
-    for p in pairs:
-        cost = record_pair(
-            p["target"],
-            p["disease"],
-            cfg=cfg,
-            model=model,
-            http=http,
-            base_url=cfg.site_base_url,
-            out_dir=args.out,
-            web_dir=WEB_DIR,
-        )
-        total += cost
-        print(f"{p['target']}/{p['disease']}: ${cost:.4f}")
-    print(f"total: ${total:.4f}")
+    bedrock = session.client("bedrock-runtime", cfg.region, config=bedrock_client_config())
+    model = BedrockModel(cfg.region, client=bedrock)
+    return record_all(pairs, cfg=cfg, model=model, http=client(), out_dir=args.out)
 
-    report = args.out.parent / "report.json"
+
+def record_all(
+    pairs: list[dict[str, str]],
+    *,
+    cfg: AgentConfig,
+    model: ModelClient,
+    http: httpx.Client,
+    out_dir: Path,
+    web_dir: Path = WEB_DIR,
+) -> int:
+    """Record every pair; a failing pair is reported and skipped, never aborting the batch."""
+    total = 0.0
+    failed: list[str] = []
+    for p in pairs:
+        name = f"{p['target']}/{p['disease']}"
+        try:
+            cost = record_pair(
+                p["target"],
+                p["disease"],
+                cfg=cfg,
+                model=model,
+                http=http,
+                base_url=cfg.site_base_url,
+                out_dir=out_dir,
+                web_dir=web_dir,
+            )
+        except Exception as exc:  # noqa: BLE001 - one bad pair must not lose the paid batch
+            failed.append(name)
+            print(f"{name}: FAILED ({type(exc).__name__}: {exc})", file=sys.stderr)
+            continue
+        total += cost
+        print(f"{name}: ${cost:.4f}")
+    print(f"total: ${total:.4f}")
+    if failed:
+        print(f"{len(failed)} pair(s) failed: {', '.join(failed)}", file=sys.stderr)
+
+    report = out_dir.parent / "report.json"
     code = eval_report.main(
         [
             "--recordings",
-            str(args.out),
+            str(out_dir),
             "--labels",
-            str(args.out.parent / "labels.csv"),
+            str(out_dir.parent / "labels.csv"),
             "--out",
             str(report),
         ]
     )
     if code == 0:
-        WEB_DIR.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(report, WEB_DIR / "eval-report.json")
+        web_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(report, web_dir / "eval-report.json")
     else:
         print("report gates failed; eval-report.json not copied to the site", file=sys.stderr)
-    return code
+    return code or (1 if failed else 0)
 
 
 if __name__ == "__main__":
