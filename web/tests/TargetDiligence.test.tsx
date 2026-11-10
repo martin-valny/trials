@@ -15,6 +15,7 @@ vi.mock("../src/lib/diligence", async (importOriginal) => {
     ...real,
     diligenceEndpoint: vi.fn(() => null),
     loadRecorded: vi.fn(async () => null),
+    loadLatest: vi.fn(async () => null),
     startRun: vi.fn(),
     pollRun: vi.fn(),
     flagSentence: vi.fn(async () => undefined),
@@ -40,6 +41,7 @@ const panel = () => screen.getByRole("region", { name: "Diligence (AI agent)" })
 beforeEach(() => {
   m.diligenceEndpoint.mockReturnValue(null);
   m.loadRecorded.mockResolvedValue(null);
+  m.loadLatest.mockReset().mockResolvedValue(null);
   m.startRun.mockReset();
   m.pollRun.mockReset();
   m.flagSentence.mockReset().mockResolvedValue(undefined);
@@ -67,11 +69,53 @@ test("offline falls back to recorded run", async () => {
 });
 
 test("offline with no recorded run says so and links to a recorded example", async () => {
+  m.loadRecorded.mockImplementation(async (t, d) => (t === "cd20" && d === "all" ? fixture() : null));
   renderPanel();
   expect(await screen.findByText(/The diligence agent is offline/)).toBeInTheDocument();
-  const link = screen.getByRole("link", { name: /recorded example/i });
+  const link = await screen.findByRole("link", { name: /recorded example/i });
   expect(link).toHaveAttribute("href", "/target/cd20");
+  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "all");
   expect(screen.queryByRole("button", { name: /Run/ })).toBeNull();
+});
+
+test("no recorded example link while the example has no recording (R47)", async () => {
+  renderPanel();
+  expect(await screen.findByText(/The diligence agent is offline/)).toBeInTheDocument();
+  await act(async () => {});
+  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "all");
+  expect(screen.queryByRole("link", { name: /recorded example/i })).toBeNull();
+  expect(screen.getByText(/No run has been recorded for this target yet/)).toBeInTheDocument();
+});
+
+test("online: the backend's run is asked for first and shown over the committed one (R45)", async () => {
+  online();
+  const committed = fixture();
+  const newer = { ...fixture(), run_id: "newer", finished_at: "2026-11-12T08:00:00Z" };
+  m.loadRecorded.mockResolvedValue(committed);
+  m.loadLatest.mockResolvedValue({ replay: newer, stale: true });
+  renderPanel();
+  expect(await screen.findByText("Recorded run, 12 Nov 2026 · data has changed since")).toBeInTheDocument();
+  expect(m.loadLatest).toHaveBeenCalledWith("cd20", "MS");
+  expect(m.startRun).not.toHaveBeenCalled();
+  // A backend run can be flagged; Run again forces a new run.
+  expect(screen.getAllByRole("button", { name: /^Flag/ }).length).toBeGreaterThan(0);
+  expect(screen.getByRole("button", { name: "Run again" })).toBeInTheDocument();
+});
+
+test("online: falls back to the committed run when the backend has none", async () => {
+  online();
+  m.loadRecorded.mockResolvedValue(fixture());
+  renderPanel();
+  expect(await screen.findByText("Recorded run, 9 Nov 2026")).toBeInTheDocument();
+  expect(m.loadLatest).toHaveBeenCalledWith("cd20", "MS");
+  expect(screen.queryByRole("button", { name: /^Flag/ })).toBeNull();
+});
+
+test("offline never asks the backend", async () => {
+  m.loadRecorded.mockResolvedValue(fixture());
+  renderPanel();
+  await screen.findByText("Recorded run, 9 Nov 2026");
+  expect(m.loadLatest).not.toHaveBeenCalled();
 });
 
 test("online idle shows Run diligence; the first click is not forced", async () => {
@@ -83,7 +127,8 @@ test("online idle shows Run diligence; the first click is not forced", async () 
   expect(m.startRun).toHaveBeenCalledWith("cd20", "MS", false);
   expect(await screen.findByText("Recorded run, 9 Nov 2026")).toBeInTheDocument();
   // A run from the backend can be flagged.
-  expect(screen.getAllByRole("button", { name: /^Flag/ }).length).toBe(3);
+  // Kept sentences s1, s2, s3 and s5 (s4 was removed by the checker).
+  expect(screen.getAllByRole("button", { name: /^Flag/ }).length).toBe(4);
 });
 
 test("disease null means all", async () => {
@@ -187,7 +232,7 @@ test("done: partly mark in text, removed list as plain text, judgement with reas
   expect(screen.getByText("Whether the stopped trial signals a class issue is open.")).toBeInTheDocument();
   const meta = screen.getByRole("group", { name: "Run details" });
   expect(meta).toHaveTextContent("REPLACE_WITH_WRITER_MODEL_ID");
-  expect(meta).toHaveTextContent("6,600 in · 1,050 out");
+  expect(meta).toHaveTextContent("6,600 in · 720 out");
   expect(meta).toHaveTextContent("$0.00");
   expect(meta).toHaveTextContent("4 Nov 2026");
   expect(meta).toHaveTextContent("0.1.0");

@@ -30,6 +30,10 @@ function deadline(ms: number, outer?: AbortSignal): { signal: AbortSignal; clear
 
 const REQUEST_TIMEOUT_MS = 15000;
 const POLL_REQUEST_MS = 10000;
+/** The page-view lookup must not hold the panel up for long; on a timeout the committed run is shown. */
+const LATEST_TIMEOUT_MS = 5000;
+/** How long the panel follows a run: the Lambda Timeout (240 s, agent/template.yaml). */
+export const POLL_TIMEOUT_MS = 240000;
 
 /** fetch bounded by a deadline; the whole call (including reading the body via ``read``) is covered. */
 async function bounded<T>(ms: number, url: string, init: RequestInit, read: (res: Response) => Promise<T>, outer?: AbortSignal): Promise<T> {
@@ -53,6 +57,29 @@ export async function loadRecorded(target: string, disease: string): Promise<Run
     const res = await fetch(`${import.meta.env.BASE_URL}diligence/${diligenceKey(target, disease)}.json`);
     if (!res.ok) return null;
     return (await res.json()) as RunRecord;
+  } catch {
+    return null;
+  }
+}
+
+export interface KnownRun {
+  replay: RunRecord;
+  /** The row's data changed since this run. */
+  stale: boolean;
+}
+
+/** The backend's cached or latest run for the pair (GET /runs/latest: read-only, no quota); null when there is none, the
+ * agent is offline or unreachable (never throws). */
+export async function loadLatest(target: string, disease: string): Promise<KnownRun | null> {
+  const e = diligenceEndpoint();
+  if (e === null) return null;
+  const url = `${e}runs/latest?target=${encodeURIComponent(target)}&disease=${encodeURIComponent(disease)}`;
+  try {
+    return await bounded(LATEST_TIMEOUT_MS, url, {}, async (res) => {
+      if (res.status !== 200) return null;
+      const b = (await res.json()) as Partial<KnownRun>;
+      return b.replay ? { replay: b.replay, stale: b.stale === true } : null;
+    });
   } catch {
     return null;
   }
@@ -89,7 +116,7 @@ export interface PollOptions {
 
 /** Poll a run until it is done or failed. Network errors, 429 and 5xx are transient; rejects with "timeout", or "aborted" when ``signal`` fires. */
 export async function pollRun(runId: string, onStep: (step: DiligenceStep) => void, opts: PollOptions = {}): Promise<RunRecord> {
-  const { intervalMs = 1000, timeoutMs = 120000, signal } = opts;
+  const { intervalMs = 1000, timeoutMs = POLL_TIMEOUT_MS, signal } = opts;
   const aborted = () => new Error("aborted");
   const url = endpoint() + "runs/" + encodeURIComponent(runId);
   const start = Date.now();

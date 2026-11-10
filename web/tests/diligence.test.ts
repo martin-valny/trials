@@ -6,7 +6,9 @@ import {
   diligenceKey,
   flagSentence,
   isValidDisease,
+  loadLatest,
   loadRecorded,
+  POLL_TIMEOUT_MS,
   pollRun,
   renderable,
   startRun,
@@ -54,6 +56,41 @@ describe("loadRecorded", () => {
     expect(await loadRecorded("cd20", "MS")).toBeNull();
     vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("down"))));
     expect(await loadRecorded("cd20", "MS")).toBeNull();
+  });
+});
+
+describe("loadLatest (GET /runs/latest, R45)", () => {
+  beforeEach(() => vi.stubEnv("VITE_DILIGENCE_URL", "https://x.test/api"));
+  it("asks the read-only lookup with the pair in the query and maps 200", async () => {
+    const f = vi.fn(async () => json(200, { replay: record, stale: true }));
+    vi.stubGlobal("fetch", f);
+    expect(await loadLatest("cd20", "all")).toEqual({ replay: record, stale: true });
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://x.test/api/runs/latest?target=cd20&disease=all");
+    expect(init.method ?? "GET").toBe("GET");
+  });
+  it("is null on 404, 5xx, network errors, and offline (never throws)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json(404, { error: "none" })));
+    expect(await loadLatest("cd20", "MS")).toBeNull();
+    vi.stubGlobal("fetch", vi.fn(async () => json(503, {})));
+    expect(await loadLatest("cd20", "MS")).toBeNull();
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("down"))));
+    expect(await loadLatest("cd20", "MS")).toBeNull();
+    vi.stubEnv("VITE_DILIGENCE_URL", "");
+    const f = vi.fn();
+    vi.stubGlobal("fetch", f);
+    expect(await loadLatest("cd20", "MS")).toBeNull();
+    expect(f).not.toHaveBeenCalled();
+  });
+  it("gives up after 5 s so the panel falls back to the committed run", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_u: string, init: RequestInit) => new Promise((_r, rej) => init.signal!.addEventListener("abort", () => rej(new Error("aborted"))))),
+    );
+    const p = loadLatest("cd20", "MS");
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(await p).toBeNull();
   });
 });
 
@@ -198,6 +235,9 @@ describe("pollRun", () => {
     const assertion = expect(p).rejects.toThrow("timeout");
     await vi.advanceTimersByTimeAsync(5000);
     await assertion;
+  });
+  it("follows a run for 240 s by default, the Lambda Timeout (R40)", () => {
+    expect(POLL_TIMEOUT_MS).toBe(240000);
   });
   it("rejects with timeout", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json(200, running(0))));

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { SECTION_ORDER, diligenceEndpoint, flagSentence, isValidDisease, loadRecorded, pollRun, renderable, startRun } from "../../lib/diligence";
+import { SECTION_ORDER, diligenceEndpoint, flagSentence, isValidDisease, loadLatest, loadRecorded, pollRun, renderable, startRun } from "../../lib/diligence";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
 import "./diligence.css";
 
@@ -99,18 +99,24 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
     };
   }, []);
 
+  // Online, the backend's cached run (newer) is asked for first; the committed recording is the fallback (spec §7).
   useEffect(() => {
     if (!valid) return;
     let on = true;
-    void loadRecorded(row.id, dz).then((rec) => {
+    void Promise.all([loadRecorded(row.id, dz), online ? loadLatest(row.id, dz) : Promise.resolve(null)]).then(([rec, latest]) => {
       if (!on) return;
       committed.current = rec;
-      setS((p) => ({ ...p, phase: "ready", shown: rec ? { rec, source: "recorded", stale: false, fresh: false } : null }));
+      const shown: Shown | null = latest
+        ? { rec: latest.replay, source: "backend", stale: latest.stale, fresh: false }
+        : rec
+          ? { rec, source: "recorded", stale: false, fresh: false }
+          : null;
+      setS((p) => ({ ...p, phase: "ready", shown }));
     });
     return () => {
       on = false;
     };
-  }, [row.id, dz, valid]);
+  }, [row.id, dz, valid, online]);
 
   // A plain clock while the agent works (no decorative spinner).
   useEffect(() => {
@@ -256,18 +262,30 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
 
 function Intro({ online, here }: { online: boolean; here: boolean }) {
   const ex = `/target/${EXAMPLE.target}${EXAMPLE.disease === "all" ? "" : `?disease=${encodeURIComponent(EXAMPLE.disease)}`}`;
+  // The example link is offered only when that example's recording ships with the site (no dead end).
+  const [example, setExample] = useState(false);
+  useEffect(() => {
+    if (online || here) return;
+    let on = true;
+    void loadRecorded(EXAMPLE.target, EXAMPLE.disease).then((rec) => {
+      if (on) setExample(rec !== null);
+    });
+    return () => {
+      on = false;
+    };
+  }, [online, here]);
   return (
     <div className="dg-intro">
       {online ? (
         <p>
           The agent plans its searches, calls ClinicalTrials.gov, ChEMBL, Europe PMC, openFDA and this site&rsquo;s own data, follows up on what
           it finds, then writes a short memo in which every sentence cites a record it retrieved. A second model checks each claim against
-          its source before anything is shown. A run takes about a minute.
+          its source before anything is shown.
         </p>
       ) : (
         <p>
           <b>The diligence agent is offline.</b>{" "}
-          {here ? (
+          {here || !example ? (
             "No run has been recorded for this target yet."
           ) : (
             <>

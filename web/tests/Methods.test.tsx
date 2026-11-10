@@ -422,6 +422,7 @@ test("diligence: metrics render from eval-report.json", async () => {
   await within(s).findByText(/8 recorded runs/);
   const text = (s.textContent ?? "").replace(/\s+/g, " ");
   expect(text).toMatch(/Citation validity 100%/);
+  expect(text).not.toMatch(/Before the check/); // absent from this report
   expect(text).toMatch(/Support rate 88%/);
   expect(text).toMatch(/supported claims divided by all claims checked, including claims later removed/);
   expect(text).toMatch(/Checker agreement 90%/);
@@ -436,6 +437,16 @@ test("diligence: metrics render from eval-report.json", async () => {
   expect(text).toMatch(/version 0\.1\.0/);
   expect(text).toMatch(/12 November 2026/);
   expect(text).not.toMatch(/Evaluation results are published with the first recorded evaluation/);
+});
+
+test("diligence: the before-check citation rate renders when the report has it", async () => {
+  stubWithReport({ ...evalReport, unretrieved_removal_rate: 0.05 });
+  renderAt(<Methods />, "/methods#diligence");
+  const s = await diligence();
+  await within(s).findByText(/8 recorded runs/);
+  expect((s.textContent ?? "").replace(/\s+/g, " ")).toMatch(
+    /Before the check, 5% of written sentences cited or named an identifier the run never retrieved/,
+  );
 });
 
 test("diligence: checker agreement null reads not yet labelled", async () => {
@@ -478,8 +489,19 @@ test("diligence: tools, limits, checks and the two approaches not used", async (
   expect(text).toMatch(/Europe PMC covers all PubMed abstracts/);
   expect(text).toMatch(/openFDA/);
   expect(text).toMatch(/12 tool calls/);
-  expect(text).toMatch(/60,000 input and 4,000 output tokens/);
-  expect(text).toMatch(/90 seconds/);
+  // R38/R39/R40: the limits as config.yaml, loop.py and template.yaml have them.
+  expect(text).toMatch(/150,000 input and 8,000 output tokens/);
+  expect(text).toMatch(/90 seconds gathering/);
+  expect(text).toMatch(/3,000 to 4,096 output tokens/);
+  expect(text).toMatch(/at most 2,000 output tokens each/);
+  expect(text).toMatch(/after 4 minutes/);
+  expect(text).not.toMatch(/60,000|about a minute/);
+  // C1/R35, R37, Minor 7.
+  expect(text).toMatch(/every identifier named in a sentence was retrieved/);
+  expect(text).toMatch(/24% or 24\.4% for 0\.244/);
+  expect(text).toMatch(/not checked by the second model/);
+  expect(text).toMatch(/recorded runs shipped with the site have none/);
+  expect(text).not.toMatch(/Every sentence has a Flag link/);
   expect(text).toMatch(/3 new runs per visitor per day/);
   expect(text).toMatch(/30 per day overall/);
   expect(text).toMatch(/untrusted/);

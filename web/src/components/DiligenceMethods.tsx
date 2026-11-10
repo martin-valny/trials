@@ -6,6 +6,8 @@ import { longDate } from "./risk/RiskMethods";
 /** The shape agent/scripts/eval_report.py writes. */
 export interface EvalReport {
   citation_validity: number | null;
+  /** Sentences removed before the model check for citing or mentioning an unretrieved identifier, over all written. */
+  unretrieved_removal_rate?: number | null;
   support_rate: number | null;
   checker_agreement: number | null;
   judgement_shown_rate: number | null;
@@ -55,7 +57,16 @@ function Results({ r }: { r: EvalReport }) {
         {longDate(r.generated_at)}.
       </p>
       <ul>
-        <li>Citation validity {pct(r.citation_validity)}: the share of citations that point to something the run retrieved.</li>
+        <li>
+          Citation validity {pct(r.citation_validity)}: the share of shown citations that point to something the run retrieved
+          (sentences that fail this are removed before anything is shown).
+        </li>
+        {typeof r.unretrieved_removal_rate === "number" ? (
+          <li>
+            Before the check, {pct(r.unretrieved_removal_rate)} of written sentences cited or named an identifier the run never
+            retrieved; they were removed.
+          </li>
+        ) : null}
         <li>
           Support rate {pct(r.support_rate)}: supported claims divided by all claims checked, including claims later removed.
         </li>
@@ -101,19 +112,27 @@ export function DiligenceMethods() {
 
       <h3>Limits</h3>
       <p>
-        One run may make 12 tool calls, read 60,000 input and 4,000 output tokens (counted cumulatively across the run) and
-        take 90 seconds. The one final write and the checker may run past the token caps, within a bound. Hitting a limit
-        ends the run with what it has, and the trace says which limit. A visitor can start 3 new runs per visitor per day,
-        and 30 per day overall; past that the page shows the latest recorded run instead.
+        One run may make 12 tool calls, read 150,000 input and 8,000 output tokens (counted cumulatively across the run,
+        cached input included) and spend 90 seconds gathering evidence. Hitting a limit ends the gathering with what the run
+        has, and the trace says which limit. One model call then writes the memo, with 3,000 to 4,096 output tokens even when
+        the caps are spent, plus one repair call if the memo is malformed; the checker&apos;s calls follow, at most 2,000
+        output tokens each. The backend stops any run after 4 minutes, and the page waits that long before it says the run
+        did not finish. A visitor can start 3 new runs per visitor per day, and 30 per day overall; past that the page shows
+        the latest recorded run instead.
       </p>
 
       <h3>How claims are checked</h3>
       <p>
-        First, rules that need no model: every sentence cites, every citation was retrieved in this run, and every number other than a single-digit whole number
-        in a sentence (identifiers such as CD20 excluded) appears in the sources it cites. A sentence that fails is removed. Then a second model gives each remaining
+        First, rules that need no model: every sentence cites, every citation was retrieved in this run, every identifier
+        named in a sentence was retrieved in this run, and every number other than a single-digit whole number in a sentence
+        (identifiers such as CD20 excluded) appears in the sources it cites. A percentage also matches a fraction in those
+        sources, rounded or to one decimal (24% or 24.4% for 0.244). A cited record&apos;s sources include the totals and
+        summaries of the search that returned it. A sentence that fails is removed. Then a second model gives each remaining
         sentence a verdict: supported, partly supported or unsupported. Unsupported sentences are removed from the memo and
         listed, with the reason, under &ldquo;Removed by the checker&rdquo;. A judgement is shown only when every reason
-        behind it is supported; otherwise the page says it is withheld. Text from tools, such as abstracts and registry fields,
+        behind it is supported; otherwise the page says it is withheld. The three-line Read and &ldquo;What would change this
+        view&rdquo; are summaries, not checked by the second model: an identifier in them that the run did not retrieve is
+        replaced by &ldquo;[reference removed]&rdquo;. Text from tools, such as abstracts and registry fields,
         is untrusted data: it is passed to the model as data and the instructions say never to follow it.
       </p>
 
@@ -145,7 +164,8 @@ export function DiligenceMethods() {
       <h3>What is AI-written</h3>
       <p>
         The memo, the three-line Read and the judgement are written by the model. The trace and the checker marks are system
-        output. Every sentence has a Flag link for readers to report a problem.
+        output. On a run served by the agent&apos;s backend, every sentence has a Flag link for readers to report a problem;
+        recorded runs shipped with the site have none.
       </p>
 
       <h3>Approaches considered and not used</h3>
