@@ -188,3 +188,36 @@ test("an empty feed still renders without metadata", async () => {
   expect(await screen.findByText("No changes in the last 7 days")).toBeInTheDocument();
   expect(screen.queryByText(/Tracking/)).not.toBeInTheDocument();
 });
+
+test("every row keeps a source link, removed trials included, with no phone-only hiding class", async () => {
+  stubFetch();
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  await userEvent.click(screen.getByRole("button", { name: "Notable only" }));
+  for (const row of rows()) {
+    const src = within(row).getByRole("link", { name: /ClinicalTrials\.gov record for NCT\d+/ });
+    expect(src.closest("td")).not.toHaveClass("ch-why-none");
+    expect(src.closest("td")?.className).not.toMatch(/hide|mobile|phone/);
+  }
+});
+
+test("registry codes read as words: phases and enrollment type", async () => {
+  const mk = (field: string, o: unknown, n: unknown) => ({
+    ...seven.changes[0], nct_id: "NCT00000001", field, old_value: o, new_value: n, notable: true,
+  });
+  stubFetch({
+    "changes/7d.json": {
+      ...seven,
+      changes: [
+        mk("phases", ["PHASE2"], ["PHASE1", "PHASE2"]),
+        mk("phase", "EARLY_PHASE1", "PHASE3"),
+        mk("enrollment_type", "ESTIMATED", "ACTUAL"),
+      ],
+    },
+  });
+  renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  for (const t of ["Phase 2", "Phase 1/2", "Early phase 1", "Phase 3", "Estimated", "Actual"])
+    expect(screen.getByText(t)).toBeInTheDocument();
+  expect(screen.queryByText(/PHASE|ESTIMATED|ACTUAL/)).not.toBeInTheDocument();
+});

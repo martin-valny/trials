@@ -6,7 +6,6 @@
 .changes-page .ch-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; font-size: var(--fs-ui); }
 .changes-page .ch-filters .segmented { margin-right: 12px; }
 .changes-page .ch-filters .dropdown-button, .changes-page .ch-filters .pill { line-height: 18px; }
-.changes-page .pill.narrowing { margin-left: 8px; }
 
 .changes-page .ch-empty { max-width: 60ch; font-size: var(--fs-read); line-height: 1.5; padding-top: 8px; }
 .changes-page .ch-empty p { margin: 0 0 8px; }
@@ -37,6 +36,7 @@
 .changes-page .old { color: var(--muted); text-decoration: line-through; }
 .changes-page .new { color: var(--ink); }
 .changes-page .delta { margin-top: 2px; font-weight: 700; color: var(--ink); }
+.changes-page .ch-when, .changes-page .ch-short { display: none; }
 .changes-page .ch-src a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
 .changes-page .ch-src a:hover { text-decoration-color: var(--ink); }
 
@@ -61,9 +61,14 @@
   .changes-page .ch-nct { order: 1; }
   .changes-page td.ch-field { order: 2; }
   .changes-page td.ch-change { order: 3; flex: 1 1 8rem; min-width: 0; }
-  .changes-page .ch-title { order: 5; flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .changes-page td.ch-why { order: 6; flex: none; max-width: 45%; color: var(--ink); }
-  .changes-page .ch-sponsor, .changes-page .ch-date, .changes-page table.ch-table td.ch-src { display: none; }
+  .changes-page .ch-title { order: 5; flex: 1 1 10rem; min-width: 10rem; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .changes-page .ch-when { order: 6; display: inline; flex: none; color: var(--muted); font-size: var(--fs-meta); }
+  .changes-page td.ch-why { order: 7; flex: none; max-width: 45%; color: var(--ink); }
+  .changes-page table.ch-table td.ch-why-none { display: none; }
+  .changes-page table.ch-table td.ch-src { order: 8; flex: none; margin-left: auto; font-size: var(--fs-meta); }
+  .changes-page .ch-sponsor, .changes-page .ch-date { display: none; }
+  .changes-page .ch-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .changes-page .ch-short { display: inline; }
   .changes-page .delta { display: inline; margin: 0 0 0 8px; }
 }
 /* The caption is for screen readers; the old phone rule's 100% width plus the padding must not widen the page. */
