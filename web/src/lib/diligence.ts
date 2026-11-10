@@ -3,9 +3,11 @@ import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceSt
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
 
-/** The front door's example: a recorded run it links to in panel g (agent/eval/pairs.yaml). Panel g's own offline link
- * points to CD20 across all diseases (TargetDiligence's EXAMPLE). */
+/** The one example run the site points to: the front door's line and panel g's offline link (agent/eval/pairs.yaml). */
 export const EXAMPLE = { target: "cd20", disease: "MS", label: "CD20 in MS" } as const;
+
+/** The example's target page, opened at panel g. */
+export const exampleHref = (): string => `/target/${EXAMPLE.target}?${new URLSearchParams({ disease: EXAMPLE.disease, panel: "g" })}`;
 
 export const diligenceKey = (target: string, disease: string): string => `${target}__${disease}`;
 

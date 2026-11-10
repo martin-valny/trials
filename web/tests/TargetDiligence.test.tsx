@@ -72,20 +72,20 @@ test("offline falls back to recorded run", async () => {
 });
 
 test("offline with no recorded run says so and links to a recorded example", async () => {
-  m.loadRecorded.mockImplementation(async (t, d) => (t === "cd20" && d === "all" ? fixture() : null));
-  renderPanel();
+  m.loadRecorded.mockImplementation(async (t, d) => (t === "cd20" && d === "MS" ? fixture() : null));
+  renderPanel(null);
   expect(await screen.findByText(/The diligence agent is offline/)).toBeInTheDocument();
   const link = await screen.findByRole("link", { name: /recorded example/i });
-  expect(link).toHaveAttribute("href", "/target/cd20");
-  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "all");
+  expect(link).toHaveAttribute("href", "/target/cd20?disease=MS&panel=g");
+  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "MS");
   expect(screen.queryByRole("button", { name: /Run/ })).toBeNull();
 });
 
 test("no recorded example link while the example has no recording (R47)", async () => {
-  renderPanel();
+  renderPanel(null);
   expect(await screen.findByText(/The diligence agent is offline/)).toBeInTheDocument();
   await act(async () => {});
-  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "all");
+  expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "MS");
   expect(screen.queryByRole("link", { name: /recorded example/i })).toBeNull();
   expect(screen.getByText(/No run has been recorded for this target yet/)).toBeInTheDocument();
 });

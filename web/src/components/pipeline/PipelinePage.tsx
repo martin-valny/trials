@@ -14,7 +14,7 @@ import {
   type Headline,
   undatedCount,
 } from "../../lib/pipeline";
-import { EXAMPLE, loadRecorded } from "../../lib/diligence";
+import { EXAMPLE, exampleHref, loadRecorded } from "../../lib/diligence";
 import { usePhone } from "../../lib/useMediaQuery";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
 import { FigureControls } from "./FigureControls";
@@ -191,7 +191,7 @@ function DiligenceLine() {
     <p className="source dg-line">
       An AI agent drafts a checked diligence memo on each target page.{" "}
       {example ? (
-        <Link to={`/target/${EXAMPLE.target}?${new URLSearchParams({ disease: EXAMPLE.disease, panel: "g" })}`}>See an example: {EXAMPLE.label} →</Link>
+        <Link to={exampleHref()}>See an example: {EXAMPLE.label} →</Link>
       ) : (
         <Link to="/methods#diligence">How it works →</Link>
       )}

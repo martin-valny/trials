@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import * as lib from "../src/lib/diligence";
 import type { PipelineFile, RunRecord } from "../src/types";
@@ -71,8 +71,12 @@ const DESKTOP_INTRO =
   "AI diligence: an agent searches ClinicalTrials.gov, ChEMBL, Europe PMC and openFDA, writes a cited memo, and a second model checks every claim.";
 
 describe("diligence strip", () => {
+  const realScroll = Element.prototype.scrollIntoView;
   beforeEach(() => {
     m.diligenceEndpoint.mockReturnValue("https://agent.test/");
+  });
+  afterEach(() => {
+    Element.prototype.scrollIntoView = realScroll;
   });
 
   test("no run, online: the desktop sentence and Run diligence, which starts the run and scrolls to g", async () => {

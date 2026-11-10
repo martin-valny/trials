@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { SECTION_ORDER, flagSentence, formatRunDate, loadRecorded, renderable } from "../../lib/diligence";
+import { EXAMPLE, SECTION_ORDER, exampleHref, flagSentence, formatRunDate, loadRecorded, renderable } from "../../lib/diligence";
 import type { Shown } from "../../lib/useDiligenceRun";
 import { useDiligence } from "./DiligenceRunContext";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
@@ -10,9 +10,6 @@ import "./diligence.css";
 export const FIXED_LABEL = "AI judgement from public data, not investment advice";
 
 export { formatRunDate };
-
-/** Where "a recorded example" points when this page has no run and no agent. The first evaluation pair (agent/eval/pairs.yaml). */
-export const EXAMPLE = { target: "cd20", disease: "all", label: "CD20" };
 
 const SECTION_TITLE: Record<DiligenceSection, string> = {
   landscape: "Landscape",
@@ -133,7 +130,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
 }
 
 function Intro({ online, here }: { online: boolean; here: boolean }) {
-  const ex = `/target/${EXAMPLE.target}${EXAMPLE.disease === "all" ? "" : `?disease=${encodeURIComponent(EXAMPLE.disease)}`}`;
+  const ex = exampleHref();
   // The example link is offered only when that example's recording ships with the site (no dead end).
   const [example, setExample] = useState(false);
   useEffect(() => {

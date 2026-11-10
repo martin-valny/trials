@@ -32,15 +32,15 @@ test("a target page shows a recorded diligence run with its checked memo", async
 });
 
 test("without a recorded run the offline panel links to an example once the example is recorded", async ({ page }) => {
-  await page.route("**/diligence/cd20__all.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: RUN }));
-  await page.goto("/#/target/cd20?disease=MS");
+  await page.route("**/diligence/cd20__MS.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: RUN }));
+  await page.goto("/#/target/cd20");
   const panel = page.getByRole("region", { name: "Diligence (AI agent)" });
   await expect(panel.getByText("The diligence agent is offline.")).toBeVisible();
-  await expect(panel.getByRole("link", { name: /recorded example/ })).toHaveAttribute("href", "#/target/cd20");
+  await expect(panel.getByRole("link", { name: /recorded example/ })).toHaveAttribute("href", "#/target/cd20?disease=MS&panel=g");
 });
 
 test("no example link while the example has no recording (R47: no dead end)", async ({ page }) => {
-  await page.goto("/#/target/cd20?disease=MS");
+  await page.goto("/#/target/cd20");
   const panel = page.getByRole("region", { name: "Diligence (AI agent)" });
   await expect(panel.getByText("The diligence agent is offline.")).toBeVisible();
   await expect(panel.getByText(/No run has been recorded for this target yet/)).toBeVisible();
