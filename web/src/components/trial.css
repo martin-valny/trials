@@ -1,0 +1,44 @@
+/* The trial page on the Figure Plate: flat, hairlines and ink, no cards or tinted boxes. Root is
+   ".page.explore.trial-page" (.page gives the gutters, explore.css the plate tokens). */
+.trial-page { padding-bottom: 56px; }
+.trial-head h1 { font-size: 28px; line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
+.trial-head .page-head-crumb a { color: var(--muted); text-underline-offset: 3px; }
+.trial-head .page-head-crumb a:hover { color: var(--ink); }
+.trial-head .page-head-sentence { margin-top: 6px; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--muted); }
+.trial-head .page-head-sentence a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.trial-head .page-head-sentence a:hover { text-decoration-color: var(--ink); }
+.trial-missing { font-size: var(--fs-read); }
+
+/* Facts: muted sentence-case terms, two columns from 900px. */
+.trial-facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 56px; margin: 20px 0 0; font-size: var(--fs-body); line-height: var(--lh-body); }
+.trial-facts > div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 0 12px; }
+.trial-facts dt { color: var(--muted); }
+.trial-facts dd { margin: 0; overflow-wrap: anywhere; }
+@media (min-width: 900px) { .trial-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .trial-facts > div { grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0 10px; } }
+
+/* Section headings: plain 13px/700 over an ink rule. */
+.trial-page h2 { margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--ink); font-size: var(--fs-ui); font-weight: 700; line-height: 1.2; }
+.trial-page .rk-trial { margin-top: 28px; }
+.trial-page .summary p { margin: 0 0 8px; font-size: var(--fs-read); line-height: var(--lh-read); max-width: 72ch; }
+.trial-page .summary p.muted { font-size: var(--fs-meta); color: var(--muted); }
+.trial-page .summary a, .trial-page .rk-unscored a { color: var(--ink); text-underline-offset: 3px; }
+.trial-target { margin: 24px 0 0; font-size: var(--fs-ui); color: var(--muted); }
+
+.trial-timeline { list-style: none; margin: 0; padding: 0; font-size: var(--fs-body); }
+.trial-timeline li { padding: 8px 0 9px; border-bottom: 1px solid var(--rule); }
+.trial-timeline li:last-child { border-bottom: 0; }
+.trial-timeline strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Change history: the shared hairline table. */
+.trial-page table.history { width: 100%; border-collapse: collapse; font-size: var(--fs-ui); line-height: 1.4; font-variant-numeric: tabular-nums; }
+.trial-page table.history caption { text-align: left; color: var(--muted); font-size: var(--fs-meta); padding-bottom: 6px; }
+.trial-page table.history th { text-align: left; vertical-align: bottom; font-size: var(--fs-meta); font-weight: 400; color: var(--muted); padding: 0 20px 6px 0; border: 0; border-bottom: 1px solid var(--ink); }
+.trial-page table.history td { text-align: left; vertical-align: top; padding: 10px 20px 11px 0; border: 0; border-bottom: 1px solid var(--rule); }
+.trial-page table.history .old { color: var(--muted); text-decoration: line-through; }
+.trial-page table.history .delta { margin-top: 2px; font-weight: 700; }
+@media (max-width: 640px) {
+  .trial-page table.history tr { border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: none; margin: 0; padding: 10px 0; }
+  .trial-page table.history td { padding: 2px 0; border: 0; }
+  .trial-page table.history td::before { text-transform: none; font-size: var(--fs-meta); }
+}

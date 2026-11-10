@@ -8,7 +8,7 @@
 }
 
 /* The plate takes over the page: full width, and the shared header adopts its tokens. */
-:root:has(.explore) ::selection { background: var(--accent); color: var(--bg); }
+:root:has(.explore) ::selection { background: var(--ink); color: var(--plate); }
 /* The page is a column filling the viewport; the plate takes whatever the header leaves. */
 #root:has(.explore) { min-height: 100dvh; display: flex; flex-direction: column; }
 main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1 1 auto; display: flex; flex-direction: column; }

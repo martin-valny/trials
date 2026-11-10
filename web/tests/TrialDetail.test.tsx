@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { expect, test } from "vitest";
 import { TrialDetail } from "../src/components/TrialDetail";
 import type { ChangeItem, TrialFile } from "../src/types";
+import { phasesLabel, statusLabel } from "../src/lib/format";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
 const NCT = "NCT90000002";
@@ -20,7 +21,8 @@ test("shows key facts", async () => {
   stubFetch();
   show();
   expect(await screen.findByRole("heading", { level: 1, name: trial.title })).toBeInTheDocument();
-  expect(screen.getByText(trial.overall_status)).toBeInTheDocument();
+  expect(screen.getByText(statusLabel(trial.overall_status))).toBeInTheDocument();
+  expect(screen.getByText(phasesLabel(trial.phases))).toBeInTheDocument();
   expect(screen.getByText("Example Pharma")).toBeInTheDocument();
   expect(screen.getByText("100 (estimated)")).toBeInTheDocument();
   expect(screen.getByText("Jan 2024 (actual)")).toBeInTheDocument(); // month precision
@@ -72,9 +74,9 @@ test("unknown trial shows not found", async () => {
   stubFetch();
   show("NCT00000000");
   expect(await screen.findByRole("heading", { name: "Trial not found" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /Back to the changes feed/ })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: /See all trials/ })).toHaveAttribute(
     "href",
-    "/changes",
+    "/trials",
   );
 });
 
@@ -180,4 +182,36 @@ test("a running trial finished in all but status shows why it is not scored", as
   stubFetch({ "risk.json": risk });
   show("NCT04334031");
   expect(await screen.findByText("Not scored: primary completion reached")).toBeInTheDocument();
+});
+
+test("facts terms are sentence case, in a plain list", async () => {
+  stubFetch();
+  const { container } = show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  const terms = Array.from(container.querySelectorAll("dl.trial-facts dt")).map((e) => e.textContent);
+  expect(terms).toContain("Lead sponsor");
+  expect(terms).toContain("Primary completion");
+  expect(terms).toContain("Status");
+  for (const t of terms) expect(t).toBe((t as string).charAt(0) + (t as string).slice(1).toLowerCase());
+  expect(container.querySelector(".facts, .callout, .placeholder")).toBeNull();
+});
+
+test("breadcrumb reads Trials / NCT and links to the trials list", async () => {
+  stubFetch();
+  const { container } = show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  const crumb = container.querySelector(".page-head-crumb") as HTMLElement;
+  expect(crumb).toHaveTextContent(`Trials / ${NCT}`);
+  expect(within(crumb).getByRole("link", { name: "Trials" })).toHaveAttribute("href", "/trials");
+  expect(screen.queryByRole("link", { name: /← Changes/ })).toBeNull();
+});
+
+test("why stopped is a plain fact, not a callout", async () => {
+  stubFetch({ [`trials/${NCT}.json`]: { ...trial, overall_status: "TERMINATED", why_stopped: "Sponsor decision" } });
+  const { container } = show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  const dt = screen.getByText("Why stopped");
+  expect(dt.tagName).toBe("DT");
+  expect(dt.nextElementSibling).toHaveTextContent("Sponsor decision");
+  expect(container.querySelector(".callout")).toBeNull();
 });

@@ -53,8 +53,7 @@ describe("css scale", () => {
     expect(bad).toEqual([]);
   });
 
-  // Task 11 removes the last legacy token (the older pages move onto the plate tokens) and un-skips this.
-  it.skip("reads no legacy token", () => {
+  it("reads no legacy token", () => {
     const legacy = /var\(--(bg|fg|accent|card|warn-bg|warn-fg|ok|line)\)/;
     expect(files.filter((f) => legacy.test(f.css)).map((f) => f.path)).toEqual([]);
   });
