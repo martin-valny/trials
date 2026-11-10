@@ -1,7 +1,10 @@
+import json
+
 import httpx
+import pytest
 from helpers import fixture, json_response
 
-from diligence.tools.registry_of_tools import TOOL_SPECS, ToolContext, dispatch
+from diligence.tools.registry_of_tools import TOOL_SPECS, WRITER_TOOLS, ToolContext, dispatch
 
 
 def test_dispatch_unknown_tool(ctx: ToolContext) -> None:
@@ -27,6 +30,25 @@ def test_dispatch_routes_and_never_raises(make_http, ctx: ToolContext) -> None: 
     assert res.error
 
 
+def test_unexpected_tool_failure_is_logged(capsys: pytest.CaptureFixture[str]) -> None:
+    """I7/R42: the result says only the class; the log line has the message."""
+    from diligence import tools
+
+    def explode(_a: object, _c: object) -> None:
+        raise RuntimeError("upstream said: quota exceeded for key-less client")
+
+    impls = tools.registry_of_tools._IMPLS
+    old = impls["fda_label"]
+    impls["fda_label"] = explode  # type: ignore[assignment]
+    try:
+        res = dispatch("fda_label", {"drug": "x"}, ToolContext(httpx.Client(), "https://e/"))
+    finally:
+        impls["fda_label"] = old
+    assert res.error == "tool failed: RuntimeError"
+    line = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert line["where"] == "tool fda_label" and "quota exceeded" in line["message"]
+
+
 def test_tool_specs_shape() -> None:
     names = [s["toolSpec"]["name"] for s in TOOL_SPECS]
     assert names == [
@@ -36,7 +58,6 @@ def test_tool_specs_shape() -> None:
         "chembl_drug",
         "literature_search",
         "fda_label",
-        "submit_memo",
     ]
-    memo = TOOL_SPECS[-1]["toolSpec"]["inputSchema"]["json"]
+    memo = WRITER_TOOLS[-1]["toolSpec"]["inputSchema"]["json"]
     assert set(memo["required"]) == {"sections", "read", "judgement", "would_change"}

@@ -70,6 +70,17 @@ MEMO: dict[str, Any] = {
             "text": "A competing programme reported a positive phase 3 result.",
             "cites": ["NCT90000004"],
         },
+        {
+            # A count from a tool's summary field (site_risk summary n) and a percent from a
+            # risk p (0.244): both must pass the deterministic number check (R37).
+            "id": "s5",
+            "section": "competition",
+            "text": (
+                "The site's stop-risk model covers 14 trials of this target in MS and gives "
+                "the first running trial a 24% chance of stopping early."
+            ),
+            "cites": ["NCT90000002"],
+        },
     ],
     "read": [
         "CD20 depletion is established in MS.",
@@ -89,6 +100,7 @@ VERDICTS = [
     },
     {"sentence_id": "s3", "verdict": "supported", "reason": "Risk estimates are near 0.24."},
     {"sentence_id": "s4", "verdict": "unsupported", "reason": "Nothing in the source says this."},
+    {"sentence_id": "s5", "verdict": "supported", "reason": "Summary n is 14; p is 0.244."},
 ]
 
 
@@ -112,8 +124,14 @@ def scripted_model() -> ScriptedModel:
                 900,
                 80,
             ),
-            ModelResponse("tool_use", [_use("submit_memo", MEMO, "d1")], 2400, 420),
-            ModelResponse("tool_use", [_use("submit_memo", MEMO, "w1")], 2600, 430),
+            ModelResponse(
+                "tool_use",
+                [_use("ready_to_write", {"notes": "Three trials, two risk estimates."}, "d1")],
+                2400,
+                40,
+                cache_read=900,
+            ),
+            ModelResponse("tool_use", [_use("submit_memo", MEMO, "w1")], 2600, 480),
             ModelResponse(
                 "tool_use",
                 [_use("submit_verdicts", {"verdicts": VERDICTS}, "c1")],

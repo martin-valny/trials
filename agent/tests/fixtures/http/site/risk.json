@@ -4,13 +4,13 @@
   "cd20": {
    "all": {
     "median": 0.244,
-    "n": 7,
+    "n": 14,
     "typical": 0.2
    },
    "by_disease": {
     "MS": {
      "median": 0.244,
-     "n": 7,
+     "n": 14,
      "typical": 0.2
     }
    }

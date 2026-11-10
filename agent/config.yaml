@@ -6,8 +6,8 @@ models:
   checker: REPLACE_WITH_CHECKER_MODEL_ID
 limits:
   max_tool_calls: 12
-  max_input_tokens: 60000
-  max_output_tokens: 4000
+  max_input_tokens: 150000
+  max_output_tokens: 8000
   max_seconds: 90
 daily:
   per_ip_runs_per_day: 3
@@ -20,8 +20,12 @@ tables:
   flags: diligence-flags
 agent_version: "0.1.0"
 # Per model ID, USD per million tokens. Placeholders: Martin enters the Bedrock pricing-page
-# values at the checkpoint (keys must match the model IDs above).
+# values at the checkpoint (keys must match the model IDs above). cache_read_per_mtok and
+# cache_write_per_mtok are the prompt-cache prices; leave them out to price cached tokens as input.
 prices:
-  REPLACE_WITH_WRITER_MODEL_ID: {input_per_mtok: 0.0, output_per_mtok: 0.0}
-  REPLACE_WITH_PLANNER_MODEL_ID: {input_per_mtok: 0.0, output_per_mtok: 0.0}
-  REPLACE_WITH_CHECKER_MODEL_ID: {input_per_mtok: 0.0, output_per_mtok: 0.0}
+  REPLACE_WITH_WRITER_MODEL_ID:
+    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
+  REPLACE_WITH_PLANNER_MODEL_ID:
+    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
+  REPLACE_WITH_CHECKER_MODEL_ID:
+    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}

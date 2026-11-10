@@ -25,7 +25,6 @@ from diligence.tools.http import client
 from diligence.tools.registry_of_tools import ToolContext
 from diligence.tools.site import row_fingerprint
 
-PLACEHOLDER = "REPLACE_WITH"
 ROOT = Path(__file__).resolve().parents[2]
 WEB_DIR = ROOT / "web" / "public" / "diligence"
 
@@ -78,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = load_config()
     model_ids = cfg.models.model_dump().values()
-    if any(PLACEHOLDER in m for m in model_ids):
+    if cfg.has_placeholder_models():
         print(
             "config.yaml still has placeholder model IDs (REPLACE_WITH_...); "
             "set the Bedrock model IDs and prices first.",

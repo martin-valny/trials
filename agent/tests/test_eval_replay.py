@@ -134,7 +134,7 @@ def test_report_from_synthetic(tmp_path: Path) -> None:
     report = build_report(rec, labels, previous=None)
     assert report["n_runs"] == 1
     assert report["citation_validity"] == 1.0
-    assert report["support_rate"] == pytest.approx(0.5)
+    assert report["support_rate"] == pytest.approx(0.6)  # 3 of 5 checked
     assert report["judgement_shown_rate"] == 1.0
     assert report["checker_agreement"] is None
     assert report["baseline"]["support_rate"] == report["support_rate"]

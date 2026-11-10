@@ -27,7 +27,7 @@ def test_site_target_happy(make_http: Callable[..., httpx.Client]) -> None:
     first = res.data["trials"][0]
     assert first["why_stopped"] == "Sponsor decision after interim safety review"
     assert first["lead_sponsor"] == "Acme Biotech"
-    assert first["phases"] == ["PHASE2"]
+    assert first["phase"] == "2"
     assert res.data["chain"]["drugs"] == ["example drug"]
     assert "MS" in res.data["chain"]["approved"]
 
@@ -44,7 +44,7 @@ def test_site_risk_happy(make_http: Callable[..., httpx.Client]) -> None:
     assert res.error is None
     assert res.ids == ["NCT90000002", "NCT90000004"]
     assert res.data["trials"][1]["p"] == 0.661
-    assert res.data["summary"]["n"] == 7
+    assert res.data["summary"]["n"] == 14
 
 
 def test_site_risk_missing_file_note(make_http: Callable[..., httpx.Client]) -> None:
@@ -101,7 +101,7 @@ def _big_pipeline() -> dict:  # type: ignore[type-arg]
         }
         for i in range(40)
     ]
-    marks[35]["s"] = "stop"  # past position 30 in raw order
+    marks[35]["s"] = "stop"  # past position 20 in raw order
     pipeline["rows"][0]["marks"] = marks
     return pipeline
 
@@ -117,9 +117,9 @@ def test_site_target_cap_picks_stopped_first_and_reports_total(
 ) -> None:
     res = site_target("cd20", "all", base_url=BASE, http=make_http(_big_handler))
     assert res.error is None
-    assert len(res.ids) == 30 and res.ids[0] == "NCT10000035"
+    assert len(res.ids) == 20 and res.ids[0] == "NCT10000035"
     assert res.data["trials_total"] == 40
-    assert "Showing 30 of 40" in res.data["note"]
+    assert "Showing 20 of 40" in res.data["note"]
     assert sum(res.data["counts_by_status"].values()) == 40
     assert res.data["counts_by_status"]["stopped"] == 1
     ends = [t["end_year"] for t in res.data["trials"][1:]]
@@ -147,3 +147,11 @@ def test_row_fingerprint_handles_missing_phase_and_state() -> None:
         m.pop("c", None)
         m.pop("s", None)
     assert row_fingerprint(pipeline, None, "cd20", "MS")
+
+
+def test_site_target_trials_drop_empty_fields(make_http: Callable[..., httpx.Client]) -> None:
+    """R39: compact rows; no null or empty fields are sent to the model."""
+    res = site_target("cd20", "all", base_url=BASE, http=make_http(_site_handler))
+    assert res.data["trials"]
+    for t in res.data["trials"]:
+        assert all(v not in (None, "", []) for v in t.values())

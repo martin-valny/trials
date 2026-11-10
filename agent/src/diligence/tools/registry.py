@@ -22,7 +22,12 @@ def registry_search(
     http: httpx.Client,
 ) -> ToolResult:
     args: dict[str, Any] = {"intervention": intervention}
-    params: dict[str, Any] = {"query.intr": intervention, "pageSize": 100, "fields": FIELDS}
+    params: dict[str, Any] = {
+        "query.intr": intervention,
+        "pageSize": 100,
+        "fields": FIELDS,
+        "countTotal": "true",
+    }
     if condition:
         params["query.cond"] = condition
         args["condition"] = condition
@@ -31,8 +36,11 @@ def registry_search(
         args["status"] = status
     try:
         studies: list[dict[str, Any]] = []
+        total: int | None = None
         for _ in range(MAX_PAGES):
             page = get_json(http, URL, params)
+            if total is None and isinstance(page.get("totalCount"), int):
+                total = page["totalCount"]
             studies += page.get("studies", [])
             token = page.get("nextPageToken")
             if not token:
@@ -62,12 +70,19 @@ def registry_search(
                         "why_stopped": trim(st.get("whyStopped") or "", 300) or None,
                     }
                 )
-        data = {
-            "counted": sum(by_status.values()),
+        counted = sum(by_status.values())
+        data: dict[str, Any] = {
+            "counted": counted,
             "counts_by_status": dict(by_status),
             "counts_by_phase": dict(by_phase),
             "trials": trials,
         }
+        if total is not None:
+            data["total"] = total
+            if total > counted:
+                data["note"] = (
+                    f"The registry has {total} matching trials; counts cover the first {counted}."
+                )
         return ToolResult(
             name="registry_search", args=args, data=data, ids=[t["nct"] for t in trials]
         )

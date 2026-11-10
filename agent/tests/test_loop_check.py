@@ -52,7 +52,7 @@ def run_with(memo: dict[str, Any], checker: list[Entry], tctx: ToolContext):  # 
     model = ScriptedModel(
         [
             resp([use("site_target", {}, "a")]),
-            resp([use("submit_memo", memo, "d")]),
+            resp([use("ready_to_write", {"notes": "n"}, "d")]),
             memo_resp(memo, tin=0, tout=0),
             *checker,
         ]
@@ -90,7 +90,7 @@ def test_unretrieved_cite_removed_with_note_and_counts(tctx: ToolContext) -> Non
             "reason": "cites PMID:777, not retrieved in this run",
         }
     ]
-    note = next(s for s in steps if s.kind == "note")
+    note = next(s for s in steps if s.kind == "note" and s.text.startswith("Removed"))
     assert note.text == "Removed s2: cites PMID:777, not retrieved in this run"
     assert steps[-2].text == "checking 2 claims … 1 supported, 0 partly, 1 removed"
     # Only the surviving sentence went to the checker.
@@ -181,5 +181,5 @@ def test_summary_lines_scrubbed_with_notes(tctx: ToolContext) -> None:
 
 def test_number_removal_has_note_step(tctx: ToolContext) -> None:
     _, _, steps = run_with(valid_memo("It enrolled 412 patients."), [], tctx)
-    notes = [s.text for s in steps if s.kind == "note"]
+    notes = [s.text for s in steps if s.kind == "note" and s.text.startswith("Removed")]
     assert notes == ["Removed s1: number not found in cited sources"]

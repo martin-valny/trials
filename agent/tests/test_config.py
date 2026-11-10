@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import pytest
+import yaml
+from pydantic import ValidationError
 
-from diligence.config import load_config
+from diligence.config import DEFAULT_PATH, load_config
 
 
 def test_load_config_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -11,8 +13,8 @@ def test_load_config_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     cfg = load_config()
     assert cfg.region == "eu-central-1"
     assert cfg.limits.max_tool_calls == 12
-    assert cfg.limits.max_input_tokens == 60000
-    assert cfg.limits.max_output_tokens == 4000
+    assert cfg.limits.max_input_tokens == 150000
+    assert cfg.limits.max_output_tokens == 8000
     assert cfg.limits.max_seconds == 90
     assert cfg.daily.per_ip_runs_per_day == 3
     assert cfg.daily.global_runs_per_day == 30
@@ -49,3 +51,20 @@ def test_table_names_can_come_from_the_environment(monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv("FLAGS_TABLE", "stack-flags")
     t = load_config().tables
     assert (t.runs, t.limits, t.flags) == ("stack-runs", "stack-limits", "stack-flags")
+
+
+def test_every_model_id_needs_a_price(tmp_path: Path) -> None:
+    """Minor 5: a missing price would silently show cost 0 on the page."""
+    raw = yaml.safe_load(DEFAULT_PATH.read_text())
+    raw["prices"].pop(raw["models"]["checker"])
+    path = tmp_path / "c.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    with pytest.raises(ValidationError, match="prices has no entry"):
+        load_config(path)
+
+
+def test_allowed_origins_is_a_comma_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    """R46: the function URL and the handler accept several origins."""
+    monkeypatch.setenv("ALLOWED_ORIGIN", "https://martin-valny.github.io, http://localhost:4181")
+    cfg = load_config()
+    assert cfg.allowed_origins == {"https://martin-valny.github.io", "http://localhost:4181"}

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class _Strict(BaseModel):
@@ -39,6 +39,13 @@ class Tables(_Strict):
 class Price(_Strict):
     input_per_mtok: float
     output_per_mtok: float
+    # Prompt-cache prices; unset means the input price is used for cached tokens too.
+    cache_read_per_mtok: float | None = None
+    cache_write_per_mtok: float | None = None
+
+
+# Model IDs in the committed config.yaml start with this until Martin enters real ones.
+PLACEHOLDER = "REPLACE_WITH"
 
 
 class AgentConfig(_Strict):
@@ -51,6 +58,21 @@ class AgentConfig(_Strict):
     agent_version: str
     allowed_origin: str
     prices: dict[str, Price]
+
+    @model_validator(mode="after")
+    def _every_model_priced(self) -> "AgentConfig":
+        missing = sorted({m for m in self.models.model_dump().values() if m not in self.prices})
+        if missing:
+            raise ValueError(f"prices has no entry for model id(s) {missing}")
+        return self
+
+    @property
+    def allowed_origins(self) -> frozenset[str]:
+        """`allowed_origin` may hold several origins, comma separated."""
+        return frozenset(o.strip() for o in self.allowed_origin.split(",") if o.strip())
+
+    def has_placeholder_models(self) -> bool:
+        return any(PLACEHOLDER in m for m in self.models.model_dump().values())
 
 
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config.yaml"

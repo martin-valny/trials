@@ -6,7 +6,8 @@ from typing import Any
 
 import httpx
 
-from diligence.prompts import MEMO_TOOL
+from diligence.log import log_error
+from diligence.prompts import MEMO_TOOL, READY_TOOL
 from diligence.tools.chembl import chembl_drug
 from diligence.tools.fda import fda_label
 from diligence.tools.literature import literature_search
@@ -85,8 +86,13 @@ TOOL_SPECS: list[dict[str, Any]] = [
         {"drug": {**_STR, "description": "Generic drug name"}},
         ["drug"],
     ),
-    MEMO_TOOL,
 ]
+
+# What each model call is offered. The planner gathers and ends with ready_to_write; only the
+# writer call (forced submit_memo) can file a memo. The writer keeps the planner's tools because
+# the history it reads holds toolUse blocks for them.
+PLANNER_TOOLS: list[dict[str, Any]] = [*TOOL_SPECS, READY_TOOL]
+WRITER_TOOLS: list[dict[str, Any]] = [*PLANNER_TOOLS, MEMO_TOOL]
 
 _REQUIRED: dict[str, list[str]] = {
     s["toolSpec"]["name"]: s["toolSpec"]["inputSchema"]["json"]["required"] for s in TOOL_SPECS
@@ -141,4 +147,5 @@ def dispatch(name: str, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     try:
         return _IMPLS[name](clean, ctx)
     except Exception as exc:  # noqa: BLE001 - tools must never raise into the loop
+        log_error(f"tool {name}", exc)
         return ToolResult(name=name, args=clean, error=f"tool failed: {type(exc).__name__}")

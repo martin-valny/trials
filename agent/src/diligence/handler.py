@@ -20,12 +20,13 @@ import boto3
 import httpx
 
 from diligence.config import AgentConfig, load_config
+from diligence.log import log_error, log_event
 from diligence.loop import RunRequest, run_agent
-from diligence.model import BedrockModel, ModelClient, ModelResponse
+from diligence.model import BedrockModel, ModelClient
 from diligence.store import STALE_AFTER_S, NewRun, Store, cache_key
 from diligence.tools.http import ToolError, client, get_json
 from diligence.tools.registry_of_tools import ToolContext
-from diligence.tools.site import _find_row, _marks, row_fingerprint
+from diligence.tools.site import find_row, marks_for, row_fingerprint
 from diligence.types import RunRecord, Step
 
 SITE_CACHE_S = 600
@@ -61,6 +62,8 @@ class Deps:
     http: httpx.Client
     model_factory: Callable[[str], ModelClient]
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
+    # False while config.yaml still has placeholder model IDs: no run may start (Minor 5).
+    configured: bool = True
     _site: dict[str, tuple[float, Any]] = field(default_factory=dict)
 
 
@@ -72,6 +75,7 @@ def default_deps() -> Deps:
         invoke=make_lambda_invoker(),
         http=client(),
         model_factory=lambda region: BedrockModel(region),
+        configured=not cfg.has_placeholder_models(),
     )
 
 
@@ -166,15 +170,17 @@ def _post_run(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
     target, disease, force = body.get("target"), body.get("disease"), body.get("force", False)
     if not isinstance(target, str) or not isinstance(disease, str) or not isinstance(force, bool):
         raise _Bad("target and disease must be strings; force must be a boolean")
+    if not deps.configured:
+        return _resp(503, {"error": "the agent is not configured"})
     try:
         pipeline = _site_json(deps, "pipeline.json", required=True)
         risk = _site_json(deps, "risk.json", required=False)
     except ToolError:
         return _resp(502, {"error": "site data unavailable"})
-    row = _find_row(pipeline, target)
+    row = find_row(pipeline, target)
     if row is None:
         raise _Bad("unknown target")
-    if disease != "all" and not _marks(row, disease):
+    if disease != "all" and not marks_for(row, disease):
         raise _Bad("no trials for this target in that disease")
     fingerprint = row_fingerprint(pipeline, risk, target, disease)
     key = cache_key(target, disease, fingerprint, deps.cfg.agent_version)
@@ -250,27 +256,6 @@ def _post_flag(event: dict[str, Any], deps: Deps) -> dict[str, Any]:
 # -- execute ---------------------------------------------------------------------------------------------------
 
 
-class _CostTracker:
-    """Wraps the model to keep a running cost total (steps carry tokens, not model ids)."""
-
-    def __init__(self, inner: ModelClient, cfg: AgentConfig) -> None:
-        self._inner, self._cfg = inner, cfg
-        self.cost = 0.0
-
-    def converse(self, **kw: Any) -> ModelResponse:
-        resp = self._inner.converse(**kw)
-        price = self._cfg.prices.get(kw["model"])
-        if price is None:
-            print(
-                json.dumps({"event": "warning", "text": f"no price for {kw['model']}"}), flush=True
-            )
-        else:
-            self.cost += (
-                resp.tokens_in * price.input_per_mtok + resp.tokens_out * price.output_per_mtok
-            ) / 1e6
-        return resp
-
-
 def _fail(deps: Deps, run_id: str, text: str) -> None:
     record = deps.store.get_run(run_id)
     if record is None or record.status != "running":
@@ -297,7 +282,7 @@ def _execute(run_id: str, deps: Deps) -> None:
         return
     # Budget: max_seconds (config, 90) plus per-call timeouts stay below the Lambda Timeout (120).
     try:
-        model = _CostTracker(deps.model_factory(deps.cfg.region), deps.cfg)
+        model = deps.model_factory(deps.cfg.region)
 
         def sink(step: Step) -> None:
             deps.store.append_step(run_id, step)
@@ -312,7 +297,6 @@ def _execute(run_id: str, deps: Deps) -> None:
                         "ms": step.ms,
                         "tokens_in": step.tokens_in,
                         "tokens_out": step.tokens_out,
-                        "cost_usd": round(model.cost, 6),
                     }
                 ),
                 flush=True,
@@ -323,7 +307,7 @@ def _execute(run_id: str, deps: Deps) -> None:
         if isinstance(meta, dict):
             data_date = str(meta.get("generated_for", ""))
         pipeline = _site_json(deps, "pipeline.json", required=False) or {}
-        row = _find_row(pipeline, record.target)
+        row = find_row(pipeline, record.target)
         final = run_agent(
             RunRequest(record.target, record.disease),
             cfg=deps.cfg,
@@ -338,7 +322,16 @@ def _execute(run_id: str, deps: Deps) -> None:
             now=deps.now,
         )
         deps.store.finish(run_id, final)
+        log_event(
+            "run_end",
+            run_id=run_id,
+            status=final.status,
+            tokens_in=final.tokens_in,
+            tokens_out=final.tokens_out,
+            cost_usd=round(final.cost_usd, 6),
+        )
     except Exception as exc:  # noqa: BLE001 - never leave a run "running" forever
+        log_error("execute", exc)
         _fail(deps, run_id, f"run failed: {type(exc).__name__}")
 
 

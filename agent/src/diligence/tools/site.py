@@ -10,7 +10,9 @@ import httpx
 from diligence.tools.http import ToolError, get_json, get_response, trim
 from diligence.types import ToolResult
 
-MAX_TRIALS = 30
+MAX_TRIALS = 20
+TITLE_CHARS = 100
+WHY_CHARS = 200
 STATE_LABEL = {
     "adv": "advanced",
     "run": "running",
@@ -20,14 +22,14 @@ STATE_LABEL = {
 }
 
 
-def _find_row(pipeline: dict[str, Any], target: str) -> dict[str, Any] | None:
+def find_row(pipeline: dict[str, Any], target: str) -> dict[str, Any] | None:
     for row in pipeline.get("rows", []):
         if row.get("id") == target:
             return row  # type: ignore[no-any-return]
     return None
 
 
-def _marks(row: dict[str, Any], disease: str) -> list[dict[str, Any]]:
+def marks_for(row: dict[str, Any], disease: str) -> list[dict[str, Any]]:
     marks: list[dict[str, Any]] = row.get("marks", [])
     return marks if disease == "all" else [m for m in marks if disease in m.get("dz", [])]
 
@@ -36,8 +38,8 @@ def row_fingerprint(
     pipeline: dict[str, Any], risk: dict[str, Any] | None, target: str, disease: str
 ) -> str:
     """Hash of what the row shows for this disease: (NCT, state, phase, why) plus rounded risk p."""
-    row = _find_row(pipeline, target)
-    marks = _marks(row, disease) if row else []
+    row = find_row(pipeline, target)
+    marks = marks_for(row, disease) if row else []
     info = pipeline.get("trials", {})
     parts = sorted(
         (
@@ -55,6 +57,7 @@ def row_fingerprint(
 
 
 def _phase_label(phases: list[str]) -> str:
+    """["PHASE1", "PHASE2"] -> "1/2" (compact for the model)."""
     return "/".join(p.replace("PHASE", "") for p in phases) or "NA"
 
 
@@ -77,10 +80,11 @@ def _pick(marks: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _trial(
     m: dict[str, Any], info: dict[str, Any], base_url: str, http: httpx.Client
 ) -> dict[str, Any]:
+    """One trial, compact: empty fields are dropped so the model reads less (R39)."""
     nct = m["n"]
     t: dict[str, Any] = {
         "nct": nct,
-        "title": trim((info.get(nct) or {}).get("t", ""), 120),
+        "title": trim((info.get(nct) or {}).get("t", ""), TITLE_CHARS),
         "state": STATE_LABEL.get(m.get("s") or "unk", "unknown"),
         "drug": m.get("drug"),
         "start_year": m.get("y"),
@@ -92,24 +96,24 @@ def _trial(
     except (ToolError, ValueError):
         full = None
     if isinstance(full, dict):
-        t["title"] = trim(full.get("title") or t["title"], 120)
-        t["phases"] = full.get("phases", [])
+        t["title"] = trim(full.get("title") or t["title"], TITLE_CHARS)
+        t["phase"] = _phase_label(full.get("phases") or [])
         t["overall_status"] = full.get("overall_status")
-        t["why_stopped"] = trim(full.get("why_stopped") or "", 300) or None
+        t["why_stopped"] = trim(full.get("why_stopped") or "", WHY_CHARS)
         t["lead_sponsor"] = full.get("lead_sponsor")
     else:
         t["why_stopped"] = (info.get(nct) or {}).get("why")
-    return t
+    return {k: v for k, v in t.items() if v not in (None, "", [])}
 
 
 def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client) -> ToolResult:
     args = {"target": target, "disease": disease}
     try:
         pipeline = get_json(http, base_url + "pipeline.json")
-        row = _find_row(pipeline, target)
+        row = find_row(pipeline, target)
         if row is None:
             return ToolResult(name="site_target", args=args, error=f"unknown target {target!r}")
-        marks = _marks(row, disease)
+        marks = marks_for(row, disease)
         sponsors = pipeline.get("sponsors", [])
         info = pipeline.get("trials", {})
         shown = _pick(marks)[:MAX_TRIALS]
@@ -169,7 +173,7 @@ def site_risk(target: str, disease: str, *, base_url: str, http: httpx.Client) -
     note = {"note": "Stop-risk estimates unavailable"}
     try:
         pipeline = get_json(http, base_url + "pipeline.json")
-        row = _find_row(pipeline, target)
+        row = find_row(pipeline, target)
         if row is None:
             return ToolResult(name="site_risk", args=args, error=f"unknown target {target!r}")
         resp = get_response(http, base_url + "risk.json")
@@ -177,7 +181,7 @@ def site_risk(target: str, disease: str, *, base_url: str, http: httpx.Client) -
             return ToolResult(name="site_risk", args=args, data=note)
         risk = resp.json()
         scored = risk.get("trials", {})
-        marks = _marks(row, disease)
+        marks = marks_for(row, disease)
         trials = [
             {
                 "nct": m["n"],

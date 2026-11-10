@@ -417,11 +417,11 @@ def test_step_logs_are_structured_json(env: Env, capsys: pytest.CaptureFixture[s
     assert rec is not None and len(steps) == len(rec.steps)
     for i, line in enumerate(steps, start=1):
         assert line["run_id"] == run_id and line["n"] == i
-        assert {"kind", "tool", "ms", "tokens_in", "tokens_out", "cost_usd"} <= set(line)
+        assert {"kind", "tool", "ms", "tokens_in", "tokens_out"} <= set(line)
     assert [s["tool"] for s in steps if s["tool"]][:2] == ["site_target", "site_risk"]
 
 
-def test_step_log_cost_is_running_total(env: Env, capsys: pytest.CaptureFixture[str]) -> None:
+def test_run_end_log_has_the_record_cost(env: Env, capsys: pytest.CaptureFixture[str]) -> None:
     prices = {
         k: v.model_copy(update={"input_per_mtok": 1.0, "output_per_mtok": 2.0})
         for k, v in env.cfg.prices.items()
@@ -433,10 +433,13 @@ def test_step_log_cost_is_running_total(env: Env, capsys: pytest.CaptureFixture[
     capsys.readouterr()
     env.execute(run_id)
     lines = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.startswith("{")]
-    costs = [x["cost_usd"] for x in lines if x.get("event") == "step"]
+    (end,) = [x for x in lines if x.get("event") == "run_end"]
     rec = env.store.get_run(run_id)
     assert rec is not None and rec.cost_usd > 0
-    assert costs == sorted(costs) and costs[-1] == pytest.approx(rec.cost_usd)
+    assert end["cost_usd"] == pytest.approx(rec.cost_usd) and end["status"] == "done"
+    # Minor 3: no second cost calculation in the handler (and no per-call price warnings).
+    assert all("cost_usd" not in x for x in lines if x.get("event") == "step")
+    assert not [x for x in lines if x.get("event") == "warning"]
 
 
 def test_execute_exception_finishes_failed(env: Env) -> None:
@@ -484,14 +487,16 @@ def test_stale_run_is_not_executed(env: Env) -> None:
     assert rec is not None and rec.status == "failed"
 
 
-def test_missing_price_logs_a_warning(env: Env, capsys: pytest.CaptureFixture[str]) -> None:
-    env.cfg = env.cfg.model_copy(update={"prices": {}})
-    env.deps.cfg = env.cfg
-    run_id = body_of(env.post_run())["run_id"]
-    capsys.readouterr()
-    env.execute(run_id)
-    out = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.startswith("{")]
-    assert any(x.get("event") == "warning" and "no price" in x["text"] for x in out)
+def test_placeholder_models_refuse_to_start_runs(env: Env, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Minor 5: a deploy with REPLACE_WITH_ model IDs must not spend quota on failing runs."""
+    assert env.cfg.has_placeholder_models()
+    monkeypatch.setattr(handler, "load_config", lambda: env.cfg)
+    deps = handler.default_deps()
+    assert deps.configured is False
+    env.deps.configured = False
+    r = env.post_run()
+    assert r["statusCode"] == 503
+    assert env.store.running_for(env.key()) is None
 
 
 def test_execute_unknown_run_is_a_noop(env: Env) -> None:

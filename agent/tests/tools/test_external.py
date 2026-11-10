@@ -31,6 +31,21 @@ def test_registry_search_pages_and_counts(make_http: Make) -> None:
     p = seen[0].params
     assert p["query.intr"] == "rituximab" and p["query.cond"] == "multiple sclerosis"
     assert p["filter.overallStatus"] == "TERMINATED"
+    assert p["countTotal"] == "true"
+    assert "total" not in res.data  # the fixture has no totalCount
+
+
+def test_registry_search_reports_total_beyond_counted(make_http: Make) -> None:
+    """Minor 11: counts cover at most 3 pages; the registry total is stated separately."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        page = fixture("ctgov_page1.json")
+        page.pop("nextPageToken", None)
+        return json_response({**page, "totalCount": 812})
+
+    res = registry_search("rituximab", http=make_http(handler))
+    assert res.data["total"] == 812 and res.data["counted"] == 3
+    assert "812 matching trials; counts cover the first 3" in res.data["note"]
 
 
 def test_chembl_drug(make_http: Make) -> None:

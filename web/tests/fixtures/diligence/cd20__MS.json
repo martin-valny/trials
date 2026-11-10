@@ -1,5 +1,5 @@
 {
-  "run_id": "affec3c21e424c72a114e7ca41d532bc",
+  "run_id": "dcb2cccab61f4ccca6c24d3ee7354317",
   "target": "cd20",
   "disease": "MS",
   "fingerprint": "580d7f1dd34bcba8a2bc66b41d1f54d5b798ac2f09d0877d9a5dda8c15d14003",
@@ -47,18 +47,28 @@
     },
     {
       "n": 4,
-      "kind": "write",
-      "text": "Memo written: 4 sentences",
+      "kind": "note",
+      "text": "Gathering done; writing the memo",
       "tool": null,
       "ids": [],
       "ms": 0,
-      "tokens_in": 5000,
-      "tokens_out": 850
+      "tokens_in": 2400,
+      "tokens_out": 40
     },
     {
       "n": 5,
+      "kind": "write",
+      "text": "Memo written: 5 sentences",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 2600,
+      "tokens_out": 480
+    },
+    {
+      "n": 6,
       "kind": "check",
-      "text": "checking 4 claims … 2 supported, 1 partly, 1 removed",
+      "text": "checking 5 claims … 3 supported, 1 partly, 1 removed",
       "tool": null,
       "ids": [],
       "ms": 0,
@@ -66,7 +76,7 @@
       "tokens_out": 120
     },
     {
-      "n": 6,
+      "n": 7,
       "kind": "done",
       "text": "Done",
       "tool": null,
@@ -101,6 +111,14 @@
         "cites": [
           "NCT90000002",
           "NCT90000004"
+        ]
+      },
+      {
+        "id": "s5",
+        "section": "competition",
+        "text": "The site's stop-risk model covers 14 trials of this target in MS and gives the first running trial a 24% chance of stopping early.",
+        "cites": [
+          "NCT90000002"
         ]
       }
     ],
@@ -141,6 +159,11 @@
       "sentence_id": "s4",
       "verdict": "unsupported",
       "reason": "Nothing in the source says this."
+    },
+    {
+      "sentence_id": "s5",
+      "verdict": "supported",
+      "reason": "Summary n is 14; p is 0.244."
     }
   ],
   "removed": [
@@ -157,7 +180,7 @@
     "checker": "REPLACE_WITH_CHECKER_MODEL_ID"
   },
   "tokens_in": 6600,
-  "tokens_out": 1050,
+  "tokens_out": 720,
   "cost_usd": 0,
   "data_date": "2026-11-04"
 }

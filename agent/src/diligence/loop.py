@@ -1,8 +1,10 @@
 """The agent loop: a planner model gathers evidence with tools, a writer model files the memo.
 
-Tool output reaches the model only inside `toolResult` content blocks (never the system prompt
-or plain user text). Limits end the run with what it has; one final writer call is then allowed
-past the caps so the visitor still gets a memo.
+The planner ends gathering with `ready_to_write` (or plain text); only the writer call, with a
+forced `submit_memo`, writes the memo. Tool output reaches the model only inside `toolResult`
+content blocks (never the system prompt or plain user text). Limits end gathering with what it
+has; the writer call (and one repair) then runs with its own bounded budget so the visitor still
+gets a memo.
 """
 
 import copy
@@ -24,18 +26,22 @@ from diligence.checker import (
     scrub_summary_lines,
 )
 from diligence.config import AgentConfig
-from diligence.model import ModelClient, ModelResponse, ReplayMismatch
+from diligence.log import current_run, log_error
+from diligence.model import CACHE_POINT, ModelClient, ModelResponse, ReplayMismatch, response_cost
 from diligence.prompts import SYSTEM_PROMPT
-from diligence.tools.registry_of_tools import TOOL_SPECS, ToolContext, dispatch
+from diligence.tools.registry_of_tools import PLANNER_TOOLS, WRITER_TOOLS, ToolContext, dispatch
 from diligence.types import Memo, RunRecord, Step, StepKind, ToolResult, Verdict
 
 StepSink = Callable[[Step], None]
 DispatchFn = Callable[[str, dict[str, Any], ToolContext], ToolResult]
 
-MIN_FINAL_WRITER_TOKENS = 1500
+# The writer call's max_tokens: what is left of the output cap, at most WRITER_MAX_TOKENS and
+# never below WRITER_MIN_TOKENS (so a run that spent its output budget still gets a memo).
+WRITER_MAX_TOKENS = 4096
+WRITER_MIN_TOKENS = 3000
 MIN_PLANNER_TOKENS = 1024
 _ID_KEYS = ("nct", "id", "pmid")
-_DRAFT_RECEIVED = "Draft received; write the final memo now"
+_READY = "Noted. Gathering is over; the memo is written next."
 
 
 @dataclass(frozen=True)
@@ -68,7 +74,10 @@ def summary_line(result: ToolResult) -> str:
             terminated = sum(
                 v for k, v in (d.get("counts_by_status") or {}).items() if k.upper() == "TERMINATED"
             )
-            return f"{d.get('counted', 0)} registry trials ({terminated} terminated)"
+            counted, total = d.get("counted", 0), d.get("total")
+            if isinstance(total, int) and total > counted:
+                return f"{total} registry trials, {counted} counted ({terminated} terminated)"
+            return f"{counted} registry trials ({terminated} terminated)"
         case "chembl_drug":
             if "max_phase" not in d:
                 return str(note or "Drug not found in ChEMBL")
@@ -235,9 +244,7 @@ class _Run:
         self._pend_out += resp.tokens_out
         price = self.cfg.prices.get(model_id)
         if price:
-            self.cost += (
-                resp.tokens_in * price.input_per_mtok + resp.tokens_out * price.output_per_mtok
-            ) / 1e6
+            self.cost += response_cost(resp, price)
 
     # -- limits ------------------------------------------------------------------------------
 
@@ -298,23 +305,31 @@ class _Run:
         payload = {"data": result.data, "ids": result.ids, "error": result.error}
         return _toolresult(use["toolUseId"], payload, error=result.error is not None)
 
-    def gather(self) -> Memo | None:
-        """Planner loop. Returns the planner's draft memo if it submitted a valid one."""
-        draft: Memo | None = None
+    def planner_messages(self) -> list[dict[str, Any]]:
+        """The history with a cache point after its last block, so the growing prefix is cached."""
+        msgs = copy.deepcopy(self.messages)
+        msgs[-1]["content"].append(dict(CACHE_POINT))
+        return msgs
+
+    def gather(self) -> None:
+        """Planner loop: tool calls until ready_to_write, plain text, or a limit."""
         while True:
             if (name := self.check_limits(tools=False)) is not None:
                 self.hit(name)
-                return draft
+                return
             cap = self.cfg.limits.max_output_tokens
             budget = min(max(cap - self.tokens_out, MIN_PLANNER_TOKENS), cap)
-            resp = self.converse(self.cfg.models.planner, self.messages, TOOL_SPECS, budget)
+            resp = self.converse(
+                self.cfg.models.planner, self.planner_messages(), PLANNER_TOOLS, budget
+            )
             content = resp.content or [{"text": "(no output)"}]
             self.messages.append({"role": "assistant", "content": content})
             uses = [b["toolUse"] for b in content if "toolUse" in b]
             if not uses:
-                return draft
+                return
             results: list[dict[str, Any]] = []
             truncated = resp.stop_reason == "max_tokens"
+            ready = False
             for use in uses:
                 if truncated:
                     # The input may be cut off mid-JSON: never execute it.
@@ -323,19 +338,17 @@ class _Run:
                             use["toolUseId"], "not run: the response was cut off", error=True
                         )
                     )
-                elif use["name"] == "submit_memo":
-                    draft, err = _parse_memo(use.get("input"))
-                    if draft is None:
-                        text = f"Draft was invalid ({err}); write the final memo now"
-                        results.append(_toolresult(use["toolUseId"], text, error=True))
-                    else:
-                        results.append(_toolresult(use["toolUseId"], _DRAFT_RECEIVED))
+                elif use["name"] == "ready_to_write":
+                    ready = True
+                    results.append(_toolresult(use["toolUseId"], _READY))
                 else:
                     results.append(self.run_tool(use))
             self.messages.append({"role": "user", "content": results})
-            submitted = any(u["name"] == "submit_memo" for u in uses) and not truncated
-            if submitted or self.limit_name:
-                return draft
+            if ready:
+                self.emit("note", "Gathering done; writing the memo")
+                return
+            if self.limit_name:
+                return
 
     def writer_messages(self, instruction: str) -> list[dict[str, Any]]:
         """Conversation so far plus the writer instruction, keeping roles alternating."""
@@ -357,9 +370,9 @@ class _Run:
         msgs = self.writer_messages(instruction)
         lim = self.cfg.limits.max_output_tokens
         for attempt in range(2):
-            budget = min(max(lim - self.tokens_out, MIN_FINAL_WRITER_TOKENS), lim)
+            budget = max(min(lim - self.tokens_out, WRITER_MAX_TOKENS), WRITER_MIN_TOKENS)
             resp = self.converse(
-                self.cfg.models.writer, msgs, TOOL_SPECS, budget, tool_choice="submit_memo"
+                self.cfg.models.writer, msgs, WRITER_TOOLS, budget, tool_choice="submit_memo"
             )
             use = next(
                 (
@@ -429,15 +442,8 @@ class _Run:
     def execute(self) -> Memo | None:
         self.emit("plan", f"Planning: {self.label or self.req.target} · {self.req.disease}")
         self.messages.append(self.first_message())
-        draft = self.gather()
-        if draft is not None and self.cfg.models.writer == self.cfg.models.planner:
-            self.emit("write", f"Memo written: {_plural(len(draft.sections), 'sentence')}")
-            memo: Memo | None = draft
-        else:
-            memo = self.write()
-        if memo is None and draft is not None:
-            self.emit("note", "Writer failed twice; using the planner's draft memo")
-            memo = draft
+        self.gather()
+        memo = self.write()
         if memo is None:
             self.emit("error", "memo could not be produced")
             return None
@@ -464,23 +470,31 @@ def run_agent(
     """Run the agent and return its record.
 
     Any failure ends the run as status "failed" with an `error` step naming only the exception
-    class ("model call failed" if it came from a planner/writer call, else "run failed").
+    class ("model call failed" if it came from a planner/writer call, else "run failed"); the
+    message goes to the log only.
     ReplayMismatch is deliberately re-raised:
     replay drift must fail CI loudly, not become a quiet failed run.
     """
     stamp = "%Y-%m-%dT%H:%M:%SZ"
     started = now().strftime(stamp)
-    run = _Run(req, cfg, model, ctx, sink, clock, label, data_date, dispatch_fn)
+    run_id = run_id or uuid.uuid4().hex
+    token = current_run.set(run_id)
     try:
-        memo = run.execute()
-    except ReplayMismatch:
-        raise
-    except Exception as exc:  # noqa: BLE001 - a failed model call must still end the run cleanly
-        prefix = "model call failed" if run.model_failed else "run failed"
-        run.emit("error", f"{prefix}: {type(exc).__name__}")
-        memo = None
+        run = _Run(req, cfg, model, ctx, sink, clock, label, data_date, dispatch_fn)
+        try:
+            memo = run.execute()
+        except ReplayMismatch:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a failed model call must still end the run
+            prefix = "model call failed" if run.model_failed else "run failed"
+            # The page gets the class only; the log gets the message (R42).
+            log_error("model" if run.model_failed else "run", exc)
+            run.emit("error", f"{prefix}: {type(exc).__name__}")
+            memo = None
+    finally:
+        current_run.reset(token)
     return RunRecord(
-        run_id=run_id or uuid.uuid4().hex,
+        run_id=run_id,
         target=req.target,
         disease=req.disease,
         fingerprint=fingerprint,
