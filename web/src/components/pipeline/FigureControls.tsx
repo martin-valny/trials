@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { normKey, type FigureState, type SortKey } from "../../lib/pipeline";
 import type { PipelineDisease } from "../../types";
 
@@ -15,10 +15,12 @@ interface Props {
   diseases: PipelineDisease[];
   companies: string[];
   onChange: (next: FigureState) => void;
+  /** The legend: from 1100px it shares the controls' second line with the sort, below that it takes its own line. */
+  children?: ReactNode;
 }
 
 /** Arrangement switch, disease control, company lens and sort (spec §7.1). Every change goes up as a new state. */
-export function FigureControls({ state, diseases, companies, onChange }: Props) {
+export function FigureControls({ state, diseases, companies, onChange, children }: Props) {
   const set = (patch: Partial<FigureState>) => onChange({ ...state, ...patch });
   return (
     <div className="controls">
@@ -51,6 +53,7 @@ export function FigureControls({ state, diseases, companies, onChange }: Props) 
       ) : (
         <CompanyFind companies={companies} onPick={(company) => set({ company })} />
       )}
+      <div className="ctl-break" aria-hidden="true" />
       <label className="sortby">
         Sort{" "}
         <select value={state.sort} onChange={(e) => set({ sort: e.target.value as SortKey })}>
@@ -61,6 +64,7 @@ export function FigureControls({ state, diseases, companies, onChange }: Props) 
           ))}
         </select>
       </label>
+      {children}
     </div>
   );
 }

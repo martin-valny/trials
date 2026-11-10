@@ -12,6 +12,7 @@ import {
   rowsForTrial,
   rowViews,
   sourceLine,
+  sourceShort,
   stopSummary,
   targetCompanies,
   cellMarks,
@@ -323,6 +324,12 @@ describe("sourceLine and accessible name", () => {
     const line = sourceLine(f, v);
     expect(line.startsWith("5 of 1,000 trials test a targeted drug in one of these 2 classes; 100 more targeted-drug trials sit in smaller classes (Methods);")).toBe(true);
     expect(line).toContain("ClinicalTrials.gov registered trials only");
+  });
+  it("says the short version in one sentence", () => {
+    const f = file([row("a", many(3)), row("b", many(2))]);
+    expect(sourceShort(f, rowViews(f, DEFAULT, 2026))).toBe("5 of 1,000 trials test a targeted drug in these 2 classes.");
+    const g = file([row("a", many(1))]);
+    expect(sourceShort(g, rowViews(g, DEFAULT, 2026))).toBe("1 of 1,000 trials test a targeted drug in this class.");
   });
   it("names a row", () => {
     const f = file([row("cd20", [mark({ s: "run" }), mark({ s: "adv" }), mark({ s: "stop" })])]);

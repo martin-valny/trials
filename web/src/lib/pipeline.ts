@@ -537,6 +537,14 @@ export function sourceLine(f: PipelineFile, views: RowView[]): string {
   );
 }
 
+/** The one-sentence version above the figure; the full caveat (sourceLine) sits in the footer. */
+export function sourceShort(f: PipelineFile, views: RowView[]): string {
+  const shown = new Set<string>();
+  for (const v of views) for (const m of v.marks) shown.add(m.n);
+  const where = views.length === 1 ? "this class" : `these ${n(views.length)} classes`;
+  return `${n(shown.size)} of ${n(f.counts.trials)} trials test a targeted drug in ${where}.`;
+}
+
 export const rowAccessibleName = (v: RowView): string =>
   `${v.row.label}: ${n(v.total)} trials, ${n(v.run)} running, ${n(v.adv)} advanced, ${n(v.stop)} stopped. Open target page.`;
 

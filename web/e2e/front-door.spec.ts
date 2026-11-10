@@ -7,7 +7,7 @@ test("the front door shows the pipeline headline and key numbers", async ({ page
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toBeVisible();
   await expect(h1).toContainText(/running/i);
-  await expect(page.getByRole("group", { name: "Key numbers" })).toContainText("trials still running");
+  await expect(page.getByRole("group", { name: "Key numbers" })).toContainText("advanced to a later phase");
   await expect(page.getByRole("link", { name: /^CD20: \d+ trials?/ })).toBeVisible();
 });
 

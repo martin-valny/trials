@@ -32,10 +32,63 @@ test("renders headline, key numbers and source line from the fixture", async () 
   const h1 = await screen.findByRole("heading", { level: 1 });
   expect(h1.textContent).toBe("7 targeted-drug trials are running. B-cell depletion leads, with 7 of them; CD20 alone has 7.");
   const keys = screen.getByLabelText("Key numbers");
-  expect(within(keys).getByText("trials still running").previousSibling).toHaveTextContent("7");
+  // The headline states the running count, so the keys carry only what it does not: advanced and companies.
+  expect([...keys.querySelectorAll(".key span")].map((e) => e.textContent)).toEqual(["advanced to a later phase", "companies with a running trial"]);
+  expect(within(keys).queryByText("trials still running")).not.toBeInTheDocument();
   expect(within(keys).getByText("companies with a running trial").previousSibling).toHaveTextContent("1");
-  expect(screen.getByText(/8 of 14 trials test a targeted drug/)).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "see all in Approaches" })).toHaveAttribute("href", "/approaches");
+});
+
+test("front door: the source above the figure is one sentence linking to how rows are built", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const src = container.querySelector(".pipeline > p.source:not(.dg-line)")!;
+  expect(src.textContent).toBe("8 of 14 trials test a targeted drug in this class. Registered trials only. How rows are built →");
+  expect(within(src as HTMLElement).getByRole("link", { name: "How rows are built →" })).toHaveAttribute("href", "/methods#rows-and-companies");
+  // On desktop it sits above the figure, with the diligence line directly under it.
+  expect(src.nextElementSibling).toHaveClass("dg-line");
+  expect(src.compareDocumentPosition(container.querySelector(".fig-body")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("front door: the full source text moves to the footer, above the advanced line", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const foot = container.querySelector("footer.foot")!;
+  const full = foot.firstElementChild!;
+  expect(full.textContent).toMatch(/^8 of 14 trials test a targeted drug in one of these \d+ classes?; 1 more targeted-drug trials sit in smaller classes/);
+  expect(full.textContent).toContain("ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials.");
+  expect(within(full as HTMLElement).getByRole("link", { name: "see all in Approaches" })).toHaveAttribute("href", "/approaches");
+  expect(full.nextElementSibling!.textContent).toMatch(/^.Advanced. means the drug has a later-phase trial/);
+  // Nothing above the figure repeats the long caveat.
+  expect(container.querySelectorAll(".pipeline > p.source")).toHaveLength(2);
+  expect(screen.getAllByText(/ClinicalTrials\.gov registered trials only/)).toHaveLength(1);
+});
+
+test("front door on a phone: the source and diligence lines follow the figure", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch();
+    const { container } = renderPage();
+    await screen.findByRole("heading", { level: 1 });
+    const src = await screen.findByText(/^8 of 14 trials test a targeted drug in this class\./);
+    const fig = container.querySelector(".fig-body")!;
+    expect(fig.compareDocumentPosition(src) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(src.nextElementSibling).toHaveClass("dg-line");
+    expect(src.nextElementSibling!.nextElementSibling).toHaveClass("foot");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("on desktop the legend sits inside the controls, after the sort", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const legend = screen.getByRole("group", { name: "Legend" });
+  expect(legend.parentElement).toHaveClass("controls");
+  expect(legend.previousElementSibling).toHaveClass("sortby");
+  expect(container.querySelector(".controls .ctl-break")).not.toBeNull();
 });
 
 test("disease switch updates the URL and the headline", async () => {

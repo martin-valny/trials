@@ -9,9 +9,10 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .pipeline a, .target-page a { color: inherit; }
 .pipeline button { font: inherit; color: inherit; }
 
-.lede { padding: 40px 40px 6px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; }
-.kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-.headline { font-size: clamp(24px, 2.6vw, 34px); font-weight: 500; line-height: 1.16; letter-spacing: -.018em; margin: 0; max-width: 22ch; text-wrap: balance; }
+.lede { padding: 24px 40px 2px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; }
+.kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+/* Display step: 30px; 42ch is the narrowest measure that sets today's sentence on two lines at 1280 (34ch gives three). */
+.headline { font-size: 30px; font-weight: 500; line-height: 1.15; letter-spacing: -.018em; margin: 0; max-width: 42ch; text-wrap: balance; }
 .headline b { font-weight: 800; }
 .headline em { font-style: normal; color: var(--red); }
 .headline .runw { color: var(--run); }
@@ -22,12 +23,16 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .key b.k-run { color: var(--run); }
 .key b.k-adv { color: var(--red); }
 .key span { display: block; font-size: 12px; color: var(--muted); margin-top: 6px; max-width: 13ch; line-height: 1.3; }
-.source { padding: 12px 40px 0; margin: 0; font-size: 12px; color: var(--muted); max-width: 110ch; }
+.source { padding: 8px 40px 0; margin: 0; font-size: 12px; color: var(--muted); max-width: 110ch; }
 .lede.unavailable .source { padding: 14px 0 0; }
 .source a { color: var(--ink); }
-.source.dg-line { padding-top: 4px; font-size: var(--fs-meta); }
+.source.dg-line { padding-top: 2px; font-size: var(--fs-meta); }
 
-.controls { display: flex; gap: 18px; align-items: center; padding: 26px 40px 16px; flex-wrap: wrap; }
+.controls { display: flex; gap: 12px 18px; align-items: center; padding: 14px 40px 10px; flex-wrap: wrap; }
+/* From 1100px the controls take two lines: arrangement, disease and company lens, then the sort with the legend at the right. */
+/* The break is a flex line of its own, so the row gap counts twice around it: halve it. */
+.ctl-break { flex-basis: 100%; height: 0; }
+.controls:has(> .ctl-break) { row-gap: 6px; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 2px; }
 .seg button { border: 0; background: none; color: var(--muted); font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
 .seg button:hover { color: var(--ink); }
@@ -46,9 +51,10 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .sortby select { font: inherit; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 2px 0; border-radius: 0; }
 .pipeline :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.legend { display: flex; gap: 18px; padding: 0 40px 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; align-items: center; }
+/* Scoped under .controls so explore.css's own .legend (a global class) never leaks in. */
+.controls > .legend { display: flex; gap: 6px 18px; font-size: 12px; line-height: 1.5; color: var(--muted); flex-wrap: wrap; align-items: center; margin: 0 0 0 auto; padding: 0; }
 .legend > span { display: inline-flex; align-items: center; gap: 6px; }
-.legend .legend-note { margin-left: auto; }
+.controls .sortby { margin-left: 0; }
 
 /* Marks: one dot per trial. */
 .m { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; position: relative; box-sizing: border-box; }
@@ -72,9 +78,11 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 @keyframes pfade { from { opacity: 0; } to { opacity: 1; } }
 .grid { --lab: 200px; --stat: 116px; --note: 210px; }
 .grid-head, .row { display: grid; grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat) var(--note); }
-.colhead { font-size: 12px; font-weight: 700; color: var(--muted); padding: 10px 12px 8px; border-bottom: 1px solid var(--ink); letter-spacing: .02em; }
+.colhead { font-size: 12px; font-weight: 700; color: var(--muted); padding: 6px 12px 6px; border-bottom: 1px solid var(--ink); letter-spacing: .02em; }
 .colhead.first { padding-left: 0; }
 .colhead small { font-weight: 400; display: block; font-size: 12px; letter-spacing: 0; }
+/* The first band sits right under the column heads' ink rule, so it needs less air above it. */
+.grid-head + .fam, .pcol + .pfam { padding-top: 12px; }
 .fam { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--fam); padding: 20px 0 6px; border-bottom: 1px solid var(--rule); }
 .row { position: relative; border-bottom: 1px solid var(--rule); transition: background .15s; }
 .row:hover { background: var(--pale); }
@@ -115,6 +123,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .plate-empty { margin: 18px 40px 40px; padding: 28px 0; border-top: 1px solid var(--ink); font-size: 15px; color: var(--ink); }
 .plate-empty button { border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
+.foot-source { flex-basis: 100%; margin: 0; max-width: 110ch; }
 .foot { padding: 22px 40px 40px; font-size: 12px; color: var(--muted); display: flex; gap: 10px 30px; flex-wrap: wrap; border-top: 1px solid var(--rule); margin-top: 24px; }
 .foot a { color: var(--ink); }
 
@@ -156,7 +165,13 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 }
 
 @media (max-width: 1099px) {
-  .lede, .controls, .legend, .fig, .source, .foot { padding-left: 24px; padding-right: 24px; }
+  .lede, .controls, .fig, .source, .foot { padding-left: 24px; padding-right: 24px; }
+  /* The legend keeps its own line under the controls, the sort back at the right of the controls' line. */
+  .ctl-break { display: none; }
+  .controls:has(> .ctl-break) { row-gap: 12px; }
+  .controls .sortby { margin-left: auto; }
+  .controls > .legend { flex-basis: 100%; margin-left: 0; gap: 6px 18px; }
+  .legend .legend-note { margin-left: auto; }
   .grid { --lab: 168px; --stat: 100px; }
   .grid-head { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
   .grid-head .colhead:last-child { display: none; }
@@ -167,7 +182,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
   .row > .note::before { top: 8px; }
   .row > .note { padding-left: 26px !important; }
   .plate-empty { margin-left: 24px; margin-right: 24px; }
-  .headline { max-width: 26ch; }
 }
 
 /* Phone */
@@ -192,15 +206,17 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 @media (max-width: 640px) {
   .lede { display: block; padding: 24px 18px 0; }
   .headline { font-size: 24px; max-width: none; }
-  .keys { gap: 0; margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule); padding-top: 14px; }
+  /* The two keys sit on one line, each number beside its caption. */
+  .keys { gap: 24px; margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; }
+  .key { display: flex; align-items: center; gap: 8px; }
   .key b { font-size: 22px; }
-  .key span { font-size: 12px; }
-  .source { padding: 12px 18px 0; font-size: 12px; }
-  .controls { padding: 18px 18px 10px; gap: 10px; }
+  .key span { font-size: 12px; margin-top: 0; }
+  .source { padding: 14px 18px 0; font-size: 12px; }
+  .controls:has(> .ctl-break), .controls { padding: 12px 18px 8px; gap: 8px; }
   .seg-scroll { overflow-x: auto; max-width: 100%; flex-wrap: nowrap; scrollbar-width: none; }
   .find { min-width: 0; flex: 1; }
-  .sortby { margin-left: 0; }
-  .legend { padding: 2px 18px 10px; gap: 10px 14px; font-size: 12px; }
+  .controls .sortby { margin-left: 0; }
+  .controls > .legend { gap: 4px 14px; padding-top: 2px; }
   .fig { padding: 0 18px; }
   .foot { padding: 18px; font-size: 12px; }
   .plate-empty { margin-left: 18px; margin-right: 18px; }

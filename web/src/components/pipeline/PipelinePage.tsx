@@ -10,6 +10,7 @@ import {
   parseFigureState,
   rowViews,
   sourceLine,
+  sourceShort,
   type FigureState,
   type Headline,
   undatedCount,
@@ -69,11 +70,21 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
   const views = useMemo(() => rowViews(file, state, year), [file, state, year]);
   const head = useMemo(() => headline(file, views, state), [file, views, state]);
   const notes = useMemo(() => marginNotes(views, state, year, file.diseases.map((d) => d.code)), [views, state, year, file.diseases]);
-  const source = useMemo(() => {
-    const base = sourceLine(file, views);
+  // One sentence above the figure; the full caveat goes to the footer.
+  const short = useMemo(() => {
+    const base = sourceShort(file, views);
     const k = state.view === "year" ? undatedCount(views) : 0;
     return k > 0 ? `${base.replace(/\.$/, "")}; ${k} ${k === 1 ? "trial without a start year is" : "trials without a start year are"} not drawn.` : base;
   }, [file, views, state.view]);
+  const full = useMemo(() => sourceLine(file, views), [file, views]);
+  const sourceAndAgent = (
+    <>
+      <p className="source">
+        {short} Registered trials only. <Link to="/methods#rows-and-companies">How rows are built →</Link>
+      </p>
+      <DiligenceLine />
+    </>
+  );
   const companies = useMemo(() => companyOptions(file), [file]);
   const empty = views.length === 0 || (state.company !== null && head.kind === "none");
   const disease = file.diseases.find((d) => d.code === state.disease);
@@ -87,41 +98,39 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
             <HeadlineText h={head} />
           </h1>
         </div>
+        {/* The headline states the running count, so the keys carry only what it does not. */}
         <div className="keys" role="group" aria-label="Key numbers">
-          <Key n={head.running} label="trials still running" tone="run" />
           <Key n={head.advanced} label="advanced to a later phase" tone="adv" />
           <Key n={head.companiesRunning} label="companies with a running trial" />
         </div>
       </header>
-      <p className="source">
-        <Source text={source} />
-      </p>
-      <DiligenceLine />
-      <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change} />
-      <div className="legend" role="group" aria-label="Legend">
-        {LEGEND.map((s) => (
-          <span key={s}>
-            <Mark m={{ ...dummy, s, n: "" }} state={s} />
-            {LEGEND_TEXT[s]}
-          </span>
-        ))}
-        {state.view === "disease" && hasApprovalData(file) && (
-          <span data-key="approved">
-            <i className="floor-swatch" aria-hidden="true" />
-            a drug on this target is approved for this disease
-          </span>
-        )}
-        {state.view === "year" ? (
-          <span className="legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
-        ) : (
-          !phone && (
-            <span className="legend-note">
-              {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
-              <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
+      {!phone && sourceAndAgent}
+      <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change}>
+        <div className="legend" role="group" aria-label="Legend">
+          {LEGEND.map((s) => (
+            <span key={s}>
+              <Mark m={{ ...dummy, s, n: "" }} state={s} />
+              {LEGEND_TEXT[s]}
             </span>
-          )
-        )}
-      </div>
+          ))}
+          {state.view === "disease" && hasApprovalData(file) && (
+            <span data-key="approved">
+              <i className="floor-swatch" aria-hidden="true" />
+              a drug on this target is approved for this disease
+            </span>
+          )}
+          {state.view === "year" ? (
+            <span className="legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
+          ) : (
+            !phone && (
+              <span className="legend-note">
+                {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
+                <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
+              </span>
+            )
+          )}
+        </div>
+      </FigureControls>
       {empty ? (
         <p className="plate-empty">
           {state.company !== null ? (
@@ -146,7 +155,11 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
           <PipelineFigure file={file} views={views} state={state} notes={notes} phone={phone} onCompany={(c) => change({ ...urlState, company: c })} />
         </div>
       )}
+      {phone && sourceAndAgent}
       <footer className="foot">
+        <p className="foot-source">
+          <Source text={full} />
+        </p>
         <span>&lsquo;Advanced&rsquo; means the drug has a later-phase trial on the registry. It does not mean the drug worked or was approved.</span>
         <span className="foot-links">
           <Link to="/methods">Methods</Link> · <Link to="/approaches/targeted">Mechanism graph</Link>
@@ -231,7 +244,7 @@ function Skeleton() {
           <div className="sk sk-head short" />
         </div>
         <div className="keys">
-          {[0, 1, 2].map((i) => (
+          {[0, 1].map((i) => (
             <div key={i} className="key">
               <div className="sk sk-num" />
               <div className="sk sk-cap" />
