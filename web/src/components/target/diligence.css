@@ -51,8 +51,8 @@
 .dg-because { margin: 10px 0 2px; font-size: 11.5px; color: var(--muted); }
 .dg-reasons { margin: 0; padding: 0; list-style: none; font-size: 12.5px; line-height: 1.45; }
 .dg-reasons li { padding: 3px 0; }
-.dg-reasons a { color: var(--ink); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.dg-reasons a:hover { text-decoration-color: var(--ink); }
+.dg .dg-to { border: 0; background: none; padding: 0; margin: 0; font: inherit; text-align: left; cursor: pointer; color: var(--ink); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.dg .dg-to:hover { text-decoration-color: var(--ink); }
 .dg-reasons.plain { margin-top: 8px; }
 .dg-reasons small, .dg-removed small { display: block; font-size: 11.5px; color: var(--muted); }
 .dg-gone { color: var(--muted); }
@@ -91,7 +91,7 @@ a.dg-cite:hover { border-color: var(--ink); color: var(--ink); }
 .dg .dg-cancel:hover { border-color: var(--ink); }
 
 /* Removed by the checker: plain text only (the IDs may be invented, so nothing here is a link). */
-.dg-removed { margin-top: 22px !important; border-top: 1px solid var(--rule); padding-top: 12px; }
+.dg-memo .dg-removed { margin-top: 22px; border-top: 1px solid var(--rule); padding-top: 12px; }
 .dg-removed ul { list-style: none; margin: 0; padding: 0; }
 .dg-removed li { font-size: 12.5px; line-height: 1.45; padding: 3px 0; }
 .dg-rm-t { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); text-decoration-thickness: 1px; }

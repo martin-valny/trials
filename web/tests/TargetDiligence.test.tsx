@@ -112,7 +112,7 @@ test("running: a vertical step list with kind, tool, text and elapsed, then the 
   });
   renderPanel();
   await userEvent.click(await screen.findByRole("button", { name: "Run diligence" }));
-  expect(m.pollRun).toHaveBeenCalledWith("r1", expect.any(Function));
+  expect(m.pollRun).toHaveBeenCalledWith("r1", expect.any(Function), expect.objectContaining({ signal: expect.any(AbortSignal) }));
   act(() => {
     push(rec.steps[0]!);
     push({ ...rec.steps[1]!, ms: 1240 });
@@ -128,7 +128,7 @@ test("running: a vertical step list with kind, tool, text and elapsed, then the 
   // A polite live region announces only the newest step's text.
   const live = screen.getByTestId("dg-live");
   expect(live).toHaveAttribute("aria-live", "polite");
-  expect(live).toHaveTextContent(/^3 trials on this target \(1 stopped\)$/);
+  expect(live).toHaveTextContent(/^Step 2: 3 trials on this target \(1 stopped\)$/);
   // No Run button while running.
   expect(screen.queryByRole("button", { name: /Run/ })).toBeNull();
   await act(async () => release(rec));
@@ -174,7 +174,8 @@ test("done: partly mark in text, removed list as plain text, judgement with reas
   const j = screen.getByRole("region", { name: "Judgement" });
   expect(j).toHaveTextContent("Mixed on further investment in this mechanism for this disease");
   expect(j).toHaveTextContent("Confidence: low");
-  const reasons = within(j).getAllByRole("link");
+  expect(within(j).queryAllByRole("link")).toHaveLength(0); // no bare #fragments under HashRouter
+  const reasons = within(j).getAllByRole("button");
   expect(reasons.map((a) => a.textContent)).toEqual([
     "Three trials of CD20 in MS are listed, one of them stopped.",
     "The two running trials carry a stop risk near a quarter.",
@@ -190,6 +191,10 @@ test("done: partly mark in text, removed list as plain text, judgement with reas
   expect(meta).toHaveTextContent("$0.00");
   expect(meta).toHaveTextContent("4 Nov 2026");
   expect(meta).toHaveTextContent("0.1.0");
+  // The synthetic run took 0 ms: no duration is claimed, and no step shows a time.
+  expect(meta).not.toHaveTextContent("Duration");
+  expect(meta).not.toHaveTextContent("0.0 s");
+  for (const li of within(screen.getByRole("list", { name: "Agent trace" })).getAllByRole("listitem")) expect(li).not.toHaveTextContent(/\d s$/);
 });
 
 test("withheld judgement lists the claims behind it", async () => {
@@ -247,6 +252,33 @@ test("capped with nothing recorded falls back to the committed run", async () =>
   await userEvent.click(await screen.findByRole("button", { name: "Run again" }));
   expect(await screen.findByText("Daily limit reached — showing the latest recorded run")).toBeInTheDocument();
   expect(screen.getByText("Recorded run, 9 Nov 2026")).toBeInTheDocument();
+});
+
+test("capped with nothing recorded anywhere says so and stops offering runs", async () => {
+  online();
+  m.startRun.mockResolvedValue({ capped: null });
+  renderPanel();
+  await userEvent.click(await screen.findByRole("button", { name: "Run diligence" }));
+  expect(await screen.findByText("Daily limit reached — no recorded run is available yet. Try again tomorrow.")).toBeInTheDocument();
+  expect(screen.queryByText(/showing the latest recorded run/)).toBeNull();
+  expect(screen.queryByRole("button", { name: /Run/ })).toBeNull();
+  expect(screen.queryByText(/The agent plans its searches/)).toBeNull();
+});
+
+test("unmounting during a run aborts the polling", async () => {
+  online();
+  m.startRun.mockResolvedValue({ run_id: "r1" });
+  let signal: AbortSignal | undefined;
+  m.pollRun.mockImplementation((_id, _onStep, opts) => {
+    signal = opts?.signal;
+    return new Promise<RunRecord>(() => {});
+  });
+  const { unmount } = renderPanel();
+  await userEvent.click(await screen.findByRole("button", { name: "Run diligence" }));
+  expect(signal).toBeDefined();
+  expect(signal!.aborted).toBe(false);
+  unmount();
+  expect(signal!.aborted).toBe(true);
 });
 
 test("poll timeout message", async () => {

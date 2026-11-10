@@ -12,19 +12,28 @@ export function diligenceEndpoint(): string | null {
   return u.endsWith("/") ? u : u + "/";
 }
 
-/** An abort signal that fires after ms (setTimeout-based so fake timers can drive it). */
-function deadline(ms: number): { signal: AbortSignal; clear: () => void } {
+/** An abort signal that fires after ms (setTimeout-based so fake timers can drive it), or when ``outer`` aborts. */
+function deadline(ms: number, outer?: AbortSignal): { signal: AbortSignal; clear: () => void } {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), ms);
-  return { signal: c.signal, clear: () => clearTimeout(t) };
+  const onOuter = () => c.abort();
+  outer?.addEventListener("abort", onOuter);
+  if (outer?.aborted) c.abort();
+  return {
+    signal: c.signal,
+    clear: () => {
+      clearTimeout(t);
+      outer?.removeEventListener("abort", onOuter);
+    },
+  };
 }
 
 const REQUEST_TIMEOUT_MS = 15000;
 const POLL_REQUEST_MS = 10000;
 
 /** fetch bounded by a deadline; the whole call (including reading the body via ``read``) is covered. */
-async function bounded<T>(ms: number, url: string, init: RequestInit, read: (res: Response) => Promise<T>): Promise<T> {
-  const d = deadline(ms);
+async function bounded<T>(ms: number, url: string, init: RequestInit, read: (res: Response) => Promise<T>, outer?: AbortSignal): Promise<T> {
+  const d = deadline(ms, outer);
   try {
     return await read(await fetch(url, { ...init, signal: d.signal }));
   } finally {
@@ -74,15 +83,19 @@ export async function startRun(target: string, disease: string, force: boolean):
 export interface PollOptions {
   intervalMs?: number;
   timeoutMs?: number;
+  /** Stops polling (rejects with "aborted"), e.g. when the panel unmounts or the target changes. */
+  signal?: AbortSignal;
 }
 
-/** Poll a run until it is done or failed. Network errors, 429 and 5xx are transient; rejects with "timeout". */
+/** Poll a run until it is done or failed. Network errors, 429 and 5xx are transient; rejects with "timeout", or "aborted" when ``signal`` fires. */
 export async function pollRun(runId: string, onStep: (step: DiligenceStep) => void, opts: PollOptions = {}): Promise<RunRecord> {
-  const { intervalMs = 1000, timeoutMs = 120000 } = opts;
+  const { intervalMs = 1000, timeoutMs = 120000, signal } = opts;
+  const aborted = () => new Error("aborted");
   const url = endpoint() + "runs/" + encodeURIComponent(runId);
   const start = Date.now();
   let lastN = 0;
   for (;;) {
+    if (signal?.aborted) throw aborted();
     const remaining = timeoutMs - (Date.now() - start);
     if (remaining <= 0) throw new Error("timeout");
     let notFound = false;
@@ -93,7 +106,7 @@ export async function pollRun(runId: string, onStep: (step: DiligenceStep) => vo
           return null;
         }
         return res.status === 200 ? ((await res.json()) as RunRecord) : null;
-      });
+      }, signal);
       if (notFound) throw new Error("not_found");
       if (rec) {
         for (const s of rec.steps) {
@@ -106,10 +119,19 @@ export async function pollRun(runId: string, onStep: (step: DiligenceStep) => vo
       }
     } catch (e) {
       if (notFound) throw e;
-      // transient: network error, abort, bad body
+      // transient: network error, per-request deadline, bad body
     }
+    if (signal?.aborted) throw aborted();
     if (Date.now() - start + intervalMs > timeoutMs) throw new Error("timeout");
-    await new Promise((r) => setTimeout(r, intervalMs));
+    await new Promise<void>((r) => {
+      const t = setTimeout(done, intervalMs);
+      function done() {
+        clearTimeout(t);
+        signal?.removeEventListener("abort", done);
+        r();
+      }
+      signal?.addEventListener("abort", done);
+    });
   }
 }
 

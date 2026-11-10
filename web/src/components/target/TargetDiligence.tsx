@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { SECTION_ORDER, diligenceEndpoint, flagSentence, isValidDisease, loadRecorded, pollRun, renderable, startRun } from "../../lib/diligence";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
@@ -67,6 +67,8 @@ interface State {
   /** Steps of the attempt in progress, or of one that ended without a run to show. */
   attempt: DiligenceStep[] | null;
   notice: string | null;
+  /** The daily limit was reached: no more runs are offered on this visit. */
+  capped: boolean;
 }
 
 interface Props {
@@ -82,9 +84,10 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
   const dz = disease ?? "all";
   const valid = isValidDisease(row, dz);
   const online = diligenceEndpoint() !== null;
-  const [s, setS] = useState<State>({ phase: valid ? "loading" : "ready", shown: null, attempt: null, notice: null });
+  const [s, setS] = useState<State>({ phase: valid ? "loading" : "ready", shown: null, attempt: null, notice: null, capped: false });
   const committed = useRef<RunRecord | null>(null);
   const alive = useRef(true);
+  const poll = useRef<AbortController | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [lastText, setLastText] = useState("");
 
@@ -92,6 +95,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
     alive.current = true;
     return () => {
       alive.current = false;
+      poll.current?.abort(); // a target or disease change remounts the panel (keyed), so this covers both
     };
   }, []);
 
@@ -120,10 +124,10 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
     async (force: boolean) => {
       const before = s.shown;
       const fail = (notice: string, partial: DiligenceStep[] | null) =>
-        setS({ phase: "ready", notice, shown: before, attempt: before ? null : partial });
+        setS({ phase: "ready", notice, shown: before, attempt: before ? null : partial, capped: false });
       setElapsed(0);
       setLastText("");
-      setS({ phase: "running", shown: before, attempt: [], notice: null });
+      setS({ phase: "running", shown: before, attempt: [], notice: null, capped: false });
       let res;
       try {
         res = await startRun(row.id, dz, force);
@@ -133,7 +137,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
       }
       if (!alive.current) return;
       if ("replay" in res) {
-        setS({ phase: "ready", notice: null, attempt: null, shown: { rec: res.replay, source: "backend", stale: res.stale, fresh: false } });
+        setS({ phase: "ready", notice: null, attempt: null, capped: false, shown: { rec: res.replay, source: "backend", stale: res.stale, fresh: false } });
         return;
       }
       if ("capped" in res) {
@@ -142,21 +146,33 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
           : committed.current
             ? { rec: committed.current, source: "recorded", stale: false, fresh: false }
             : null;
-        setS({ phase: "ready", notice: "Daily limit reached — showing the latest recorded run", attempt: null, shown: latest });
+        setS({
+          phase: "ready",
+          notice: latest
+            ? "Daily limit reached — showing the latest recorded run"
+            : "Daily limit reached — no recorded run is available yet. Try again tomorrow.",
+          attempt: null,
+          shown: latest,
+          capped: true,
+        });
         return;
       }
       const steps: DiligenceStep[] = [];
+      poll.current?.abort();
+      const ctl = new AbortController();
+      poll.current = ctl;
       try {
         const rec = await pollRun(res.run_id, (step) => {
           if (!alive.current) return;
           steps.push(step);
-          setLastText(step.text);
+          // The step number makes two identical texts in a row distinct, so each is announced.
+          setLastText(`Step ${step.n}: ${step.text}`);
           setS((p) => ({ ...p, attempt: [...steps] }));
-        });
+        }, { signal: ctl.signal });
         if (!alive.current) return;
-        setS({ phase: "ready", notice: null, attempt: null, shown: { rec, source: "backend", stale: false, fresh: true } });
+        setS({ phase: "ready", notice: null, attempt: null, capped: false, shown: { rec, source: "backend", stale: false, fresh: true } });
       } catch (e) {
-        if (!alive.current) return;
+        if (!alive.current || ctl.signal.aborted) return;
         const msg = e instanceof Error ? e.message : "";
         const then = before ? " Showing the recorded run." : " Try again later.";
         fail(
@@ -174,7 +190,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
 
   const shown = s.phase === "running" ? null : s.shown;
   const trace = s.phase === "running" || (s.attempt && !shown) ? (s.attempt ?? []) : (shown?.rec.steps ?? null);
-  const canRun = online && valid && s.phase === "ready";
+  const canRun = online && valid && s.phase === "ready" && !s.capped;
 
   let status: string | null = null;
   if (s.phase === "running") status = `Running · ${Math.floor(elapsed / 1000)} s`;
@@ -214,7 +230,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
               {s.notice}
             </p>
           )}
-          {!shown && !trace && <Intro online={online} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
+          {!shown && !trace && !s.capped && <Intro online={online} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
           {trace && (
             <div className={`dg-grid${shown?.rec.memo || s.phase === "running" ? "" : " solo"}`}>
               <Trace steps={trace} running={s.phase === "running"} />
@@ -308,8 +324,8 @@ function Memo({ shown, canFlag }: { shown: Shown; canFlag: boolean }) {
     );
   const memo = rec.memo;
   const byId = new Map(memo.sections.map((x) => [x.id, x]));
-  const go = (e: MouseEvent<HTMLAnchorElement>, sid: string) => {
-    e.preventDefault(); // HashRouter: a bare #fragment would be read as a route
+  // Buttons, not #fragment links: under HashRouter a bare fragment would be read as a route.
+  const go = (sid: string) => {
     const el = document.getElementById(anchor(sid));
     if (!el) return;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -348,9 +364,9 @@ function Memo({ shown, canFlag }: { shown: Shown; canFlag: boolean }) {
                   return (
                     <li key={sid}>
                       {sen ? (
-                        <a href={`#${anchor(sid)}`} onClick={(e) => go(e, sid)}>
+                        <button type="button" className="dg-to" onClick={() => go(sid)}>
                           {sen.text}
-                        </a>
+                        </button>
                       ) : (
                         <span className="dg-gone">claim {sid} is not in the memo</span>
                       )}
@@ -575,10 +591,12 @@ function RunDetails({ rec }: { rec: RunRecord }) {
         <dt>Cost</dt>
         <dd>${rec.cost_usd.toFixed(2)} (estimate)</dd>
       </div>
-      <div>
-        <dt>Duration</dt>
-        <dd>{dur === null ? "not finished" : seconds(dur)}</dd>
-      </div>
+      {dur !== null && dur > 0 && (
+        <div>
+          <dt>Duration</dt>
+          <dd>{seconds(dur)}</dd>
+        </div>
+      )}
       <div>
         <dt>Data as of</dt>
         <dd>{formatRunDate(rec.data_date)}</dd>

@@ -156,6 +156,36 @@ describe("pollRun", () => {
     await expect(pollRun("r1", () => {})).rejects.toThrow("not_found");
     expect(f).toHaveBeenCalledTimes(1);
   });
+  it("stops polling when its signal aborts between polls", async () => {
+    const f = vi.fn(async () => json(200, running(1)));
+    vi.stubGlobal("fetch", f);
+    const c = new AbortController();
+    const p = pollRun("r1", () => {}, { signal: c.signal });
+    const assertion = expect(p).rejects.toThrow("aborted");
+    await vi.advanceTimersByTimeAsync(1500);
+    const calls = f.mock.calls.length;
+    c.abort();
+    await assertion;
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(f.mock.calls.length).toBe(calls);
+  });
+  it("aborts an in-flight poll request", async () => {
+    let seen: AbortSignal | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_u: string, init?: RequestInit) => {
+        seen = init?.signal ?? undefined;
+        return new Promise<Response>((_res, rej) => init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError"))));
+      }),
+    );
+    const c = new AbortController();
+    const p = pollRun("r1", () => {}, { signal: c.signal });
+    const assertion = expect(p).rejects.toThrow("aborted");
+    await vi.advanceTimersByTimeAsync(10);
+    c.abort();
+    await assertion;
+    expect(seen?.aborted).toBe(true);
+  });
   it("a stalled fetch cannot outlive timeoutMs", async () => {
     vi.stubGlobal(
       "fetch",
