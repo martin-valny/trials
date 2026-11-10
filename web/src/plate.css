@@ -23,10 +23,13 @@
 .page { width: 100%; max-width: 1440px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
 @media (max-width: 640px) { .page { padding-left: 16px; padding-right: 16px; } }
 
-/* Print: the page as a figure on paper. The contents strip is a screen aid; capped lists print in full;
-   the diligence strip's empty loading line holds space on screen only. */
+/* Print: the page as a figure on paper. The contents strip is a screen aid; capped lists print in full.
+   Diligence prints only what was read: the strip only in its "AI read" state, and never its action; panel g's run,
+   flag and flag-form controls are left off (the memo and its claims print). */
 @media print {
-  .contents-strip, .dstrip[data-state="loading"], .rk-all, .target-page .more-btn { display: none !important; }
+  .contents-strip, .rk-all, .target-page .more-btn { display: none !important; }
+  .dstrip:not([data-state="read"]), .dstrip-go, .dstrip a, .dstrip button,
+  .dg-run, .dg-flag, .dg-form { display: none !important; }
   .rk-rows > .rk-row[hidden], .co[hidden], .stop-card[hidden] { display: grid !important; }
 }
 

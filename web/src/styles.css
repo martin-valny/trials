@@ -17,19 +17,19 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .brand svg { display: block; }
 .brand-dot { fill: var(--brand-dot); }
 /* Brand left, nav right; the freshness badge sits between them (DOM order stays brand, nav, badge). */
-.site-header nav { order: 2; margin-left: auto; display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: .875rem; }
+.site-header nav { order: 2; margin-left: auto; display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; font-size: var(--fs-body); }
 .site-header .badge { order: 1; }
 .site-header nav a { color: var(--muted); text-decoration: none; }
 .site-header nav a[aria-current="page"] { color: var(--ink); font-weight: 700; }
 .site-header nav a:hover { color: var(--ink); }
 .nav-menu-btn { display: none; order: 2; margin-left: auto; border: 0; background: none; font-size: 22px; line-height: 1; padding: 0 .25rem; color: var(--ink); cursor: pointer; }
 .nav-sheet { position: absolute; z-index: 45; left: 0; right: 0; top: 100%; display: flex; flex-direction: column; padding: .25rem 1rem .5rem; background: var(--plate); border-bottom: 1px solid var(--ink); box-shadow: 0 12px 24px rgba(0, 0, 0, .12); }
-.nav-sheet a { padding: .65rem 0; font-size: 1rem; border-bottom: 1px solid var(--rule); }
+.nav-sheet a { padding: .65rem 0; font-size: var(--fs-read); border-bottom: 1px solid var(--rule); }
 /* Theme: a setting, not a destination. Set off from the nav by a hairline, in the nav's type,
    with a 9px key that reads like the plate's legend swatches: empty light, solid dark, half system. */
 .theme-switch { order: 3; display: inline-flex; align-items: center; gap: .45rem;
   padding: .15rem .75rem; border: 1px solid var(--rule); border-radius: 999px; background: none;
-  font: inherit; font-size: .875rem; line-height: 1.5; color: var(--ink); cursor: pointer; }
+  font: inherit; font-size: var(--fs-body); line-height: 1.5; color: var(--ink); cursor: pointer; }
 .theme-switch-k { color: var(--muted); transition: color .15s; }
 .theme-switch:hover .theme-switch-k { color: var(--ink); }
 .theme-switch-v { min-width: 3.4em; text-align: left; }
@@ -42,11 +42,14 @@ main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
 .badge.ok { color: var(--muted); }
 .badge.ok::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--live); margin-right: 6px; vertical-align: 1px; }
 .badge.stale { color: var(--ink); }
-.muted { color: var(--muted); font-size: .85rem; }
+.muted { color: var(--muted); font-size: var(--fs-ui); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 table.changes { width: 100%; border-collapse: collapse; }
 table.changes caption { text-align: left; color: var(--muted); padding-bottom: .5rem; }
 table.changes th, table.changes td { text-align: left; vertical-align: top; padding: .6rem; border-bottom: 1px solid var(--rule); }
+/* A short old or new value (a date, a status, a number) never breaks inside itself ("Jul / 2027"); the arrow between
+   them may wrap. Long values (names, outcome lists) stay free to wrap. Shared by Changes and the trial page. */
+table.changes .ch-nb { white-space: nowrap; }
 .old { text-decoration: line-through; color: var(--muted); }
 .delta { font-weight: 600; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -70,9 +73,9 @@ table.changes th, table.changes td { text-align: left; vertical-align: top; padd
   table.changes, table.changes tbody, table.changes tr, table.changes td, table.changes caption { display: block; width: 100%; }
   table.changes tr { border: 0; border-bottom: 1px solid var(--rule); padding: .5rem 0; }
   table.changes td { border: 0; padding: .15rem 0; overflow-wrap: anywhere; }
-  table.changes td::before { content: attr(data-label); display: block; font-size: .75rem; color: var(--muted); }
+  table.changes td::before { content: attr(data-label); display: block; font-size: var(--fs-meta); color: var(--muted); }
 }
 
 /* The arrival banner when another page hands over a list of trials. */
-.trials-only { margin: 0 0 1rem; font-size: .9rem; color: var(--ink); }
+.trials-only { margin: 0 0 1rem; font-size: var(--fs-body); color: var(--ink); }
 .trials-only .text-button { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }

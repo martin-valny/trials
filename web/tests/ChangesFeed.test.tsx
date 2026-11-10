@@ -244,3 +244,13 @@ test("names are not sentence-cased: sponsor, conditions, drug codes stay as writ
   expect(screen.getAllByText("NIH").length).toBeGreaterThan(0);
   expect(screen.queryByText(/Nih|Nmosd|Cidp|Azd/)).not.toBeInTheDocument();
 });
+
+test("a short old or new value is kept on one line, and the phone date keeps its year", async () => {
+  stubFetch();
+  const { container } = renderAt(<ChangesFeed />);
+  await screen.findByRole("table");
+  const date = within(screen.getByRole("table")).getByText("29 Sep 2026");
+  expect(date).toHaveClass("new", "ch-nb");
+  expect(within(screen.getByRole("table")).getByText("1 Jun 2026")).toHaveClass("old", "ch-nb");
+  for (const when of container.querySelectorAll(".ch-when")) expect(when.textContent).toBe("4 Nov 2026");
+});

@@ -218,3 +218,44 @@ test("in the column variant the reading line is measured from the top of the vie
     delete (document.documentElement as unknown as Record<string, unknown>).scrollHeight;
   }
 });
+
+/** Arrival: the first heading in view (top 240 of an 800px view) but below the reading line: 200 for the column
+ *  (max(24, 0.25 vh)), 230 for the row (40px strip + 0.25 of the rest). */
+async function arrive(orientation: "row" | "column") {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal("innerHeight", 800);
+  const tops: Record<string, number> = { pa: 240, pb: 1400, pf: 2600, pg: 3800 };
+  const realRect = Element.prototype.getBoundingClientRect;
+  Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, value: 10000 });
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    const nav = this.tagName === "NAV";
+    const t = nav ? 0 : (tops[this.id] ?? 0);
+    const h = nav ? (orientation === "column" ? 700 : 40) : 20;
+    return { top: t, bottom: t + h, left: 0, right: 100, width: 100, height: h, x: 0, y: t, toJSON: () => ({}) } as DOMRect;
+  };
+  try {
+    render(
+      <MemoryRouter initialEntries={["/page"]}>
+        <ContentsStrip items={ITEMS} label="On this page" orientation={orientation} />
+        {ITEMS.map((i) => (
+          <h2 key={i.id} id={i.id} tabIndex={-1}>
+            {i.name}
+          </h2>
+        ))}
+      </MemoryRouter>,
+    );
+    await act(() => new Promise((r) => setTimeout(r, 30)));
+    return screen.getAllByRole("link").map((a) => a.getAttribute("aria-current"));
+  } finally {
+    Element.prototype.getBoundingClientRect = realRect;
+    delete (document.documentElement as unknown as Record<string, unknown>).scrollHeight;
+  }
+}
+
+test("on arrival the column marks its first section when it is in view but not yet up at the reading line", async () => {
+  expect(await arrive("column")).toEqual(["location", null, null, null]);
+});
+
+test("on arrival the row marks nothing until a panel reaches the line under the strip", async () => {
+  expect(await arrive("row")).toEqual([null, null, null, null]);
+});

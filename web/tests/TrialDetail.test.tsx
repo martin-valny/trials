@@ -64,12 +64,29 @@ test("full change history table", async () => {
   expect(within(table).getByText("Date moved by 90 days or more")).toBeInTheDocument();
 });
 
-test("target placeholder is labelled", async () => {
+test("a trial drawn on a target row links to that target page", async () => {
   stubFetch();
   show();
-  expect(
-    await screen.findByText("Target: not yet mapped (coming in enrichment)"),
-  ).toBeInTheDocument();
+  const link = await screen.findByRole("link", { name: "Target: CD20" });
+  expect(link).toHaveTextContent("Target: CD20 →");
+  expect(link).toHaveAttribute("href", "/target/cd20");
+  expect(screen.queryByText(/not yet mapped/)).not.toBeInTheDocument();
+});
+
+test("no target line when no row draws the trial, or pipeline.json is missing", async () => {
+  stubFetch();
+  const a = show("NCT04334031");
+  await screen.findByRole("heading", { level: 1 });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByText(/^Target:/)).not.toBeInTheDocument();
+  a.unmount();
+
+  stubFetch({ "pipeline.json": 404 });
+  show();
+  await screen.findByRole("heading", { level: 1, name: trial.title });
+  await new Promise((r) => setTimeout(r, 0));
+  expect(screen.queryByText(/^Target:/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/not yet mapped/)).not.toBeInTheDocument();
 });
 
 test("unknown trial shows not found", async () => {
@@ -144,8 +161,13 @@ test("results link shown only when has_results", async () => {
 test("trial page shows estimate and note", async () => {
   stubFetch();
   show();
-  const sec = await screen.findByRole("region", { name: "Estimated chance of stopping early" });
+  const sec = await screen.findByRole("region", { name: "Chance of stopping early" });
+  // Headed like the page's other sections.
+  expect(within(sec).getByRole("heading", { level: 2, name: "Chance of stopping early" })).toBeInTheDocument();
   expect(sec).toHaveTextContent("Estimated chance of stopping early: 24% (24–25), typical 20% for phase 2 drug trials");
+  // The estimate and its range stay on one line together.
+  expect(sec.querySelector(".rk-nb")).toHaveTextContent(/^24% \(24–25\)$/);
+  expect(within(sec).getByText("Main factors")).not.toHaveStyle({ textTransform: "uppercase" });
   expect(within(sec).getByRole("img", { name: "Estimated 24% (24–25); typical 20%" })).toBeInTheDocument();
   const factors = within(sec).getByRole("list", { name: "Main factors" });
   expect(factors).toHaveTextContent("Sites planned: 1");

@@ -404,3 +404,27 @@ test("on a phone the kicker line is dropped; desktop keeps it", () => {
   expect(phone.slice(0, phone.indexOf("\n}\n"))).toMatch(/\.kicker \{ display: none; \}/);
   expect(css).not.toMatch(/k-run/);
 });
+
+test("on desktop 'spans two phases' is its own legend item, after the note; the lens keeps its full placeholder", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const legend = screen.getByRole("group", { name: "Legend" });
+  const note = legend.querySelector(".p-legend-note")!;
+  expect(note.textContent).toBe("One mark per trial, oldest first");
+  expect(note.nextElementSibling).toHaveTextContent(/^spans two phases$/);
+  expect(note.nextElementSibling).toHaveAttribute("data-key", "span");
+  expect(screen.getByRole("combobox", { name: "Company lens" })).toHaveAttribute("placeholder", "Company lens: find a company");
+});
+
+test("on a phone the company lens has a placeholder that fits its pill", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch();
+    renderPage();
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.getByRole("combobox", { name: "Company lens" })).toHaveAttribute("placeholder", "Find a company");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

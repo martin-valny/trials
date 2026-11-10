@@ -27,6 +27,14 @@ const ALLOWED_11 = [
   ".rk-axis", // stop-risk scale axis ticks
 ];
 
+/** True when a selector names the class as a whole token: ".tick" matches ".tick" and "g.tick text", not ".ticker". */
+const hasClass = (selector: string, cls: string): boolean =>
+  new RegExp(`${cls.replace(/[.-]/g, "\\$&")}(?![\\w-])`).test(selector);
+
+/** True when every selector in the list ends on an input or a textarea. */
+const onTextField = (selector: string): boolean =>
+  selector.split(",").every((s) => /(^|[\s>+~])(input|textarea)(\[[^\]]*\]|:[\w-]+)*\s*$/.test(s.trim()));
+
 describe("css scale", () => {
   it("uses only scale sizes for text", () => {
     const bad: string[] = [];
@@ -39,18 +47,31 @@ describe("css scale", () => {
           if (px) {
             const n = Number(px[1]);
             if (SCALE.has(n)) continue;
-            if (n === 11 && ALLOWED_11.some((s) => selector.includes(s))) continue;
+            if (n === 11 && ALLOWED_11.some((s) => hasClass(selector, s))) continue;
           }
-          const rem = /^(\d*\.?\d+)rem$/.exec(v);
-          if (rem && Number(rem[1]) >= 0.75) continue;
-          const em = /^(\d*\.?\d+)em$/.exec(v);
-          if (em && Number(em[1]) >= 0.75) continue;
+          // rem/em only as a scale step (×16); 1rem (16px) only on a text field, where it stops iOS zooming on focus.
+          const rel = /^(\d*\.?\d+)r?em$/.exec(v);
+          if (rel) {
+            const n = Number(rel[1]);
+            if (SCALE.has(n * 16)) continue;
+            if (v === "1rem" && onTextField(selector)) continue;
+          }
           if (v === "inherit") continue;
           bad.push(`${path.split("/src/")[1]}: ${selector.trim().slice(-50)} { font-size: ${v} }`);
         }
       }
     }
     expect(bad).toEqual([]);
+  });
+
+  it("matches allowed classes as whole tokens", () => {
+    expect(hasClass(".pipe g.tick text", ".tick")).toBe(true);
+    expect(hasClass(".ticker", ".tick")).toBe(false);
+    expect(hasClass(".tick-label", ".tick")).toBe(false);
+    expect(hasClass(".rk-axis", ".axis")).toBe(false);
+    expect(onTextField(".tb-find input")).toBe(true);
+    expect(onTextField(".dg-form textarea")).toBe(true);
+    expect(onTextField(".nav-sheet a")).toBe(false);
   });
 
   it("reads no legacy token", () => {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   fieldLabel,
+  keepWhole,
   formatAgeRange,
   sexLabel,
   firstSentences,
@@ -148,4 +149,10 @@ test("sexLabel", () => {
   expect(sexLabel("ALL")).toBe("All sexes");
   expect(sexLabel("FEMALE")).toBe("Female only");
   expect(sexLabel("MALE")).toBe("Male only");
+});
+
+test("keepWhole keeps dates, statuses and numbers whole, and lets long values wrap", () => {
+  expect(keepWhole("1 Mar 2028")).toBe(true);
+  expect(keepWhole("Active, not recruiting")).toBe(true);
+  expect(keepWhole("Change from baseline in EDSS at week 96 (96 weeks)")).toBe(false);
 });

@@ -283,7 +283,7 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
 .popover-search::placeholder { color: var(--muted); }
 .popover-search:hover { border-color: var(--ink); }
 .popover-search::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
-.popover-hint { margin: 0 0 8px; color: var(--muted); font-size: 0.8125rem; line-height: 1.35; }
+.popover-hint { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-ui); line-height: 1.35; }
 .popover-actions { display: flex; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
 /* Select all / none are words, not pills: ink text with a muted underline that darkens on hover. */
 .explore .text-button {

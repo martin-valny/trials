@@ -1,5 +1,6 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { normKey, type FigureState, type SortKey } from "../../lib/pipeline";
+import { usePhone } from "../../lib/useMediaQuery";
 import type { PipelineDisease } from "../../types";
 
 const SORTS: [SortKey, string][] = [
@@ -70,6 +71,8 @@ export function FigureControls({ state, diseases, companies, onChange, children 
 }
 
 function CompanyFind({ companies, onPick }: { companies: string[]; onPick: (c: string) => void }) {
+  // The full placeholder clips in a phone's pill; the aria-label still names the lens.
+  const phone = usePhone();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -99,7 +102,7 @@ function CompanyFind({ companies, onPick }: { companies: string[]; onPick: (c: s
         aria-controls={`${id}-list`}
         aria-autocomplete="list"
         aria-activedescendant={showList ? `${id}-${active}` : undefined}
-        placeholder="Company lens: find a company"
+        placeholder={phone ? "Find a company" : "Company lens: find a company"}
         autoComplete="off"
         value={q}
         onChange={(e) => {

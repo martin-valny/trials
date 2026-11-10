@@ -30,13 +30,8 @@
 .trials-page .tr-title { margin-top: 2px; }
 .trials-page .tr-sponsor { color: var(--muted); }
 
-/* The plate mark beside the status word: ring running, dot stopped, pale dot finished, dashed unknown. */
+/* The status mark itself (.tr-mark) lives in marks.css, shared with the trial page. */
 .trials-page .tr-status { white-space: normal; }
-.tr-mark { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; box-sizing: border-box; vertical-align: 0; }
-.tr-mark.run { border: 1.6px solid var(--run); }
-.tr-mark.stop { background: var(--stop); }
-.tr-mark.fin { background: var(--fin); }
-.tr-mark.unk { border: 1.2px dashed var(--unk); }
 
 .trials-page .tr-more { margin-top: 14px; }
 

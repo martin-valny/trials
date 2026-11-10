@@ -1,15 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { loadTrial } from "../data";
+import { loadPipeline, loadTrial } from "../data";
 import { fieldLabel, formatAgeRange, formatDate, formatValue, markState, phasesLabel, sexLabel, statusLabel } from "../lib/format";
 import { formatPct, formatRange } from "../lib/risk";
 import { useRisk } from "../lib/useRisk";
-import type { DateInfo, RiskFile, TrialFile } from "../types";
+import type { DateInfo, PipelineFile, RiskFile, TrialFile } from "../types";
 import { ChangeTable } from "./ChangeTable";
 import { PageHead } from "./PageHead";
 import { RiskFactors } from "./risk/RiskFactors";
 import { RiskNote } from "./risk/RiskNote";
 import { RiskAxis, RiskScale } from "./risk/RiskScale";
+import "./marks.css";
 import "./explore/explore.css";
 import "./trial.css";
 
@@ -25,10 +26,32 @@ type Result = { nct: string; trial: TrialFile | null } | { nct: string; error: s
 const dateText = (d: DateInfo | null): string =>
   d ? `${formatDate(d)}${d.type ? ` (${d.type.toLowerCase()})` : ""}` : "—";
 
+/** The target row whose figure draws this trial, if any (the first in the front door's order). */
+export function trialTarget(file: PipelineFile | null, nct: string): { id: string; label: string } | null {
+  const row = file?.rows.find((r) => r.marks.some((m) => m.n === nct));
+  return row ? { id: row.id, label: row.label } : null;
+}
+
+/** pipeline.json, null while loading or when it is missing or unreadable. */
+function usePipelineFile(): PipelineFile | null {
+  const [f, setF] = useState<PipelineFile | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadPipeline()
+      .then((x) => live && setF(x))
+      .catch(() => live && setF(null));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return f;
+}
+
 export function TrialDetail() {
   const { nct = "" } = useParams();
   const [result, setResult] = useState<Result | null>(null);
   const risk = useRisk();
+  const pipeline = usePipelineFile();
 
   useEffect(() => {
     let live = true;
@@ -84,6 +107,7 @@ export function TrialDetail() {
     ...(t.why_stopped ? [["Why stopped", t.why_stopped] as [string, ReactNode]] : []),
   ];
 
+  const target = trialTarget(pipeline, t.nct_id);
   const e = t.eligibility;
   const ages = formatAgeRange(e.min_age_years, e.max_age_years) || null;
   const eligibility = [e.sex === null ? null : sexLabel(e.sex), ages].filter((x): x is string => x !== null).join(", ");
@@ -133,7 +157,14 @@ export function TrialDetail() {
         ) : null}
       </section>
 
-      <p className="trial-target">Target: not yet mapped (coming in enrichment)</p>
+      {target ? (
+        <p className="trial-target">
+          <Link to={`/target/${target.id}`}>
+            Target: {target.label}
+            <span aria-hidden="true"> →</span>
+          </Link>
+        </p>
+      ) : null}
 
       <h2>Timeline</h2>
       {timeline.length === 0 ? (
@@ -166,9 +197,14 @@ function TrialRisk({ nct, risk }: { nct: string; risk: RiskFile | null }) {
   const why = risk.not_scored[nct];
   if (!r) return why ? <p className="muted rk-unscored">Not scored: {why}</p> : null;
   return (
-    <section className="rk rk-trial" aria-label="Estimated chance of stopping early">
+    <section className="rk rk-trial" aria-labelledby={`rk-h-${nct}`}>
+      <h2 id={`rk-h-${nct}`}>Chance of stopping early</h2>
       <p className="rk-line">
-        Estimated chance of stopping early: <b>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)}), typical {formatPct(r.typical)} for {r.basis}
+        Estimated chance of stopping early:{" "}
+        <span className="rk-nb">
+          <b>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)})
+        </span>
+        , typical {formatPct(r.typical)} for {r.basis}
       </p>
       <div className="rk-plot">
         <RiskScale p={r.p} lo={r.lo} hi={r.hi} typical={r.typical} />

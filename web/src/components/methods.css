@@ -20,7 +20,7 @@
 .methods ul { margin: 0 0 14px; padding-left: 1.25em; }
 .methods li { margin: 0 0 4px; }
 .methods li::marker { color: var(--muted); }
-.methods code { font-size: 0.9em; }
+.methods code { font-size: var(--fs-body); }
 /* An old #fragment and the contents land a section clear of the top edge; nothing sticky covers the prose. */
 .methods [id] { scroll-margin-top: 24px; }
 

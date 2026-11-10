@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { fieldLabel, formatDate, formatDelta, formatValue, phaseLabel, phasesLabel, reasonLabel, statusLabel } from "../lib/format";
 import type { ChangeItem } from "../types";
+import { Value } from "./ChangeTable";
 
 /** Tracked fields whose values are registry enums (TRACKED_FIELDS in the pipeline); every other field's values are names and stay as written. */
 const ENUM_FIELDS = new Set(["overall_status", "enrollment_type"]);
@@ -30,17 +31,23 @@ export function ChangeRow({ item }: { item: ChangeItem }) {
         <div className="ch-title">{item.title ?? "No longer in the registry results"}</div>
         {item.lead_sponsor ? <div className="ch-sponsor">{item.lead_sponsor}</div> : null}
         {/* Phone only (line 2): the table's Detected line is hidden there. */}
-        <span className="ch-when">{detected.replace(/ \d{4}$/, "")}</span>
+        <span className="ch-when">{detected}</span>
       </td>
       <td data-label="Field" className="ch-field">
         {fieldLabel(item.field)}
       </td>
       <td data-label="Change" className="ch-change">
-        <span className="old">{valueText(item.field, item.old_value)}</span>
+        <Value className="old" text={valueText(item.field, item.old_value)} />
         <span aria-hidden="true"> → </span>
         <span className="visually-hidden"> changed to </span>
-        <span className="new">{valueText(item.field, item.new_value)}</span>
-        {delta ? <div className="delta">{delta}</div> : null}
+        <Value className="new" text={valueText(item.field, item.new_value)} />
+        {/* A breakable space before the delta: on a phone it sits inline and, when it wraps, starts flush left. */}
+        {delta ? (
+          <>
+            <span className="ch-gap"> </span>
+            <div className="delta">{delta}</div>
+          </>
+        ) : null}
         <div className="ch-date">Detected {detected}</div>
       </td>
       <td data-label="Why notable" className={item.notable ? "ch-why" : "ch-why ch-why-none"}>

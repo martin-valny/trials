@@ -6,6 +6,7 @@ import { useShowMore } from "../lib/useShowMore";
 import type { TrialSummary } from "../types";
 import { MultiSelect, type MultiSelectOption } from "./explore/MultiSelect";
 import { PageHead } from "./PageHead";
+import "./marks.css";
 import "./explore/explore.css";
 import "./trials.css";
 

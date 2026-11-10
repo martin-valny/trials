@@ -1,6 +1,7 @@
 /* Changes on the Figure Plate. The page root is ".page.explore.changes-page": .page gives the site's gutters and
    explore.css the plate tokens and the dropdown/pill styles. Flat: hairlines and ink, no cards, no shadows.
-   Everything is scoped to .changes-page because TrialsList still uses the old table.changes rules. */
+   Everything is scoped to .changes-page: this page's table and the trial page's ChangeTable share the base
+   table.changes rules in styles.css. */
 .changes-page { background: none; flex: 0 0 auto; }
 .changes-page .ch-bar { margin-top: 16px; padding-bottom: 12px; }
 .changes-page .ch-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; font-size: var(--fs-ui); }
@@ -69,7 +70,8 @@
   .changes-page .ch-sponsor, .changes-page .ch-date { display: none; }
   .changes-page .ch-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .changes-page .ch-short { display: inline; }
-  .changes-page .delta { display: inline; margin: 0 0 0 8px; }
+  .changes-page .delta { display: inline; margin: 0; white-space: nowrap; }
+  .changes-page .ch-gap { word-spacing: 4px; }
 }
 /* The caption is for screen readers; the old phone rule's 100% width plus the padding must not widen the page. */
 .changes-page table.ch-table caption { width: 1px; padding: 0; }

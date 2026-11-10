@@ -64,12 +64,15 @@
 .rk-note { margin: 14px 0 0; font-size: 12px; color: var(--muted); max-width: 80ch; }
 .rk-note a { color: var(--rk-ink); }
 
-/* The trial page: the same scale, kept short, under the status block. */
-.rk-trial { margin: 1.5rem 0; padding-top: .75rem; border-top: 1px solid var(--rk-rule); max-width: 40rem; }
-.rk-line { margin: 0 0 .5rem; }
+/* The trial page: a full-width section under the facts, headed like the page's other sections (trial.css h2);
+   the sentence, scale, factors and note keep their short measure inside it. */
+.rk-trial .rk-line, .rk-trial .rk-factors, .rk-trial .rk-note { max-width: 40rem; }
+.rk-line { margin: 0 0 8px; }
+/* "14% (11–20)" stays on one line; the sentence may wrap around it. */
+.rk-nb { white-space: nowrap; }
 .rk-plot { max-width: 22rem; }
 .rk-plot .rk-axis { margin-top: 2px; }
-.rk-fh { margin: .75rem 0 .25rem; font-size: .75rem; color: var(--muted); text-transform: uppercase; }
+.rk-fh { margin: 12px 0 4px; font-size: var(--fs-meta); color: var(--muted); }
 
 @media (max-width: 640px) {
   .rk-head { grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0 16px; }
@@ -82,8 +85,8 @@
   .rk-factors li { grid-template-columns: 4.25rem minmax(0, 1fr); padding: 4px 0; }
 }
 
-/* Methods, "How good is the stop-risk model?". Methods keeps the older palette (--fg --muted --line); the chart is
-   drawn plate-style: hairline axes, a dashed diagonal, ink points, 11px tabular tick labels. */
+/* Methods, "How good is the stop-risk model?", in the plate tokens like the rest of the page; the chart is drawn
+   plate-style: hairline axes, a dashed diagonal, ink points, 11px tabular tick labels. */
 .rk-m-scroll { overflow-x: auto; margin: 1rem 0 .5rem; }
 .rk-m-table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; width: 100%; max-width: 46rem; }
 .rk-m-table caption { text-align: left; font-weight: 700; font-size: 13px; padding-bottom: .4rem; }

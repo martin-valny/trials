@@ -250,6 +250,6 @@ test("the stop-risk panel and the trial-page estimate never say failure or troub
     </Routes>,
     "/trial/NCT90000002",
   );
-  await screen.findByRole("region", { name: "Estimated chance of stopping early" });
+  await screen.findByRole("region", { name: "Chance of stopping early" });
   noBannedWords();
 });

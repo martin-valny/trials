@@ -101,6 +101,9 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
       tops.forEach((t, i) => {
         if (t <= line || (atFoot && t < vh)) at = i;
       });
+      // A column (Methods) has a header above its first section: on arrival, with that section in view but not yet up
+      // at the line, it is still the one being read. A row keeps nothing marked until a panel reaches the line.
+      if (at < 0 && column && tops[0]! >= 0 && tops[0]! < vh) at = 0;
       setCurrent(at >= 0 ? els[at]!.id : null);
     };
     const schedule = () => {

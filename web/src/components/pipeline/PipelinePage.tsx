@@ -123,10 +123,15 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
             <span className="p-legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
           ) : (
             !phone && (
-              <span className="p-legend-note">
-                {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
-                <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
-              </span>
+              <>
+                <span className="p-legend-note">
+                  {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"}
+                </span>
+                <span data-key="span">
+                  <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" />
+                  spans two phases
+                </span>
+              </>
             )
           )}
         </div>

@@ -42,6 +42,9 @@ export function formatValue(field: string, v: unknown): string {
   return String(v);
 }
 
+/** True for a value short enough to keep on one line in a change row (a date, a status, a number). */
+export const keepWhole = (text: string): boolean => text.length <= 28;
+
 export function formatDelta(days: number | null): string {
   if (days === null || days === 0) return "";
   const n = Math.abs(days);

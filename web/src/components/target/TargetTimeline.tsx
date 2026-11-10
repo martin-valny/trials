@@ -32,6 +32,16 @@ export function asOfText(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
+/** A generous estimate of a 600-weight Hanken Grotesk label's width (SVG text cannot be measured before it is drawn). */
+const labelWidth = (text: string, size: number): number => text.length * size * 0.6;
+
+/** Where the "Data as of" label sits: right of the rule, unless it would run past the plot's right edge; a phone
+ *  always sets it to the left. */
+export function asOfPlacement(nowX: number, width: number, narrow: boolean, text: string, size = 12): { x: number; anchor: "start" | "end" } {
+  if (narrow) return { x: nowX - 4, anchor: "end" };
+  return nowX + 6 + labelWidth(text, size) > width - 2 ? { x: nowX - 6, anchor: "end" } : { x: nowX + 6, anchor: "start" };
+}
+
 /** The width of an element, 1200 where it cannot be measured (tests, first paint). */
 function useWidth(ref: React.RefObject<HTMLElement | null>): number {
   const [w, setW] = useState(1200);
@@ -114,6 +124,8 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
   const bottom = y;
   const H = bottom + 22;
   const nowX = X(asof);
+  const asOfLabel = `Data as of ${asOfText(file.generated_for)}`;
+  const asOfAt = asOfPlacement(nowX, W, narrow, asOfLabel);
   const ticks: number[] = [];
   for (let t = y0; t <= y1; t += 5) ticks.push(t);
 
@@ -130,7 +142,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           {ticks.map((t) => (
             <g key={t}>
               <line x1={X(t)} x2={X(t)} y1={18} y2={bottom - 6} stroke="var(--rule)" />
-              <text x={X(t)} y={11} fontSize="10.5" fill="var(--muted)" textAnchor={X(t) < 16 ? "start" : X(t) > W - 18 ? "end" : "middle"}>
+              <text x={X(t)} y={11} fontSize="11" fill="var(--muted)" textAnchor={X(t) < 16 ? "start" : X(t) > W - 18 ? "end" : "middle"}>
                 {t}
               </text>
             </g>
@@ -138,15 +150,15 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           {laid.map((lane) => (
             <g key={lane.name}>
               {narrow ? (
-                <text x={0} y={lane.y - 6} fontSize="11.5" fontWeight="700" fill="var(--ink)" stroke="var(--plate)" strokeWidth="3" paintOrder="stroke">
+                <text x={0} y={lane.y - 6} fontSize="12" fontWeight="700" fill="var(--ink)" stroke="var(--plate)" strokeWidth="3" paintOrder="stroke">
                   {lane.name} <tspan fontWeight="400" fill="var(--muted)">{lane.marks.length}</tspan>
                 </text>
               ) : (
                 <>
-                  <text x={0} y={lane.y + 12} fontSize="12.5" fontWeight="700" fill="var(--ink)">
+                  <text x={0} y={lane.y + 12} fontSize="13" fontWeight="700" fill="var(--ink)">
                     {lane.name}
                   </text>
-                  <text x={0} y={lane.y + 27} fontSize="11" fill="var(--muted)">
+                  <text x={0} y={lane.y + 27} fontSize="12" fill="var(--muted)">
                     {lane.marks.length} {lane.marks.length === 1 ? "trial" : "trials"} · {lane.marks.filter((m) => st(m) === "run").length} running
                   </text>
                 </>
@@ -196,8 +208,8 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
             </g>
           ))}
           <line x1={nowX} x2={nowX} y1={14} y2={bottom - 6} stroke="var(--ink)" />
-          <text x={nowX + (narrow ? -4 : 6)} y={bottom + 8} fontSize="10.5" fontWeight="600" fill="var(--ink)" textAnchor={narrow ? "end" : "start"}>
-            Data as of {asOfText(file.generated_for)}
+          <text x={asOfAt.x} y={bottom + 8} fontSize="12" fontWeight="600" fill="var(--ink)" textAnchor={asOfAt.anchor}>
+            {asOfLabel}
           </text>
         </svg>
         {tip && (
