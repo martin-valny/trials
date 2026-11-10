@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-11-09T15:16:07.858Z",
         "reason": "Claude triage: L24 .rk-range-end is a CSS border triangle (arrowhead for a range past the 60% axis end), not a side accent on a card"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/components/target/target.css"
+        ],
+        "createdAt": "2026-11-10T12:01:14.064Z",
+        "reason": "Claude triage: target.css:81 is the mechanism chain's CSS border-triangle arrowhead (.chain .ed::after, 0-size box), not a side accent on a card; same pattern as the existing risk.css ignore"
       }
     ]
   }
