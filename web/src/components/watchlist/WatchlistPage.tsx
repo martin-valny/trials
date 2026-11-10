@@ -4,6 +4,7 @@ import { loadTrials } from "../../data";
 import { MIN_SUMMARY_N, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
 import { usePipelineFile } from "../../lib/useDisease";
 import { useRisk } from "../../lib/useRisk";
+import { useShowMore } from "../../lib/useShowMore";
 import type { PipelineFile, RiskFile, TrialsIndex } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
 import { PageHead } from "../PageHead";
@@ -16,8 +17,6 @@ import "./watchlist.css";
 
 const n = (x: number): string => x.toLocaleString("en-US");
 const NONE = "none";
-/** Rows shown at first, and added by each "Show N more" (DESIGN.md's show-more pattern). */
-const PAGE = 50;
 
 /** trials.json: undefined while loading, null when missing or unreadable (rows then lack title and phase). */
 function useTrialsIndex(): TrialsIndex | null | undefined {
@@ -149,10 +148,9 @@ function TrialList({
   }, [risk, pipeline, index, sort, chosen]);
 
   // The first PAGE rows, more on demand; any change of filters or sort (the query) starts over.
-  const [page, setPage] = useState({ qs, limit: PAGE });
-  const limit = page.qs === qs ? page.limit : PAGE;
-  const visible = shown.slice(0, limit);
-  const more = Math.min(PAGE, shown.length - visible.length);
+  const paging = useShowMore(qs, shown.length);
+  const visible = shown.slice(0, paging.visible);
+  const more = paging.more;
 
   const update = (f: (p: URLSearchParams) => void) =>
     setParams(
@@ -280,7 +278,7 @@ function TrialList({
               </tbody>
             </table>
             {more > 0 ? (
-              <button type="button" className="text-button wl-more" onClick={() => setPage({ qs, limit: limit + PAGE })}>
+              <button type="button" className="text-button wl-more" onClick={paging.showMore}>
                 Show {n(more)} more, {n(shown.length)} {shown.length === 1 ? "trial" : "trials"}
               </button>
             ) : null}

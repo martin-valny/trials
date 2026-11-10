@@ -1,8 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadPipeline, loadTrials } from "../data";
-import { formatDate, formatValue } from "../lib/format";
-import type { TrialSummary } from "../types";
+import { formatDate, phasesLabel, statusLabel } from "../lib/format";
+import { useShowMore } from "../lib/useShowMore";
+import type { MarkState, TrialSummary } from "../types";
+import { MultiSelect, type MultiSelectOption } from "./explore/MultiSelect";
+import { PageHead } from "./PageHead";
+import "./explore/explore.css";
+import "./trials.css";
+
+const n = (x: number): string => x.toLocaleString("en-US");
+
+/** The plate mark for a registry status: running ring, stopped dot, finished pale dot, unknown dashed. */
+function markState(status: string): MarkState {
+  switch (status) {
+    case "RECRUITING":
+    case "ACTIVE_NOT_RECRUITING":
+    case "NOT_YET_RECRUITING":
+    case "ENROLLING_BY_INVITATION":
+      return "run";
+    case "TERMINATED":
+    case "WITHDRAWN":
+    case "SUSPENDED":
+      return "stop";
+    case "COMPLETED":
+      return "fin";
+    default:
+      return "unk";
+  }
+}
+
+/** A small drawn magnifier, hairline ink, set inside the find pill. */
+function FindGlyph() {
+  return (
+    <svg className="find-glyph" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+      <circle cx="5" cy="5" r="3.75" />
+      <path d="M7.75 7.75 11 11" />
+    </svg>
+  );
+}
 
 type Result = { trials: TrialSummary[] } | { error: string };
 
@@ -10,7 +46,8 @@ type Result = { trials: TrialSummary[] } | { error: string };
 export function TrialsList() {
   const [result, setResult] = useState<Result | null>(null);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
+  // null = every status (no narrowing); a set = only those.
+  const [status, setStatus] = useState<Set<string> | null>(null);
   // A list handed over by another page: ?nct=NCT1,NCT2&from=<what they are>[&disease=…].
   const [params, setParams] = useSearchParams();
   const only = useMemo(() => {
@@ -73,13 +110,20 @@ export function TrialsList() {
     [all, only, diseaseLabel, disease],
   );
   const onlyN = scoped.length;
-  const statuses = useMemo(() => [...new Set(all.map((t) => t.overall_status))].sort(), [all]);
+  const statusOptions = useMemo<MultiSelectOption[]>(() => {
+    const m = new Map<string, number>();
+    for (const t of scoped) m.set(t.overall_status, (m.get(t.overall_status) ?? 0) + 1);
+    return [...m.entries()]
+      .map(([value, count]) => ({ value, label: statusLabel(value), n: count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [scoped]);
+  const pickedStatus = status ?? new Set(statusOptions.map((o) => o.value));
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     return scoped
       .filter(
         (t) =>
-          (!status || t.overall_status === status) &&
+          (status === null || status.has(t.overall_status)) &&
           (!q ||
             [t.nct_id, t.title, t.lead_sponsor ?? ""].some((v) => v.toLowerCase().includes(q))),
       )
@@ -90,9 +134,20 @@ export function TrialsList() {
       );
   }, [scoped, query, status]);
 
+  // A new query, status pick or handed-over list starts again at the first page.
+  const paging = useShowMore(
+    JSON.stringify([query.trim().toLowerCase(), status === null ? null : [...status].sort(), params.get("nct"), disease]),
+    shown.length,
+  );
+  const visible = shown.slice(0, paging.visible);
+
   return (
-    <section aria-labelledby="trials-heading">
-      <h1 id="trials-heading">Trials</h1>
+    <div className="page explore trials-page">
+      <PageHead
+        title="Trials"
+        sentence={all.length > 0 ? `${n(all.length)} tracked trials, most recently changed first.` : undefined}
+      />
+      <section aria-label="Tracked trials">
 
       {result === null || diseaseLoading ? <p role="status">Loading trials…</p> : null}
       {result && "error" in result ? (
@@ -103,7 +158,7 @@ export function TrialsList() {
       ) : null}
 
       {all.length > 0 && !diseaseLoading && (only !== null || diseaseLabel !== null) ? (
-        <p className="trials-only" role="status">
+        <p className="trials-only tr-only" role="status">
           Showing {onlyN} {onlyN === 1 ? "trial" : "trials"}{from ? ` from ${from}` : ""}{diseaseLabel ? ` in ${diseaseLabel}` : ""} ·{" "}
           <button type="button" className="text-button" onClick={clearOnly}>
             Clear
@@ -113,28 +168,33 @@ export function TrialsList() {
 
       {all.length > 0 && !diseaseLoading ? (
         <>
-          <form className="filters" onSubmit={(e) => e.preventDefault()}>
-            <label>
-              Search
+          <div className="tr-bar" role="group" aria-label="Trial filters">
+            <div className="tb-find">
+              <label className="visually-hidden" htmlFor="trials-find">
+                Search
+              </label>
+              <FindGlyph />
               <input
+                id="trials-find"
                 type="search"
                 value={query}
                 placeholder="NCT number, title or sponsor"
                 onChange={(e) => setQuery(e.target.value)}
               />
-            </label>
-            <label>
-              Status
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="">All statuses</option>
-                {statuses.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </form>
+            </div>
+            <MultiSelect
+              label="Status"
+              options={statusOptions}
+              selected={pickedStatus}
+              onChange={(next) =>
+                setStatus(
+                  statusOptions.every((o) => next.has(o.value))
+                    ? null
+                    : new Set([...next].filter((v) => statusOptions.some((o) => o.value === v))),
+                )
+              }
+            />
+          </div>
 
           {shown.length === 0 ? (
             <p>
@@ -143,40 +203,56 @@ export function TrialsList() {
                 : "No trials match these filters."}
             </p>
           ) : (
-            <table className="changes trials">
-              <caption>
-                Showing {shown.length} of {all.length} tracked trials
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Trial</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Phase</th>
-                  <th scope="col">Primary completion</th>
-                  <th scope="col">Last change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((t) => (
-                  <tr key={t.nct_id}>
-                    <td data-label="Trial">
-                      <Link to={`/trial/${t.nct_id}`}>{t.nct_id}</Link>
-                      <div className="muted">{t.title}</div>
-                      {t.lead_sponsor ? <div className="muted">{t.lead_sponsor}</div> : null}
-                    </td>
-                    <td data-label="Status">{t.overall_status}</td>
-                    <td data-label="Phase">{formatValue("phases", t.phases)}</td>
-                    <td data-label="Primary completion">
-                      {t.primary_completion_date ? formatDate(t.primary_completion_date) : "—"}
-                    </td>
-                    <td data-label="Last change">{t.last_change ?? "—"}</td>
+            <>
+              <p className="tr-count">
+                Showing {n(visible.length)} of {n(shown.length)} {shown.length === 1 ? "trial" : "trials"}
+              </p>
+              <table className="trials tr-table">
+                <caption className="visually-hidden">Tracked trials, most recently changed first</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Trial</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Phase</th>
+                    <th scope="col">Primary completion</th>
+                    <th scope="col">Last change</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {visible.map((t) => (
+                    <tr key={t.nct_id}>
+                      <td className="tr-trial">
+                        <Link to={`/trial/${t.nct_id}`} className="tr-nct">
+                          {t.nct_id}
+                        </Link>
+                        <div className="tr-title">{t.title}</div>
+                        {t.lead_sponsor ? <div className="tr-sponsor">{t.lead_sponsor}</div> : null}
+                      </td>
+                      <td className="tr-status">
+                        <i className={`tr-mark ${markState(t.overall_status)}`} aria-hidden="true" />
+                        {statusLabel(t.overall_status)}
+                      </td>
+                      <td className="tr-phase">{phasesLabel(t.phases)}</td>
+                      <td className="tr-date">
+                        {t.primary_completion_date ? formatDate(t.primary_completion_date) : "—"}
+                      </td>
+                      <td className="tr-date">
+                        {t.last_change ? formatDate({ date: t.last_change, precision: "day", type: null }) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {paging.more > 0 ? (
+                <button type="button" className="text-button tr-more" onClick={paging.showMore}>
+                  Show {n(paging.more)} more, {n(shown.length)} {shown.length === 1 ? "trial" : "trials"}
+                </button>
+              ) : null}
+            </>
           )}
         </>
       ) : null}
-    </section>
+      </section>
+    </div>
   );
 }

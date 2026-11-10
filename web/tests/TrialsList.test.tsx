@@ -28,8 +28,12 @@ test("lists every tracked trial with a count", async () => {
   await screen.findByRole("table");
   expect(rows()).toHaveLength(index.trials.length);
   expect(
-    screen.getByText(`Showing ${index.trials.length} of ${index.trials.length} tracked trials`),
+    screen.getByText(`Showing ${index.trials.length} of ${index.trials.length} trials`),
   ).toBeInTheDocument();
+  expect(
+    screen.getByText(`${index.trials.length} tracked trials, most recently changed first.`),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Trials" })).toBeInTheDocument();
 });
 
 test("most recently changed trials come first, then by NCT number", async () => {
@@ -74,7 +78,9 @@ test("status filter narrows rows and nothing-matching is explained", async () =>
   stubFetch();
   renderAt(<TrialsList />);
   await screen.findByRole("table");
-  await userEvent.selectOptions(screen.getByLabelText("Status"), "TERMINATED");
+  await userEvent.click(screen.getByRole("button", { name: "Status: all" }));
+  const boxes = within(screen.getByRole("group", { name: "Status" })).getAllByRole("checkbox");
+  for (const b of boxes) if (!/^Terminated/.test(b.getAttribute("aria-label") ?? b.closest("label")?.textContent ?? "")) await userEvent.click(b);
   expect(rows()).toHaveLength(index.trials.filter((t) => t.overall_status === "TERMINATED").length);
   await userEvent.type(screen.getByLabelText("Search"), "zzzz-no-such-trial");
   expect(screen.getByText("No trials match these filters.")).toBeInTheDocument();
@@ -187,4 +193,71 @@ test("if pipeline.json cannot be loaded the disease filter is skipped", async ()
   await screen.findByRole("table");
   expect(rows()).toHaveLength(index.trials.length);
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+// A list longer than one page: the fixture's 14 trials repeated under new NCT numbers.
+const many = (n: number) => {
+  const trials = Array.from({ length: n }, (_, i) => {
+    const t = index.trials[i % index.trials.length];
+    return { ...t, nct_id: `NCT${String(90000000 + i)}`, last_change: `2026-10-${String(1 + (i % 28)).padStart(2, "0")}` };
+  });
+  return { ...index, trials };
+};
+
+test("pages 50 at a time with Show more", async () => {
+  stubFetch({ "trials.json": many(120) });
+  renderAt(<TrialsList />);
+  await screen.findByRole("table");
+  expect(rows()).toHaveLength(50);
+  expect(screen.getByText("Showing 50 of 120 trials")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  expect(rows()).toHaveLength(100);
+  await userEvent.click(screen.getByRole("button", { name: /^Show 20 more/ }));
+  expect(rows()).toHaveLength(120);
+  expect(screen.queryByRole("button", { name: /Show \d+ more/ })).not.toBeInTheDocument();
+});
+
+test("search covers trials beyond the first page", async () => {
+  stubFetch({ "trials.json": many(120) });
+  renderAt(<TrialsList />);
+  await screen.findByRole("table");
+  expect(ids()).not.toContain("NCT90000119");
+  await userEvent.type(screen.getByLabelText("Search"), "NCT90000119");
+  expect(ids()).toEqual(["NCT90000119"]);
+});
+
+test("changing the query or the status filter returns to 50 rows", async () => {
+  stubFetch({ "trials.json": many(120) });
+  renderAt(<TrialsList />);
+  await screen.findByRole("table");
+  await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  expect(rows()).toHaveLength(100);
+  await userEvent.type(screen.getByLabelText("Search"), "NCT9000");
+  expect(rows()).toHaveLength(50);
+  await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  expect(rows()).toHaveLength(100);
+  await userEvent.clear(screen.getByLabelText("Search"));
+  expect(rows()).toHaveLength(50);
+  await userEvent.click(screen.getByRole("button", { name: /^Show 50 more/ }));
+  await userEvent.click(screen.getByRole("button", { name: "Status: all" }));
+  await userEvent.click(within(screen.getByRole("group", { name: "Status" })).getAllByRole("checkbox")[0]);
+  expect(rows().length).toBeLessThanOrEqual(50);
+});
+
+test("status reads as words with a mark, phases and dates as people write them", async () => {
+  stubFetch({
+    "trials.json": {
+      ...index,
+      trials: [
+        { ...index.trials[0], overall_status: "ACTIVE_NOT_RECRUITING", phases: ["PHASE2", "PHASE3"], last_change: "2026-11-06" },
+      ],
+    },
+  });
+  renderAt(<TrialsList />);
+  await screen.findByRole("table");
+  const row = rows()[0];
+  expect(within(row).getByText("Active, not recruiting")).toBeInTheDocument();
+  expect(row.querySelector(".tr-mark.run")).not.toBeNull();
+  expect(within(row).getByText("Phase 2/3")).toBeInTheDocument();
+  expect(within(row).getByText("6 Nov 2026")).toBeInTheDocument();
 });
