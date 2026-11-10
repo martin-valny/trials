@@ -51,7 +51,7 @@
 .canvas-empty p { margin: 0; font-weight: 700; }
 
 /* --- Panel b, Targeted drugs: the graph -------------------------------------------------------------- */
-/* The Find pill on a right-aligned line of its own, then the key on one line directly over the frame;
+/* The Find pill on a right-aligned line of its own (on the heading's line beside the rail), then the key on one line directly over the frame;
    the canvas is the figure, bounded by hairlines only. The key never stretches: it is as tall as its
    lines (it once took a flex-basis of 28rem as height in the phone's column). */
 .graph-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -64,6 +64,13 @@
 .share-ramp { display: inline-block; width: 28px; height: 8px; flex: none; }
 .graph-search { flex: none; align-self: flex-end; }
 .graph-search input { width: 15rem; }
+/* Beside the rail, the Find pill moves up to the right end of panel b's heading line, so the canvas starts a line
+   sooner; the heading keeps clear of it. Narrower screens keep the pill on its own line. */
+@media (min-width: 901px) {
+  .mech-canvas { position: relative; }
+  .mech-canvas .graph-search { position: absolute; top: -3px; right: 0; }
+  .mech-canvas:has(.graph-search) > .panel-h { padding-right: calc(15rem + 24px); }
+}
 .graph-matches {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; list-style: none; margin: 0; padding: 4px 0;
   min-width: 100%; max-width: min(24rem, calc(100vw - 32px));

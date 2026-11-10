@@ -1,0 +1,24 @@
+/* The shared page head (spec section 6): crumb, title, one computed sentence, an optional aside. The grid places
+   the aside at the right of the title row from 1100px and under the sentence below that; an absent part takes no
+   room. Gutters are the site's (.page): 40px, 16px on a phone. Plate tokens only. */
+.page-head {
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "crumb" "title" "sentence" "aside";
+  padding: 24px 40px 0;
+}
+.page-head-crumb { grid-area: crumb; margin: 0 0 8px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
+.page-head h1 { grid-area: title; min-width: 0; margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.page-head-sentence {
+  grid-area: sentence; margin: 8px 0 0; max-width: 72ch;
+  font-size: var(--fs-read); line-height: var(--lh-read); text-wrap: pretty;
+}
+.page-head-aside { grid-area: aside; min-width: 0; margin-top: 12px; }
+
+@media (min-width: 1100px) {
+  .page-head { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "crumb crumb" "title aside" "sentence sentence"; column-gap: 32px; }
+  .page-head-aside { margin-top: 0; align-self: center; justify-self: end; }
+}
+@media (max-width: 640px) {
+  .page-head { padding: 24px 16px 0; }
+  .page-head h1 { font-size: 28px; }
+}

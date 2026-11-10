@@ -1,11 +1,12 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadTrials } from "../../data";
-import { MIN_SUMMARY_N, aboveLine, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
+import { MIN_SUMMARY_N, countAbove, formatPct, formatRange, rankTrials, vsTypical, type WatchFilter, type WatchRow, type WatchSort } from "../../lib/risk";
 import { usePipelineFile } from "../../lib/useDisease";
 import { useRisk } from "../../lib/useRisk";
 import type { PipelineFile, RiskFile, TrialsIndex } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
+import { PageHead } from "../PageHead";
 import { RiskFactors } from "../risk/RiskFactors";
 import { RiskNote } from "../risk/RiskNote";
 import { RiskAxis, RiskScale } from "../risk/RiskScale";
@@ -33,14 +34,12 @@ function useTrialsIndex(): TrialsIndex | null | undefined {
   return f;
 }
 
-function Head({ lede, claim }: { lede?: string; claim?: string }) {
-  return (
-    <header className="wl-head">
-      <h1>Watchlist</h1>
-      {lede ? <p className="wl-lede">{lede}</p> : null}
-      {claim ? <p className="wl-claim">{claim}</p> : null}
-    </header>
-  );
+const Head = ({ sentence }: { sentence?: string }) => <PageHead title="Watchlist" sentence={sentence} />;
+
+/** The page head's one sentence: how many trials are ranked, and how many sit above their phase's typical rate. */
+function headSentence(total: number, above: number): string {
+  const ranked = `${n(total)} running drug ${total === 1 ? "trial" : "trials"}, ranked by estimated chance of stopping early`;
+  return total > 0 ? `${ranked}; ${n(above)} ${above === 1 ? "sits" : "sit"} above their phase's typical rate.` : `${ranked}.`;
 }
 
 /** Route ``/watchlist``: every scored running trial ranked by its estimated chance of stopping early (spec §7). */
@@ -194,13 +193,7 @@ function TrialList({
 
   return (
     <div className="explore watchlist rk">
-      <Head
-        lede={`${n(total)} running drug ${total === 1 ? "trial" : "trials"}, ranked by estimated chance of stopping early.`}
-        claim={total > 0 ? aboveLine(countAbove(all), total) : undefined}
-      />
-      <div className="wl-note">
-        <RiskNote />
-      </div>
+      <Head sentence={headSentence(total, countAbove(all))} />
       <div className="toolbar wl-toolbar" role="group" aria-label="Watchlist filters">
         <div className="tb-filters">
           <MultiSelect
@@ -243,6 +236,15 @@ function TrialList({
         </div>
       </div>
 
+      {/* The standing note, then the table's key: one line at desktop widths, the key at its right. */}
+      <div className="wl-note">
+        <RiskNote />
+        {shown.length > 0 ? (
+          <p className="wl-key">
+            Ring = estimate, band = range, tick = typical for {bases.length === 1 ? bases[0] : "each trial's phase"}.
+          </p>
+        ) : null}
+      </div>
       <div className="wl-body">
         {total === 0 ? (
           <p className="wl-msg">No running trials have an estimate yet.</p>
@@ -250,9 +252,6 @@ function TrialList({
           <p className="wl-msg">No running trials match these filters.</p>
         ) : (
           <>
-            <p className="wl-key">
-              Ring = estimate, band = range, tick = typical for {bases.length === 1 ? bases[0] : "each trial's phase"}.
-            </p>
             <table className="wl-table" aria-label={`Running trials ranked by ${sort === "estimate" ? "estimate" : "difference from typical"}`}>
               <colgroup>
                 <col className="wl-c-trial" />
@@ -384,7 +383,7 @@ function TargetList({ risk, pipeline }: { risk: RiskFile; pipeline: PipelineFile
   }, [risk, pipeline]);
   return (
     <div className="explore watchlist rk">
-      <Head lede="Running drug trials by target, ranked by median estimated chance of stopping early." />
+      <Head sentence="Running drug trials by target, ranked by median estimated chance of stopping early." />
       <div className="wl-note">
         <RiskNote />
       </div>

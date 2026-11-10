@@ -57,6 +57,18 @@ test("MechanismsPage selects from the URL and switches on rail click", async () 
   expect(screen.getByText(/Success not defined/)).toBeInTheDocument();
 });
 
+test("the Figure 2 title sits in the shared page head", async () => {
+  stubFetch({ "explorer.json": withCell() });
+  const { container } = renderPage("/approaches/cell");
+  await screen.findByRole("region", { name: /^b\s*Cell & transplant/ });
+  const head = container.querySelector("header.page-head");
+  expect(head).not.toBeNull();
+  const h1 = within(head as HTMLElement).getByRole("heading", { level: 1 });
+  expect(h1.textContent).toMatch(/^Figure 2 \| Approaches: every trial by how its treatment works/);
+  expect(within(h1).getByText("Figure 2 |").tagName).toBe("B");
+  expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+});
+
 test("an unknown or missing approach goes to Targeted drugs", async () => {
   stubFetch();
   renderPage("/approaches/bogus");

@@ -34,6 +34,7 @@ import { useTheme } from "../../lib/theme";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import type { ExplorerFile, ExplorerTrial, GraphFile, Meta, Outcome } from "../../types";
 import { MultiSelect, type MultiSelectOption } from "../explore/MultiSelect";
+import { PageHead } from "../PageHead";
 import { ApproachRail } from "./ApproachRail";
 import { GraphCanvas, GraphSearch } from "./GraphCanvas";
 import { KindTree, STRIP_ORDER, trialsWord } from "./KindTree";
@@ -53,12 +54,17 @@ type State =
 /** mechanisms.json: undefined while loading, null when missing or unreadable (the graph waits for an update). */
 type GraphState = GraphFile | null | undefined;
 
+/** The figure's title in the shared page head: "Figure 2 |" in 800, the claim in 500 (mechanisms.css). */
 function Title() {
   return (
-    <h1 className="plate-title">
-      <b>Figure 2 |</b> Approaches: every trial by how its treatment works, from drugs with a molecular target to
-      the approaches without one.
-    </h1>
+    <PageHead
+      title={
+        <>
+          <b>Figure 2 |</b> Approaches: every trial by how its treatment works, from drugs with a molecular target to
+          the approaches without one.
+        </>
+      }
+    />
   );
 }
 
@@ -540,7 +546,7 @@ function GraphView({
   }
   return (
     <div className="graph-view">
-      {/* The Find pill on a line of its own (right-aligned side by side), the key one line under it. */}
+      {/* The Find pill (on panel b's heading line beside the rail, mechanisms.css), the key under it. */}
       <div className="graph-bar">
         <GraphSearch graph={graph} onSelect={onFocus} />
         <GraphKey palette={palette} topShare={topShare} />

@@ -1,15 +1,14 @@
 /* The Watchlist: every scored running trial in one ranked table, read as the same family as the target page's
    panel f (the scale, estimate text and factors come from risk.css). Plate tokens, the toolbar and its dropdowns
    come from explore.css (the page root is ".explore.watchlist.rk"). No colours of its own. */
-.wl-head { padding: 28px 40px 0; }
-.wl-head h1 { margin: 0; font-size: clamp(30px, 3.2vw, 44px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
-.wl-lede { margin: 12px 0 0; font-size: 19px; line-height: 1.35; letter-spacing: -.01em; max-width: 62ch; text-wrap: balance; }
-/* The claim line: one data-derived sentence under the lede, quieter than it. */
-.wl-claim { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--muted); font-variant-numeric: tabular-nums; max-width: 62ch; }
-.wl-note { padding: 0 40px; }
-.wl-note .rk-note { margin-top: 10px; }
+/* The head is the shared PageHead (page-head.css). The standing note sits directly under the filters, unchanged. */
+/* The note and the table's key share a line where they fit (the key at the right), else the key wraps under it. */
+.wl-note { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; padding: 10px 40px 0; }
+.wl-note .rk-note { margin: 0; max-width: none; }
+/* At desktop widths the head's sentence (number, ranking, number above typical) takes one line. */
+@media (min-width: 1100px) { .watchlist .page-head-sentence { max-width: 90ch; } }
 
-.watchlist .toolbar.wl-toolbar { display: flex; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+.watchlist .toolbar.wl-toolbar { display: flex; flex-wrap: wrap; align-items: center; margin-top: 14px; }
 .wl-toolbar .tb-sort { gap: 8px; }
 .wl-toolbar .tb-count { margin-left: auto; }
 .watchlist .wl-reset { margin-left: 10px; }
@@ -17,7 +16,7 @@
 .wl-body { padding: 16px 40px 56px; }
 .wl-sk { height: 360px; }
 .wl-msg { margin: 0; padding: 4px 0; font-size: 15px; line-height: 1.5; max-width: 60ch; }
-.wl-key { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.wl-key { margin: 0; font-size: 12px; color: var(--muted); }
 
 /* One hairline-ruled table; the heading row closes with an ink rule, like the panel heads. */
 .wl-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; line-height: 1.4; }
@@ -58,7 +57,7 @@
 .wl-targets .rk-est-t small { display: inline; margin-left: 8px; }
 
 @media (max-width: 1099px) {
-  .wl-head, .wl-note { padding-left: 24px; padding-right: 24px; }
+  .watchlist .page-head, .wl-note { padding-left: 24px; padding-right: 24px; }
   .wl-body { padding-left: 24px; padding-right: 24px; }
   .wl-table th, .wl-table td { padding-right: 16px; }
   .wl-est-in { grid-template-columns: minmax(0, 1fr) 6.5rem; gap: 0 12px; }
@@ -66,11 +65,7 @@
 
 /* Phone: each trial is a stacked card between hairlines; the axis stays once, over the first card. */
 @media (max-width: 640px) {
-  .wl-head { padding: 22px 16px 0; }
-  .wl-head h1 { font-size: 30px; }
-  .wl-lede { font-size: 15px; }
-  .wl-claim { font-size: 14px; }
-  .wl-note { padding: 0 16px; }
+  .watchlist .page-head, .wl-note { padding-left: 16px; padding-right: 16px; }
   .wl-body { padding: 12px 16px 40px; }
   .watchlist .wl-reset { margin-left: 4px; }
   /* Two sorts fit one phone line: keep the split pill (explore.css turns its own into a block on a phone). */

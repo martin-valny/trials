@@ -19,6 +19,10 @@ main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex
   max-width: calc(70ch + 80px); text-wrap: balance; letter-spacing: -0.005em;
 }
 .plate-title b { font-weight: 800; }
+/* Approaches: its figure title sits in the shared page head (top gap, left edge) and keeps the plate title's
+   treatment, "Figure 2 |" in 800 and the claim in 500, at the plate title's size. */
+.mechanisms .page-head h1 { font-size: clamp(20px, 2vw, 28px); font-weight: 500; letter-spacing: -0.005em; max-width: 70ch; text-wrap: balance; }
+.mechanisms .page-head h1 b { font-weight: 800; }
 
 /* The plate keeps its own height, so panel d follows it at a fixed gap rather than being pinned to
    the bottom of the viewport. */

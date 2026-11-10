@@ -20,6 +20,8 @@ const renderPage = (route = "/watchlist") =>
 
 const NOTE =
   "Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy.";
+/** The page head's sentence for the unmodified fixture (7 scored trials; derived from risk.json's fixture). */
+const SENTENCE = "7 running drug trials, ranked by estimated chance of stopping early; 5 sit above their phase's typical rate.";
 const table = () => screen.findByRole("table", { name: /Running trials ranked/ });
 const order = () =>
   within(screen.getByRole("table", { name: /Running trials ranked/ }))
@@ -44,7 +46,7 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   renderPage();
   await table();
   expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
-  expect(screen.getByText("7 running drug trials, ranked by estimated chance of stopping early.")).toBeInTheDocument();
+  expect(screen.getByText(SENTENCE)).toBeInTheDocument();
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
   expect(order()).toEqual(["NCT90000004", "NCT90000005", "NCT90000099", "NCT90000002", "NCT90000008", "NCT90000006", "NCT90000007"]);
   const first = screen.getAllByRole("row")[1]!;
@@ -206,7 +208,36 @@ test("never uses banned wording", async () => {
   expect(container.textContent).not.toMatch(/risk of failure|likely to fail|in trouble/i);
 });
 
-test("a claim line under the lede counts trials above their typical rate", async () => {
+test("the page head says what the page is in one computed sentence, with no separate claim line", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await table();
+  const head = container.querySelector("header.page-head")!;
+  expect(head).not.toBeNull();
+  expect(within(head as HTMLElement).getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
+  const sentences = head.querySelectorAll("p");
+  expect(sentences).toHaveLength(1);
+  expect(sentences[0]).toHaveTextContent(
+    /^7 running drug trials, ranked by estimated chance of stopping early; \d+ sits? above their phase's typical rate\.$/,
+  );
+  expect(sentences[0]!.textContent).toBe(SENTENCE);
+  expect(container.querySelector(".wl-claim, .wl-lede")).toBeNull();
+});
+
+test("the standing note sits directly after the filters toolbar", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await table();
+  const toolbar = screen.getByRole("group", { name: "Watchlist filters" });
+  const note = screen.getByText(/^Statistical estimate from public registry data\./);
+  expect(toolbar.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(note.closest("header")).toBeNull();
+  // Nothing of the page's own sits between the toolbar and the note.
+  expect(toolbar.nextElementSibling).toBe(note.closest(".wl-note"));
+  expect(container.querySelector("header.page-head")!.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("the page head's sentence counts trials above their typical rate", async () => {
   const risk = riskVariant((r) => {
     for (const t of Object.values(r.trials!)) Object.assign(t, { p: 0.2, lo: 0.15, hi: 0.25, typical: 0.2 });
     Object.assign(r.trials!.NCT90000004!, { p: 0.5, lo: 0.4, hi: 0.6 });
@@ -217,7 +248,9 @@ test("a claim line under the lede counts trials above their typical rate", async
   stubFetch({ "risk.json": risk });
   renderPage();
   await table();
-  expect(screen.getByText("2 of 7 sit above their phase's typical rate.")).toBeInTheDocument();
+  expect(
+    screen.getByText("7 running drug trials, ranked by estimated chance of stopping early; 2 sit above their phase's typical rate."),
+  ).toBeInTheDocument();
 });
 
 test("the trial name is risk.json's drug name when given", async () => {
