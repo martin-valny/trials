@@ -287,7 +287,7 @@ test("By disease: an approved cell has the floor rule and accessible text; withd
   expect(nmosd.querySelector(".floor")).not.toBeNull();
   expect(nmosd.querySelector(".nodot")).not.toBeNull();
   expect(container.querySelector('[data-row="cd20"] [data-cell="CIDP"] .floor')).toBeNull();
-  expect(container.querySelector('.legend [data-key="approved"]')).toHaveTextContent(
+  expect(container.querySelector('.p-legend [data-key="approved"]')).toHaveTextContent(
     "a drug on this target is approved for this disease",
   );
 });
@@ -385,4 +385,22 @@ test("front door: with the example recorded, the line links to it in panel g", a
   const link = await screen.findByRole("link", { name: "See an example: CD20 in MS →" });
   expect(link).toHaveAttribute("href", "/target/cd20?disease=MS&panel=g");
   expect(link.parentElement!.textContent).toBe("An AI agent drafts a checked diligence memo on each target page. See an example: CD20 in MS →");
+});
+
+test("the front-door legend has its own class, so explore.css's .legend and the pipeline's never match each other", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const legend = screen.getByRole("group", { name: "Legend" });
+  expect(legend).toHaveClass("p-legend");
+  expect(legend).not.toHaveClass("legend");
+  const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  expect(css).not.toMatch(/\.legend\b/);
+});
+
+test("on a phone the kicker line is dropped; desktop keeps it", () => {
+  const css = readFileSync(resolve(__dirname, "../src/components/pipeline/pipeline.css"), "utf8");
+  const phone = css.slice(css.indexOf("@media (max-width: 640px)"));
+  expect(phone.slice(0, phone.indexOf("\n}\n"))).toMatch(/\.kicker \{ display: none; \}/);
+  expect(css).not.toMatch(/k-run/);
 });

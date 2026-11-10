@@ -106,7 +106,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
       </header>
       {!phone && sourceAndAgent}
       <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change}>
-        <div className="legend" role="group" aria-label="Legend">
+        <div className="p-legend" role="group" aria-label="Legend">
           {LEGEND.map((s) => (
             <span key={s}>
               <Mark m={{ ...dummy, s, n: "" }} state={s} />
@@ -120,10 +120,10 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
             </span>
           )}
           {state.view === "year" ? (
-            <span className="legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
+            <span className="p-legend-note">One mark per trial at its start year{phone ? " (3-year bins)" : ""}</span>
           ) : (
             !phone && (
-              <span className="legend-note">
+              <span className="p-legend-note">
                 {state.view === "disease" ? "One mark per trial; a trial in several diseases appears in each" : "One mark per trial, oldest first"} ·{" "}
                 <Mark m={{ ...dummy, s: "fin", span: "1/2" }} state="fin" /> spans two phases
               </span>
@@ -225,7 +225,7 @@ function Source({ text }: { text: string }) {
   );
 }
 
-function Key({ n, label, tone }: { n: number; label: string; tone?: "run" | "adv" }) {
+function Key({ n, label, tone }: { n: number; label: string; tone?: "adv" }) {
   return (
     <div className="key">
       <b className={tone ? `k-${tone}` : undefined}>{n.toLocaleString("en-US")}</b>

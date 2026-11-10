@@ -20,7 +20,6 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .lede.unavailable .headline { max-width: 30ch; }
 .keys { display: flex; gap: 34px; }
 .key b { display: block; font-size: 30px; font-weight: 500; letter-spacing: -.02em; line-height: 1; }
-.key b.k-run { color: var(--run); }
 .key b.k-adv { color: var(--red); }
 .key span { display: block; font-size: 12px; color: var(--muted); margin-top: 6px; max-width: 13ch; line-height: 1.3; }
 .source { padding: 8px 40px 0; margin: 0; font-size: 12px; color: var(--muted); max-width: 110ch; }
@@ -51,9 +50,9 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .sortby select { font: inherit; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 2px 0; border-radius: 0; }
 .pipeline :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-/* Scoped under .controls so explore.css's own .legend (a global class) never leaks in. */
-.controls > .legend { display: flex; gap: 6px 18px; font-size: 12px; line-height: 1.5; color: var(--muted); flex-wrap: wrap; align-items: center; margin: 0 0 0 auto; padding: 0; }
-.legend > span { display: inline-flex; align-items: center; gap: 6px; }
+/* The front-door key is "p-legend": explore.css owns the global "legend" class (Explore's key bar), so neither stylesheet can match the other. */
+.controls > .p-legend { display: flex; gap: 6px 18px; font-size: 12px; line-height: 1.5; color: var(--muted); flex-wrap: wrap; align-items: center; margin: 0 0 0 auto; padding: 0; }
+.p-legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .controls .sortby { margin-left: 0; }
 
 /* Marks: one dot per trial. */
@@ -71,7 +70,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .cell .m::after { content: ""; position: absolute; inset: -2px; }
 .lensed .m { opacity: .13; }
 .lensed .m.hit { opacity: 1; outline: 1.5px solid var(--ink); outline-offset: 1px; }
-.lensed .legend .m, .lensed .trial-card .m { opacity: 1; }
+.lensed .p-legend .m, .lensed .trial-card .m { opacity: 1; }
 
 .fig { padding: 0 40px 10px; position: relative; }
 .fig-body { animation: pfade .16s ease-out; }
@@ -170,8 +169,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
   .ctl-break { display: none; }
   .controls:has(> .ctl-break) { row-gap: 12px; }
   .controls .sortby { margin-left: auto; }
-  .controls > .legend { flex-basis: 100%; margin-left: 0; gap: 6px 18px; }
-  .legend .legend-note { margin-left: auto; }
+  .controls > .p-legend { flex-basis: 100%; margin-left: 0; gap: 6px 18px; }
+  .p-legend .p-legend-note { margin-left: auto; }
   .grid { --lab: 168px; --stat: 100px; }
   .grid-head { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
   .grid-head .colhead:last-child { display: none; }
@@ -205,6 +204,8 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 
 @media (max-width: 640px) {
   .lede { display: block; padding: 24px 18px 0; }
+  /* Ruling R15: the kicker line goes on a phone; the headline says what the page is. */
+  .kicker { display: none; }
   .headline { font-size: 24px; max-width: none; }
   /* The two keys sit on one line, each number beside its caption. */
   .keys { gap: 24px; margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; }
@@ -216,7 +217,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
   .seg-scroll { overflow-x: auto; max-width: 100%; flex-wrap: nowrap; scrollbar-width: none; }
   .find { min-width: 0; flex: 1; }
   .controls .sortby { margin-left: 0; }
-  .controls > .legend { gap: 4px 14px; padding-top: 2px; }
+  .controls > .p-legend { gap: 4px 14px; padding-top: 2px; }
   .fig { padding: 0 18px; }
   .foot { padding: 18px; font-size: 12px; }
   .plate-empty { margin-left: 18px; margin-right: 18px; }
