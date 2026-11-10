@@ -467,7 +467,7 @@ test("diligence: bad JSON is treated as absent", async () => {
   );
   renderAt(<Methods />, "/methods#diligence");
   const s = await diligence();
-  expect(await within(s).findByText(/published with the first recorded evaluation/)).toBeInTheDocument();
+  expect(await within(s).findByText("Evaluation results are published with the first recorded evaluation.")).toBeInTheDocument();
 });
 
 test("diligence: tools, limits, checks and the two approaches not used", async () => {
