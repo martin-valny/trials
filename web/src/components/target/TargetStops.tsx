@@ -28,7 +28,7 @@ export function TargetStops({ file, label, marks, onOpen }: Props) {
       {showGroups && groups.length > 0 && (
         <div className="reasons" aria-label="Reason groups">
           {groups.map(([g, k]) => (
-            <span key={g}>
+            <span key={g} className="reason-pill">
               {g} <b>{k}</b>
             </span>
           ))}

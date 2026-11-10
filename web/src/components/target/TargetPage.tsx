@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { contentsWord } from "../../lib/diligence";
 import { DEFAULT_FIGURE_STATE, diseaseLines, figureSearch, markState, normKey, parseFigureState, targetCompanies, trialsLink } from "../../lib/pipeline";
@@ -6,7 +6,7 @@ import { countAbove } from "../../lib/risk";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
 import { useRisk } from "../../lib/useRisk";
 import { ContentsStrip, scrollToPanel, type ContentsItem } from "../ContentsStrip";
-import { usePhone } from "../../lib/useMediaQuery";
+import { useMediaQuery, usePhone } from "../../lib/useMediaQuery";
 import { usePipeline } from "../pipeline/PipelinePage";
 import { TrialCard } from "../pipeline/TrialCard";
 import "../pipeline/pipeline.css";
@@ -119,6 +119,16 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
     }
     return out;
   }, [file, row, marks, stats.stop, risk, disease]);
+  // At 1100px and up the disease chips sit at the right of the title row; below, on one sideways line under the header.
+  // Rendered in one place at a time so the reading and tab order match what is on screen.
+  const wide = useMediaQuery("(min-width: 1100px)");
+  const chips = (
+    <DiseaseChips
+      counts={counts}
+      disease={disease}
+      onPick={(code) => setParams(chipSearch(code === disease ? null : code, params.get("panel")), { replace: true })}
+    />
+  );
   const back = disease ? `/?${figureSearch({ ...DEFAULT_FIGURE_STATE, disease })}` : "/";
 
   const onOpen = useCallback((nct: string, el: Element) => {
@@ -136,7 +146,7 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
           <Link to={back}>Pipeline</Link> / {family}
         </nav>
         <header className="thead">
-          <div>
+          <div className="thead-row">
             <h1>
               {row.label}
               <small>
@@ -145,49 +155,21 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
                 {format ? ` · ${format}` : ""}
               </small>
             </h1>
-            {marks.length === 0 ? (
-              <p className="tl">No {row.label} trials{disease ? ` in ${disease}` : ""}.</p>
-            ) : (
-              <p className="tl">
-                <span className="runw">{lede.head}</span>
-                {lede.tail}
-                <em>{lede.adv}</em>
-                {lede.rest.slice(lede.adv.length)}
-              </p>
-            )}
+            {wide && chips}
           </div>
-          <DiligenceStrip onGo={goToDiligence} />
-          {marks.length > 0 && (
-          <div className="keys" role="group" aria-label="Key numbers">
-            <div className="key">
-              <b className="k-run">{n(stats.run)}</b>
-              <span>still running</span>
-            </div>
-            <div className="key">
-              <b className="k-adv">{n(stats.adv)}</b>
-              <span>advanced</span>
-            </div>
-            <div className="key">
-              <b>{n(stats.stop)}</b>
-              <span>stopped</span>
-            </div>
-          </div>
+          {marks.length === 0 ? (
+            <p className="tl">No {row.label} trials{disease ? ` in ${disease}` : ""}.</p>
+          ) : (
+            <p className="tl">
+              <span className="runw">{lede.head}</span>
+              {lede.tail}
+              <em>{lede.adv}</em>
+              {lede.rest.slice(lede.adv.length)}
+            </p>
           )}
+          <DiligenceStrip onGo={goToDiligence} />
         </header>
-        <div className="dzs" role="group" aria-label="Diseases">
-          {counts.map((d) => (
-            <button
-              key={d.code}
-              type="button"
-              className={`dz${d.code === disease ? " on" : ""}`}
-              aria-pressed={d.code === disease}
-              onClick={() => setParams(chipSearch(d.code === disease ? null : d.code, params.get("panel")), { replace: true })}
-            >
-              {d.code}
-              <b>{n(d.n)}</b>
-            </button>
-          ))}
-        </div>
+        {!wide && chips}
         <PageContents items={items} pending={marks.length > 0 && risk === undefined} />
 
         {marks.length === 0 ? (
@@ -264,6 +246,28 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
 
 /** The header strip's actions go to panel g with the contents strip's scroller, so the heading clears the sticky strip. */
 const goToDiligence = () => scrollToPanel("pg");
+
+/** The disease chips: one line; where it overflows it scrolls sideways, and the selected chip is kept in view. */
+function DiseaseChips({ counts, disease, onPick }: { counts: { code: string; n: number }[]; disease: string | null; onPick: (code: string) => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    const on = el?.querySelector<HTMLElement>(".dz.on");
+    if (!el || !on || el.scrollWidth <= el.clientWidth) return;
+    const left = on.offsetLeft - el.offsetLeft;
+    if (left < el.scrollLeft || left + on.offsetWidth > el.scrollLeft + el.clientWidth) el.scrollTo?.({ left: Math.max(0, left - 18) });
+  }, [disease]);
+  return (
+    <div className="dzs" role="group" aria-label="Diseases" ref={box}>
+      {counts.map((d) => (
+        <button key={d.code} type="button" className={`dz${d.code === disease ? " on" : ""}`} aria-pressed={d.code === disease} onClick={() => onPick(d.code)}>
+          {d.code}
+          <b>{n(d.n)}</b>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 /** A disease chip's search: the figure state for the disease, keeping the contents strip's ?panel=. */
 function chipSearch(disease: string | null, panel: string | null): string {

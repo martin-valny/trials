@@ -3,19 +3,23 @@
 .target-page button { font: inherit; color: inherit; }
 .target-page :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.crumb { padding: 22px 40px 0; font-size: 12px; color: var(--muted); }
+.crumb { padding: 16px 40px 0; font-size: var(--fs-meta); color: var(--muted); }
 .crumb a { text-decoration: none; border-bottom: 1px dotted var(--muted); }
-.thead { padding: 14px 40px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 40px; align-items: end; }
+/* The page head (spec section 6): title row (title + sub-line; the disease chips at its right from 1100px), the lede, the
+   diligence strip. The lede is the only place the running / advanced / stopped counts appear. */
+.thead { padding: 8px 40px 0; }
+.thead-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 32px; }
 .thead h1 { font-size: 40px; font-weight: 600; letter-spacing: -.03em; margin: 0; line-height: 1; }
 .thead h1 small { font-size: 15px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin-left: 14px; vertical-align: middle; }
-.thead .tl { font-size: 19px; line-height: 1.35; font-weight: 400; letter-spacing: -.01em; margin: 14px 0 0; max-width: 46ch; }
+.thead .tl { font-size: var(--fs-lede); line-height: 1.35; font-weight: 400; letter-spacing: -.01em; margin: 12px 0 0; max-width: 46ch; }
 .thead .tl em { font-style: normal; color: var(--red); }
 .thead .tl .runw { color: var(--run); }
-.thead .keys { grid-row: 1; grid-column: 2; }
+/* From 1100px the chips share the title row, so the lede takes the full width: one line for most targets. */
+@media (min-width: 1100px) { .thead .tl { max-width: none; } }
 
 /* The diligence strip: one quiet line under the lede, spanning the header (spec section 5). Plate tokens only, never red. */
 /* Every state reserves the read state's height (sentence lines + the label's line), so nothing below moves when the state changes. */
-.dstrip { grid-row: 2; grid-column: 1 / -1; margin: 14px 0 0; min-height: 42px; font-size: var(--fs-ui); line-height: 20px; color: var(--muted); }
+.dstrip { margin: 12px 0 0; min-height: 42px; font-size: var(--fs-ui); line-height: 20px; color: var(--muted); }
 .dstrip-go, .dstrip a { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; text-decoration: underline 1px var(--muted); text-underline-offset: 3px; white-space: nowrap; }
 .dstrip-go:hover, .dstrip a:hover { text-decoration-color: var(--ink); }
 .dstrip-label { display: block; margin: 2px 0 0; font-size: var(--fs-meta); line-height: 20px; font-weight: 700; color: var(--ink); }
@@ -23,16 +27,22 @@
 /* Panel headings are the contents strip's targets (tabIndex -1): they land clear of the sticky strip. */
 .sec-h [tabindex="-1"] { scroll-margin-top: calc(var(--strip-h, 0px) + 16px); }
 .sec-h [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
-.target-page .key b { display: block; }
 
-.dzs { display: flex; gap: 6px; padding: 16px 40px 0; flex-wrap: wrap; }
-.dz { font-size: 12px; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; color: var(--muted); background: none; cursor: pointer; }
+/* Under the header: one line that scrolls sideways, bleeding into the gutters (the front door's disease switch).
+   4px above and below so a chip's focus ring is not clipped by the scroller. */
+.dzs { display: flex; gap: 6px; padding: 12px 40px 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.dzs::-webkit-scrollbar { display: none; }
+.thead .dzs { margin-left: auto; padding: 4px 0; flex-wrap: wrap; justify-content: flex-end; overflow: visible; }
+.dz { flex: none; font-size: var(--fs-meta); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; color: var(--muted); background: none; cursor: pointer; }
 .dz b { color: var(--ink); font-weight: 600; margin-left: 4px; }
 .dz:hover { border-color: var(--ink); }
 .dz.on { background: var(--ink); border-color: var(--ink); color: var(--plate); }
 .dz.on b { color: var(--plate); }
 
 .sec { padding: 36px 40px 0; }
+/* The contents strip's hairline already separates the head from the panels: panel a starts closer under it. */
+.target-page .contents-strip { margin-top: 12px; }
+.target-page .contents-strip + .sec { padding-top: 24px; }
 .sec-h { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--ink); padding-bottom: 8px; margin-bottom: 14px; }
 .sec-h .ltr { font-size: 20px; font-weight: 800; line-height: 1; }
 .sec-h h2, .sec-h h3 { font-size: 13px; font-weight: 700; margin: 0; }
@@ -72,7 +82,7 @@ p.sec.empty-line { padding-bottom: 20px; }
 
 /* c. stops */
 .reasons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-.reasons span { font-size: 12px; background: var(--pale); border-radius: 6px; padding: 4px 9px; }
+.reason-pill { font-size: var(--fs-meta); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; }
 .reasons b { font-weight: 600; }
 .stop-card { padding: 12px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: start; }
 .stop-card > .m { margin-top: 6px; }
@@ -114,14 +124,15 @@ p.sec.empty-line { padding-bottom: 20px; }
 }
 @media (max-width: 640px) {
   .crumb { padding: 16px 18px 0; }
-  .thead { display: block; padding: 10px 18px 0; }
+  .thead { padding: 8px 18px 0; }
   .thead h1 { font-size: 34px; }
-  .thead h1 small { display: block; margin: 8px 0 0; font-size: 13px; }
-  .thead .tl { font-size: 15px; }
-  .thead .keys { margin-top: 18px; }
-  .dstrip { margin-top: 12px; min-height: 62px; }
-  .dzs { padding: 14px 18px 0; }
+  .thead h1 small { display: block; margin: 6px 0 0; font-size: var(--fs-ui); }
+  .thead .tl { font-size: var(--fs-read); margin-top: 10px; }
+  .dstrip { margin-top: 10px; min-height: 62px; }
+  .dzs { padding: 10px 18px 4px; }
   .sec { padding: 28px 18px 0; }
+  .target-page .contents-strip { margin-top: 10px; }
+  .target-page .contents-strip + .sec { padding-top: 22px; }
   .sec-h p { display: none; } /* the captions; the graph link sits under the chain on a phone (.chain-graph) */
   .co { grid-template-columns: minmax(96px, 36%) minmax(0, 1fr) 76px; }
   .chain { flex-direction: column; align-items: flex-start; }

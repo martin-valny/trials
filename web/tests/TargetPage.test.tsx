@@ -1,6 +1,8 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { axisStart } from "../src/components/target/TargetTimeline";
@@ -31,7 +33,7 @@ function variant(edit: (f: PipelineFile) => void): PipelineFile {
   return f;
 }
 
-test("renders lede and key numbers for cd20 from the fixture", async () => {
+test("renders the lede for cd20 from the fixture, stating each number once", async () => {
   stubFetch();
   renderPage();
   const h1 = await screen.findByRole("heading", { level: 1 });
@@ -39,10 +41,65 @@ test("renders lede and key numbers for cd20 from the fixture", async () => {
   expect(h1).toHaveTextContent("gene MS4A1 · B-cell depletion · antibodies");
   const lede = screen.getByText((_, el) => el?.tagName === "P" && el.classList.contains("tl"));
   expect(lede.textContent).toBe("7 of 8 trials are running, from 1 company or academic group. 0 advanced to a later phase; 1 stopped.");
-  const keys = screen.getByLabelText("Key numbers");
-  expect(within(keys).getByText("still running").previousSibling).toHaveTextContent("7");
-  expect(within(keys).getByText("stopped").previousSibling).toHaveTextContent("1");
+  // The lede carries the counts, in colour; the key numbers that repeated them are gone (spec section 6).
+  expect(screen.queryByRole("group", { name: "Key numbers" })).not.toBeInTheDocument();
+  expect(lede.querySelector(".runw")).toHaveTextContent("7 of 8 trials are running");
+  expect(lede.querySelector("em")).toHaveTextContent("0 advanced");
+  expect(lede.textContent).toMatch(/1 stopped\.$/);
+  expect(screen.getByRole("group", { name: "Diseases" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/");
+});
+
+test("panel c's reason chips are pills on a hairline, not tinted boxes (spec section 9)", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const chips = container.querySelectorAll(".reasons > span");
+  expect(chips.length).toBeGreaterThan(0);
+  for (const c of chips) expect(c).toHaveClass("reason-pill");
+  const css = readFileSync(join(__dirname, "..", "src", "components", "target", "target.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const rule = /\.reason-pill\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+  expect(rule).toMatch(/border-radius:\s*999px/);
+  expect(rule).toMatch(/border:\s*1px solid var\(--rule\)/);
+  expect(rule).toMatch(/font-size:\s*var\(--fs-meta\)/);
+  expect(rule).not.toMatch(/--pale/);
+  expect(css).not.toMatch(/\.reasons span\s*\{[^}]*--pale/);
+});
+
+test("below 1100px the disease chips scroll sideways and keep the selected one in view", async () => {
+  const f = variant((p) => {
+    p.rows[0]!.marks[1]!.dz = ["MG"];
+  });
+  stubFetch({ "pipeline.json": f });
+  const scrollTo = vi.fn();
+  const protos = [
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("dzs") ? 600 : 0;
+    }),
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("dzs") ? 300 : 0;
+    }),
+    vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("on") ? 480 : 0;
+    }),
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains("dz") ? 60 : 0;
+    }),
+  ];
+  Element.prototype.scrollTo = scrollTo as unknown as typeof Element.prototype.scrollTo;
+  try {
+    renderPage("/target/cd20?disease=MG");
+    await screen.findByRole("heading", { level: 1 });
+    const group = screen.getByRole("group", { name: "Diseases" });
+    // jsdom has no wide viewport: the chips sit under the header, not in the title row.
+    expect(group.closest(".thead")).toBeNull();
+    await waitFor(() => expect(scrollTo).toHaveBeenCalled());
+    expect(scrollTo.mock.contexts.at(-1)).toBe(group);
+    expect((scrollTo.mock.calls.at(-1)![0] as ScrollToOptions).left).toBeGreaterThan(0);
+  } finally {
+    for (const s of protos) s.mockRestore();
+    delete (Element.prototype as { scrollTo?: unknown }).scrollTo;
+  }
 });
 
 test("disease chip sets ?disease and refilters", async () => {
@@ -156,7 +213,6 @@ test("lede counts industry parents with a running trial only", async () => {
   renderPage();
   await screen.findByRole("heading", { level: 1 });
   expect(ledeText()).toContain("7 of 8 trials are running, from 1 company or academic group.");
-  expect(screen.getByLabelText("Key numbers")).toBeInTheDocument();
 });
 
 test("a valid disease with no trials in the row shows calm copy and keeps the chip", async () => {
