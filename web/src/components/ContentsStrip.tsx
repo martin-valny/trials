@@ -23,15 +23,25 @@ interface Props {
 
 const key = (i: ContentsItem): string => i.letter ?? i.id;
 
-/** Scroll a heading to the top (clear of the sticky strip, by its scroll-margin) and move focus to it.
- *  Smooth only when the visitor has not asked for less motion. The page's one scroller for panels. */
-export function scrollToPanel(id: string): void {
+/** Scroll a heading to the top (clear of the sticky strip, by its scroll-margin) and, when the visitor asked to go
+ *  there (click or Enter), move focus to it. Smooth only when the visitor has not asked for less motion.
+ *  The page's one scroller for panels. */
+export function scrollToPanel(id: string, { focus = true }: { focus?: boolean } = {}): void {
   const el = document.getElementById(id);
   if (!el) return;
   const smooth = window.matchMedia?.("(prefers-reduced-motion: no-preference)").matches === true;
   el.scrollIntoView?.({ block: "start", behavior: smooth ? "smooth" : "auto" });
-  el.focus({ preventScroll: true });
+  if (focus) el.focus({ preventScroll: true });
 }
+
+/** A panel the visitor went to, and when: it stays current until the scroll there has settled, then while in view. */
+interface Lock {
+  id: string;
+  at: number;
+}
+
+/** Quiet time after the last scroll event that counts as settled ("scrollend" is not everywhere). */
+const SETTLE_MS = 150;
 
 /** Height of the strip, written to --strip-h on the root so headings (scroll-margin-top) and other sticky parts clear it. */
 function useStripHeight(ref: RefObject<HTMLElement | null>) {
@@ -52,7 +62,7 @@ function useStripHeight(ref: RefObject<HTMLElement | null>) {
 
 /** The panel nearest the top: the last heading above a reading line just under the strip. At the foot of the page,
  *  where the last panels cannot reach the top, the last heading in view; a clicked panel stays current while in view. */
-function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>, clicked: RefObject<string | null>) {
+function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>, clicked: RefObject<Lock | null>) {
   const [current, setCurrent] = useState<string | null>(null);
   const ids = items.map((i) => i.id).join(" ");
   useEffect(() => {
@@ -62,6 +72,8 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
       .filter((e): e is HTMLElement => e !== null);
     if (els.length === 0 || typeof IntersectionObserver !== "function") return;
     let frame = 0;
+    let settle = 0;
+    let lastScroll = 0;
     const measure = () => {
       frame = 0;
       const top = strip.current?.getBoundingClientRect().bottom ?? 0;
@@ -70,8 +82,13 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
       const atFoot = window.scrollY + vh >= document.documentElement.scrollHeight - 2;
       const tops = els.map((e) => e.getBoundingClientRect().top);
       const lock = clicked.current;
-      const lockAt = lock ? els.findIndex((e) => e.id === lock) : -1;
-      if (lockAt >= 0 && tops[lockAt]! >= 0 && tops[lockAt]! < vh) return setCurrent(lock);
+      const lockAt = lock ? els.findIndex((e) => e.id === lock.id) : -1;
+      if (lock && lockAt >= 0) {
+        // While a smooth scroll is on its way the target may still be off screen: keep it until the scroll settles.
+        const now = performance.now();
+        const moving = now - lock.at < SETTLE_MS || now - lastScroll < SETTLE_MS;
+        if (moving || (tops[lockAt]! >= 0 && tops[lockAt]! < vh)) return setCurrent(lock.id);
+      }
       clicked.current = null;
       let at = -1;
       tops.forEach((t, i) => {
@@ -82,15 +99,25 @@ function useCurrent(items: ContentsItem[], strip: RefObject<HTMLElement | null>,
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
     };
+    const onScroll = () => {
+      lastScroll = performance.now();
+      schedule();
+      // Measure once more when the scrolling has stopped, so a released lock is seen.
+      clearTimeout(settle);
+      settle = window.setTimeout(schedule, SETTLE_MS + 10);
+    };
     // Headings crossing the strip or the viewport's edges, plus scrolling at the foot of the page, where nothing crosses.
     const io = new IntersectionObserver(schedule, { threshold: [0, 1] });
     for (const e of els) io.observe(e);
-    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scrollend", schedule);
     window.addEventListener("resize", schedule);
     schedule();
     return () => {
       io.disconnect();
-      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scrollend", schedule);
+      clearTimeout(settle);
       window.removeEventListener("resize", schedule);
       if (frame) cancelAnimationFrame(frame);
     };
@@ -105,7 +132,7 @@ export function ContentsStrip({ items, label, param = "panel", pending = false }
   const phone = usePhone();
   const nav = useRef<HTMLElement>(null);
   const list = useRef<HTMLUListElement>(null);
-  const clicked = useRef<string | null>(null);
+  const clicked = useRef<Lock | null>(null);
   // The deep link is read once, on the first render; it scrolls once, when its panel has rendered.
   const wanted = useRef<string | null>(params.get(param));
   useStripHeight(nav);
@@ -118,8 +145,9 @@ export function ContentsStrip({ items, label, param = "panel", pending = false }
     const item = items.find((i) => key(i) === want);
     if (item && document.getElementById(item.id)) {
       wanted.current = null;
-      clicked.current = item.id;
-      scrollToPanel(item.id);
+      clicked.current = { id: item.id, at: performance.now() };
+      // Arriving by link: scroll only. Focus moves on a visitor's click or Enter, never by itself.
+      scrollToPanel(item.id, { focus: false });
     } else if (!pending) wanted.current = null;
   }, [items, pending]);
   useEffect(settle, [settle]);
@@ -151,7 +179,7 @@ export function ContentsStrip({ items, label, param = "panel", pending = false }
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
     wanted.current = null;
-    clicked.current = item.id;
+    clicked.current = { id: item.id, at: performance.now() };
     scrollToPanel(item.id);
     setParams(
       (p) => {

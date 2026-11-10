@@ -482,7 +482,7 @@ test("CD20, all diseases: the strip lists a to g, b's number is the companies pa
   expect(link(/Stops/)).toHaveTextContent("Stops 1");
   expect(link(/Diseases/)).toHaveTextContent(`Diseases ${container.querySelectorAll(".dzt .dzl").length}`);
   expect(link(/Stop chance/)).toHaveTextContent(/Stop chance \d+ above$/);
-  expect(link(/Diligence/).textContent).toMatch(/^g Diligence( recorded \d{1,2} [A-Z][a-z]{2}| not run| running| offline)?$/);
+  expect(link(/Diligence/).textContent).toMatch(/^g Diligence( recorded \d{1,2} [A-Z][a-z]+| not run| running| offline)?$/);
   for (const l of within(contents()).getAllByRole("link")) {
     const id = l.getAttribute("href")!.match(/panel=([a-g])/)![1];
     expect(document.getElementById(`p${id}`), id).not.toBeNull();
@@ -515,6 +515,8 @@ test("panel f shows the 8 highest estimates, then all of them on Show all", asyn
   const more = within(riskPanel()).getByRole("button", { name: "Show all 11 running trials" });
   await userEvent.click(more);
   expect(rows()).toHaveLength(11);
+  // Focus moves to the first row revealed, not to the page body.
+  expect(rows()[8]!.contains(document.activeElement)).toBe(true);
   expect(within(riskPanel()).queryByRole("button", { name: /^Show all/ })).not.toBeInTheDocument();
 });
 

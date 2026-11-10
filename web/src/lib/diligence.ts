@@ -1,4 +1,5 @@
 import type { DiligenceRun } from "./useDiligenceRun";
+import { MONTHS } from "./format";
 import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../types";
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
@@ -203,10 +204,13 @@ export function isValidDisease(row: PipelineRow, disease: string): boolean {
   return disease === "all" || row.marks.some((m) => m.dz.includes(disease));
 }
 
-/** "2026-11-09T12:00:00Z" -> "9 Nov 2026", as the rest of the site writes dates. */
-export function formatRunDate(iso: string): string {
+/** "2026-11-09T12:00:00Z" -> "9 Nov 2026" (or "9 Nov" without the year), with the site's three-letter months:
+ *  en-GB's own short month would write "Sept". */
+export function formatRunDate(iso: string, { year = true }: { year?: boolean } = {}): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  if (Number.isNaN(d.getTime())) return iso;
+  const dm = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  return year ? `${dm} ${d.getUTCFullYear()}` : dm;
 }
 
 /** n = sentences the checker supported; m = sentences it judged (verdicts plus sentences removed). */
@@ -266,8 +270,7 @@ export function contentsWord(r: Pick<DiligenceRun, "phase" | "shown" | "capped" 
   switch (v.kind) {
     case "read": {
       const rec = r.shown!.rec;
-      const d = new Date(rec.finished_at ?? rec.started_at);
-      return Number.isNaN(d.getTime()) ? "recorded" : `recorded ${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+      return `recorded ${formatRunDate(rec.finished_at ?? rec.started_at, { year: false })}`;
     }
     case "intro":
       return v.action === "run" ? "not run" : "offline";

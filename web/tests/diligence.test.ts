@@ -5,6 +5,7 @@ import {
   diligenceEndpoint,
   claimCounts,
   contentsWord,
+  formatRunDate,
   diligenceKey,
   flagSentence,
   isValidDisease,
@@ -359,5 +360,17 @@ describe("contentsWord (panel g in the contents strip)", () => {
   it("no word while loading or with no trials", () => {
     expect(contentsWord({ ...base, phase: "loading" })).toBeNull();
     expect(contentsWord({ ...base, valid: false })).toBeNull();
+  });
+});
+
+describe("formatRunDate", () => {
+  it("writes the site's three-letter months, with or without the year", () => {
+    expect(formatRunDate("2026-09-09T12:00:00Z")).toBe("9 Sep 2026");
+    expect(formatRunDate("2026-09-09T12:00:00Z", { year: false })).toBe("9 Sep");
+  });
+  it("contentsWord uses it: never 'Sept'", () => {
+    const rec = { ...record, finished_at: "2026-09-09T12:00:00Z" };
+    const base = { phase: "ready" as const, capped: false, failed: false, valid: true, online: true, elapsed: 0 };
+    expect(contentsWord({ ...base, shown: { rec, source: "recorded" as const, stale: false, fresh: false } })).toBe("recorded 9 Sep");
   });
 });

@@ -1,6 +1,6 @@
 import type { DateInfo, Outcome } from "../types";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DASH = "—";
 
 export function isDateInfo(v: unknown): v is DateInfo {

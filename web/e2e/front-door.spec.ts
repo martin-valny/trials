@@ -47,7 +47,9 @@ test("phone: By year has no horizontal scroll", async ({ page }) => {
 
 test("row -> target page -> List these trials -> Trials with the banner", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: /^CD20: \d+ trials?/ }).click();
+  // Tap the row where a reader does, on the target's name (top left). The row's centre can fall on a company name,
+  // which is its own button (the company lens) layered over the row link.
+  await page.getByRole("link", { name: /^CD20: \d+ trials?/ }).click({ position: { x: 12, y: 14 } });
   await expect(page).toHaveURL(/#\/target\/cd20/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("CD20");
   await page.getByRole("link", { name: /^List these \d+ trials →/ }).click();
@@ -165,4 +167,21 @@ test("keyboard: Enter on the strip's g link puts focus on panel g's heading", as
   await page.keyboard.press("Enter");
   await expect(page.locator("#pg")).toBeFocused();
   await expect(page).toHaveURL(/panel=g/);
+});
+
+test("clicking f in the strip marks f current once the scroll has settled", async ({ page }) => {
+  await page.goto("/#/target/cd20");
+  const strip = page.getByRole("navigation", { name: "Panels on this page" });
+  await expect(page.getByRole("heading", { name: "Running trials, estimated chance of stopping early" })).toBeAttached();
+  await strip.getByRole("link", { name: /^f Stop chance/ }).click();
+  await expect(page).toHaveURL(/panel=f/);
+  await page.waitForTimeout(1200);
+  await expect(strip.getByRole("link", { name: /^f Stop chance/ })).toHaveAttribute("aria-current", "location");
+  await expect(strip.locator('[aria-current="location"]')).toHaveCount(1);
+});
+
+test("?panel=f scrolls there without putting focus on the heading", async ({ page }) => {
+  await page.goto("/#/target/cd20?panel=f");
+  await expect(page.getByRole("heading", { name: "Running trials, estimated chance of stopping early" })).toBeInViewport();
+  await expect(page.locator("#pf")).not.toBeFocused();
 });

@@ -1,4 +1,5 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Link } from "react-router-dom";
 import { markState } from "../../lib/pipeline";
 import { MIN_SUMMARY_N, aboveLine, countAbove, formatPct, formatRange, targetSummary, vsTypical } from "../../lib/risk";
@@ -47,6 +48,12 @@ export function TargetRisk({ risk, ...props }: Props) {
 
 function Panel({ rowId, disease = null, file, label, marks, risk }: Omit<Props, "risk"> & { risk: RiskFile }) {
   const [all, setAll] = useState(false);
+  const list = useRef<HTMLUListElement>(null);
+  // "Show all" leaves the page; focus goes to the first row it revealed, not to the body.
+  const showAll = () => {
+    flushSync(() => setAll(true));
+    list.current?.children[RISK_SHOWN]?.querySelector<HTMLElement>("a, button")?.focus();
+  };
   const rows: Row[] = useMemo(() => riskRows(risk, marks, disease), [risk, marks, disease]);
   const dzLabel = disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases";
   const empty = <p className="empty-line">No running trials with an estimate{disease ? " for this disease" : ""}.</p>;
@@ -80,14 +87,14 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Omit<Props, 
           <RiskAxis />
           <span>Estimate</span>
         </div>
-        <ul className="rk-rows" aria-label="Running trials by estimate">
+        <ul className="rk-rows" aria-label="Running trials by estimate" ref={list}>
           {rows.map((r, i) => (
             // Rows past the first eight stay in the page, hidden, so print can show every one.
             <RiskRow key={r.m.n} row={r} file={file} hidden={!all && i >= RISK_SHOWN} />
           ))}
         </ul>
         {!all && rows.length > RISK_SHOWN && (
-          <button type="button" className="more-btn rk-all" onClick={() => setAll(true)}>
+          <button type="button" className="more-btn rk-all" onClick={showAll}>
             Show all {n(rows.length)} running trials
           </button>
         )}
