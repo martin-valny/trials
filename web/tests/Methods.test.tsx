@@ -444,6 +444,7 @@ test("diligence: checker agreement null reads not yet labelled", async () => {
   const s = await diligence();
   await within(s).findByText(/8 recorded runs/);
   expect(s.textContent).toMatch(/Checker agreement not yet labelled/);
+  expect(s.textContent).not.toMatch(/Claude-assisted/);
 });
 
 test("diligence: no report gives the honest line and no numbers", async () => {
@@ -453,6 +454,9 @@ test("diligence: no report gives the honest line and no numbers", async () => {
   expect(await within(s).findByText("Evaluation results are published with the first recorded evaluation.")).toBeInTheDocument();
   expect(s.textContent).not.toMatch(/Citation validity/);
   expect(s.textContent).toMatch(/set at deployment/);
+  expect(s.textContent).toMatch(/cost per run is published with the first recorded evaluation/);
+  expect(s.textContent).not.toMatch(/cents/);
+  expect(s.textContent).toMatch(/other than a single-digit whole number/);
   expect(s.textContent).not.toMatch(/\$\d/);
 });
 

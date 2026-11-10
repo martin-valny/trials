@@ -64,8 +64,8 @@ function Results({ r }: { r: EvalReport }) {
             <>Checker agreement not yet labelled.</>
           ) : (
             <>Checker agreement {pct(r.checker_agreement)}: how often the second model&apos;s verdict matches a label.</>
-          )}{" "}
-          The comparison uses Claude-assisted labels, and Martin spot-checks a sample.
+          )}
+          {r.checker_agreement === null ? null : " The comparison uses Claude-assisted labels, and Martin spot-checks a sample."}
         </li>
         <li>Judgement shown in {pct(r.judgement_shown_rate)} of runs.</li>
         {r.cost_usd_mean !== null || r.seconds_mean !== null ? (
@@ -109,8 +109,8 @@ export function DiligenceMethods() {
 
       <h3>How claims are checked</h3>
       <p>
-        First, rules that need no model: every sentence cites, every citation was retrieved in this run, and every number in
-        a sentence appears in the sources it cites. A sentence that fails is removed. Then a second model gives each remaining
+        First, rules that need no model: every sentence cites, every citation was retrieved in this run, and every number other than a single-digit whole number
+        in a sentence (identifiers such as CD20 excluded) appears in the sources it cites. A sentence that fails is removed. Then a second model gives each remaining
         sentence a verdict: supported, partly supported or unsupported. Unsupported sentences are removed from the memo and
         listed, with the reason, under &ldquo;Removed by the checker&rdquo;. A judgement is shown only when every reason
         behind it is supported; otherwise the page says it is withheld. Text from tools, such as abstracts and registry fields,
@@ -121,7 +121,7 @@ export function DiligenceMethods() {
       <p>
         Recorded runs (every model reply and tool result) are replayed in CI, which needs no model and costs nothing. If the
         prompts, tool definitions or model IDs change, the recordings no longer match and CI fails with &ldquo;re-record the
-        evaluation&rdquo;. Recording is done by hand and costs a few cents per run.
+        evaluation&rdquo;. Recording is done by hand.
       </p>
       {report === undefined ? null : report ? (
         <Results r={report} />
@@ -139,7 +139,7 @@ export function DiligenceMethods() {
         Runs use AWS Bedrock in eu-central-1
         {report && report.cost_usd_mean !== null
           ? ` and cost $${report.cost_usd_mean.toFixed(3)} on average in the evaluation.`
-          : "; recording one costs a few cents."}
+          : "; cost per run is published with the first recorded evaluation."}
       </p>
 
       <h3>What is AI-written</h3>

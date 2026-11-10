@@ -64,7 +64,7 @@ A bad row stops the stage with `<file>:<line>: <problem>`; the run continues wit
 
 **What.** On a target page (panel g) a Bedrock tool-use agent writes a cited diligence memo for one target in one disease, from the site's own data, ClinicalTrials.gov, ChEMBL, Europe PMC abstracts and openFDA drug labels. The request is fixed in v1. A deterministic check (every sentence cites, every cite was retrieved in the run, numbers appear in the cited sources) and a second model's verdicts decide what stays; unsupported sentences are removed and listed, and the judgement shows only when every reason behind it is supported. It is AI-written and says so.
 
-**Architecture.** The static site calls a Lambda function URL (`POST /runs`, `GET /runs/{id}`, `POST /flags`); the Lambda starts a run and invokes itself asynchronously to execute it, keeping runs, daily limits and reader flags in three DynamoDB tables, and calling Bedrock and the public APIs. Per run: 12 tool calls, 60k input and 4k output tokens, 90 s; 3 new runs per visitor and 30 per day overall.
+**Architecture.** The static site calls a Lambda function URL (`POST /runs`, `GET /runs/{id}`, `POST /flags`); the Lambda starts a run and invokes itself asynchronously to execute it, keeping runs, daily limits and reader flags in three DynamoDB tables, and calling Bedrock and the public APIs. Per-run and daily limits are set in `agent/config.yaml` and stated on Methods.
 
 **Optional backend.** The site works without it: a committed recorded run is replayed, or the panel says the agent is offline. Recorded runs ship after the first evaluation; until then the panel shows no run. Nothing here is deployed by CI; Martin deploys with `sam deploy` (see [agent/README.md](agent/README.md)).
 

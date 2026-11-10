@@ -57,7 +57,7 @@ flowchart LR
     X --> API[site JSON, ClinicalTrials.gov,<br/>ChEMBL, Europe PMC, openFDA]
 ```
 
-A start request is validated, checked against the daily caps (3 per visitor, 30 overall; IPs kept only as salted hashes) and answered with a run id; the same request in flight returns the same id. The execute invocation runs the tool loop within the per-run limits and the checker, and writes the run record that polling reads. CI replays recorded runs without any model or network (`agent/tests/test_eval_replay.py`); the prompt hash gate fails with "re-record the evaluation".
+A start request is validated, checked against the daily caps (set in `agent/config.yaml`; IPs kept only as salted hashes) and answered with a run id; the same request in flight returns the same id. The execute invocation runs the tool loop within the per-run limits and the checker, and writes the run record that polling reads. CI replays recorded runs without any model or network (`agent/tests/test_eval_replay.py`); the prompt hash gate fails with "re-record the evaluation".
 
 ## Principles
 
