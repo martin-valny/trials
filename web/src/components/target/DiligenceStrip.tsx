@@ -50,6 +50,9 @@ export function DiligenceStrip({ onGo }: { onGo(): void }) {
         action = <Link to="/methods#diligence">How it works →</Link>;
       }
       break;
+    case "unrecorded":
+      text = "No diligence run recorded for this pair.";
+      break;
     case "running":
       text = `AI diligence running · ${v.seconds} s`;
       action = go("Follow it →");

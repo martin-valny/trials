@@ -1,5 +1,6 @@
 import type { DiligenceRun } from "./useDiligenceRun";
 import { MONTHS } from "./format";
+import { pairHref, type DiligenceRelease } from "./diligenceRelease";
 import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../types";
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
@@ -7,8 +8,8 @@ export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "
 /** The one example run the site points to: the front door's line and panel g's offline link (agent/eval/pairs.yaml). */
 export const EXAMPLE = { target: "cd20", disease: "MS", label: "CD20 in MS" } as const;
 
-/** The example's target page, opened at panel g. */
-export const exampleHref = (): string => `/target/${EXAMPLE.target}?${new URLSearchParams({ disease: EXAMPLE.disease, panel: "g" })}`;
+/** The example's target page, opened at the diligence panel (g while the agent is closed, a once it is open). */
+export const exampleHref = (open = false): string => pairHref(EXAMPLE, open);
 
 export const diligenceKey = (target: string, disease: string): string => `${target}__${disease}`;
 
@@ -222,6 +223,7 @@ export type StripView =
   | { kind: "hidden" }
   | { kind: "loading" }
   | { kind: "intro"; action: "run" | "methods" }
+  | { kind: "unrecorded" }
   | { kind: "running"; seconds: number }
   | {
       kind: "read";
@@ -239,13 +241,17 @@ export type StripView =
 const STRIP_STANCE = { favours: "favours further investment", mixed: "mixed", against: "argues against further investment" } as const;
 
 /** What the header strip shows for a run state (spec section 5). */
-export function stripView(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">): StripView {
+export function stripView(
+  r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">,
+  release: DiligenceRelease = "closed",
+): StripView {
   if (!r.valid) return { kind: "hidden" };
   if (r.phase === "loading") return { kind: "loading" };
   if (r.phase === "running") return { kind: "running", seconds: Math.round(r.elapsed / 1000) };
   if (!r.shown) {
     if (r.failed) return { kind: "failed" };
     if (r.capped) return { kind: "capped" };
+    if (!r.online && release === "recorded") return { kind: "unrecorded" };
     return { kind: "intro", action: r.online ? "run" : "methods" };
   }
   const { rec, fresh, stale } = r.shown;
@@ -265,13 +271,18 @@ export function stripView(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "
 }
 
 /** Panel g's word in the contents strip: "recorded 9 Nov", "not run", "running" or "offline"; null while loading or with no trials. */
-export function contentsWord(r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">): string | null {
-  const v = stripView(r);
+export function contentsWord(
+  r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">,
+  release: DiligenceRelease = "closed",
+): string | null {
+  const v = stripView(r, release);
   switch (v.kind) {
     case "read": {
       const rec = r.shown!.rec;
       return `recorded ${formatRunDate(rec.finished_at ?? rec.started_at, { year: false })}`;
     }
+    case "unrecorded":
+      return "not recorded";
     case "intro":
       return v.action === "run" ? "not run" : "offline";
     case "running":

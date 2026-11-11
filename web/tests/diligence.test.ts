@@ -343,6 +343,18 @@ describe("stripView", () => {
   });
 });
 
+describe("stripView unrecorded", () => {
+  const base = { phase: "ready" as const, shown: null, capped: false, failed: false, valid: true, online: false, elapsed: 0 };
+  it("a recorded-only site with no run for this pair is unrecorded", () => {
+    expect(stripView(base, "recorded")).toEqual({ kind: "unrecorded" });
+    expect(contentsWord(base, "recorded")).toBe("not recorded");
+  });
+  it("the default release keeps today's intro", () => {
+    expect(stripView(base)).toEqual({ kind: "intro", action: "methods" });
+    expect(contentsWord(base)).toBe("offline");
+  });
+});
+
 describe("contentsWord (panel g in the contents strip)", () => {
   const base = { phase: "ready" as const, shown: null, capped: false, failed: false, valid: true, online: true, elapsed: 0 };
   const shown = { rec: record, source: "recorded" as const, stale: false, fresh: false };
