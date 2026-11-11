@@ -577,7 +577,23 @@
       "name": "Front-door diligence line",
       "kind": "custom",
       "refersTo": "",
-      "description": "Under the front-door source line, 12px muted: 'An AI agent drafts a checked diligence memo on each target page.' then 'See an example: CD20 in MS →' (to /target/cd20?disease=MS&panel=g) once the recorded example run ships, else 'How it works →' to /methods#diligence. On a phone it follows the figure with the source line.",
+      "description": "Closed or pending only: under the front-door source line, 12px muted: 'An AI agent drafts a checked diligence memo on each target page.' then 'See an example: CD20 in MS →' (to /target/cd20?disease=MS&panel=g) once the recorded example run ships, else 'How it works →' to /methods#diligence. On a phone it follows the figure with the source line. Once the agent is open the Front-door diligence band replaces it; pending shows neither.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Front-door diligence band",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "DiligenceBand.tsx / diligence-band.css. Recorded or live state only: a named region between the lede and the figure, hairline above and below, no fill, no new colour. 'AI diligence' 13px/700, one 14px sentence, a PairPicker (native selects at 16px, recorded pairs only) with 'Open memo →' as an ink-outlined pill (the figure keeps the only filled control above the fold) and 'Read how it works →' to /diligence, then the 12px label 'AI judgement from public data, not investment advice'. Under 768px no picker: name, sentence, one link ('Open a recorded memo →'; live 'Choose a target →') to /diligence, and the label. Never starts a run. Cost to the first figure row: +104px at 1280, +140px at 375.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Diligence page",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "/diligence, DiligencePage.tsx: PageHead 'AI diligence' with the fixed label as its aside; How it works (three numbered steps); Recorded memos (hairline table: target, disease, AI read as stance and confidence or 'withheld', claims 'n of m', removed, recorded date, 'Open memo →'; two lines per row on a phone); How well it does (evaluation figures, any the report lacks left out); in the live state 'Any target' with the picker. Second in the nav when open; closed redirects to /methods?s=diligence. On target pages diligence is panel a when open, g when closed (panelLetters).",
       "html": "",
       "css": ""
     },

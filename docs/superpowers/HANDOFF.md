@@ -4,6 +4,25 @@ Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of s
 
 ---
 
+## 00. Current state — session 13 (2026-11-11): diligence centrepiece built, read this first (session 12 below is the design revision)
+
+- **Branch:** `feat/diligence-centrepiece` (cut from `feat/diligence-agent`). Spec `docs/superpowers/specs/2026-11-10-diligence-centrepiece-design.md`; six tasks, SDD, each reviewed. **Nothing pushed.** Martin pushes. Ledger and per-task reports: `.superpowers/sdd/2026-11-11-diligence-centrepiece/`.
+- **What it is:** the diligence agent promoted to three entry points once it is open: a band on the front door above the figure, a `/diligence` page (second in the nav), and diligence as panel **a** on target pages (g while closed). Design: DESIGN.md "Diligence centrepiece".
+- **The release gate (spec §4):** **closed** = no `web/public/diligence/index.json` with a run and no backend URL: exactly the old site (panel g, front-door example line, no band, no nav item, `/diligence` goes to `/methods?s=diligence`). **recorded** = the index lists at least one run (`agent/scripts/site_index.py` writes it from the shipped memos; run `cd agent && uv run python scripts/site_index.py` after recording if it was not written). **live** = a backend URL at build time. **pending** (index not yet read) shows nothing on the front door. The public site after diligence Task 11 runs in the recorded state.
+- **Switch to live:** set the repository variable `DILIGENCE_URL` to the function URL (the deploy workflow passes it as `VITE_DILIGENCE_URL`), then rebuild. Live adds the "Any target" picker on `/diligence`, a full target list in the band's picker (wide screens) and the Run button on target pages; no run ever starts from a link, a page load or the front door.
+- **Controller rulings:** (1) the index lists only pairs; the site derives stance and claim counts from each memo, the counting rule stays in TS. (2) The phone band (<768px) has no picker: the full band cost +299px at 375 and put the figure at the fold; it is now name, sentence, one link to `/diligence`, label. (3) The band's Open memo button is an outline pill so the figure keeps the only filled control above the fold. (4) Pending shows nothing on the front door; one shift on first load in the recorded state is accepted. (5) The "no memo recorded" strip carries no not-investment-advice label (no judgement shown). (6) `select` joins `input`/`textarea` in the 1rem iOS no-zoom exemption (DESIGN.md, `css-scale.test.ts`). (7) Methods' "only AI-written text" limitation now says the Diligence page and front door show only the agent's read, taken from the memo.
+- **Measured** (first figure row, `.fig-body [data-row]`, px from the top of the page; fixture data served from a scratch copy of the build with the index intercepted; no horizontal scroll in any state):
+
+  | Width | closed | recorded | delta | spec §6.2 |
+  |---|---|---|---|---|
+  | 1280 | 398 | 502 | **+104** | n/a |
+  | 375 | 501 | 641 | **+140** | +60 to 90 (missed by about 50; accepted, ruling 2) |
+  | 700 (recorded only) | | 736 | | |
+
+- **Observed, not fixed** (screenshots at 700 and 768, recorded): at 700 the band is a single column with the link and label stacked under the sentence, fine. At 768 the `/diligence` page's Recorded memos table is tight: the "Removed" and "Recorded" column heads touch, the "Open memo →" link runs about 10px past the right content edge, and the three How-it-works steps wrap under their numbers. Candidates for a fix wave.
+- **Screenshots:** `/private/tmp/claude-503/-Users-martin-valny-Desktop-trials/825cdb54-31c2-4522-9eb2-2fd532d26301/scratchpad/shots-centrepiece/` (front door, CD20 MS target page and `/diligence`; closed and recorded; 1280 and 375; light and dark; plus 700 and 768).
+- **Still pending:** diligence Task 11 (Martin deploys the backend, runs the recording; then the index, a live end-to-end run, finish review). See `docs/superpowers/plans/2026-11-09-diligence-agent.md` Task 11.
+
 ## 00. Current state — session 12 (2026-11-10), read this first (12: design revision shipped; 11: diligence agent built, design brainstorm next; 10: stop-risk model + diligence agent planned; 9: approved for this disease; 8: By year, Explore retired; 7b: front door; 7a: phase 3)
 
 **Where things stand (end of session 12, 2026-11-10) — start here:**

@@ -644,8 +644,9 @@ export function Methods() {
               </li>
               <li>History starts on the first day of tracking; earlier changes are not reconstructed.</li>
               <li>
-                The only AI-written text on the site is the diligence agent&apos;s memo on target pages, labelled as such;
-                every other value comes from the registry record or is computed from it.
+                The only AI-written text on the site is the diligence agent&apos;s memo on target pages, labelled as such. The
+                Diligence page and the front door show only its read of a target (stance, confidence, claims supported),
+                taken from that memo; every other value comes from the registry record or is computed from it.
               </li>
             </ul>
           </section>

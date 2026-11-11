@@ -606,7 +606,7 @@ test("Methods: Limitations names the one AI-written text instead of saying no AI
   expect(lim.textContent).not.toMatch(/No AI is used in this version/);
   expect(
     within(lim).getByText(
-      "The only AI-written text on the site is the diligence agent's memo on target pages, labelled as such; every other value comes from the registry record or is computed from it.",
+      "The only AI-written text on the site is the diligence agent's memo on target pages, labelled as such. The Diligence page and the front door show only its read of a target (stance, confidence, claims supported), taken from that memo; every other value comes from the registry record or is computed from it.",
     ),
   ).toBeInTheDocument();
 });
