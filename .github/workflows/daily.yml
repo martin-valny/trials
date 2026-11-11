@@ -124,7 +124,7 @@ jobs:
                  --notes "Raw ClinicalTrials.gov snapshots"
           gh release upload "$tag" "${files[@]}" --clobber
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.run.outputs.status == 'success'
         with:
           node-version: 22
