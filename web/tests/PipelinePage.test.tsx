@@ -3,8 +3,10 @@ import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
-import { expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { PipelinePage } from "../src/components/pipeline/PipelinePage";
+import { FIXED_LABEL } from "../src/lib/diligencePanels";
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import type { PipelineFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
@@ -24,6 +26,14 @@ function renderPage(route = "/") {
     </MemoryRouter>,
   );
 }
+beforeEach(() => {
+  __resetDiligenceIndex();
+  vi.stubEnv("VITE_DILIGENCE_URL", "");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 const where = () => screen.getAllByTestId("where").map((e) => e.textContent).join("|");
 
 test("renders headline, key numbers and source line from the fixture", async () => {
@@ -427,4 +437,88 @@ test("on a phone the company lens has a placeholder that fits its pill", async (
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+// The front-door diligence band (spec section 6.2): shown once the agent is open, in place of the example line.
+const BAND_SENTENCE = "An agent drafts a cited memo on a target, then a checker removes every claim its sources do not support.";
+const band = () => screen.findByRole("region", { name: "AI diligence" });
+
+test("closed shows today's example line, no band", async () => {
+  stubFetch();
+  renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  expect(await screen.findByText(/An AI agent drafts a checked diligence memo on each target page\./)).toHaveClass("dg-line");
+  expect(screen.queryByRole("region", { name: "AI diligence" })).not.toBeInTheDocument();
+  expect(screen.queryByText(BAND_SENTENCE)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Open memo →" })).not.toBeInTheDocument();
+});
+
+test("recorded shows the band with recorded pairs only", async () => {
+  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }, { target: "btk", disease: "MS" }] } });
+  const { container } = renderPage();
+  const b = await band();
+  expect(within(b).getByText(BAND_SENTENCE)).toBeInTheDocument();
+  expect(container.querySelector(".dg-line")).toBeNull();
+  // Between the page head and the figure.
+  expect(container.querySelector(".lede")!.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(b.compareDocumentPosition(container.querySelector(".fig-body")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const target = within(b).getByRole("combobox", { name: "Target" });
+  expect(within(target).getAllByRole("option").map((o) => o.textContent)).toEqual(["CD20", "BTK"]);
+  expect(within(b).getByRole("link", { name: "Read how it works →" })).toHaveAttribute("href", "/diligence");
+  await userEvent.selectOptions(target, "cd20");
+  const disease = within(b).getByRole("combobox", { name: "Disease" });
+  expect(within(disease).getAllByRole("option").map((o) => o.textContent)).toEqual(["Multiple sclerosis"]);
+  await userEvent.selectOptions(disease, "MS");
+  await userEvent.click(within(b).getByRole("button", { name: "Open memo →" }));
+  expect(where()).toContain("/target/cd20?disease=MS&panel=a");
+});
+
+test("on a phone the band sits above the figure and the source line below it", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  try {
+    stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } });
+    const { container } = renderPage();
+    const b = await band();
+    const fig = container.querySelector(".fig-body")!;
+    expect(b.compareDocumentPosition(fig) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const src = screen.getByText(/^8 of 14 trials test a targeted drug in this class\./);
+    expect(fig.compareDocumentPosition(src) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(src.nextElementSibling).toHaveClass("foot");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("all-diseases option", async () => {
+  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "all" }] } });
+  renderPage();
+  const b = await band();
+  const disease = within(b).getByRole("combobox", { name: "Disease" });
+  expect(within(disease).getAllByRole("option").map((o) => o.textContent)).toEqual(["All diseases"]);
+  await userEvent.click(within(b).getByRole("button", { name: "Open memo →" }));
+  expect(where()).toContain("/target/cd20?panel=a");
+  expect(where()).not.toContain("disease=");
+});
+
+test("band never POSTs /runs", async () => {
+  vi.stubEnv("VITE_DILIGENCE_URL", "https://agent.test/");
+  const fetchSpy = stubFetch();
+  renderPage();
+  const b = await band();
+  const target = within(b).getByRole("combobox", { name: "Target" });
+  await userEvent.selectOptions(target, "cd20");
+  await userEvent.selectOptions(within(b).getByRole("combobox", { name: "Disease" }), "MS");
+  await userEvent.click(within(b).getByRole("button", { name: "Open memo →" }));
+  expect(where()).toContain("/target/cd20?disease=MS&panel=a");
+  const calls = fetchSpy.mock.calls as unknown as [string, RequestInit?][];
+  expect(calls.filter(([u]) => /\/runs\b/.test(String(u)))).toEqual([]);
+  expect(calls.filter(([, init]) => init?.method !== undefined && init.method !== "GET")).toEqual([]);
+});
+
+test("band carries the not-investment-advice label", async () => {
+  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } });
+  renderPage();
+  const b = await band();
+  expect(within(b).getByText(FIXED_LABEL)).toBeInTheDocument();
+  expect(FIXED_LABEL).toBe("AI judgement from public data, not investment advice");
 });

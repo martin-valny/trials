@@ -16,8 +16,10 @@ import {
   undatedCount,
 } from "../../lib/pipeline";
 import { EXAMPLE, exampleHref, loadRecorded } from "../../lib/diligence";
+import { isOpen, useDiligenceRelease } from "../../lib/diligenceRelease";
 import { usePhone } from "../../lib/useMediaQuery";
 import type { MarkState, PipelineFile, PipelineMark } from "../../types";
+import { DiligenceBand } from "./DiligenceBand";
 import { FigureControls } from "./FigureControls";
 import { Mark } from "./Mark";
 import { PipelineFigure } from "./PipelineFigure";
@@ -77,12 +79,15 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
     return k > 0 ? `${base.replace(/\.$/, "")}; ${k} ${k === 1 ? "trial without a start year is" : "trials without a start year are"} not drawn.` : base;
   }, [file, views, state.view]);
   const full = useMemo(() => sourceLine(file, views), [file, views]);
+  // Once the agent is open the band takes the example line's place, above the figure at every width.
+  const { release, pairs } = useDiligenceRelease();
+  const open = isOpen(release);
   const sourceAndAgent = (
     <>
       <p className="source">
         {short} Registered trials only. <Link to="/methods#rows-and-companies">How rows are built →</Link>
       </p>
-      <DiligenceLine />
+      {open ? null : <DiligenceLine />}
     </>
   );
   const companies = useMemo(() => companyOptions(file), [file]);
@@ -105,6 +110,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
         </div>
       </header>
       {!phone && sourceAndAgent}
+      {open && <DiligenceBand pairs={pairs} rows={file.rows} diseases={file.diseases} live={release === "live"} />}
       <FigureControls state={urlState} diseases={file.diseases} companies={companies} onChange={change}>
         <div className="p-legend" role="group" aria-label="Legend">
           {LEGEND.map((s) => (
