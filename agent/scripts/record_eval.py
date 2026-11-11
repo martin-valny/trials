@@ -15,6 +15,7 @@ from typing import Any
 
 import eval_report
 import httpx
+import site_index
 import yaml
 
 from diligence.config import AgentConfig, load_config
@@ -160,6 +161,7 @@ def record_all(
         shutil.copyfile(report, web_dir / "eval-report.json")
     else:
         print("report gates failed; eval-report.json not copied to the site", file=sys.stderr)
+    site_index.write_index(web_dir)
     return code or (1 if failed else 0)
 
 

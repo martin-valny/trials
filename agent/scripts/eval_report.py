@@ -7,9 +7,12 @@
 import argparse
 import csv
 import json
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+import site_index
 
 from diligence.config import AgentConfig, load_config
 from diligence.model import prompt_hash, read_lines
@@ -125,6 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--recordings", type=Path, default=Path("eval/recordings"))
     ap.add_argument("--labels", type=Path, default=Path("eval/labels.csv"))
     ap.add_argument("--out", type=Path, default=Path("eval/report.json"))
+    ap.add_argument("--web-dir", type=Path, help="publish the report and the runs index here")
     args = ap.parse_args(argv)
     previous = json.loads(args.out.read_text()) if args.out.exists() else None
     cfg = load_config()
@@ -137,6 +141,11 @@ def main(argv: list[str] | None = None) -> int:
     for p in problems:
         print(f"GATE FAILED: {p}")
     print(f"{report['n_runs']} runs -> {args.out}")
+    if args.web_dir:
+        if not problems:
+            args.web_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(args.out, args.web_dir / "eval-report.json")
+        site_index.write_index(args.web_dir)
     return 1 if problems else 0
 
 
