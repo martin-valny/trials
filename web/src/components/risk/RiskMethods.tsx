@@ -142,11 +142,20 @@ export function RiskMethods({ model, area }: { model: RiskModelInfo | null; area
   return (
     <section id="stop-risk" aria-labelledby="stop-risk-h" className="rk-m">
       <h2 id="stop-risk-h" tabIndex={-1}>How good is the stop-risk model?</h2>
-      <p>
-        Target pages, trial pages and the Watchlist show, for each running drug or biologic trial in Phase 1 to 3, an
-        estimated chance that it will stop early. It is a statistical estimate from public registry data, not a
-        statement about any sponsor or trial, and it is often wrong.
-      </p>
+      {model && !model.per_trial ? (
+        <p>
+          Target pages and the Watchlist show, for each target, the median estimated chance that its running drug or
+          biologic trials in Phase 1 to 3 will stop early, where at least three are scored. Estimates for single trials
+          are not published. It is a statistical estimate from public registry data, not a statement about any sponsor
+          or trial, and it is often wrong.
+        </p>
+      ) : (
+        <p>
+          Target pages, trial pages and the Watchlist show, for each running drug or biologic trial in Phase 1 to 3, an
+          estimated chance that it will stop early. It is a statistical estimate from public registry data, not a
+          statement about any sponsor or trial, and it is often wrong.
+        </p>
+      )}
       {model ? <RiskMethodsBody model={model} area={area} /> : <p>Estimates and their accuracy appear after the next update.</p>}
     </section>
   );

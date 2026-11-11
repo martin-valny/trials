@@ -54,6 +54,12 @@ def _tables(trials: list[dict[str, Any]], no_drug: tuple[str, ...] = ()) -> Tabl
     )
 
 
+@pytest.fixture
+def cfg(cfg: AreaConfig) -> AreaConfig:
+    """Per-trial estimates on, whatever config/area.yaml's live switch says."""
+    return cfg.model_copy(update={"risk": cfg.risk.model_copy(update={"per_trial": True})})
+
+
 @pytest.fixture(scope="module")
 def loaded() -> artefacts.Loaded:
     return artefacts.load(FIXTURE)

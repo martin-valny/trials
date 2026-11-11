@@ -50,7 +50,9 @@ def main(out_dir: Path) -> None:
             "approaches_dir": fixtures / "approaches",
             "sponsors_dir": fixtures / "sponsors",
             "approvals_dir": fixtures / "approvals",
-            "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk"}),
+            # The fixtures carry per-trial estimates whatever the live switch says (web tests
+            # cover the off state by removing them).
+            "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk", "per_trial": True}),
         }
     )
     with tempfile.TemporaryDirectory() as tmp:

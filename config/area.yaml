@@ -105,5 +105,5 @@ explorer:
     - observation
 risk:
   enabled: true
-  per_trial: true
+  per_trial: false
   dir: risk

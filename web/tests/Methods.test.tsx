@@ -258,6 +258,18 @@ const section = async (): Promise<HTMLElement> => {
   return s;
 };
 
+test("stop-risk: the intro says single-trial estimates are not published when per_trial is off", async () => {
+  stubFetch({ "risk.json": riskFile({ per_trial: false }) });
+  const { unmount } = renderAt(<Methods />, "/methods#stop-risk");
+  expect(await screen.findByText(/Estimates for single trials are not published/)).toBeInTheDocument();
+  expect(screen.queryByText(/for each running drug or biologic trial/)).toBeNull();
+  unmount();
+  stubFetch({ "risk.json": riskFile() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  expect(await screen.findByText(/for each running drug or biologic trial/)).toBeInTheDocument();
+  expect(screen.queryByText(/Estimates for single trials are not published/)).toBeNull();
+});
+
 test("stop-risk: the accuracy table renders each model's AUC and Brier from risk.json", async () => {
   stubFetch({ "risk.json": riskFile() });
   renderAt(<Methods />, "/methods#stop-risk");
