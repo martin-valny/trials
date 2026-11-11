@@ -21,7 +21,7 @@ A static site on GitHub Pages, rebuilt daily by GitHub Actions. Visitors arrive 
 ## Capabilities and Constraints
 - $0 running cost, no server, no secrets, no user accounts, public data only.
 - A new therapeutic area is a config change only; no source file names a condition.
-- Routes (the nav, in order): Pipeline (`/`, the front door: a pipeline figure whose rows open target pages), Watchlist, Approaches, Changes (1/7/30-day feed), Trials (searchable list, 50 at a time), Methods; plus target pages and trial pages. Explore (`/explore`, the similarity map) is linked only from Methods. Every route shares one design (the Figure Plate, DESIGN.md).
+- Routes (the nav, in order): Pipeline (`/`, the front door: a pipeline figure whose rows open target pages), Diligence (`/diligence`, second in the nav, only once the agent is open), Watchlist, Approaches, Changes (1/7/30-day feed), Trials (searchable list, 50 at a time), Methods; plus target pages and trial pages. Explore (`/explore`, the similarity map) is linked only from Methods. Every route shares one design (the Figure Plate, DESIGN.md).
 - Stack: Vite + React 19 + TypeScript, HashRouter.
 - Registry facts available: conditions, interventions (type, name), phases, status, why stopped, enrollment, sponsor, countries, outcomes, dates. Brief summary, sex and age eligibility are cheap to add. Race/ethnicity is not in the protocol and is out of scope.
 - "Success" has no registry field. Proxies: completed vs stopped early (all trials), the drug progressing to a later phase or approval (needs drug mapping), and primary endpoint met where results are posted (a minority).

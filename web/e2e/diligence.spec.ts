@@ -71,6 +71,10 @@ test("closed: no band, no nav item, and /diligence goes to Methods", async ({ pa
     expect(labels).not.toContain("Diligence");
     expect(labels.at(-1)).toBe("Methods");
   }
+  await expect(page.getByText("An AI agent drafts a checked diligence memo on each target page.")).toBeVisible();
+  await page.goto("/#/target/cd20?disease=MS");
+  const strip = page.getByRole("navigation", { name: "Panels on this page" });
+  await expect(strip.getByRole("link").last()).toContainText(/^g\s*Diligence/);
   await page.goto("/#/diligence");
   await expect(page).toHaveURL(/#\/methods\?s=diligence/);
 });
