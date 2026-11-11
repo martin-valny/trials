@@ -1,11 +1,12 @@
 import type { DiligenceRun } from "./useDiligenceRun";
 import { MONTHS } from "./format";
-import { pairHref, type DiligenceRelease } from "./diligenceRelease";
+import { pairHref } from "./diligencePanels";
+import type { DiligenceRelease } from "./diligenceRelease";
 import type { DiligenceRemoved, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../types";
 
 export const SECTION_ORDER: DiligenceSection[] = ["landscape", "track_record", "literature", "competition"];
 
-/** The one example run the site points to: the front door's line and panel g's offline link (agent/eval/pairs.yaml). */
+/** The one example run the site points to: the front door's line and the diligence panel's offline link (agent/eval/pairs.yaml). */
 export const EXAMPLE = { target: "cd20", disease: "MS", label: "CD20 in MS" } as const;
 
 /** The example's target page, opened at the diligence panel (g while the agent is closed, a once it is open). */
@@ -270,7 +271,7 @@ export function stripView(
   };
 }
 
-/** Panel g's word in the contents strip: "recorded 9 Nov", "not run", "running" or "offline"; null while loading or with no trials. */
+/** The diligence panel's word in the contents strip: "recorded 9 Nov", "not recorded", "not run", "running" or "offline"; null while loading or with no trials. */
 export function contentsWord(
   r: Pick<DiligenceRun, "phase" | "shown" | "capped" | "failed" | "valid" | "online" | "elapsed">,
   release: DiligenceRelease = "closed",

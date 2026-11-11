@@ -4,11 +4,9 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-// Imported before the page: lib/diligence and lib/diligenceRelease import each other, and the release hook sees the
-// mocked diligenceEndpoint only when it is loaded first (otherwise it binds the real one while the mock is being built).
-import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import { TargetPage } from "../src/components/target/TargetPage";
 import * as lib from "../src/lib/diligence";
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import type { PipelineFile, RunRecord } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
