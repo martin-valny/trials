@@ -239,7 +239,8 @@ export type StripView =
   | { kind: "failed" }
   | { kind: "capped" };
 
-const STRIP_STANCE = { favours: "favours further investment", mixed: "mixed", against: "argues against further investment" } as const;
+/** A judgement's stance in the site's words (the header strip, the Diligence page). */
+export const STRIP_STANCE = { favours: "favours further investment", mixed: "mixed", against: "argues against further investment" } as const;
 
 /** What the header strip shows for a run state (spec section 5). */
 export function stripView(

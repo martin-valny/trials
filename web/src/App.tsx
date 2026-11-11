@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { ChangesFeed } from "./components/ChangesFeed";
+import { DiligencePage } from "./components/diligence/DiligencePage";
 import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
 import { MechanismsPage } from "./components/mechanisms/MechanismsPage";
@@ -33,6 +34,7 @@ export function AppRoutes() {
         <Routes>
           <Route path="/" element={<PipelinePage />} />
           <Route path="/target/:slug" element={<TargetPage />} />
+          <Route path="/diligence" element={<DiligencePage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/mechanisms/*" element={<MechanismsRedirect />} />

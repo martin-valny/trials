@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { isOpen, useDiligenceRelease } from "../lib/diligenceRelease";
 import { usePhone } from "../lib/useMediaQuery";
 import { FreshnessBadge } from "./FreshnessBadge";
 
@@ -26,10 +27,12 @@ function useRouteScopedOpen(): [boolean, (f: (o: boolean) => boolean) => void] {
   return [open, set];
 }
 
-/** Pipeline, Watchlist, Approaches, Changes, Trials, Methods. A menu button on a phone. */
+/** Pipeline, Watchlist, Approaches, Changes, Trials, Methods; Diligence second once memos are recorded or the agent is
+ *  live (not while the index is still being read). A menu button on a phone. */
 export function SiteNav() {
   const phone = usePhone();
   const [open, setOpen] = useRouteScopedOpen();
+  const diligence = isOpen(useDiligenceRelease().release) ? <NavLink to="/diligence">Diligence</NavLink> : null;
 
   if (phone)
     return (
@@ -40,6 +43,7 @@ export function SiteNav() {
         {open && (
           <div className="nav-sheet">
             <NavLink to="/" end>Pipeline</NavLink>
+            {diligence}
             <NavLink to="/watchlist">Watchlist</NavLink>
             <NavLink to="/approaches">Approaches</NavLink>
             <NavLink to="/changes">Changes</NavLink>
@@ -55,6 +59,7 @@ export function SiteNav() {
   return (
     <nav aria-label="Main">
       <NavLink to="/" end>Pipeline</NavLink>
+      {diligence}
       <NavLink to="/watchlist">Watchlist</NavLink>
       <NavLink to="/approaches">Approaches</NavLink>
       <NavLink to="/changes">Changes</NavLink>

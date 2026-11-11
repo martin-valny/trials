@@ -28,7 +28,8 @@ function parseReport(raw: unknown): EvalReport | null {
   return { ...(r as EvalReport), models: r.models ?? {} };
 }
 
-function useEvalReport(): EvalReport | null | undefined {
+/** diligence/eval-report.json: undefined while loading, null when absent or unreadable. */
+export function useEvalReport(): EvalReport | null | undefined {
   const [report, setReport] = useState<EvalReport | null | undefined>(undefined);
   useEffect(() => {
     let live = true;

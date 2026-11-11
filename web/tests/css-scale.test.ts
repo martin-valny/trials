@@ -31,9 +31,9 @@ const ALLOWED_11 = [
 const hasClass = (selector: string, cls: string): boolean =>
   new RegExp(`${cls.replace(/[.-]/g, "\\$&")}(?![\\w-])`).test(selector);
 
-/** True when every selector in the list ends on an input or a textarea. */
+/** True when every selector in the list ends on a form field (input, textarea or select): iOS zooms on focus below 16px. */
 const onTextField = (selector: string): boolean =>
-  selector.split(",").every((s) => /(^|[\s>+~])(input|textarea)(\[[^\]]*\]|:[\w-]+)*\s*$/.test(s.trim()));
+  selector.split(",").every((s) => /(^|[\s>+~])(input|textarea|select)(\[[^\]]*\]|:[\w-]+)*\s*$/.test(s.trim()));
 
 describe("css scale", () => {
   it("uses only scale sizes for text", () => {
@@ -71,6 +71,7 @@ describe("css scale", () => {
     expect(hasClass(".rk-axis", ".axis")).toBe(false);
     expect(onTextField(".tb-find input")).toBe(true);
     expect(onTextField(".dg-form textarea")).toBe(true);
+    expect(onTextField(".pair-picker select")).toBe(true);
     expect(onTextField(".nav-sheet a")).toBe(false);
   });
 

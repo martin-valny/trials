@@ -1,13 +1,16 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import { expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import { AppRoutes } from "../src/App";
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import { stubFetch } from "./helpers";
 
 function Where() {
   const loc = useLocation();
   return <p data-testid="where">{loc.pathname + loc.search}</p>;
 }
+beforeEach(() => __resetDiligenceIndex());
+
 const go = (route: string) =>
   render(
     <MemoryRouter initialEntries={[route]}>
@@ -70,4 +73,46 @@ test("/watchlist renders the Watchlist", async () => {
   await screen.findByRole("table", { name: /Running trials ranked/ });
   expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
   expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+});
+
+const OPEN_INDEX = { "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } };
+
+test("nav order when open", async () => {
+  stubFetch(OPEN_INDEX);
+  go("/changes");
+  const nav = screen.getByRole("navigation", { name: "Main" });
+  await waitFor(() =>
+    expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Pipeline",
+      "Diligence",
+      "Watchlist",
+      "Approaches",
+      "Changes",
+      "Trials",
+      "Methods",
+    ]),
+  );
+  expect(within(nav).getByRole("link", { name: "Diligence" })).toHaveAttribute("href", "/diligence");
+});
+
+test("nav has no Diligence item when closed", async () => {
+  const fetch = stubFetch();
+  go("/changes");
+  await waitFor(() => expect(fetch.mock.calls.some(([u]) => String(u).endsWith("diligence/index.json"))).toBe(true));
+  await new Promise((r) => setTimeout(r, 20));
+  expect(within(screen.getByRole("navigation", { name: "Main" })).queryByRole("link", { name: "Diligence" })).not.toBeInTheDocument();
+});
+
+test("closed redirects to methods", async () => {
+  stubFetch();
+  go("/diligence");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/methods?s=diligence"));
+  expect(await screen.findByRole("heading", { level: 1, name: "Methods" })).toBeInTheDocument();
+});
+
+test("/diligence renders the Diligence page when memos are recorded", async () => {
+  stubFetch(OPEN_INDEX);
+  go("/diligence");
+  expect(await screen.findByRole("heading", { level: 1, name: "AI diligence" })).toBeInTheDocument();
+  expect(screen.getByTestId("where").textContent).toBe("/diligence");
 });
