@@ -52,6 +52,7 @@ test("front door: the source above the figure is one sentence linking to how row
   stubFetch();
   const { container } = renderPage();
   await screen.findByRole("heading", { level: 1 });
+  await screen.findByText(/An AI agent drafts a checked diligence memo/); // once the release settles (closed)
   const src = container.querySelector(".pipeline > p.source:not(.dg-line)")!;
   expect(src.textContent).toBe("8 of 14 trials test a targeted drug in this class. Registered trials only. How rows are built →");
   expect(within(src as HTMLElement).getByRole("link", { name: "How rows are built →" })).toHaveAttribute("href", "/methods#rows-and-companies");
@@ -64,6 +65,7 @@ test("front door: the full source text moves to the footer, above the advanced l
   stubFetch();
   const { container } = renderPage();
   await screen.findByRole("heading", { level: 1 });
+  await screen.findByText(/An AI agent drafts a checked diligence memo/); // once the release settles (closed)
   const foot = container.querySelector("footer.foot")!;
   const full = foot.firstElementChild!;
   expect(full.textContent).toMatch(/^8 of 14 trials test a targeted drug in one of these \d+ classes?; 1 more targeted-drug trials sit in smaller classes/);
@@ -82,6 +84,7 @@ test("front door on a phone: the source and diligence lines follow the figure", 
     const { container } = renderPage();
     await screen.findByRole("heading", { level: 1 });
     const src = await screen.findByText(/^8 of 14 trials test a targeted drug in this class\./);
+    await screen.findByText(/An AI agent drafts a checked diligence memo/);
     const fig = container.querySelector(".fig-body")!;
     expect(fig.compareDocumentPosition(src) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(src.nextElementSibling).toHaveClass("dg-line");
@@ -473,7 +476,7 @@ test("recorded shows the band with recorded pairs only", async () => {
   expect(where()).toContain("/target/cd20?disease=MS&panel=a");
 });
 
-test("on a phone the band sits above the figure and the source line below it", async () => {
+test("on a phone the band sits above the figure with one link line and no picker", async () => {
   vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
   try {
     stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } });
@@ -481,12 +484,44 @@ test("on a phone the band sits above the figure and the source line below it", a
     const b = await band();
     const fig = container.querySelector(".fig-body")!;
     expect(b.compareDocumentPosition(fig) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(b).getByText(BAND_SENTENCE)).toBeInTheDocument();
+    expect(within(b).getByRole("link", { name: "Open a recorded memo →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).getByRole("link", { name: "Read how it works →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).getByText(FIXED_LABEL)).toBeInTheDocument();
+    // Not rendered, so not in the tab order.
+    expect(within(b).queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(b).queryByRole("button")).not.toBeInTheDocument();
     const src = screen.getByText(/^8 of 14 trials test a targeted drug in this class\./);
     expect(fig.compareDocumentPosition(src) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(src.nextElementSibling).toHaveClass("foot");
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+test("on a phone in the live state the band links to the Diligence page, the same line", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  vi.stubEnv("VITE_DILIGENCE_URL", "https://agent.test/");
+  try {
+    stubFetch();
+    renderPage();
+    const b = await band();
+    expect(within(b).getByRole("link", { name: "Open a recorded memo →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).queryByRole("combobox")).not.toBeInTheDocument();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test("pending shows neither the example line nor the band", async () => {
+  const served = stubFetch();
+  // The index request never settles; everything else is served as usual.
+  vi.stubGlobal("fetch", (url: string) => (String(url).endsWith("/diligence/index.json") ? new Promise(() => undefined) : served(url)));
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  await screen.findByText(/^8 of 14 trials test a targeted drug in this class\./);
+  expect(container.querySelector(".dg-line")).toBeNull();
+  expect(screen.queryByRole("region", { name: "AI diligence" })).not.toBeInTheDocument();
 });
 
 test("all-diseases option", async () => {

@@ -79,7 +79,8 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
     return k > 0 ? `${base.replace(/\.$/, "")}; ${k} ${k === 1 ? "trial without a start year is" : "trials without a start year are"} not drawn.` : base;
   }, [file, views, state.view]);
   const full = useMemo(() => sourceLine(file, views), [file, views]);
-  // Once the agent is open the band takes the example line's place, above the figure at every width.
+  // Once the agent is open the band takes the example line's place, above the figure at every width. Until the index
+  // is read neither shows, so the front door never swaps one for the other.
   const { release, pairs } = useDiligenceRelease();
   const open = isOpen(release);
   const sourceAndAgent = (
@@ -87,7 +88,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
       <p className="source">
         {short} Registered trials only. <Link to="/methods#rows-and-companies">How rows are built →</Link>
       </p>
-      {open ? null : <DiligenceLine />}
+      {release === "closed" ? <DiligenceLine /> : null}
     </>
   );
   const companies = useMemo(() => companyOptions(file), [file]);
