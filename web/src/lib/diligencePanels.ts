@@ -1,5 +1,8 @@
 // A leaf module (no imports): lib/diligence and lib/diligenceRelease both use it, so neither imports the other.
 
+/** The label on every surface that shows the agent's judgement: the band, the Diligence page head, the strip, the panel. */
+export const FIXED_LABEL = "AI judgement from public data, not investment advice";
+
 /** A target and disease with a recorded diligence run shipped with the site. */
 export interface RecordedPair {
   target: string;

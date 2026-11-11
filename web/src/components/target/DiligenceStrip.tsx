@@ -4,7 +4,7 @@ import { stripView } from "../../lib/diligence";
 import type { DiligenceRelease } from "../../lib/diligenceRelease";
 import { usePhone } from "../../lib/useMediaQuery";
 import { useDiligence } from "./DiligenceRunContext";
-import { FIXED_LABEL } from "./TargetDiligence";
+import { FIXED_LABEL } from "../../lib/diligencePanels";
 
 const WHAT = "AI diligence: an agent searches ClinicalTrials.gov, ChEMBL, Europe PMC and openFDA, writes a cited memo, and a second model checks every claim.";
 const WHAT_PHONE = "AI diligence: a cited memo from public sources, checked claim by claim.";

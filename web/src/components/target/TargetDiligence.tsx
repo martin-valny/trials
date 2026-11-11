@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EXAMPLE, SECTION_ORDER, exampleHref, flagSentence, formatRunDate, loadRecorded, renderable } from "../../lib/diligence";
+import { FIXED_LABEL } from "../../lib/diligencePanels";
 import { isOpen, type DiligenceRelease } from "../../lib/diligenceRelease";
 import type { Shown } from "../../lib/useDiligenceRun";
 import { useDiligence } from "./DiligenceRunContext";
@@ -8,7 +9,6 @@ import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, Diligence
 import "./diligence.css";
 
 /** Shown verbatim with every judgement, withheld or not (spec §2, anti-goals). */
-export const FIXED_LABEL = "AI judgement from public data, not investment advice";
 
 export { formatRunDate };
 

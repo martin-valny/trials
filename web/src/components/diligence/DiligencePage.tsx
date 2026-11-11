@@ -4,12 +4,12 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { claimCounts, diligenceKey, formatRunDate, loadRecorded, STRIP_STANCE } from "../../lib/diligence";
+import { FIXED_LABEL } from "../../lib/diligencePanels";
 import { pairHref, useDiligenceRelease, type RecordedPair } from "../../lib/diligenceRelease";
 import { usePipelineFile, type PipelineState } from "../../lib/useDisease";
 import type { RunRecord } from "../../types";
 import { useEvalReport, type EvalReport } from "../DiligenceMethods";
 import { PageHead } from "../PageHead";
-import { FIXED_LABEL } from "../target/TargetDiligence";
 import { PairPicker } from "./PairPicker";
 import "./diligence-page.css";
 

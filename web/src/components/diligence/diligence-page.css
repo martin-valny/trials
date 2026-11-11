@@ -39,13 +39,15 @@
 }
 .dp-table td { vertical-align: top; padding: 11px 20px 12px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
 .dp-table th:last-child, .dp-table td:last-child { padding-right: 0; text-align: right; }
-.dp-c-t { width: 13%; }
-.dp-c-d { width: 17%; }
-.dp-c-read { width: 25%; }
-.dp-c-n { width: 13%; }
-.dp-c-rm { width: 8%; }
-.dp-c-when { width: 11%; }
-.dp-c-go { width: 13%; }
+/* The AI read takes the slack: a stance and its confidence ("favours further investment, high confidence") hold one
+   line at 1280; the short columns keep only what their head and values need. */
+.dp-c-t { width: 11%; }
+.dp-c-d { width: 15%; }
+.dp-c-read { width: 34%; }
+.dp-c-n { width: 12%; }
+.dp-c-rm { width: 7%; }
+.dp-c-when { width: 10%; }
+.dp-c-go { width: 11%; }
 .dp-t { font-weight: 700; }
 .dp-conf, .dp-withheld { color: var(--muted); }
 .dp-go a { white-space: nowrap; }
@@ -69,16 +71,25 @@
   .dp-sec:first-child { margin-top: 28px; }
   .dp-table, .dp-table tbody { display: block; width: auto; max-width: 100%; }
   .dp-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .dp-table tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; padding: 12px 0 13px; border-bottom: 1px solid var(--rule); }
+  /* The row clips sideways by 4px past its own edges: line 2's "·" separators sit in the gap before each item, so one
+     that would open a wrapped line falls outside the row and is cut, and no line ends or starts on a "·". The 4px
+     keeps the link's focus ring clear of the clip. */
+  .dp-table tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 -4px; padding: 12px 4px 13px;
+    overflow-x: clip; border: 0;
+    /* The hairline is drawn inside the 4px, so it still ends on the column's edges. */
+    background: linear-gradient(var(--rule), var(--rule)) 4px 100% / calc(100% - 8px) 1px no-repeat;
+  }
   .dp-table tr::after { content: ""; order: 4; flex: 0 0 100%; height: 0; }
   .dp-table td { display: block; padding: 0; border: 0; text-align: left; }
   .dp-table td:last-child { text-align: right; }
   .dp-t { order: 1; }
-  .dp-d { order: 2; flex: 1 1 0; min-width: 0; color: var(--muted); }
+  .dp-d { order: 2; flex: 1 1 0; min-width: 0; margin-left: -6px; color: var(--muted); }
   .dp-go { order: 3; }
   .dp-read, .dp-n, .dp-rm, .dp-when { order: 5; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
   .dp-read .dp-stance { color: var(--ink); }
-  .dp-read::after, .dp-n::after, .dp-rm::after { content: "·"; margin-left: 6px; }
+  .dp-n, .dp-rm, .dp-when { position: relative; white-space: nowrap; }
+  .dp-n::before, .dp-rm::before, .dp-when::before { content: "·"; position: absolute; right: 100%; width: 14px; text-align: center; }
   .dp-ph { display: inline; }
   .dp-figures { gap: 18px 28px; }
   .dp-figures b { font-size: 22px; }
