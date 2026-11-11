@@ -1,0 +1,7 @@
+/* The registry status mark beside a status word (Trials list, trial page): running ring, stopped dot, finished pale
+   dot, unknown dashed ring. Never colour alone: the word always sits beside it. */
+.tr-mark { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; box-sizing: border-box; vertical-align: 0; }
+.tr-mark.run { border: 1.6px solid var(--run); }
+.tr-mark.stop { background: var(--stop); }
+.tr-mark.fin { background: var(--fin); }
+.tr-mark.unk { border: 1.2px dashed var(--unk); }

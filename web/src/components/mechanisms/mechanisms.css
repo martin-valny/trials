@@ -1,0 +1,211 @@
+/* Figure 2: the approaches as a rail (panel a, a figure legend), the selected approach's second layer
+   (panel b: a typeset tree, or the Targeted drugs graph) and one kind's trials (panel c). Tokens,
+   pills, dropdowns and the toolbar come from explore.css (the page root is ".explore.mechanisms"). */
+
+/* Only Disease and Outcome: one line, Reset all and the count after them. */
+.mechanisms .toolbar.mech-toolbar { display: flex; flex-wrap: wrap; align-items: center; }
+.mechanisms .toolbar.mech-toolbar .tb-count { margin-left: auto; }
+
+.mech-plate {
+  flex: none;
+  display: grid; grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+  gap: 0 36px; padding: 14px 40px 40px; align-items: start;
+}
+.mechanisms.has-panel .mech-plate { grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr) minmax(18rem, 22rem); }
+
+/* --- Panel a: the rail ----------------------------------------------------------------------------- */
+.rail { min-width: 0; }
+.rail.skeleton-block { height: 18rem; }
+.rail-rows { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+/* A row is a legend entry, not a pill: label and count on one line, the success line under them. The
+   selected row carries a 2px ink rule on its left; the others a hairline-free gutter of the same width. */
+.mechanisms .rail .rail-row {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; align-items: baseline;
+  padding: 7px 0 8px 12px; text-align: left; font-size: 13px; line-height: 1.3;
+  color: var(--ink); background: transparent; border: 0; border-left: 2px solid transparent; border-radius: 0;
+}
+.mechanisms .rail .rail-row:hover .rail-label { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
+.mechanisms .rail .rail-row[aria-pressed="true"] { background: transparent; color: var(--ink); border-left-color: var(--ink); }
+.mechanisms .rail .rail-row[aria-pressed="true"] .rail-label { font-weight: 700; }
+.rail-n { font-variant-numeric: tabular-nums; text-align: right; }
+.rail-success { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rail-track { position: relative; flex: 0 0 5.5rem; height: 4px; background: var(--pale); }
+.rail-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+/* Too few finished trials: the share is an outline, as panel b's bars are on the map. */
+.rail-success.few .rail-fill { background: var(--plate); border: 1px solid var(--ink); }
+.rail-share { font-size: 12px; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Non-drug care: a dash where the bar would be, and the words "success not defined". */
+.rail-dash { flex: none; width: 12px; height: 1px; background: var(--muted); }
+.rail-note { margin-top: 10px; }
+/* The footnote under the bars needs air above it (it was pulled up by .panel-note + .panel-note). */
+.panel-note.rail-note + .panel-note.rail-uncategorised { margin-top: 14px; }
+/* The Targeted lede runs the panel's width, and its link never splits across lines. */
+.panel-note.graph-lede { max-width: none; }
+.graph-lede .nw { white-space: nowrap; }
+
+/* --- Panel b: the canvas --------------------------------------------------------------------------- */
+.mech-canvas { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.canvas-sum { font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.strip-key { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; line-height: 1.45; }
+.canvas-empty { padding: 56px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 15px; }
+.canvas-empty p { margin: 0; font-weight: 700; }
+
+/* --- Panel b, Targeted drugs: the graph -------------------------------------------------------------- */
+/* The Find pill on a right-aligned line of its own (on the heading's line beside the rail), then the key on one line directly over the frame;
+   the canvas is the figure, bounded by hairlines only. The key never stretches: it is as tall as its
+   lines (it once took a flex-basis of 28rem as height in the phone's column). */
+.graph-view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.graph-bar { display: flex; flex-direction: column; gap: 8px; }
+.graph-key {
+  flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px 14px; min-width: 0;
+  font-size: 12px; line-height: 1.45;
+}
+.key-shape { flex: none; color: var(--ink); overflow: visible; }
+.share-ramp { display: inline-block; width: 28px; height: 8px; flex: none; }
+.graph-search { flex: none; align-self: flex-end; }
+.graph-search input { width: 15rem; }
+/* Beside the rail, the Find pill moves up to the right end of panel b's heading line, so the canvas starts a line
+   sooner; the heading keeps clear of it. Narrower screens keep the pill on its own line. */
+@media (min-width: 901px) {
+  .mech-canvas { position: relative; }
+  .mech-canvas .graph-search { position: absolute; top: -3px; right: 0; }
+  .mech-canvas:has(.graph-search) > .panel-h { padding-right: calc(15rem + 24px); }
+}
+.graph-matches {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; list-style: none; margin: 0; padding: 4px 0;
+  min-width: 100%; max-width: min(24rem, calc(100vw - 32px));
+  background: var(--plate); color: var(--ink); border: 1px solid var(--rule); border-top-color: var(--ink);
+  font-size: 13px; line-height: 1.35;
+}
+.graph-matches li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 5px 12px; cursor: pointer; }
+.graph-matches li[aria-selected="true"], .graph-matches li:hover { background: var(--pale); }
+.match-label { min-width: 0; overflow-wrap: anywhere; }
+.match-kind { flex: none; font-size: 12px; color: var(--muted); }
+.graph-frame { position: relative; height: clamp(22rem, 64vh, 42rem); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.graph-frame.skeleton-block { border: 0; }
+.graph-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; color: var(--ink); }
+.graph-canvas:focus { outline: none; }
+.graph-canvas:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.graph-fallback { margin: 0; padding: 24px 0; font-size: 13px; }
+.graph-note, .graph-cut, .graph-dropped { max-width: 84ch; }
+.graph-label-key { margin-top: 0; }
+
+/* Where successes converge: a short ranked list under the figure, set as a table of contents. */
+.converge { max-width: 40rem; }
+.converge-h { margin: 6px 0 4px; font-size: 13px; font-weight: 700; line-height: 1.3; }
+.converge-list { margin: 0; padding: 0 0 0 1.4em; font-size: 13px; line-height: 1.4; }
+.converge-list li { padding: 3px 0; }
+.converge-list li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.converge-n { margin-left: 8px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mechanisms .text-button.node-link { font-size: inherit; text-align: left; }
+
+/* The tree: group headings over indented kind rows, set in the figure's type scale. */
+/* Capped at a reading measure, so a row's share sits by its strip however wide the canvas is. */
+.tree { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; max-width: 46rem; }
+.tree-group { min-width: 0; }
+.tree-h { margin: 0; padding-bottom: 4px; border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 700; line-height: 1.3; }
+.tree-kinds { list-style: none; margin: 2px 0 0; padding: 0 0 0 14px; }
+/* label · · · · n trials [strip] share: a leader joins the label to its numbers, as in a table of contents. */
+.mechanisms .tree .kind-row {
+  width: 100%;
+  display: grid; grid-template-columns: minmax(0, 2.2fr) 5.5rem minmax(3rem, 1fr) 4.5rem;
+  align-items: center; column-gap: 10px;
+  padding: 5px 0 5px 8px; margin-left: -10px; text-align: left; font-size: 13px; line-height: 1.3;
+  color: var(--ink); background: transparent; border: 0; border-left: 2px solid transparent; border-radius: 0;
+}
+.mechanisms .tree .kind-row:hover .kind-label { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
+.mechanisms .tree .kind-row[aria-pressed="true"] { background: transparent; color: var(--ink); border-left-color: var(--ink); }
+.mechanisms .tree .kind-row[aria-pressed="true"] .kind-label { font-weight: 700; }
+.kind-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.kind-label { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.kind-leader { flex: 1 1 1rem; min-width: 1rem; border-bottom: 1px dotted var(--muted); opacity: 0.6; }
+.kind-n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind-share { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind-few { font-size: 12px; color: var(--muted); }
+
+/* The outcome strip: a 6px square-ended bar, its length the kind's size against the largest kind,
+   split by outcome. Succeeded is the only red; unknown is a hairline outline. */
+.strip { display: block; min-width: 0; }
+.strip-bar { display: flex; height: 6px; min-width: 2px; }
+.strip-seg { display: block; flex-basis: 0; min-width: 1px; }
+.strip-seg.ring { border: 1px solid; box-sizing: border-box; background: transparent; }
+
+.rationale { margin: 2px 0 4px; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 72ch; text-wrap: pretty; }
+.rationale-tag { font-weight: 700; color: var(--muted); }
+.tree-kinds .rationale { margin: 0 0 6px; }
+.mechanisms .tree .tree-more { margin: 6px 0 0 14px; }
+
+/* --- Panel c: one kind's trials -------------------------------------------------------------------- */
+/* Beside the canvas, behind a hairline; it keeps to the viewport while the tree scrolls. */
+.side-panel {
+  position: sticky; top: 12px; min-width: 0; max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 0 12px 20px; border-left: 1px solid var(--rule);
+  display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.45; color: var(--ink);
+}
+.side-panel p { margin: 0; }
+.side-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.side-head .panel-h:focus { outline: none; }
+.side-head .panel-h:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.side-meta { font-size: 12px; color: var(--muted); }
+.side-counts { font-variant-numeric: tabular-nums; }
+.side-trials { list-style: none; margin: 4px 0 0; padding: 0; font-size: 13px; }
+.side-trials li { padding: 6px 0; border-top: 1px solid var(--rule); }
+.side-nct { font-weight: 800; font-variant-numeric: tabular-nums; }
+.side-outcome { color: var(--muted); }
+.side-muted { color: var(--muted); font-size: 12px; }
+.side-facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; }
+.side-facts > div { display: contents; }
+.side-facts dt { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.side-facts dd { margin: 0; overflow-wrap: anywhere; }
+.side-sources { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.side-sources:empty { display: none; }
+.mechanisms .side-panel .side-more { align-self: flex-start; margin-top: 4px; }
+
+/* --- Narrow screens -------------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .mech-plate, .mechanisms.has-panel .mech-plate { grid-template-columns: minmax(0, 1fr); gap: 14px 0; }
+  /* The rail becomes one horizontally scrolling row of chips (label and count) above the canvas. */
+  .rail-rows {
+    display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+    margin: 8px -40px 0; padding: 2px 40px 4px; scroll-padding: 0 40px;
+  }
+  .rail-rows::-webkit-scrollbar { display: none; }
+  .rail-rows li { flex: none; }
+  .mechanisms .rail .rail-row {
+    display: inline-flex; gap: 6px; width: auto; padding: 4px 10px; white-space: nowrap; font-size: 13px; line-height: 18px;
+    border: 1px solid var(--rule); border-radius: 999px;
+  }
+  .mechanisms .rail .rail-row:hover { border-color: var(--ink); }
+  .mechanisms .rail .rail-row[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
+  .mechanisms .rail .rail-row[aria-pressed="true"] .rail-label { font-weight: 400; }
+  .mechanisms .rail .rail-row .rail-n { color: inherit; opacity: 0.75; }
+  .rail-success, .rail-note { display: none; }
+  /* Panel c is a bottom sheet with an ink rule on top, as the filter sheets are. */
+  .side-panel {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 60dvh;
+    padding: 12px 40px calc(14px + env(safe-area-inset-bottom)); border-left: 0; border-top: 1px solid var(--ink);
+    background: var(--plate);
+  }
+  .mechanisms.has-panel .mech-plate { padding-bottom: 62dvh; } /* the end of the tree can still scroll above the sheet */
+}
+@media (max-width: 640px) {
+  .mech-plate { padding: 10px 16px 32px; }
+  .rail-rows { margin: 8px -16px 0; padding: 2px 16px 4px; scroll-padding: 0 16px; }
+  .side-panel { padding-left: 16px; padding-right: 16px; }
+  .graph-frame { height: 24rem; }
+  .graph-search { align-self: stretch; }
+  .graph-search input { width: 100%; }
+  .graph-key { gap: 6px 12px; }
+  .graph-matches { left: 0; right: auto; }
+  .tree-kinds { padding-left: 10px; }
+  /* Label, count and share on one line; the strip runs the full width beneath them. */
+  .mechanisms .tree .kind-row {
+    grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "label n share" "strip strip strip";
+    row-gap: 4px; padding: 7px 0 7px 8px;
+  }
+  .kind-name { grid-area: label; }
+  .kind-leader { display: none; }
+  .kind-n { grid-area: n; }
+  .kind-share { grid-area: share; min-width: 2.6rem; }
+  .strip { grid-area: strip; }
+}

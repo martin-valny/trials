@@ -1,0 +1,67 @@
+{
+ "studies": [
+  {
+   "protocolSection": {
+    "identificationModule": {
+     "nctId": "NCT00087529",
+     "briefTitle": "A Study to Evaluate the Safety and Efficacy of Rituximab in Adults With Primary Progressive Multiple Sclerosis"
+    },
+    "statusModule": {
+     "overallStatus": "COMPLETED"
+    },
+    "conditionsModule": {
+     "conditions": [
+      "Multiple Sclerosis"
+     ]
+    },
+    "designModule": {
+     "phases": [
+      "PHASE2",
+      "PHASE3"
+     ]
+    }
+   }
+  },
+  {
+   "protocolSection": {
+    "identificationModule": {
+     "nctId": "NCT01212094",
+     "briefTitle": "Double Blind Combination of Rituximab by Intravenous and Intrathecal Injection Versus Placebo in Patients With Low-Inflammatory Secondary Progressive Multiple Sclerosis (RIVITaLISe)"
+    },
+    "statusModule": {
+     "overallStatus": "TERMINATED",
+     "whyStopped": "The efficacy on CSF biomarkers failed to reach criteria for continuation of the trial"
+    },
+    "conditionsModule": {
+     "conditions": [
+      "Multiple Sclerosis"
+     ]
+    },
+    "designModule": {
+     "phases": [
+      "PHASE1",
+      "PHASE2"
+     ]
+    }
+   }
+  },
+  {
+   "protocolSection": {
+    "identificationModule": {
+     "nctId": "NCT03193866",
+     "briefTitle": "COMparison Between All immunoTherapies for Multiple Sclerosis."
+    },
+    "statusModule": {
+     "overallStatus": "COMPLETED"
+    },
+    "conditionsModule": {
+     "conditions": [
+      "Relapsing-remitting Multiple Sclerosis"
+     ]
+    },
+    "designModule": {}
+   }
+  }
+ ],
+ "nextPageToken": "ZVNj7o2Elu8o3lpyBYqp6rLumpOQJJxtZvGt3fEW"
+}

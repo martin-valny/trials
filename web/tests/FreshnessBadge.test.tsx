@@ -6,19 +6,28 @@ import { readFixture, stubFetch } from "./helpers";
 
 const meta = readFixture<Meta>("meta.json");
 
-test("badge shows last update and data timestamp", async () => {
+test("badge shows the registry date, with the full times on hover", async () => {
   stubFetch();
   render(<FreshnessBadge now={new Date("2026-11-04T12:00:00Z")} />);
-  expect(await screen.findByText(/Last updated 2026-11-04 07:19 UTC/)).toBeInTheDocument();
-  expect(screen.getByText(/registry data as of 2026-11-04 10:00:00/)).toBeInTheDocument();
+  const badge = await screen.findByText("Registry data from 4 Nov 2026");
+  expect(badge).toHaveClass("ok");
+  expect(badge).toHaveAttribute("title", expect.stringMatching(/Last updated 2026-11-04 07:19 UTC/));
   expect(screen.queryByText(/may be stale/)).not.toBeInTheDocument();
 });
 
-test("badge warns when stale", async () => {
-  const last = new Date("2026-11-04T07:19:00Z").getTime();
+test("badge says how old the data is when stale", async () => {
   stubFetch();
-  render(<FreshnessBadge now={new Date(last + 37 * 3600 * 1000)} />);
-  expect(await screen.findByText(/Data may be stale/)).toBeInTheDocument();
+  render(<FreshnessBadge now={new Date("2026-11-07T20:19:00Z")} />);
+  const note = await screen.findByText("Registry data from 4 Nov 2026, 3 days old");
+  expect(note).toHaveClass("stale");
+  expect(note).not.toHaveClass("warn");
+  expect(screen.queryByText(/Data may be stale/)).not.toBeInTheDocument();
+});
+
+test("stale with no registry date falls back to the last update", async () => {
+  stubFetch({ "meta.json": { ...meta, data_timestamp: null } });
+  render(<FreshnessBadge now={new Date("2026-11-06T12:00:00Z")} />);
+  expect(await screen.findByText("Registry data from 4 Nov 2026, 2 days old")).toBeInTheDocument();
 });
 
 test("badge handles missing meta", async () => {
@@ -55,9 +64,8 @@ test("null timestamps degrade to unknown instead of crashing", async () => {
   expect(await screen.findByText("Freshness unknown")).toBeInTheDocument();
 });
 
-test("missing data timestamp still shows the last update", async () => {
+test("missing data timestamp still shows the last update date", async () => {
   stubFetch({ "meta.json": { ...meta, data_timestamp: null } });
   render(<FreshnessBadge now={new Date("2026-11-04T12:00:00Z")} />);
-  expect(await screen.findByText(/Last updated 2026-11-04 07:19 UTC/)).toBeInTheDocument();
-  expect(screen.queryByText(/registry data as of/)).not.toBeInTheDocument();
+  expect(await screen.findByText("Registry data from 4 Nov 2026")).toBeInTheDocument();
 });

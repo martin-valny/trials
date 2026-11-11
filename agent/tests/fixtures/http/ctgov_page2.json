@@ -1,0 +1,25 @@
+{
+ "studies": [
+  {
+   "protocolSection": {
+    "identificationModule": {
+     "nctId": "NCT05000001",
+     "briefTitle": "Rituximab extension study"
+    },
+    "statusModule": {
+     "overallStatus": "RECRUITING"
+    },
+    "conditionsModule": {
+     "conditions": [
+      "Multiple Sclerosis"
+     ]
+    },
+    "designModule": {
+     "phases": [
+      "PHASE3"
+     ]
+    }
+   }
+  }
+ ]
+}

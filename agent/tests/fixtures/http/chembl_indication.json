@@ -1,0 +1,28 @@
+{
+ "drug_indications": [
+  {
+   "efo_term": "relapsing-remitting multiple sclerosis",
+   "mesh_heading": "Multiple Sclerosis, Relapsing-Remitting",
+   "max_phase_for_ind": "4.0",
+   "molecule_chembl_id": "CHEMBL2108041"
+  },
+  {
+   "efo_term": "chronic progressive multiple sclerosis",
+   "mesh_heading": "Multiple Sclerosis, Chronic Progressive",
+   "max_phase_for_ind": "4.0",
+   "molecule_chembl_id": "CHEMBL2108041"
+  },
+  {
+   "efo_term": "non-Hodgkins lymphoma",
+   "mesh_heading": "Lymphoma, Non-Hodgkin",
+   "max_phase_for_ind": "1.0",
+   "molecule_chembl_id": "CHEMBL2108041"
+  },
+  {
+   "efo_term": "rheumatoid arthritis",
+   "mesh_heading": "Arthritis, Rheumatoid",
+   "max_phase_for_ind": "3.0",
+   "molecule_chembl_id": "CHEMBL2108041"
+  }
+ ]
+}

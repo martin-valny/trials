@@ -1,0 +1,21 @@
+# Evaluation pairs: row id x disease code ("all" = every disease). Chosen from the current
+# pipeline.json; each row has at least one mark for the disease.
+pairs:
+  - {target: cd20, disease: all, why: "Crowded row (123 trials) across every disease"}
+  - {target: cd20, disease: MS, why: "Crowded, approved class: 99 trials, 7 stopped"}
+  - {target: cd20, disease: MG, why: "Same target where it is not approved: 9 trials, none stopped"}
+  - {target: fcrn, disease: MG, why: "Approved class, 37 trials, 3 stopped"}
+  - {target: fcrn, disease: CIDP, why: "Approved target, second disease: 8 trials, 2 stopped"}
+  - {target: c5, disease: MG, why: "Approved complement inhibitors: 18 trials, 1 stopped"}
+  - {target: c5, disease: NMOSD, why: "Approved in NMOSD: 10 trials, 2 stopped"}
+  - {target: cd19-car-t, disease: MG, why: "CAR-T: 13 trials, mostly running, no approval"}
+  - {target: bcma-car-t, disease: MG, why: "CAR-T borrowed from myeloma: 14 trials"}
+  - {target: cd19, disease: NMOSD, why: "Small row: 4 trials, none stopped"}
+  - {target: baff-april, disease: MS, why: "Many stopped: 4 of 5 trials stopped, none running"}
+  - {target: btk, disease: MS, why: "Large pipeline: 33 trials, 6 stopped"}
+  - {target: il-17a, disease: MS, why: "Sparse: 3 trials, one stopped, none running"}
+  - {target: cd38, disease: MG, why: "Sparse: a single trial for this disease"}
+  - {target: clemastine, disease: MS, why: "Sparse repurposed drug: 4 trials, one stopped"}
+  - {target: acth, disease: MS, why: "No running trials (6 of 10 stopped), so likely no stop-risk entries"}
+  - {target: alpha4-integrin, disease: MS, why: "Approved, 9 of 31 trials stopped, none running"}
+  - {target: il-6-receptor, disease: NMOSD, why: "Approved in NMOSD: 9 trials, 1 stopped"}

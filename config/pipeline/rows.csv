@@ -1,0 +1,29 @@
+row_id,label,sub,family,family_order,row_order,classes,drugs,gene,blurb,related
+cd20,CD20,MS4A1 · antibodies,B-cell depletion,1,1,anti-CD20,,MS4A1,Antibodies that remove CD20-bearing B cells; the best-established way to quiet B-cell-driven disease.,cd19;cd20-car-t
+cd19,CD19,CD19 · antibodies,B-cell depletion,1,2,anti-CD19,,CD19,"Antibodies that remove a wider range of B cells, including plasmablasts.",cd20;cd19-car-t
+baff-april,BAFF / APRIL,TNFSF13B · TNFSF13,B-cell depletion,1,3,anti-BAFF;anti-APRIL,,,Block the survival signals B cells and plasma cells depend on.,cd20
+fcrn,FcRn,FCGRT · IgG recycling,IgG and complement,2,1,anti-FcRn,,FCGRT,Speed the clearance of pathogenic IgG antibodies.,c5
+c5,C5,terminal complement,IgG and complement,2,2,anti-C5,,C5,Stop the last step of the complement cascade.,fcrn;c1s-c2
+c1s-c2,C1s / C2,classical pathway,IgG and complement,2,3,anti-C1s;anti-C2,,,"Block complement earlier, at the classical pathway.",c5
+cd19-car-t,CD19 CAR-T,engineered T cells,Cell therapy,3,1,CD19 CAR-T,,CD19,Engineered T cells that reset the B-cell compartment.,cd19;cd20-car-t;bcma-car-t
+bcma-car-t,BCMA CAR-T,engineered T cells,Cell therapy,3,2,BCMA CAR-T,,TNFRSF17,Engineered T cells aimed at plasma cells.,cd19-car-t
+cd20-car-t,CD20 CAR-T,engineered T cells,Cell therapy,3,3,CD20 CAR-T,,MS4A1,Engineered T cells aimed at CD20-bearing B cells.,cd20;cd19-car-t
+btk,BTK,BTK · small molecules,Kinases,4,1,BTK inhibitor,,BTK,Oral drugs that act on B cells and microglia.,cd20
+il-6-receptor,IL-6 receptor,IL6R,Cytokines and co-stimulation,5,1,anti-IL-6R,,IL6R,Block interleukin-6 signalling.,
+cd40l-cd3,CD40L / CD3,CD40LG · CD3E,Cytokines and co-stimulation,5,2,anti-CD40L;anti-CD3,,,Interrupt the T-cell and B-cell conversation.,
+il-17a,IL-17A,IL17A,Cytokines and co-stimulation,5,3,anti-IL-17A,,IL17A,"Block interleukin-17A, a driver of tissue inflammation.",
+cd38,CD38,CD38 · antibodies,Cytokines and co-stimulation,5,4,anti-CD38,,CD38,Antibodies that remove CD38-bearing plasma cells.,bcma-car-t
+s1p-receptor,S1P receptor,S1PR1 · small molecules,Lymphocyte trafficking,6,1,S1P receptor modulator,,S1PR1,"Keep lymphocytes in the lymph nodes, out of the brain.",alpha4-integrin
+alpha4-integrin,α4-integrin,ITGA4,Lymphocyte trafficking,6,2,anti-α4-integrin,,ITGA4,Stop lymphocytes crossing into the brain.,s1p-receptor
+fumarates,Fumarates,Nrf2 / KEAP1,Broad immune modulation,7,1,KEAP1 inhibitor,,,Activate the Nrf2 antioxidant pathway.,
+dhodh,DHODH,DHODH · teriflunomide,Broad immune modulation,7,2,DHODH inhibitor,,DHODH,Slow the division of activated lymphocytes.,
+cd52,CD52,CD52 · alemtuzumab,Broad immune modulation,7,3,anti-CD52,,CD52,"Remove lymphocytes broadly, then let them rebuild.",
+interferon-beta,Interferon-β,IFNAR1/2,Broad immune modulation,7,4,IFN-α/β receptor modulator,,,The oldest disease-modifying class.,
+cladribine,Cladribine,purine analogue,Broad immune modulation,7,5,,cladribine;mavenclad®;cladribine high dose;cladribine low dose,,A purine analogue that removes dividing lymphocytes.,
+glucocorticoids,Glucocorticoids,NR3C1 · steroids,Broad immune modulation,7,6,glucocorticoid receptor modulator,,NR3C1,Steroids for relapses and as a comparator; also given alongside other drugs.,acth
+acth,ACTH,MC2R,Broad immune modulation,7,7,ACTH receptor modulator,,MC2R,Adrenocorticotropic hormone for relapses.,glucocorticoids
+clemastine,Clemastine,M1 / H1 · remyelination,Repair and protection,8,1,,clemastine;clemastine fumarate,,An antihistamine tested for remyelination.,
+lingo-1-rgma,LINGO-1 / RGMa,remyelination,Repair and protection,8,2,anti-LINGO-1;anti-RGMa,,,Aim to restore myelin and protect axons.,
+syncytin-1,Syncytin-1,HERV-W env,Repair and protection,8,3,anti-syncytin-1,,ERVW-1,Antibody against a retroviral envelope protein.,
+fampridine,Fampridine,Kv channel · symptom,Symptom relief,9,1,Kv channel inhibitor,,,Potassium-channel blocker for walking in MS.,
+cannabinoids,Cannabinoids,CB1 receptor · symptom,Symptom relief,9,2,CB1 receptor modulator;CB1 receptor inhibitor,,CNR1,Cannabinoid drugs tested for spasticity and pain.,

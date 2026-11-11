@@ -1,0 +1,50 @@
+kind,approach,group,label,rationale,source_url
+ahsct,cell,Haematopoietic reset,autologous haematopoietic stem cell transplantation,"Proposed immune reset: high-dose chemotherapy removes the autoreactive immune system, which regrows from the patient's own stem cells; no single molecular target",https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C16039
+msc,cell,Mesenchymal cells,mesenchymal stem cells,Proposed paracrine immunomodulation and tissue support; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D045164
+tolerogenic_dc,cell,Immune cells,tolerogenic dendritic cells,Proposed antigen-specific tolerance from dendritic cells conditioned to calm rather than prime T cells; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D003713
+t_cell_vaccination,cell,Immune cells,T-cell vaccination,"Proposed regulatory response against the patient's own myelin-reactive T cells, given back attenuated; no single molecular target",https://www.ebi.ac.uk/chembl/explore/compound/CHEMBL2219427
+virus_specific_t,cell,Immune cells,virus-specific T cells,Proposed killing of EBV-infected B cells by EBV-specific T cells; no human molecular target,https://www.ebi.ac.uk/chembl/explore/compound/CHEMBL5314622
+nk_cells,cell,Immune cells,NK cell therapy,Proposed depletion of autoreactive immune cells by natural killer cells; no single molecular target,https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C202601
+immunoglobulin,plasma,Immunoglobulin replacement,immunoglobulin (IVIG / SCIG),Proposed broad immunomodulation by pooled human IgG; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D016756
+plasma_exchange,plasma,Removal,plasma exchange,Proposed removal of circulating autoantibodies and other plasma factors; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D010951
+immunoadsorption,plasma,Removal,immunoadsorption,Proposed selective removal of circulating immunoglobulin from plasma; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D007163
+atg,plasma,Polyclonal depletion,anti-thymocyte globulin,Proposed T-cell depletion by polyclonal antibodies against many T-cell surface antigens; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000961
+myelin_peptide,tolerisation,Antigen-specific tolerisation,myelin peptides,Proposed tolerance to myelin basic protein by giving its peptides; the antigen is not a drug target,https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C166542
+achr_peptide,tolerisation,Antigen-specific tolerisation,acetylcholine receptor peptides,Proposed tolerance to the acetylcholine receptor by giving its epitopes; the antigen is not a drug target,https://evsexplore.semantics.cancer.gov/evsexplore/concept/ncit/C203653
+tcr_peptide,tolerisation,Antigen-specific tolerisation,T-cell receptor peptides,Proposed regulatory response against myelin-reactive T cells by giving peptides of their receptors; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D003888
+helminth,tolerisation,Microbial,helminth therapy,Proposed shift of immune responses towards regulation by a controlled helminth infection; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D006376
+glatiramer,diffuse,Glatiramer,glatiramer acetate,Proposed modification of immune processes; the label says the mechanism is not fully understood,https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=0aa4ff2a-ce8e-46cd-830f-a264cc582be2
+high_dose_biotin,diffuse,Biotin,high-dose biotin,Proposed activation of biotin-dependent carboxylases for myelin repair and energy supply; not an established target,https://pubmed.ncbi.nlm.nih.gov/34332461/
+lipoic_acid,diffuse,Antioxidants,lipoic acid,Proposed antioxidant effect; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D008063
+gold_nanocrystals,diffuse,Nanocatalysts,gold nanocrystals (CNM-Au8),Proposed support of brain cell energy metabolism (NAD+/NADH); no protein target,https://pubmed.ncbi.nlm.nih.gov/38087362/
+exercise,nondrug,Rehabilitation & exercise,exercise and training,"Proposed benefit of structured physical activity for fitness, mobility and fatigue; no molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D005081
+physiotherapy,nondrug,Rehabilitation & exercise,physiotherapy,"Proposed recovery of movement, balance and function through guided physical therapy; no molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D026741
+cognitive_rehab,nondrug,Rehabilitation & exercise,cognitive rehabilitation,Proposed recovery or compensation of cognitive function through structured training; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000072466
+robotics,nondrug,Rehabilitation & exercise,robot-assisted training,Proposed recovery of gait and arm function through repetitive robot- or exoskeleton-assisted practice; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D012371
+cbt,nondrug,Behavioural & psychological,cognitive behavioural therapy,"Proposed relief of fatigue, mood, pain or sleep problems by changing thoughts and habits; no molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D015928
+mindfulness,nondrug,Behavioural & psychological,mindfulness and meditation,Proposed relief of stress and mood symptoms through attention training; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D064866
+education,nondrug,Behavioural & psychological,education and self-management,Proposed better self-management through information and coaching; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D010353
+tms,nondrug,Devices & neuromodulation,transcranial magnetic stimulation,Proposed modulation of cortical excitability by magnetic pulses; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D050781
+tdcs,nondrug,Devices & neuromodulation,transcranial direct current stimulation,Proposed modulation of cortical excitability by a weak direct current; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D065908
+peripheral_stimulation,nondrug,Devices & neuromodulation,peripheral nerve and muscle stimulation,"Proposed relief of spasticity, pain, bladder or muscle weakness by electrical stimulation; no molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D004599
+deep_brain_stimulation,nondrug,Devices & neuromodulation,deep brain stimulation,Proposed tremor control by stimulating deep brain nuclei; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D046690
+virtual_reality,nondrug,Devices & neuromodulation,virtual reality,Proposed motor and cognitive training in an immersive virtual setting; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000076142
+wearable,nondrug,Devices & neuromodulation,wearables and apps,Proposed support of activity and symptom tracking by wearable devices; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000076251
+diet,nondrug,Diet & supplements,diet,"Proposed effect of a dietary pattern (ketogenic, fasting, calorie restriction and others) on inflammation and metabolism; no single molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D004035
+thymectomy,nondrug,Procedures,thymectomy,"Proposed removal of the thymus, where acetylcholine receptor autoimmunity is thought to start; no molecular target",https://meshb.nlm.nih.gov/record/ui?ui=D013934
+venous_angioplasty,nondrug,Procedures,venous angioplasty (CCSVI),Proposed relief of venous outflow narrowing (the CCSVI hypothesis); no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D017130
+focused_ultrasound,nondrug,Procedures,focused ultrasound,Proposed tremor control by an ultrasound lesion in the thalamus; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D057086
+fmt,nondrug,Procedures,faecal microbiota transplantation,Proposed reshaping of the gut microbiome that modulates immune responses; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000069467
+intermittent_hypoxia,nondrug,Other non-drug,acute intermittent hypoxia,Proposed priming of spinal motor plasticity by brief bouts of low oxygen; no molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000860
+type:BEHAVIORAL,nondrug,Behavioural & psychological,other behavioural,,
+type:DEVICE,nondrug,Devices & neuromodulation,other device,,
+type:PROCEDURE,nondrug,Procedures,other procedure,,
+type:RADIATION,nondrug,Procedures,radiation,,
+type:DIETARY_SUPPLEMENT,nondrug,Diet & supplements,other supplement,,
+type:DIAGNOSTIC_TEST,unclassified,Not a treatment,diagnostic test,,
+not_a_treatment,unclassified,Not a treatment,not a treatment,,
+type:OTHER,unclassified,Not yet sorted,other intervention,,
+type:GENETIC,unclassified,Not yet sorted,"genetic, not yet sorted",,
+type:COMBINATION_PRODUCT,unclassified,Not yet sorted,"combination product, not yet sorted",,
+type:DRUG,unclassified,Not yet sorted,"drug, not yet mapped",,
+type:BIOLOGICAL,unclassified,Not yet sorted,"biological, not yet mapped",,

@@ -1,0 +1,23 @@
+# Pinned from uv.lock, boto3/botocore included: the Lambda runtime's bundled botocore may be too
+# old for Converse cachePoint, so the package carries the tested one. Regenerate with:
+#   uv export --no-dev --no-hashes --no-emit-project --no-header --no-annotate --frozen \
+#     >> requirements-lambda.txt   (keep this comment on top)
+annotated-types==0.8.0
+anyio==4.16.0
+boto3==1.43.126
+botocore==1.43.126
+certifi==2026.10.23
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+jmespath==1.1.0
+pydantic==2.14.3
+pydantic-core==2.50.4
+python-dateutil==2.9.0.post0
+pyyaml==6.0.3
+s3transfer==0.19.3
+six==1.17.0
+typing-extensions==4.16.0
+typing-inspection==0.4.5
+urllib3==2.8.0

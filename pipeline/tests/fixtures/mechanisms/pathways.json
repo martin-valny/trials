@@ -1,0 +1,88 @@
+{
+ "reactome_release": "test",
+ "targets": {
+  "MS4A1": [
+   "R-HSA-983695"
+  ],
+  "NFE2L2": [
+   "R-HSA-9759194"
+  ]
+ },
+ "pathways": {
+  "R-HSA-1280218": {
+   "name": "Adaptive Immune System",
+   "parents": [
+    "R-HSA-168256"
+   ],
+   "genes": 1170,
+   "source": "reactome"
+  },
+  "R-HSA-168256": {
+   "name": "Immune System",
+   "parents": [],
+   "genes": 2504,
+   "source": "reactome"
+  },
+  "R-HSA-2262752": {
+   "name": "Cellular responses to stress",
+   "parents": [
+    "R-HSA-8953897"
+   ],
+   "genes": 793,
+   "source": "reactome"
+  },
+  "R-HSA-8953897": {
+   "name": "Cellular responses to stimuli",
+   "parents": [],
+   "genes": 903,
+   "source": "reactome"
+  },
+  "R-HSA-9711123": {
+   "name": "Cellular response to chemical stress",
+   "parents": [
+    "R-HSA-2262752"
+   ],
+   "genes": 204,
+   "source": "reactome"
+  },
+  "R-HSA-9755511": {
+   "name": "KEAP1-NFE2L2 pathway",
+   "parents": [
+    "R-HSA-9711123"
+   ],
+   "genes": 120,
+   "source": "reactome"
+  },
+  "R-HSA-9759194": {
+   "name": "Nuclear events mediated by NFE2L2",
+   "parents": [
+    "R-HSA-9755511"
+   ],
+   "genes": 88,
+   "source": "reactome"
+  },
+  "R-HSA-983695": {
+   "name": "Antigen activates B Cell Receptor (BCR) leading to generation of second messengers",
+   "parents": [
+    "R-HSA-983705"
+   ],
+   "genes": 110,
+   "source": "reactome"
+  },
+  "R-HSA-983705": {
+   "name": "Signaling by the B Cell Receptor (BCR)",
+   "parents": [
+    "R-HSA-1280218"
+   ],
+   "genes": 177,
+   "source": "reactome"
+  }
+ },
+ "overlaps": [
+  [
+   "R-HSA-983695",
+   "R-HSA-9759194",
+   0.5
+  ]
+ ]
+}

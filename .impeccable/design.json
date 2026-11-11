@@ -1,0 +1,696 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T23:00:00Z",
+  "title": "Design System: Trial Radar",
+  "extensions": {
+    "colorMeta": {
+      "rubric-red": {
+        "role": "primary",
+        "displayName": "Rubric Red",
+        "canonical": "#c8102e"
+      },
+      "slide-orange": {
+        "role": "primary",
+        "displayName": "Slide Orange (dark-mode --red)",
+        "canonical": "#ff8a3d"
+      },
+      "plate": {
+        "role": "neutral",
+        "displayName": "Plate White",
+        "canonical": "#ffffff"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111111"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#5b6268"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d6dadd"
+      },
+      "pale": {
+        "role": "neutral",
+        "displayName": "Pale",
+        "canonical": "#e4e8eb"
+      },
+      "slate": {
+        "role": "secondary",
+        "displayName": "Phase 3 Slate",
+        "canonical": "#3b4a57"
+      },
+      "dark-plate": {
+        "role": "neutral",
+        "displayName": "Slide Ground",
+        "canonical": "#17191c"
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Slide Ink",
+        "canonical": "#eceae4"
+      },
+      "outcome-stopped": {
+        "role": "secondary",
+        "displayName": "Stopped (outcome)",
+        "canonical": "#222222"
+      },
+      "outcome-completed": {
+        "role": "secondary",
+        "displayName": "Completed, outcome unknown (pale ground)",
+        "canonical": "#c9d1d8"
+      },
+      "outcome-running": {
+        "role": "secondary",
+        "displayName": "Still running (navy)",
+        "canonical": "#3c5488"
+      },
+      "dark-outcome-completed": {
+        "role": "secondary",
+        "displayName": "Dark completed, outcome unknown",
+        "canonical": "#50575f"
+      },
+      "dark-outcome-running": {
+        "role": "secondary",
+        "displayName": "Dark still running",
+        "canonical": "#8da3d6"
+      },
+      "disease-ms": {
+        "role": "secondary",
+        "displayName": "Disease: Multiple sclerosis",
+        "canonical": "#3c5488"
+      },
+      "disease-nmosd": {
+        "role": "secondary",
+        "displayName": "Disease: NMOSD",
+        "canonical": "#00a087"
+      },
+      "disease-mogad": {
+        "role": "secondary",
+        "displayName": "Disease: MOGAD",
+        "canonical": "#8e5ea2"
+      },
+      "disease-mg": {
+        "role": "secondary",
+        "displayName": "Disease: Myasthenia gravis",
+        "canonical": "#4dbbd5"
+      },
+      "disease-cidp": {
+        "role": "secondary",
+        "displayName": "Disease: CIDP",
+        "canonical": "#e0a030"
+      },
+      "disease-ae": {
+        "role": "secondary",
+        "displayName": "Disease: Autoimmune encephalitis",
+        "canonical": "#7e6148"
+      },
+      "dark-disease-ms": {
+        "role": "secondary",
+        "displayName": "Dark disease: Multiple sclerosis",
+        "canonical": "#8da3d6"
+      },
+      "dark-disease-nmosd": {
+        "role": "secondary",
+        "displayName": "Dark disease: NMOSD",
+        "canonical": "#3cc7a8"
+      },
+      "dark-disease-mogad": {
+        "role": "secondary",
+        "displayName": "Dark disease: MOGAD",
+        "canonical": "#cf8fd6"
+      },
+      "dark-disease-mg": {
+        "role": "secondary",
+        "displayName": "Dark disease: Myasthenia gravis",
+        "canonical": "#7fd3e6"
+      },
+      "dark-disease-cidp": {
+        "role": "secondary",
+        "displayName": "Dark disease: CIDP",
+        "canonical": "#f0c060"
+      },
+      "dark-disease-ae": {
+        "role": "secondary",
+        "displayName": "Dark disease: Autoimmune encephalitis",
+        "canonical": "#b8977a"
+      },
+      "category-other": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: other class (slate fill)",
+        "canonical": "#8796a3"
+      },
+      "dark-category-other": {
+        "role": "secondary",
+        "displayName": "Dark mechanism/modality: other class",
+        "canonical": "#6c7f93"
+      },
+      "category-multiple": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: more than one (hollow 1px ink ring)",
+        "canonical": "#111111"
+      },
+      "dark-category-multiple": {
+        "role": "secondary",
+        "displayName": "Dark more than one (hollow ring)",
+        "canonical": "#eceae4"
+      },
+      "category-none": {
+        "role": "secondary",
+        "displayName": "Mechanism/modality: none known (the cloud's pale ground)",
+        "canonical": "#c9d1d8"
+      },
+      "dark-category-none": {
+        "role": "secondary",
+        "displayName": "Dark none known",
+        "canonical": "#50575f"
+      },
+      "outcome-unknown": {
+        "role": "neutral",
+        "displayName": "Status unknown (--unk)",
+        "canonical": "#aab3bb"
+      },
+      "dark-outcome-unknown": {
+        "role": "neutral",
+        "displayName": "Status unknown, dark (--unk)",
+        "canonical": "#6a7178"
+      },
+      "family-band": {
+        "role": "neutral",
+        "displayName": "Family band ink (--fam)",
+        "canonical": "#62758a"
+      },
+      "dark-family-band": {
+        "role": "neutral",
+        "displayName": "Family band ink, dark (--fam)",
+        "canonical": "#7a8ea5"
+      },
+      "ladder": {
+        "role": "neutral",
+        "displayName": "Ladder",
+        "canonical": "#e4e8eb"
+      },
+      "dark-ladder": {
+        "role": "neutral",
+        "displayName": "Ladder (dark)",
+        "canonical": "#3d4147"
+      }
+    },
+    "typographyMeta": {
+      "scale-meta": {
+        "displayName": "Meta (--fs-meta)",
+        "purpose": "12/1.45: captions, notes, sub-lines, column heads, the freshness note, the diligence strip's label. The floor for text."
+      },
+      "scale-ui": {
+        "displayName": "UI (--fs-ui)",
+        "purpose": "13/1.4: controls and pills, table cells, panel headings (700), the contents strip, the diligence strip, company names."
+      },
+      "scale-body": {
+        "displayName": "Body (--fs-body)",
+        "purpose": "14/1.5: panel prose, stop reasons, memo text, trial-page facts."
+      },
+      "scale-reading": {
+        "displayName": "Reading (--fs-read)",
+        "purpose": "15/1.6: Methods prose, PageHead sentences, the target lede on a phone."
+      },
+      "scale-lede": {
+        "displayName": "Lede (--fs-lede)",
+        "purpose": "19/1.35: the target-page lede (desktop), Methods h2."
+      },
+      "display-front": {
+        "displayName": "Display: front door",
+        "purpose": "Front-door headline 30px/500, 1.15, -0.018em, max 42ch (24px on a phone)."
+      },
+      "display-target": {
+        "displayName": "Display: target title",
+        "purpose": "Target-page title 40px/600, line-height 1, -0.03em (34px on a phone)."
+      },
+      "display-page": {
+        "displayName": "Display: page head",
+        "purpose": "Shared PageHead title 34px/600, 1.1, -0.02em (28px on a phone): Watchlist, Changes, Trials, Methods."
+      },
+      "display-trial": {
+        "displayName": "Display: trial title",
+        "purpose": "Trial-page title 28px/600, 1.15, balanced wrap."
+      },
+      "plate-title": {
+        "displayName": "Plate title",
+        "purpose": "Figure 1 | claim; bold lead, regular rest."
+      },
+      "panel-letter": {
+        "displayName": "Panel letter",
+        "purpose": "Lowercase a-d."
+      },
+      "panel-heading": {
+        "displayName": "Panel heading",
+        "purpose": "Panel titles."
+      },
+      "claim": {
+        "displayName": "Claim",
+        "purpose": "Panel b's one-sentence answer."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Legend, bars, panel d."
+      },
+      "note": {
+        "displayName": "Note",
+        "purpose": "Muted captions."
+      },
+      "pill": {
+        "displayName": "Pill",
+        "purpose": "Control text, 13px (the UI step)."
+      },
+      "canvas-label": {
+        "displayName": "Canvas label",
+        "purpose": "Cluster labels on the plate: 600 11.5px ink on a 2px plate halo; a 'MS · ' disease prefix in 400 muted."
+      },
+      "canvas-numeral": {
+        "displayName": "Canvas numeral",
+        "purpose": "Phone (<=640px): 800 11px ink numerals on a 3px plate halo, keyed under the canvas: 1-6 at Explore's cluster anchors, 1-n beside Figure 2's top-level pathways. One of the allowed 11px exceptions to the 12px floor."
+      },
+      "header-note": {
+        "displayName": "Header note",
+        "purpose": "Freshness: 12px muted; when stale 'Data may be stale.' in ink 700 then 'registry as of 6 Nov 2026'."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "turn",
+        "value": "starts still; Play turns 0.0022 rad/frame, tilt 0.32, until Pause; pauses on hover; no turn and no Play control under prefers-reduced-motion: reduce",
+        "purpose": "Opt-in slow cloud rotation."
+      },
+      {
+        "name": "chevron",
+        "value": "rotate 180deg, 160ms cubic-bezier(0.16,1,0.3,1) (no-preference only)",
+        "purpose": "Dropdown open state."
+      },
+      {
+        "name": "plate-pulse",
+        "value": "1.6s cubic-bezier(0.16,1,0.3,1) infinite alternate, opacity 1 to 0.55 (no-preference only)",
+        "purpose": "Skeleton loading."
+      },
+      {
+        "name": "zoom",
+        "value": "wheel / pinch / + - 0 on the focused canvas, 1x to 8x about the pointer; screen-space after projection (dots keep their size); zoomed, drag pans and Shift-drag turns; not persisted; unaffected by reduced motion",
+        "purpose": "Separate dense clusters."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "900px"
+      },
+      {
+        "name": "phone",
+        "value": "640px"
+      },
+      {
+        "name": "wide",
+        "value": "1100px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Segmented pill (Colour)",
+      "kind": "chip",
+      "refersTo": "pill-segmented-on",
+      "description": "Single-select; solid ink when pressed. Colour: Outcome | Phase | Disease | Mechanism | Modality | Approach (six parts; a three-by-two block on a phone). Panel b's Group by (By disease | By modality | By mechanism | By approach) uses the same pill.",
+      "html": "<button class=\"ds-pill\" aria-pressed=\"true\">Outcome</button> <button class=\"ds-pill\" aria-pressed=\"false\">Phase</button> <button class=\"ds-pill\" aria-pressed=\"false\">Mechanism</button>",
+      "css": ".ds-pill{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-pill:hover{border-color:var(--ink,#111)}.ds-pill[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-pill:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Find input",
+      "kind": "input",
+      "refersTo": "find-input",
+      "description": "Pill-shaped search in the toolbar with a drawn hairline magnifier.",
+      "html": "<input class=\"ds-find\" type=\"search\" placeholder=\"NCT, drug or sponsor\">",
+      "css": ".ds-find{font:inherit;font-size:12.5px;line-height:18px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 12px 4px 28px;width:12.5rem}.ds-find:hover{border-color:var(--ink,#111)}.ds-find:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Panel bar",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Panel b bar with average tick. Rows share one column set (subgrid) so tracks align. A group under min_group (10 finished) shows no percentage ('—'): an outline bar (plate fill, 1px ink border), its counts and 11px muted 'too few to tell' under the count. Modality rows use the shown casing; ';'-joined modalities are split at data load.",
+      "html": "<div class=\"ds-bar\"><span>Antibody</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:24%\"></i><i class=\"ds-avg\" style=\"left:13%\"></i></div></div><div class=\"ds-bar ds-few\"><span>Other</span><div class=\"ds-track\"><i class=\"ds-fill\" style=\"width:17%\"></i><i class=\"ds-avg\" style=\"left:13%\"></i></div></div>",
+      "css": ".ds-bar{display:grid;grid-template-columns:8rem 1fr;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-track{position:relative;height:12px;background:var(--pale,#e4e8eb)}.ds-fill{position:absolute;inset:0 auto 0 0;background:var(--ink,#111)}.ds-avg{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink,#111);box-shadow:0 0 0 1px var(--plate,#fff)} .ds-few .ds-fill{background:var(--plate,#fff);border:1px solid var(--ink,#111)}"
+    },
+    {
+      "name": "Dropdown (filter)",
+      "kind": "chip",
+      "refersTo": "dropdown-rest",
+      "description": "Toolbar filter (Disease, Phase, Outcome, Treatment, Mechanism, Modality, Years). At rest it shows only its name ('Mechanism' plus chevron) on a hairline border; the value stays in the accessible name ('Mechanism: all'). Once it narrows: ink border and ': value' with the value in 700. Opens a flat plate inset with an ink top edge; a 44dvh bottom sheet with a 1px ink top rule on phones, scrolling the map into view above it. Disease and Mechanism get a filter field: a hairline pill with one 2px ink outline at 2px offset on :focus-visible only.",
+      "html": "<button class=\"ds-dd\" data-narrowed=\"false\">Phase</button> <button class=\"ds-dd\" data-narrowed=\"true\">Disease: <span class=\"ds-v\">2 of 6</span></button>",
+      "css": ".ds-dd{font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--rule,#d6dadd);border-radius:999px;padding:4px 10px;cursor:pointer;font-variant-numeric:tabular-nums}.ds-dd[data-narrowed=true]{border-color:var(--ink,#111)}.ds-dd[data-narrowed=true] .ds-v{color:var(--ink,#111);font-weight:700}.ds-dd:hover{border-color:var(--ink,#111)}.ds-dd:focus-visible{outline:2px solid var(--ink,#111);outline-offset:2px}"
+    },
+    {
+      "name": "Years range",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "From/To pill fields over a hairline track; the span is a 2px ink bar between square-ended plate handles with ink borders.",
+      "html": "<div class=\"ds-yr\"><i class=\"ds-yr-bar\" style=\"left:20%;right:10%\"></i></div>",
+      "css": ".ds-yr{position:relative;height:18px;width:15rem}.ds-yr::before{content:'';position:absolute;left:5px;right:5px;top:50%;height:1px;background:var(--rule,#d6dadd)}.ds-yr-bar{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--ink,#111)}"
+    },
+    {
+      "name": "Narrowing pill",
+      "kind": "chip",
+      "refersTo": "pill-narrowing-on",
+      "description": "Results posted: off is show-all (ink text, muted border, never struck through); on is solid ink. Tabular count. Side by side it sits on the toolbar's first line, just before the count.",
+      "html": "<button class=\"ds-np\" aria-pressed=\"false\">Results posted <span class=\"ds-n\">602</span></button> <button class=\"ds-np\" aria-pressed=\"true\">Results posted <span class=\"ds-n\">602</span></button>",
+      "css": ".ds-np{display:inline-flex;gap:7px;font:inherit;font-size:12.5px;color:var(--ink,#111);background:var(--plate,#fff);border:1px solid var(--muted,#5b6268);border-radius:999px;padding:4px 10px;cursor:pointer}.ds-np .ds-n{color:var(--muted,#5b6268);font-variant-numeric:tabular-nums}.ds-np[aria-pressed=true]{background:var(--ink,#111);color:var(--plate,#fff);border-color:var(--ink,#111)}.ds-np[aria-pressed=true] .ds-n{color:var(--plate,#fff)}"
+    },
+    {
+      "name": "Hover card",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Mouse/pen only. Two lines on a flat plate with a 1px ink border, max 18rem, centred above the dot (below only at the top edge), with a 1px ink leader to the dot's ring.",
+      "html": "<div class=\"ds-hc\"><p><b>NCT00000001</b> · Trial title</p><p class=\"ds-f\">drug · Drug · Phase 3 · 2014–2019</p></div>",
+      "css": ".ds-hc{max-width:18rem;padding:7px 10px 8px;background:var(--plate,#fff);border:1px solid var(--ink,#111);font-size:12px;line-height:1.4;color:var(--ink,#111)}.ds-hc p{margin:0}.ds-hc b{font-weight:800}.ds-f{color:var(--muted,#5b6268);margin-top:3px!important}"
+    },
+    {
+      "name": "Theme switch",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Header text control cycling System, Light, Dark; 9px key circle empty/solid/half. At 1279px and below the word 'Theme' is dropped (glyph and choice stay) so the header keeps to one line.",
+      "html": "<button class=\"ds-th\"><span class=\"ds-k\"></span><span class=\"ds-tk\">Theme</span> Light</button>",
+      "css": ".ds-th{display:inline-flex;align-items:center;gap:.45rem;font:inherit;background:none;border:0;color:var(--ink,#111);cursor:pointer}.ds-k{width:9px;height:9px;border:1px solid currentColor;border-radius:50%}.ds-tk{color:var(--muted,#5b6268)}"
+    },
+    {
+      "name": "Play / pause",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Quiet text plus a drawn 10px glyph (1.5px ink stroke) in panel a's corner; absent under reduced motion.",
+      "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M2.5 1.25 8.5 5l-6 3.75z\"/></svg>Play</button>",
+      "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
+    },
+    {
+      "name": "Reset view",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Shown only while the map is zoomed, beside Play, in the same quiet style: text plus a drawn 10px four-corner frame glyph (1.5px ink stroke). Never red.",
+      "html": "<button class=\"ds-pp\"><svg viewBox=\"0 0 10 10\" width=\"10\" height=\"10\"><path d=\"M1 3.5V1h2.5M6.5 1H9v2.5M9 6.5V9H6.5M3.5 9H1V6.5\"/></svg>Reset view</button>",
+      "css": ".ds-pp{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:500;background:none;border:1px solid transparent;border-radius:999px;padding:5px 8px;color:var(--ink,#111);cursor:pointer}.ds-pp svg{fill:none;stroke:var(--ink,#111);stroke-width:1.5}.ds-pp:hover{border-color:var(--rule,#d6dadd)}"
+    },
+    {
+      "name": "Freshness note",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "One quiet 12px header note, never a tinted pill. Stale: 'Data may be stale.' in ink 700, then 'registry as of 6 Nov 2026' muted; full timestamps in the title. No amber, no red.",
+      "html": "<span class=\"ds-fresh\"><b>Data may be stale.</b> registry as of 6 Nov 2026</span>",
+      "css": ".ds-fresh{font-size:12px;line-height:1.45;color:var(--muted,#5b6268)}.ds-fresh b{color:var(--ink,#111);font-weight:700}"
+    },
+    {
+      "name": "Cluster label",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Canvas label beside its anchor: 8 positions tried at up to 48px leaders, kept off dots, other labels, leaders and the control band; a label with no fit becomes a margin callout outside the cloud. Disease prefix 400 muted, mechanism or type part 600 ink, 2px plate halo, 1px ink leader.",
+      "html": "<span class=\"ds-cl\"><span class=\"ds-cl-p\">MS · </span>anti-CD20 (ocrelizumab)</span>",
+      "css": ".ds-cl{font-size:11.5px;font-weight:600;color:var(--ink,#111)}.ds-cl-p{font-weight:400;color:var(--muted,#5b6268)}"
+    },
+    {
+      "name": "Cluster key (phone)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "At 640px and below the map carries numerals 1-6 at cluster anchors (11px/800, plate halo) and this numbered 12px key sits under the canvas, journal figure-key style.",
+      "html": "<ol class=\"ds-ck\"><li><b>1</b><span><span class=\"ds-cl-p\">MS · </span>anti-CD20 (ocrelizumab)</span></li></ol>",
+      "css": ".ds-ck{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px;font-size:12px;line-height:1.4;color:var(--ink,#111)}.ds-ck li{display:flex;gap:6px}.ds-ck b{font-weight:800;font-variant-numeric:tabular-nums}.ds-cl-p{color:var(--muted,#5b6268)}"
+    },
+    {
+      "name": "Approach rail",
+      "kind": "list",
+      "refersTo": "",
+      "description": "Panel a of Figure 2: all seven approaches in vocabulary order, never hidden (0 when filtered out). Label and tabular count, then a 5.5rem x 4px pale track with an ink fill at the 1b success share and '17% succeeded' in 11px muted; 'too few to tell' under min_group; Non-drug care a dash and 'success not defined'. Selected row: 2px ink left rule and 700 label, never a filled pill. At 900px and below it becomes one horizontally scrolling row of chips; the selected chip is solid ink.",
+      "html": "<ul class=\"ds-rail\"><li><button aria-pressed=\"true\"><span>Cell &amp; transplant</span><span class=\"n\">68</span><span class=\"s\"><span class=\"t\"><i style=\"width:3%\"></i></span>3% succeeded</span></button></li><li><button aria-pressed=\"false\"><span>Non-drug care</span><span class=\"n\">1,062</span><span class=\"s\">— success not defined</span></button></li></ul>",
+      "css": ".ds-rail{list-style:none;margin:0;padding:0;font-size:13px;color:var(--ink,#111)}.ds-rail button{all:unset;display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:6px 0 6px 14px;border-left:2px solid transparent;width:100%;cursor:pointer}.ds-rail button[aria-pressed=true]{border-left-color:var(--ink,#111);font-weight:700}.ds-rail .n{font-variant-numeric:tabular-nums}.ds-rail .s{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:11px;font-weight:400;color:var(--muted,#5b6268)}.ds-rail .t{width:5.5rem;height:4px;background:var(--pale,#e3e7ea)}.ds-rail .t i{display:block;height:100%;background:var(--ink,#111)}"
+    },
+    {
+      "name": "Kind row and outcome strip",
+      "kind": "list",
+      "refersTo": "",
+      "description": "A tree row: label, a dotted muted leader, 'N trials' (tabular), a 6px square-ended strip whose length is the kind against the largest kind, split succeeded (red, the only red), stopped (ink), completed (pale), running (navy), unknown (hairline outline); then the share or 'too few to tell'. A 'proposed' rationale line with a quiet source link sits under a group heading or a row. Groups over 20 rows end in a 'Show N more, M trials' text button. The tree keeps a 46rem measure so the share sits by its strip.",
+      "html": "<div class=\"ds-kr\"><span>mesenchymal stem cells</span><span class=\"l\"></span><span class=\"n\">35 trials</span><span class=\"st\"><i style=\"flex:5;background:#111\"></i><i style=\"flex:19;background:#c9d1d8\"></i><i style=\"flex:8;background:#3c5488\"></i><i style=\"flex:3;border:1px solid #c9d1d8\"></i></span><span>0%</span></div>",
+      "css": ".ds-kr{display:grid;grid-template-columns:auto 1fr auto 12rem 6rem;gap:8px;align-items:center;font-size:13px;color:var(--ink,#111)}.ds-kr .l{border-bottom:1px dotted var(--muted,#5b6268);height:0;align-self:center}.ds-kr .n{font-variant-numeric:tabular-nums}.ds-kr .st{display:flex;height:6px;width:60%}.ds-kr .st i{display:block}"
+    },
+    {
+      "name": "Side panel c",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Behind a hairline left rule, sticky: 'c label' with a Close word, 'Approach > Group' muted, counts by outcome and the pool sentence, the rationale, 'Show these trials on the map', then trials between hairlines. Takes focus on open; Escape or Close returns focus. At 900px and below a bottom sheet (max 60dvh, ink top rule).",
+      "html": "<aside class=\"ds-sp\"><h2><b>c</b> mesenchymal stem cells</h2><p class=\"m\">Cell &amp; transplant › Mesenchymal cells</p></aside>",
+      "css": ".ds-sp{border-left:1px solid var(--rule,#d9dde0);padding-left:24px;font-size:13px;color:var(--ink,#111)}.ds-sp h2{font-size:13px;font-weight:700;margin:0}.ds-sp h2 b{font-size:22px;font-weight:800;margin-right:8px}.ds-sp .m{color:var(--muted,#5b6268);margin:4px 0}"
+    },
+    {
+      "name": "Mechanism graph",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Targeted drugs' canvas: circle drug, square target, diamond Reactome pathway (inner diamond GO, dashed curated); size by trials, fill from the pale ground to the success red by pool share, hollow under min_group; hairline edges. Above it the Find pill on a right-aligned line of its own, then the key on one line over the frame. At rest reduced ink with top-level pathways labelled (on a phone, ink numerals 1 to n clear of other marks, named in a numbered key under the canvas); hover lights one hop, click focuses the chain and opens panel c; everything else fades to 0.14. Filters light up rather than hide. 'Where successes converge' lists up to five sub-top-level pathways under it. The graph is capped at 300 nodes: a muted caption under it gives the cut, and Find lists the left-out drugs as 'not drawn' with a note saying why and a link to their trials on the map.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Pipeline figure",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Front page (/). Lede: a 12px/700 uppercase kicker on its own line (hidden on a phone), a computed headline (500, 30px/1.15, max 42ch, two lines at 1280; 24px on a phone) with its first sentence in --run, and two key numbers (30px/500: advanced in red, companies with a running trial; one inline line on a phone). No running key: the headline says it. One 12px source line ('693 of 2,987 trials test a targeted drug in these 28 classes. Registered trials only. How rows are built →'), the full caveat opening the footer, and under it the diligence line (see Front-door diligence line); on a phone both lines follow the figure. Controls: By phase | By disease | By year segmented pill (solid ink), a quieter disease pill (pale tint, 2px ink underline), a company-lens combobox that becomes an ink chip, Sort select; from 1100px the legend (.p-legend, five marks) sits at the right of the Sort line. Grid: 200px label, phase or disease columns (By disease weighted by sqrt of mark count, 0.7 to 2.2fr), 116px Running stat, 210px margin note; column heads 12px/700. Family bands in 11px/700 uppercase --fam (an allowed 11px exception); the Mostly historical dashed divider with rows at 62%; up to four computed margin notes with a red leader and 12px kicker (Spreading, Most crowded, Newest wave, Most advanced, Most stopped). Whole row links to its target page. Company lens fades other rows to 45% (desktop) or hides them behind a 'Show n other rows' toggle (phone). Phone: sticky column header and per-row strips with 6px marks. By disease only: a cell with an approved, not-withdrawn drug carries the floor rule (see Floor rule).",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Pipeline mark",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "One dot per trial, 8px (6px on a phone strip): advanced solid red (orange in dark), running hollow 1.6px --run ring, stopped solid --stop, finished solid --fin, unknown dashed 1.2px --unk ring; a two-phase trial has a 5px muted tail to its left. Lens hit: 1.5px ink outline, others 13% opacity.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial card",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Popover (330px, 1px ink border, 10px corners) beside a mark, or a bottom sheet on a phone: NCT, title, facts (Drug, Sponsor, Phase, Dates, State), the registry's stop reason as a quotation with a 2px ink rule, actions Open trial page, Show on map, ClinicalTrials.gov. Focus on open, Escape closes, the disease rides along on links.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Target page",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "/target/:slug. Breadcrumb, then the head: 40px/600 class name (34px phone) with gene and family; from 1100px the disease chips at the right of the title row (below that one sideways-scrolling line under the head); one computed 19px lede that is the only place the running/advanced/stopped counts appear (no key numbers); the diligence strip (see Diligence strip); the contents strip (see Contents strip). Then lettered sections: a timeline by drug (stroke weight = phase, running to the data-as-of rule then dashed, advanced ends in a red dot, stopped in a tick, a list fallback), b companies by parent (marks as buttons), c what stopped and why (full reason pills on a hairline border and quoted registry text), d how it works (drug, gene, pathway, top-level pathway chain, hand-off to the mechanism graph), e by disease, f stop chance (8 rows then 'Show all'), g diligence (AI agent).",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Floor rule",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "By disease cells only (never By phase or By year): a 2px --ink rule along the bottom edge of a cell where a drug on the target is approved for the disease by any regulator and at least one such drug is not withdrawn. Inset 6px (3px on a phone strip); also drawn on an empty cell, above its pale dot. The tooltip title sits on the rule ('Approved for {disease}: {drugs}.') and the same text is visually hidden for assistive tech. The company lens never dims it. Key item: a short ink rule, 'a drug on this target is approved for this disease'.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Panel e: by disease",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Target page, after panel d: '{Row} by disease'. One line per disease with a trial or an approval, in figure order: disease, trial count and '{k} running' in --run, a four-step phase ladder (Phase 1, 2, 3, Approved use; furthest in ink, earlier in the family ink, later pale, counts beneath), then approved drugs (name linking to its source, source in muted small text, withdrawn last with a muted tag) under the same floor rule, or a muted 'None approved'. No success rate by design. Phone (<= 640px): one block per disease (name and counts, ladder, drugs). Without approval data: 'Approval data not available' in the header and the ladder only.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Site nav",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Pipeline, Watchlist, Approaches, Changes, Trials, Methods (no Explore entry; /explore is linked only from Methods). On a phone a 36px menu button opens a full-width sheet with the same entries and the freshness note.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Risk scale",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Hairline 0-60% track; ring = estimate; pale band = range, with an open-end arrowhead when it runs past 60%; short ink tick = typical rate; the ring becomes a right-pointing arrowhead when the estimate is above 60%. Always also written as a number.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Target panel f (stop risk)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Sixth lettered section on a target page (f, after By disease): a computed claim line counting every scored running trial, then the 8 highest estimates and a text button 'Show all N running trials' (focus moves to the first new row; print shows all), each row with the scale, the estimate against typical in words, and up to three factors (a bare-text disclosure on a phone). Respects the disease chip; target summary only when per_trial is off.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Watchlist (/watchlist)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead 'Watchlist' with one computed sentence ('237 running drug trials, ranked by estimated chance of stopping early; 79 sit above their phase's typical rate.'), then the toolbar of Disease, Company and Target multi-selects plus a sort (estimate or difference from typical), the standing note directly under the filters (12px, full contrast), and a table of scored running trials with the scale. 50 rows and a 'Show N more' button; filters and sort in the URL; factors as a phone disclosure.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial-page estimate block",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Under the trial page's facts: 'Estimated chance of stopping early: N% (range), typical M% for phase X', the scale with its axis, the factors and the standing note. Nothing when the trial is not scored or per_trial is off.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Methods calibration figure",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "SVG of estimated chance against observed share stopped, one ink point per tenth of the held-out trials, hairline axes and a dashed diagonal for a perfect match, beside a metrics table; in-area metric shown as 'too few to judge' under 300 trials.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Page head",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead.tsx / page-head.css: one head for Watchlist, Approaches, Changes, Trials, the trial page and Methods. Optional crumb (12px muted), h1 34px/600 (28px phone), at most one computed 15px sentence (max 72ch), an optional aside at the right of the title row from 1100px. 24px under the site header, on .page's 40px (16px phone) gutters. Front door and target pages build their own heads to the same rules.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Contents strip",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "ContentsStrip.tsx / contents-strip.css. Row orientation on target pages: a sticky <nav aria-label='Panels on this page'> under the head, one plain-text link per rendered panel ('a Timeline · b Companies 8 · c Stops 7 · d Mechanism · e Diseases 6 · f Stop chance 10 above · g Diligence not run'; letter 800, name 500, number 400 muted, 13px), current panel aria-current='location' with a 2px ink underline, hairline below, never pills. Click/Enter scrolls (smooth only without reduced motion), focuses the panel heading and sets ?panel= (replace); ?panel= deep links scroll without moving focus and are dropped when the panel does not render. Phone: letter and name only, one sideways-scrolling line, 44px items. Column orientation on Methods: <nav aria-label='On this page'>, a 16rem sticky list on a hairline from 1100px (current = 2px ink left rule), a wrapped block at the top below that, ?s= param. Hidden in print.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Diligence strip",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "DiligenceStrip.tsx: one 13px muted line in the target head, under the lede, sharing panel g's run state. States: intro (what the agent does + 'Run diligence →', or ' Offline at the moment.' + 'How it works →'), running ('AI diligence running · 12 s' + 'Follow it →'), read ('AI read: {stance} · {confidence} confidence · {n} of {m} claims supported · Recorded {date}', withheld judgement never shows a stance, tails for stale data, a failed latest run or the daily cap + 'Read the memo →'), failed ('Run again →'), capped, hidden (no trials in the disease), loading (a pale bar at the final height). Fixed label 'AI judgement from public data, not investment advice' (12px/700 ink) whenever a stance or memo shows: on its own line below 1100px, inline after the action from 1100px. Phone copy: 'AI diligence: a cited memo from public sources, checked claim by claim.' Reserved height 20px (>=1100px), 42px (641-1099px), 62px (phone). Plate tokens only, never red or orange.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Front-door diligence line",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Closed or pending only: under the front-door source line, 12px muted: 'An AI agent drafts a checked diligence memo on each target page.' then 'See an example: CD20 in MS →' (to /target/cd20?disease=MS&panel=g) once the recorded example run ships, else 'How it works →' to /methods#diligence. On a phone it follows the figure with the source line. Once the agent is open the Front-door diligence band replaces it; pending shows neither.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Front-door diligence band",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "DiligenceBand.tsx / diligence-band.css. Recorded or live state only: a named region between the lede and the figure, hairline above and below, no fill, no new colour. 'AI diligence' 13px/700, one 14px sentence, a PairPicker (native selects at 16px, recorded pairs only) with 'Open memo →' as an ink-outlined pill (the figure keeps the only filled control above the fold) and 'Read how it works →' to /diligence, then the 12px label 'AI judgement from public data, not investment advice'. Under 768px no picker: name, sentence, one link ('Open a recorded memo →'; live 'Choose a target →') to /diligence, and the label. Never starts a run. Cost to the first figure row: +104px at 1280, +140px at 375.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Diligence page",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "/diligence, DiligencePage.tsx: PageHead 'AI diligence' with the fixed label as its aside; How it works (three numbered steps); Recorded memos (hairline table: target, disease, AI read as stance and confidence or 'withheld', claims 'n of m', removed, recorded date, 'Open memo →'; two lines per row on a phone); How well it does (evaluation figures, any the report lacks left out); in the live state 'Any target' with the picker. Second in the nav when open; closed redirects to /methods?s=diligence. On target pages diligence is panel a when open, g when closed (panelLetters).",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Changes (/changes)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead with '{n} changes to tracked trials in the last 7 days; {k} notable.' One filter line: time window segmented pill (1 / 7 / 30 days, selected solid ink), Sponsor and Field dropdown pills with counts, 'Notable only' narrowing pill. Hairline table (13px, tabular; head 12px muted over an ink rule): trial, field, change (old struck through in muted, new in ink, 'slipped N days' in 700), why notable, source. Phone: two lines per row, no cards.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trials (/trials)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead with '2,987 tracked trials, most recently changed first.' Find pill and a Status dropdown pill with counts; 'Showing 50 of 2,987 trials', 50 rows, 'Show 50 more, N trials'. Columns: trial (NCT 700, title, sponsor muted), status mark and word, phase, primary completion, last change. Phone: two lines per trial. The ?nct= banner keeps its behaviour.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Trial page (/trial/:nct)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead: crumb 'Trials / NCT…', title 28px/600, one 13px muted line 'NCT… · View on ClinicalTrials.gov ↗'. Facts as a two-column list from 900px (muted sentence-case terms, 14px values; Status with the plate mark). Then the estimate block and plainly headed sections (13px/700 over an ink rule): Summary, Timeline, Change history.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Methods (/methods)",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "PageHead 'Methods' with one sentence. From 1100px a sticky contents column (see Contents strip) beside the prose; below, the contents as a block on top. Prose 15px/1.6 at a 29.4rem measure (lines at most 75 characters); h2 19px/700 over an ink rule, h3 15px/700. Stop-risk and diligence sections keep their figures and tables.",
+      "html": "",
+      "css": ""
+    },
+    {
+      "name": "Registry words and dates",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "lib/format.ts: statusLabel (Recruiting; Active, not recruiting; Completed; Terminated; Withdrawn; Unknown), phasesLabel (Phase 1, Phase 1/2, … 'No phase' for NA), one date format '6 Nov 2026' (month and year without a day), status shown with the plate mark beside the word. Used by Changes, Trials, the trial page and Methods.",
+      "html": "",
+      "css": ""
+    }
+  ],
+  "narrative": {
+    "northStar": "The Figure Plate",
+    "overview": "Every route is a figure of a paper on one flat white plate: hairline rules, bold lowercase panel letters, Hanken Grotesk only on a six-step type scale (12/13/14/15/19 plus display sizes; 12px floor), one token set on :root in plate.css, and one red reserved for success ('advanced' on the front door). The front door is a pipeline figure whose rows open target pages (lettered panels a-g under a sticky contents strip, with an AI diligence strip in the head); Approaches is Figure 2 (rail, graph or tree, side panel); Watchlist, Changes, Trials, the trial page and Methods share one page head and the plate's pills, dropdowns and hairline tables. Dark mode (a manual System/Light/Dark choice in the header) is a Dark slide with orange in red's place. Explore keeps its own styles on the shared tokens.",
+    "keyCharacteristics": [
+      "White plate, near-black ink, hairline rules; flat",
+      "Red means succeeded and nothing else",
+      "Bold lowercase panel letters a-d",
+      "Pills for all controls, in a two-line toolbar above the plate",
+      "Canvas starts still; Play turns it slowly",
+      "Approaches without a molecular target are a tree, never a graph",
+      "Filters light the graph up instead of hiding it",
+      "Target pages: every panel on one scroll, found from a sticky contents strip"
+    ],
+    "rules": [
+      {
+        "name": "The Only-Succeeded Rule",
+        "body": "Red is used only for succeeded data. Never for focus rings, ticks, links, selection, errors or category colours.",
+        "section": "colors"
+      },
+      {
+        "name": "The Shape-Not-Shade Rule",
+        "body": "Greys are told apart by shape, not shade: unknown outcome is a hollow 1px ring; in Mechanism and Modality modes 'more than one' is a hollow 1px ink ring, 'other' a slate fill and 'none known' the cloud's pale ground. Keys show ring swatches for rings.",
+        "section": "colors"
+      },
+      {
+        "name": "The Lowercase Letter Rule",
+        "body": "Panels are labelled with bold lowercase letters only.",
+        "section": "typography"
+      },
+      {
+        "name": "The Emphasis Pass",
+        "body": "Marks that carry the reading are redrawn on top, opaque, radius at least 3px, with a 1px plate knockout: succeeded (Outcome), every condition but the largest (Disease), and hued series classes (Mechanism, Modality). Phase has none.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Advanced Rule",
+        "body": "On the front door 'advanced' always means the drug has a later-phase trial on the registry, never that it worked; running trials are never drawn as failures; every sentence is computed from the data."
+      }
+    ],
+    "dos": [
+      "Do letter panels with bold lowercase a, b, c, d at 22px/800.",
+      "Do separate regions with 1px rules: ink above panel d, hairline under the toolbar and elsewhere.",
+      "Do keep controls as pills: solid ink when chosen or narrowing; a dropdown at rest shows only its name on a hairline; ink border and ': value' in 700 once it narrows.",
+      "Do size dots by capped square-root enrollment and encode unknown by ring shape.",
+      "Do honour both schemes via tokens.",
+      "Do keep text at 12px or larger (11px only for family bands, scale axis labels and canvas numerals) and open every page with one head: title, at most one computed sentence, 24px under the site header."
+    ],
+    "donts": [
+      "Don't use red (or dark-mode orange) for anything but succeeded data.",
+      "Don't add shadows, glows, gradients or card chrome to panels.",
+      "Don't reorder the layout into filters-left / canvas-centre / details-right.",
+      "Don't read 'advanced' as 'worked', fade running trials, or hand-write a headline or margin note on the front door.",
+      "Don't hide a panel behind a tab, picker or toggle; don't state a fact twice in a head or put a caveat between the title and the data."
+    ]
+  }
+}

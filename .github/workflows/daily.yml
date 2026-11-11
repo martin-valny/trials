@@ -136,6 +136,8 @@ jobs:
         working-directory: web
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # The diligence agent's function URL (repo variable); unset builds the offline panel.
+          VITE_DILIGENCE_URL: ${{ vars.DILIGENCE_URL }}
         run: |
           npm ci
           npm run build

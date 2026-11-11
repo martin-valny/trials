@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import gzip
 import json
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -16,6 +18,7 @@ from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovError
 from trialradar.pipeline import RunResult
 from trialradar.snapshot import read_snapshot
+from trialradar.store import COORDS_SCHEMA
 
 from .conftest import (
     ADDED,
@@ -193,7 +196,7 @@ def test_alias_edit_between_days_emits_no_changes(env: Env, cfg: AreaConfig) -> 
 
     result = env.run(FakeClient(TS2, studies), D2)
 
-    assert result == RunResult("success", 0, [], [])
+    assert result == RunResult("success", 0, ["mechanism_unmapped: 1 drugs (8 trials)"], [])
     assert env.store.changes().height == 0
     doc = json.loads((env.site_dir / "trials" / "NCT90000001.json").read_text())
     assert doc["lead_sponsor"] == "Example Pharmaceuticals Inc"
@@ -398,11 +401,17 @@ def test_each_stage_logs_one_json_line(
         "check_raw",
         "filter_relevant",
         "normalize",
+        "extras",
         "state_before",
         "quality",
         "diff",
         "store",
+        "explorer",
+        "pipeline_figure",
+        "stop_risk",
+        "mechanism_graph",
         "export",
+        "explorer_coords",
         "run_log",
     ]
     for ln in lines:
@@ -535,3 +544,300 @@ def test_snapshot_is_promoted_before_its_sidecar(
     monkeypatch.setattr(os, "replace", spy)
     assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
     assert moves == ["2026-03-01.jsonl.gz", "2026-03-01.meta.json"]
+
+
+# ----- explorer -----
+
+
+def _coords(env: Env) -> dict[str, tuple[float, float, float]]:
+    df = pl.read_parquet(env.store_root / "explorer" / "coords.parquet")
+    return {r["nct_id"]: (r["x"], r["y"], r["z"]) for r in df.iter_rows(named=True)}
+
+
+def test_run_writes_explorer_and_coords(env: Env, cfg: AreaConfig) -> None:
+    studies = day1_studies(cfg)
+    assert env.run(FakeClient(TS1, studies), D1).status == "success"
+
+    doc = json.loads((env.site_dir / "explorer.json").read_text(encoding="utf-8"))
+    ids = relevant_ids(cfg, studies)
+    assert doc["generated_for"] == D1.isoformat()
+    assert [t["nct_id"] for t in doc["trials"]] == ids
+    assert sorted(_coords(env)) == ids
+    assert env.store.load_explorer_coords() == _coords(env)
+    trial = json.loads((env.site_dir / "trials" / f"{STATUS_EDIT}.json").read_text())
+    assert {"brief_summary", "eligibility", "has_results"} <= set(trial)
+
+
+def test_second_day_is_aligned(env: Env, cfg: AreaConfig) -> None:
+    """Day 2 lands on yesterday's saved map. Yesterday's map is saved rotated,
+    reflected, scaled and shifted while the features are unchanged (a status edit),
+    so a day-2 layout that is not aligned would sit far from it."""
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    rot = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    saved = {n: tuple(np.array(c) @ rot * 1.7 + 0.3) for n, c in _coords(env).items()}
+    env.store.save_explorer_coords(
+        pl.DataFrame(
+            [{"nct_id": n, "x": c[0], "y": c[1], "z": c[2]} for n, c in sorted(saved.items())],
+            schema=COORDS_SCHEMA,
+        )
+    )
+    studies = day1_studies(cfg)
+    for s in studies:
+        if nct(s) == STATUS_EDIT:
+            s["protocolSection"]["statusModule"]["overallStatus"] = "TERMINATED"
+
+    assert env.run(FakeClient(TS2, studies), D2).status == "success"
+
+    day2 = _coords(env)
+    assert sorted(day2) == sorted(saved)
+    for n, want in saved.items():
+        assert max(abs(a - b) for a, b in zip(want, day2[n], strict=True)) < 0.05, n
+
+
+def test_alignment_never_moves_the_map_further_from_yesterday(
+    env: Env, cfg: AreaConfig, tmp_path: Path
+) -> None:
+    """With a changed trial set the layout itself changes; the Procrustes fit must
+    still leave day 2 no further from day 1 than the unaligned (rebuilt) layout."""
+    from trialradar.pipeline import rebuild
+    from trialradar.store import Store
+
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    day1 = _coords(env)
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "success"
+    aligned = _coords(env)
+    rebuild(cfg, tmp_path / "rb", env.raw_dir, tmp_path / "rb-site", env.aliases_dir)
+    raw = Store(tmp_path / "rb").load_explorer_coords()  # rebuild: no previous coords
+
+    common = sorted(set(day1) & set(aligned))
+    assert raw.keys() == aligned.keys()
+
+    def sse(coords: dict[str, tuple[float, float, float]]) -> float:
+        return float(sum(((np.array(coords[n]) - day1[n]) ** 2).sum() for n in common))
+
+    assert sse(aligned) <= sse(raw) + 1e-9
+    assert REMOVED not in aligned and ADDED in aligned
+
+
+def test_explorer_failure_is_isolated(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R19: a failed explorer build never fails the daily run. The run succeeds with a
+    warning, the site is exported without a map (the stale explorer.json is removed, so
+    the page shows "the map appears after the next daily update" rather than an old map
+    over new trials) and the saved coordinates are left as they were."""
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert (env.site_dir / "explorer.json").exists()
+    coords_before = (env.store_root / "explorer" / "coords.parquet").read_bytes()
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("umap exploded")
+
+    monkeypatch.setattr(pipeline, "build_explorer", boom)
+    result = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+
+    assert result.status == "success"
+    assert "explorer: RuntimeError: umap exploded" in result.warnings
+    assert env.store.changes().height == 4
+    assert env.store.committed_date() == D2
+    assert not (env.site_dir / "explorer.json").exists()
+    meta = json.loads((env.site_dir / "meta.json").read_text())
+    assert "explorer: RuntimeError: umap exploded" in meta["warnings"]
+    index = json.loads((env.site_dir / "trials.json").read_text())
+    assert index["generated_for"] == "2026-03-02"
+    assert (env.store_root / "explorer" / "coords.parquet").read_bytes() == coords_before
+    assert env.store.run_log()["status"].to_list() == ["success", "success"]
+    assert env.store.last_success_timestamp() == TS2
+    assert (env.raw_dir / "2026-03-02.jsonl.gz").exists()
+    assert not (env.raw_dir / "2026-03-02.failed.jsonl.gz").exists()
+
+    monkeypatch.undo()
+    rerun = env.run(FakeClient(TS2, day2_studies(cfg)), D2, force=True)
+    assert rerun.status == "success"
+    assert json.loads((env.site_dir / "explorer.json").read_text())["generated_for"] == "2026-03-02"
+
+
+def test_malformed_extras_warn_and_never_quarantine(
+    env: Env, cfg: AreaConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """R19: a study whose explorer-only fields are malformed gets empty extras and a
+    warning; the run succeeds and the snapshot is promoted, not quarantined."""
+    studies = day1_studies(cfg)
+    bad = relevant_ids(cfg, studies)[0]
+    for s in studies:
+        if nct(s) == bad:
+            s["protocolSection"]["descriptionModule"] = "not a module"
+    result = env.run(FakeClient(TS1, studies), D1)
+
+    assert result.status == "success"
+    assert any(w.startswith(f"extras_fallback: {bad}: ") for w in result.warnings)
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    extras = next(ln for ln in lines if ln["stage"] == "extras")
+    assert any(w.startswith("extras_fallback: ") for w in extras["warnings"])
+    row = env.store.run_log().row(-1, named=True)
+    assert any(w.startswith("extras_fallback: ") for w in json.loads(row["warnings"]))
+    assert (env.raw_dir / "2026-03-01.jsonl.gz").exists()
+    assert not (env.raw_dir / "2026-03-01.failed.jsonl.gz").exists()
+    trial = json.loads((env.site_dir / "trials" / f"{bad}.json").read_text())
+    assert trial["brief_summary"] is None
+
+
+def test_layout_fallback_is_a_run_warning(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import umap
+
+    def broken(self: Any, *args: Any, **kwargs: Any) -> None:
+        raise ValueError("no layout")
+
+    monkeypatch.setattr(umap.UMAP, "fit_transform", broken)
+    result = env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+
+    assert result.status == "success"
+    assert any(w.startswith("explorer_layout_fallback: ") for w in result.warnings)
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = next(ln for ln in lines if ln["stage"] == "explorer")
+    assert any(w.startswith("explorer_layout_fallback: ") for w in explorer["warnings"])
+
+
+def test_export_failure_keeps_the_saved_coords(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    coords_before = (env.store_root / "explorer" / "coords.parquet").read_bytes()
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(pipeline, "export", boom)
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "failed"
+    assert (env.store_root / "explorer" / "coords.parquet").read_bytes() == coords_before
+
+
+def test_corrupt_coords_warn_and_fall_back(
+    env: Env, cfg: AreaConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    (env.store_root / "explorer" / "coords.parquet").write_bytes(b"garbage")
+    capsys.readouterr()
+
+    assert env.run(FakeClient(TS2, day2_studies(cfg)), D2).status == "success"
+
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = next(ln for ln in lines if ln["stage"] == "explorer")
+    assert any("coords" in w for w in explorer["warnings"])
+    assert ADDED in _coords(env)
+
+
+def test_run_writes_pipeline_json(env: Env, cfg: AreaConfig) -> None:
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    doc = json.loads((env.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == "2026-03-01"
+    assert doc["counts"]["trials"] == len(
+        json.loads((env.site_dir / "explorer.json").read_text())["trials"]
+    )
+
+
+def test_missing_pipeline_config_warns_and_writes_no_figure(
+    tmp_path: Path, cfg: AreaConfig
+) -> None:
+    """R19: no config/pipeline means one warning, no pipeline.json, a successful run."""
+    broken = Env(tmp_path, cfg.model_copy(update={"pipeline_dir": tmp_path / "missing"}))
+    broken.site_dir.mkdir()
+    (broken.site_dir / "pipeline.json").write_text("{}", encoding="utf-8")  # stale
+    result = broken.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("pipeline_figure:") for w in result.warnings)
+    assert (broken.site_dir / "explorer.json").exists()
+    assert not (broken.site_dir / "pipeline.json").exists()
+
+
+def test_run_without_approvals_warns_missing(tmp_path: Path, cfg: AreaConfig) -> None:
+    """R19: no approvals.csv means a warning and no ``ap`` keys; the figure still builds."""
+    bare = Env(tmp_path, cfg)
+    bare.cfg = bare.cfg.model_copy(update={"approvals_dir": tmp_path / "missing"})
+    result = bare.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert "approvals: missing" in result.warnings
+    doc = json.loads((bare.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_bad_approvals_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    bad_dir = tmp_path / "approvals"
+    bad_dir.mkdir()
+    (bad_dir / "approvals.csv").write_text("wrong,header\n", encoding="utf-8")
+    bad = Env(tmp_path, cfg)
+    bad.cfg = bad.cfg.model_copy(update={"approvals_dir": bad_dir})
+    result = bad.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("approvals: ") and "approvals.csv:1: " in w for w in result.warnings)
+    doc = json.loads((bad.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_joins_fixture_approvals(env: Env, cfg: AreaConfig) -> None:
+    assert env.run(FakeClient(TS1, day1_studies(cfg)), D1).status == "success"
+    doc = json.loads((env.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    cd20 = next(r for r in doc["rows"] if r["id"] == "cd20")
+    assert sorted(cd20["ap"]) == ["CIDP", "MS", "NMOSD"]
+
+
+def _run_with_unreadable_approvals(
+    tmp_path: Path, cfg: AreaConfig, make: Callable[[Path], None]
+) -> None:
+    bad_dir = tmp_path / "approvals"
+    bad_dir.mkdir()
+    make(bad_dir / "approvals.csv")
+    bad = Env(tmp_path, cfg)
+    bad.cfg = bad.cfg.model_copy(update={"approvals_dir": bad_dir})
+    result = bad.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("approvals: ") and "approvals.csv: " in w for w in result.warnings)
+    assert not any(w.startswith("pipeline_figure") for w in result.warnings)
+    doc = json.loads((bad.site_dir / "pipeline.json").read_text(encoding="utf-8"))
+    assert all("ap" not in row for row in doc["rows"])
+
+
+def test_run_non_utf8_approvals_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    _run_with_unreadable_approvals(tmp_path, cfg, lambda p: p.write_bytes(b"\xff\xfe caf\xe9"))
+
+
+def test_run_approvals_is_a_directory_warns_and_builds(tmp_path: Path, cfg: AreaConfig) -> None:
+    _run_with_unreadable_approvals(tmp_path, cfg, lambda p: p.mkdir())
+
+
+def test_run_writes_risk_json(env: Env, cfg: AreaConfig) -> None:
+    result = env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert not any(w.startswith("stop_risk:") for w in result.warnings)
+    doc = json.loads((env.site_dir / "risk.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == "2026-03-01"
+    assert doc["model"]["version"] == "stop-risk-fixture"
+
+
+def test_stop_risk_failure_is_warning(tmp_path: Path, cfg: AreaConfig) -> None:
+    """R19: unreadable risk artefacts mean one warning, no risk.json, a successful run."""
+    empty = tmp_path / "no-risk"
+    empty.mkdir()
+    broken = Env(tmp_path, cfg)
+    broken.cfg = broken.cfg.model_copy(
+        update={"risk": broken.cfg.risk.model_copy(update={"dir": empty})}
+    )
+    broken.site_dir.mkdir()
+    (broken.site_dir / "risk.json").write_text("{}", encoding="utf-8")  # stale
+    result = broken.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert any(w.startswith("stop_risk:") for w in result.warnings)
+    assert not (broken.site_dir / "risk.json").exists()
+
+
+def test_stop_risk_disabled_writes_nothing(tmp_path: Path, cfg: AreaConfig) -> None:
+    off = Env(tmp_path, cfg)
+    off.cfg = off.cfg.model_copy(
+        update={"risk": off.cfg.risk.model_copy(update={"enabled": False})}
+    )
+    result = off.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert result.status == "success"
+    assert not any(w.startswith("stop_risk:") for w in result.warnings)
+    assert not (off.site_dir / "risk.json").exists()

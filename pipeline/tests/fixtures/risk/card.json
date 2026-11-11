@@ -1,0 +1,210 @@
+{
+  "version": "stop-risk-fixture",
+  "trained_on": "2026-01-01",
+  "sklearn": "1.9.1",
+  "shipped": "boosted",
+  "shipped_reason": "synthetic fixture model",
+  "filter": {
+    "synthetic": true
+  },
+  "features": [
+    "phase_1",
+    "phase_2",
+    "phase_3",
+    "randomized",
+    "masking_level",
+    "n_arms",
+    "placebo_arm",
+    "sponsor_industry",
+    "sponsor_academic",
+    "n_collaborators",
+    "n_sites",
+    "n_countries",
+    "multi_region",
+    "n_primary_outcomes",
+    "n_secondary_outcomes",
+    "n_conditions",
+    "cat_infections",
+    "cat_neoplasms",
+    "cat_musculoskeletal_diseases",
+    "cat_digestive_system_diseases",
+    "cat_stomatognathic_diseases",
+    "cat_respiratory_tract_diseases",
+    "cat_otorhinolaryngologic_diseases",
+    "cat_nervous_system_diseases",
+    "cat_eye_diseases",
+    "cat_urogenital_diseases",
+    "cat_female_urogenital_diseases_and_pregnancy_complications",
+    "cat_pregnancy_complications",
+    "cat_cardiovascular_diseases",
+    "cat_hemic_and_lymphatic_diseases",
+    "cat_congenital_hereditary_and_neonatal_diseases_and_abnormalities",
+    "cat_skin_and_connective_tissue_diseases",
+    "cat_nutritional_and_metabolic_diseases",
+    "cat_endocrine_system_diseases",
+    "cat_immune_system_diseases",
+    "cat_disorders_of_environmental_origin",
+    "cat_pathological_conditions_signs_and_symptoms",
+    "cat_occupational_diseases",
+    "cat_chemically_induced_disorders",
+    "cat_wounds_and_injuries",
+    "cat_mental_disorders",
+    "n_categories",
+    "has_biological",
+    "n_experimental_interventions",
+    "start_year",
+    "sponsor_prior_n",
+    "sponsor_prior_rate",
+    "sponsor_few_prior"
+  ],
+  "excluded": [
+    "enrollment (actual enrollment is small because a trial stopped)",
+    "why_stopped",
+    "results posted",
+    "actual completion dates and durations",
+    "last update date",
+    "site recruitment status",
+    "overall status"
+  ],
+  "split": {
+    "train_end": "2015-12-31",
+    "test": [
+      "2016-01-01",
+      "2019-12-31"
+    ]
+  },
+  "refit_end": "2019-12-31",
+  "metrics": {
+    "baseline": {
+      "auc": 0.7,
+      "brier": 0.15,
+      "n": 100,
+      "positives": 20,
+      "calibration": [
+        {
+          "p": 0.1,
+          "observed": 0.1,
+          "n": 20
+        },
+        {
+          "p": 0.2,
+          "observed": 0.2,
+          "n": 20
+        },
+        {
+          "p": 0.30000000000000004,
+          "observed": 0.30000000000000004,
+          "n": 20
+        },
+        {
+          "p": 0.4,
+          "observed": 0.4,
+          "n": 20
+        },
+        {
+          "p": 0.5,
+          "observed": 0.5,
+          "n": 20
+        }
+      ]
+    },
+    "boosted": {
+      "auc": 0.7,
+      "brier": 0.15,
+      "n": 100,
+      "positives": 20,
+      "calibration": [
+        {
+          "p": 0.1,
+          "observed": 0.1,
+          "n": 20
+        },
+        {
+          "p": 0.2,
+          "observed": 0.2,
+          "n": 20
+        },
+        {
+          "p": 0.30000000000000004,
+          "observed": 0.30000000000000004,
+          "n": 20
+        },
+        {
+          "p": 0.4,
+          "observed": 0.4,
+          "n": 20
+        },
+        {
+          "p": 0.5,
+          "observed": 0.5,
+          "n": 20
+        }
+      ]
+    },
+    "boosted_no_sites": {
+      "auc": 0.7,
+      "brier": 0.15,
+      "n": 100,
+      "positives": 20,
+      "calibration": [
+        {
+          "p": 0.1,
+          "observed": 0.1,
+          "n": 20
+        },
+        {
+          "p": 0.2,
+          "observed": 0.2,
+          "n": 20
+        },
+        {
+          "p": 0.30000000000000004,
+          "observed": 0.30000000000000004,
+          "n": 20
+        },
+        {
+          "p": 0.4,
+          "observed": 0.4,
+          "n": 20
+        },
+        {
+          "p": 0.5,
+          "observed": 0.5,
+          "n": 20
+        }
+      ]
+    },
+    "in_area": null
+  },
+  "site_leak_flag": false,
+  "typical": [
+    {
+      "phase": "all",
+      "sponsor": "all",
+      "rate": 0.16,
+      "n": 1000
+    },
+    {
+      "phase": "phase 1",
+      "sponsor": "all",
+      "rate": 0.14,
+      "n": 1000
+    },
+    {
+      "phase": "phase 2",
+      "sponsor": "all",
+      "rate": 0.2,
+      "n": 1000
+    },
+    {
+      "phase": "phase 3",
+      "sponsor": "all",
+      "rate": 0.18,
+      "n": 1000
+    }
+  ],
+  "max_start_year": 2025,
+  "sponsor_floor": 5,
+  "n_train": 300,
+  "n_test": 100
+}

@@ -1,0 +1,14 @@
+target,go_id,go_name
+CACNA1F,GO:0098703,calcium ion import across plasma membrane
+CACNA2D4,GO:0050908,detection of light stimulus involved in visual perception
+CACNG1,GO:1902514,regulation of calcium ion transmembrane transport via high voltage-gated calcium channel
+CACNG5,GO:2000311,regulation of AMPA receptor activity
+COXFA4L2,GO:1902957,"negative regulation of mitochondrial electron transport, NADH to ubiquinone"
+ERVW-1,GO:0007520,myoblast fusion
+FCGRT,GO:0002416,IgG immunoglobulin transcytosis in epithelial cells mediated by FcRn immunoglobulin receptor
+GABRD,GO:1902476,chloride transmembrane transport
+GABRE,GO:1904862,inhibitory synapse assembly
+GABRG1,GO:1904862,inhibitory synapse assembly
+GABRP,GO:1902476,chloride transmembrane transport
+SIGMAR1,GO:0070207,protein homotrimerization
+SV2A,GO:0016082,synaptic vesicle priming

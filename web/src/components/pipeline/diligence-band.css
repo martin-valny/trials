@@ -1,0 +1,44 @@
+/* The front door's diligence band (spec section 6.2), between the page head and the figure. It is a caption to the
+   plate, not a second hero: a hairline above and below inside the gutters, a 13px bold sentence-case name, one body
+   sentence, the shared PairPicker and a quiet link, and the fixed label in 12px muted. Plate tokens only; no red
+   (nothing here "advanced"). Wide: the name in its own column, the sentence beside it with the label at the right,
+   the picker on the line under the sentence. Under 768px (no picker there, see DiligenceBand): the name runs into the
+   sentence, then one link to the Diligence page, then the label. */
+.dg-band {
+  display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+  grid-template-areas: "k s label" ". act act";
+  column-gap: 24px; row-gap: 10px; align-items: baseline;
+  margin: 16px 40px 0; padding: 12px 0 14px;
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.dg-band-k { grid-area: k; margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); font-weight: 700; }
+.dg-band-s { grid-area: s; margin: 0; max-width: 72ch; font-size: var(--fs-body); line-height: var(--lh-body); text-wrap: pretty; }
+.dg-band-label { grid-area: label; margin: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); text-align: right; }
+.dg-band-act { grid-area: act; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; }
+.dg-band-how { font-size: var(--fs-ui); line-height: var(--lh-ui); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.dg-band-how:hover { text-decoration-color: var(--ink); }
+/* The band's button is an outline pill, so the figure's selected control stays the only filled ink control above the
+   fold; a pale fill on hover only. */
+.dg-band .pp-go { color: var(--ink); background: transparent; border-color: var(--ink); }
+.dg-band .pp-go:hover:not(:disabled) { background: var(--pale); }
+
+@media (max-width: 1099px) {
+  .dg-band { margin-left: 24px; margin-right: 24px; }
+}
+/* Narrower than the sentence and the label side by side: the label drops under the picker. */
+@media (max-width: 1023px) {
+  .dg-band { grid-template-columns: 8.5rem minmax(0, 1fr); grid-template-areas: "k s" ". act" ". label"; }
+  .dg-band-label { text-align: left; }
+}
+
+@media (max-width: 767px) {
+  .dg-band { display: block; padding: 10px 0 12px; }
+  .dg-band-k, .dg-band-s { display: inline; }
+  .dg-band-k { margin-right: .4em; }
+  .dg-band-s { font-size: var(--fs-ui); line-height: var(--lh-ui); }
+  .dg-band-act { margin-top: 6px; gap: 4px 20px; }
+  .dg-band-label { margin-top: 2px; text-align: left; }
+}
+@media (max-width: 640px) {
+  .dg-band { margin: 14px 18px 0; }
+}

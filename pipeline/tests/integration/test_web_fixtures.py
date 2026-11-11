@@ -7,7 +7,7 @@ from pathlib import Path
 
 from conftest import REPO_ROOT
 
-from integration.conftest import tree_bytes
+from integration.conftest import tree_bytes, without_coords, without_graph_coords
 
 SCRIPT = REPO_ROOT / "pipeline" / "scripts" / "make_web_fixtures.py"
 COMMITTED = REPO_ROOT / "web" / "tests" / "fixtures" / "data"
@@ -20,6 +20,10 @@ def test_committed_web_fixtures_are_current(tmp_path: Path) -> None:
     spec.loader.exec_module(module)
     out = tmp_path / "data"
     module.main(out)
-    assert tree_bytes(out) == tree_bytes(COMMITTED), (
-        "web fixtures are stale; run: cd pipeline && uv run python scripts/make_web_fixtures.py"
-    )
+    stale = "web fixtures are stale; run: cd pipeline && uv run python scripts/make_web_fixtures.py"
+    # UMAP coordinates differ across platforms (numba floats), and so may the graph layout's
+    # last float digits (numpy reductions); everything else is exact.
+    skip = ("explorer.json", "mechanisms.json")
+    assert tree_bytes(out, exclude=skip) == tree_bytes(COMMITTED, exclude=skip), stale
+    assert without_coords(out) == without_coords(COMMITTED), stale
+    assert without_graph_coords(out) == without_graph_coords(COMMITTED), stale

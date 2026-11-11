@@ -7,6 +7,7 @@ import json
 import os
 import re
 from collections import defaultdict
+from collections.abc import Mapping
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from typing import Any
 import polars as pl
 
 from trialradar.config import AreaConfig
+from trialradar.explorer.extras import StudyExtras
 from trialradar.tables import Tables
 
 WINDOWS: tuple[int, ...] = (1, 7, 30)
@@ -93,7 +95,9 @@ def _group(df: pl.DataFrame) -> dict[str, list[dict[str, Any]]]:
     return out
 
 
-def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+def _trial_docs(
+    tables: Tables, items: list[dict[str, Any]], extras: Mapping[str, StudyExtras]
+) -> dict[str, dict[str, Any]]:
     conds, intervs = _group(tables.condition), _group(tables.intervention)
     sites, outs = _group(tables.site), _group(tables.outcome)
     item_by_trial: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -103,6 +107,7 @@ def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[s
     docs: dict[str, dict[str, Any]] = {}
     for r in tables.trial.iter_rows(named=True):
         nct = r["nct_id"]
+        x = extras.get(nct)
         site_rows = sites.get(nct, [])
         outcomes = outs.get(nct, [])
 
@@ -137,15 +142,32 @@ def _trial_docs(tables: Tables, items: list[dict[str, Any]]) -> dict[str, dict[s
             "secondary_outcomes": pick("secondary"),
             "changes": item_by_trial.get(nct, []),
             "source_url": _STUDY_URL + nct,
+            "brief_summary": x.brief_summary if x else None,
+            "eligibility": {
+                "sex": x.sex if x else None,
+                "min_age_years": x.min_age_years if x else None,
+                "max_age_years": x.max_age_years if x else None,
+            },
+            "has_results": x.has_results if x else False,
         }
     return docs
 
 
-def _index(docs: dict[str, dict[str, Any]], day: date) -> dict[str, Any]:
-    """One row per tracked trial for the browse view; sorted so output is stable."""
+def _index(
+    docs: dict[str, dict[str, Any]],
+    day: date,
+    cfg: AreaConfig,
+    extras: Mapping[str, StudyExtras],
+) -> dict[str, Any]:
+    """One row per tracked trial for the browse view; sorted so output is stable.
+
+    ``dz`` lists the trial's disease codes (figure order, no repeats), as the pipeline
+    figure assigns a mark's; it is omitted when the trial has none."""
     rows = []
     for nct in sorted(docs):
         d = docs[nct]
+        x = extras.get(nct)
+        dz = cfg.codes_for(x.condition_labels if x else ())
         rows.append(
             {
                 "nct_id": nct,
@@ -157,6 +179,7 @@ def _index(docs: dict[str, dict[str, Any]], day: date) -> dict[str, Any]:
                 "primary_completion_date": d["primary_completion_date"],
                 "enrollment": d["enrollment"],
                 "last_change": max((c["detected_date"] for c in d["changes"]), default=None),
+                **({"dz": dz} if dz else {}),
             }
         )
     return {"generated_for": day.isoformat(), "trials": rows}
@@ -198,8 +221,22 @@ def export(
     cfg: AreaConfig,
     day: date,
     out_dir: Path,
+    *,
+    extras: Mapping[str, StudyExtras] | None = None,
+    explorer: dict[str, Any] | None = None,
+    mechanisms: dict[str, Any] | None = None,
+    pipeline: dict[str, Any] | None = None,
+    risk: dict[str, Any] | None = None,
 ) -> None:
-    """Write the site JSON views for ``day`` into ``out_dir``."""
+    """Write the site JSON views for ``day`` into ``out_dir``.
+
+    ``extras`` add the registry summary, eligibility and results flag to the trial
+    files (null/false when absent); ``explorer`` is written as ``explorer.json``, and
+    without it a previous ``explorer.json`` is removed (the site then shows no map).
+    ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
+    only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``).
+    ``risk`` (the stop-risk estimates) is written as ``risk.json``, and a stale one is
+    removed when there is none; it does not depend on the map."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -215,7 +252,7 @@ def export(
             {"window_days": n, "generated_for": hi, "changes": window},
         )
 
-    docs = _trial_docs(tables, items)
+    docs = _trial_docs(tables, items, extras or {})
     trials_dir = out_dir / "trials"
     trials_dir.mkdir(parents=True, exist_ok=True)
     for nct, doc in docs.items():
@@ -224,5 +261,23 @@ def export(
         if _TRIAL_FILE.fullmatch(p.name) and p.is_file() and p.stem not in docs:
             p.unlink()
 
-    _write_json(out_dir / "trials.json", _index(docs, day))
+    _write_json(out_dir / "trials.json", _index(docs, day, cfg, extras or {}))
+    if explorer is not None:
+        _write_json(out_dir / "explorer.json", explorer)
+    else:
+        # No map this time: never leave an old map over the new trials.
+        (out_dir / "explorer.json").unlink(missing_ok=True)
+    if explorer is not None and mechanisms is not None:
+        _write_json(out_dir / "mechanisms.json", mechanisms)
+    else:
+        # No graph this time: the page says it appears after the next update.
+        (out_dir / "mechanisms.json").unlink(missing_ok=True)
+    if explorer is not None and pipeline is not None:
+        _write_json(out_dir / "pipeline.json", pipeline)
+    else:
+        (out_dir / "pipeline.json").unlink(missing_ok=True)
+    if risk is not None:
+        _write_json(out_dir / "risk.json", risk)
+    else:
+        (out_dir / "risk.json").unlink(missing_ok=True)
     _write_json(out_dir / "meta.json", _meta(tables, run_log, cfg, day))

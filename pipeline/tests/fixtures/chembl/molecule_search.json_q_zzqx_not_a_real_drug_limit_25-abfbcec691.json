@@ -1,0 +1,398 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL6055837",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL6055837"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": null,
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3558236",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3558236"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3558237",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3558237"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3680033",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3680033"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL58301",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL58301"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL4109511",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4109511"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL157030",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL157030"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL555230",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL1195728"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL6015857",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL6015857"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": null,
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL97450",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL97450"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL358031",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL358031"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL329432",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL329432"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL93575",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL93575"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL92627",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL92627"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL4297904",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4297904"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Bay-1093884"
+    },
+    {
+     "molecule_synonym": "BAY-1093884"
+    },
+    {
+     "molecule_synonym": "Bay1093884"
+    },
+    {
+     "molecule_synonym": "BAY1093884"
+    },
+    {
+     "molecule_synonym": "Befovacimab"
+    }
+   ],
+   "molecule_type": "Unknown",
+   "pref_name": "BAY-1093884"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL4297945",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4297945"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Efmoroctocog alfa"
+    },
+    {
+     "molecule_synonym": "Efmoroctocog alfa"
+    },
+    {
+     "molecule_synonym": "Efmoroctocog alfa"
+    },
+    {
+     "molecule_synonym": "Efraloctocog alfa"
+    },
+    {
+     "molecule_synonym": "Elocta"
+    },
+    {
+     "molecule_synonym": "Elocta"
+    },
+    {
+     "molecule_synonym": "Eloctate"
+    }
+   ],
+   "molecule_type": "Protein",
+   "pref_name": "EFMOROCTOCOG ALFA"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL330447",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL330447"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL330115",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL330115"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL330243",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL330243"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL327417",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL327417"
+   },
+   "molecule_synonyms": [],
+   "molecule_type": "Small molecule",
+   "pref_name": null
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3545128",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3545128"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Ags-003"
+    },
+    {
+     "molecule_synonym": "AGS-003"
+    },
+    {
+     "molecule_synonym": "AGS-003 MDCS"
+    },
+    {
+     "molecule_synonym": "AGS-003 MDCs for drug substance AGS-003 for drug product"
+    },
+    {
+     "molecule_synonym": "Arcelis"
+    },
+    {
+     "molecule_synonym": "Rocapuldencel-t"
+    },
+    {
+     "molecule_synonym": "Rocapuldencel-t"
+    }
+   ],
+   "molecule_type": "Cell",
+   "pref_name": "ROCAPULDENCEL-T"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3833393",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3833393"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "ACE-910"
+    },
+    {
+     "molecule_synonym": "ACE910"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab"
+    },
+    {
+     "molecule_synonym": "Emicizumab kxwh"
+    },
+    {
+     "molecule_synonym": "Emicizumab-kxwh"
+    },
+    {
+     "molecule_synonym": "Hemlibra"
+    }
+   ],
+   "molecule_type": "Antibody",
+   "pref_name": "EMICIZUMAB"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3990039",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL3990039"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Hympavzi"
+    },
+    {
+     "molecule_synonym": "Marstacimab"
+    },
+    {
+     "molecule_synonym": "Marstacimab"
+    },
+    {
+     "molecule_synonym": "Marstacimab"
+    },
+    {
+     "molecule_synonym": "Marstacimab"
+    },
+    {
+     "molecule_synonym": "Marstacimab"
+    },
+    {
+     "molecule_synonym": "Marstacimab-hncq"
+    },
+    {
+     "molecule_synonym": "PF-06741086"
+    }
+   ],
+   "molecule_type": "Antibody",
+   "pref_name": "MARSTACIMAB"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL4297754",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4297754"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "ALN-57213"
+    },
+    {
+     "molecule_synonym": "Aln-at3sc"
+    },
+    {
+     "molecule_synonym": "ALN-AT3SC"
+    },
+    {
+     "molecule_synonym": "Fitusiran"
+    },
+    {
+     "molecule_synonym": "Fitusiran"
+    },
+    {
+     "molecule_synonym": "Fitusiran"
+    }
+   ],
+   "molecule_type": "Oligonucleotide",
+   "pref_name": "FITUSIRAN"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL4298072",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL4298072"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "Cb-813"
+    },
+    {
+     "molecule_synonym": "Marzeptacog alfa (activado)"
+    },
+    {
+     "molecule_synonym": "Marzeptacog alfa (activated)"
+    },
+    {
+     "molecule_synonym": "Marzeptacog alfa (activated)"
+    },
+    {
+     "molecule_synonym": "Marzeptacog alfa (active)"
+    },
+    {
+     "molecule_synonym": "Marzeptacog alpha"
+    },
+    {
+     "molecule_synonym": "Pf-05280602"
+    },
+    {
+     "molecule_synonym": "PF-05280602"
+    }
+   ],
+   "molecule_type": "Unknown",
+   "pref_name": "MARZEPTACOG ALFA (ACTIVATED)"
+  }
+ ],
+ "page_meta": {
+  "next": "/chembl/api/data/molecule/search.json?limit=25&offset=25&q=zzqx+not+a+real+drug"
+ }
+}

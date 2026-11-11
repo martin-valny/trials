@@ -1,5 +1,10 @@
 import type { ChangeItem } from "../types";
-import { fieldLabel, formatDelta, formatValue, reasonLabel } from "../lib/format";
+import { fieldLabel, formatDate, formatDelta, formatValue, keepWhole, reasonLabel } from "../lib/format";
+
+/** An old or new value in a change row; a short one (a date, a status, a number) is kept on one line. */
+export function Value({ className, text }: { className: "old" | "new"; text: string }) {
+  return <span className={keepWhole(text) ? `${className} ch-nb` : className}>{text}</span>;
+}
 
 /** Full change history for one trial (all-time, newest first). */
 export function ChangeTable({ items }: { items: ChangeItem[] }) {
@@ -17,13 +22,13 @@ export function ChangeTable({ items }: { items: ChangeItem[] }) {
       <tbody>
         {items.map((i) => (
           <tr key={`${i.field}|${i.detected_date}|${String(i.new_value)}`}>
-            <td data-label="Detected">{i.detected_date}</td>
+            <td data-label="Detected">{formatDate({ date: i.detected_date, precision: "day", type: null })}</td>
             <td data-label="Field">{fieldLabel(i.field)}</td>
             <td data-label="Change">
-              <span className="old">{formatValue(i.field, i.old_value)}</span>
+              <Value className="old" text={formatValue(i.field, i.old_value)} />
               <span aria-hidden="true"> → </span>
               <span className="visually-hidden"> changed to </span>
-              <span className="new">{formatValue(i.field, i.new_value)}</span>
+              <Value className="new" text={formatValue(i.field, i.new_value)} />
               {formatDelta(i.delta_days) ? (
                 <div className="delta">{formatDelta(i.delta_days)}</div>
               ) : null}

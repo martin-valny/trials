@@ -1,4 +1,5 @@
-import type { ChangesFile, Meta, TrialFile, TrialsIndex, Window } from "./types";
+import { normalizeFile } from "./lib/explorer";
+import type { ChangesFile, ExplorerFile, GraphFile, Meta, PipelineFile, RiskFile, TrialFile, TrialsIndex, Window } from "./types";
 
 const base = (): string => import.meta.env.BASE_URL + "data/";
 
@@ -19,3 +20,15 @@ export const loadTrial = (nct: string): Promise<TrialFile | null> =>
 export const loadMeta = (): Promise<Meta | null> => fetchJson<Meta>("meta.json");
 
 export const loadTrials = (): Promise<TrialsIndex | null> => fetchJson<TrialsIndex>("trials.json");
+
+export const loadExplorer = (): Promise<ExplorerFile | null> =>
+  fetchJson<ExplorerFile>("explorer.json").then((f) => (f === null ? null : normalizeFile(f)));
+
+/** The Targeted drugs graph (mechanisms.json); null before the first build that writes it. */
+export const loadGraph = (): Promise<GraphFile | null> => fetchJson<GraphFile>("mechanisms.json");
+
+/** The pipeline figure's data (pipeline.json); null when the refresh did not write it (R19). */
+export const loadPipeline = (): Promise<PipelineFile | null> => fetchJson<PipelineFile>("pipeline.json");
+
+/** The stop-risk estimates (risk.json); null when the refresh did not write it. */
+export const loadRisk = (): Promise<RiskFile | null> => fetchJson<RiskFile>("risk.json");

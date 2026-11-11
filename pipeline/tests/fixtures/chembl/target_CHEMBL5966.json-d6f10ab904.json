@@ -1,0 +1,16 @@
+{
+ "pref_name": "IgG receptor FcRn large subunit p51",
+ "target_chembl_id": "CHEMBL5966",
+ "target_components": [
+  {
+   "accession": "P55899",
+   "target_component_synonyms": [
+    {
+     "component_synonym": "FCGRT",
+     "syn_type": "GENE_SYMBOL"
+    }
+   ]
+  }
+ ],
+ "target_type": "SINGLE PROTEIN"
+}

@@ -1,0 +1,65 @@
+{
+ "generated_for": "2026-11-04",
+ "targets": {
+  "cd20": {
+   "all": {
+    "median": 0.244,
+    "n": 14,
+    "typical": 0.2
+   },
+   "by_disease": {
+    "MS": {
+     "median": 0.244,
+     "n": 14,
+     "typical": 0.2
+    }
+   }
+  }
+ },
+ "trials": {
+  "NCT90000002": {
+   "basis": "phase 2 drug trials",
+   "drug": "Example Drug",
+   "factors": [
+    {
+     "dir": "down",
+     "label": "Sites planned: 1"
+    },
+    {
+     "dir": "up",
+     "label": "Randomized allocation"
+    },
+    {
+     "dir": "down",
+     "label": "Primary outcomes: 1"
+    }
+   ],
+   "hi": 0.251,
+   "lo": 0.238,
+   "p": 0.244,
+   "typical": 0.2
+  },
+  "NCT90000004": {
+   "basis": "phase 2 drug trials",
+   "drug": "Example Drug",
+   "factors": [
+    {
+     "dir": "up",
+     "label": "Secondary outcomes: 9"
+    },
+    {
+     "dir": "down",
+     "label": "Sites planned: 1"
+    },
+    {
+     "dir": "up",
+     "label": "Randomized allocation"
+    }
+   ],
+   "hi": 0.68,
+   "lo": 0.642,
+   "p": 0.661,
+   "typical": 0.2
+  }
+ }
+}

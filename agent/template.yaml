@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Trial Radar diligence agent backend (Lambda function URL, DynamoDB, Bedrock).
+
+Parameters:
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Description: >-
+      Browser origins allowed to call the function URL (scheme + host, no path), comma
+      separated, e.g. https://martin-valny.github.io,http://localhost:4181 for a local check.
+    Default: https://martin-valny.github.io
+  IpSalt:
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    Description: Secret salt for hashing visitor IPs. Choose a long random string; never commit it.
+  BedrockModelArns:
+    Type: CommaDelimitedList
+    Description: >-
+      Foundation-model and inference-profile ARNs the function may invoke, comma separated.
+      Must cover every model ID in config.yaml (an EU inference profile also needs the
+      foundation-model ARNs in the regions it routes to).
+  SiteBaseUrl:
+    Type: String
+    Default: https://martin-valny.github.io/trials/data/
+    Description: Base URL of the site's published JSON, with trailing slash.
+  ReservedConcurrency:
+    Type: Number
+    Default: 2
+    MinValue: 0
+    Description: >-
+      Reserved concurrent executions for the function; 0 reserves none. New accounts often have
+      a concurrency quota of 10, and Lambda refuses any reservation that leaves less than 10
+      unreserved, so use 0 there (the daily run caps still bound spend).
+
+Conditions:
+  ReserveConcurrency: !Not [!Equals [!Ref ReservedConcurrency, 0]]
+
+Globals:
+  Function:
+    Runtime: python3.12
+
+Resources:
+  RunsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+
+  LimitsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  FlagsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+
+  DiligenceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/trial-radar-diligence
+      RetentionInDays: 14
+
+  DiligenceFunction:
+    Type: AWS::Serverless::Function
+    # `sam build` runs `make build-DiligenceFunction` (agent/Makefile): it installs the
+    # runtime dependencies and copies src/diligence and config.yaml into the package root.
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: trial-radar-diligence
+      CodeUri: .
+      Handler: diligence.handler.lambda_handler
+      Runtime: python3.12
+      Architectures: [x86_64]
+      # Gathering is bounded by max_seconds (90, config.yaml); the writer and checker calls run
+      # after it. store.RUN_TIMEOUT_S mirrors this value and STALE_AFTER_S stays above it.
+      Timeout: 240
+      MemorySize: 512
+      ReservedConcurrentExecutions: !If [ReserveConcurrency, !Ref ReservedConcurrency, !Ref AWS::NoValue]
+      # The self-invoke is async: never retry it (a retry would re-run Bedrock without quota).
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+        MaximumEventAgeInSeconds: 60
+      LoggingConfig:
+        LogGroup: !Ref DiligenceLogGroup
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins: !Ref AllowedOrigins
+          AllowMethods:
+            - GET
+            - POST
+          AllowHeaders:
+            - content-type
+      Environment:
+        Variables:
+          DILIGENCE_CONFIG: /var/task/config.yaml
+          IP_SALT: !Ref IpSalt
+          ALLOWED_ORIGIN: !Join [",", !Ref AllowedOrigins]
+          SITE_BASE_URL: !Ref SiteBaseUrl
+          RUNS_TABLE: !Ref RunsTable
+          LIMITS_TABLE: !Ref LimitsTable
+          FLAGS_TABLE: !Ref FlagsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RunsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LimitsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FlagsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: !Ref BedrockModelArns
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:trial-radar-diligence
+
+  # Public function URLs need both lambda:InvokeFunctionUrl (SAM generates it) and, since 2025,
+  # lambda:InvokeFunction restricted to calls made through the URL.
+  DiligenceUrlInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DiligenceFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+Outputs:
+  FunctionUrl:
+    Description: Set this as VITE_DILIGENCE_URL when building the web app.
+    Value: !GetAtt DiligenceFunctionUrl.FunctionUrl

@@ -1,0 +1,5 @@
+row_id,disease,drug,chembl_id,sources,withdrawn,regulator,year,url
+cd20,CIDP,obinutuzumab,CHEMBL1743048,chembl,1,,,https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL1743048/
+cd20,MS,ocrelizumab,CHEMBL1743008,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=ocrelizumab
+cd20,MS,ofatumumab,CHEMBL1743048,chembl;fda_label,,,,https://www.ebi.ac.uk/chembl/compound_report_card/CHEMBL1743048/
+cd20,NMOSD,rituximab,,hand,,PMDA,2022,https://example.org/rituximab-nmosd

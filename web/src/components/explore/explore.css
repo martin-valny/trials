@@ -1,0 +1,485 @@
+/* The Figure Plate: a white plate with panels a-d. Dark theme (html[data-theme=dark]) is the "Dark slide". */
+.explore {
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--plate);
+  display: flex; flex-direction: column;
+  flex: 1 1 auto;
+}
+
+/* The plate takes over the page: full width, and the shared header adopts its tokens. */
+:root:has(.explore) ::selection { background: var(--ink); color: var(--plate); }
+/* The page is a column filling the viewport; the plate takes whatever the header leaves. */
+#root:has(.explore) { min-height: 100dvh; display: flex; flex-direction: column; }
+main:has(> .explore) { max-width: none; width: 100%; margin: 0; padding: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+
+.plate-title {
+  margin: 0; padding: 22px 40px 8px;
+  font-size: clamp(20px, 2vw, 28px); font-weight: 500; line-height: 1.2;
+  max-width: calc(70ch + 80px); text-wrap: balance; letter-spacing: -0.005em;
+}
+.plate-title b { font-weight: 800; }
+/* Approaches: its figure title sits in the shared page head (top gap, left edge) and keeps the plate title's
+   treatment, "Figure 2 |" in 800 and the claim in 500, at the plate title's size. */
+.mechanisms .page-head h1 { font-size: clamp(20px, 2vw, 28px); font-weight: 500; letter-spacing: -0.005em; max-width: 70ch; text-wrap: balance; }
+.mechanisms .page-head h1 b { font-weight: 800; }
+/* Its loading line holds the title's two lines (four on a phone) at the same size and line-height. */
+.mechanisms .page-head .page-head-skeleton { margin: 0; width: min(42rem, 100%); font-size: clamp(20px, 2vw, 28px); height: 2.2em; }
+@media (max-width: 640px) { .mechanisms .page-head .page-head-skeleton { height: 4.4em; } }
+
+/* The plate keeps its own height, so panel d follows it at a fixed gap rather than being pinned to
+   the bottom of the viewport. */
+.plate {
+  flex: none;
+  display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 0 36px; padding: 12px 40px; min-height: 0;
+}
+.panel { position: relative; min-height: 0; min-width: 0; }
+.panel-a { grid-row: 1 / 3; display: flex; flex-direction: column; min-height: 62vh; }
+/* Side by side, panel a is sized to the viewport rather than stretched to the right column, so its key
+   and the "Dot size" caption both land above the fold. */
+@media (min-width: 901px) {
+  .panel-a { align-self: start; min-height: 0; height: max(420px, min(62vh, calc(100dvh - 330px))); }
+}
+.panel-h { margin: 0; font-size: 13px; font-weight: 700; line-height: 1.3; }
+.panel-l { margin-right: 10px; font-size: 22px; font-weight: 800; line-height: 1; }
+.panel-a-body { position: relative; flex: 1 1 auto; min-height: 0; margin-top: 4px; }
+.panel-note.plate-caption { margin-top: 6px; max-width: 84ch; }
+/* Phone: the key to the numerals on the map, journal style: bold numeral, quiet disease prefix, ink name. */
+.cluster-key {
+  list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px;
+  font-size: 12px; line-height: 1.4; color: var(--ink);
+}
+.cluster-key li { display: flex; gap: 6px; }
+.cluster-key-n { flex: none; min-width: 1ch; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cluster-key-prefix { color: var(--muted); white-space: pre; }
+.plate-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; color: var(--ink); }
+.plate-canvas:active { cursor: grabbing; }
+
+.plate-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; font-size: 15px; pointer-events: none;
+}
+.plate-empty p { margin: 0; font-weight: 700; }
+.plate-empty button { pointer-events: auto; }
+
+.plate-fallback, .explore-message { margin: 0; padding: 24px 0; max-width: 60ch; font-size: 15px; line-height: 1.5; }
+.explore-message { padding: 16px 40px; }
+.explore a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--muted); }
+.explore a:hover { text-decoration-color: var(--ink); }
+
+.explore button {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate);
+  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+}
+.explore button:hover { border-color: var(--ink); }
+.explore button[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
+.explore :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Panels b and c: small figures in the right column. */
+.panel-b, .panel-c { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; }
+.panel-note, .panel-claim { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 52ch; }
+.panel-claim { font-size: 14px; font-weight: 500; color: var(--ink); text-wrap: pretty; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 13px; }
+/* Labels wrap by word, so the track keeps at least 110px to be read against. */
+/* The rows share one set of columns (subgrid), so a row's "too few to tell" widens the count column
+   for every row and the tracks stay aligned. */
+.bars { grid-template-columns: minmax(6rem, 10.5rem) minmax(110px, 1fr) 2.6rem minmax(3.6rem, max-content); column-gap: 8px; }
+.bar { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; align-items: center; }
+.bar-label { overflow-wrap: break-word; line-height: 1.2; }
+.bar-track { position: relative; height: 12px; background: var(--pale); }
+/* Non-drug care By approach: no track, a 12px muted dash where the bar would be, as on Figure 2's rail. */
+.bar-track.none { display: flex; align-items: center; background: transparent; }
+.bar-dash { width: 12px; height: 1px; background: var(--muted); }
+.bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.bar-avg { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink); box-shadow: 0 0 0 1px var(--plate); }
+.bar-n { text-align: right; font-variant-numeric: tabular-nums; }
+.bar-k { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Too few finished trials to lean on: the share is drawn as an outline, not a solid bar. */
+.bar.few .bar-fill { background: var(--plate); border: 1px solid var(--ink); }
+.panel-switch { margin: 2px 0 4px; }
+.explore .panel-switch .segmented button { white-space: nowrap; }
+/* Four groupings do not fit panel b's line where the column is narrow (901 to 1099px, and phones):
+   the split pill becomes a two-by-two block, as the phone's colour pill does. */
+@media (min-width: 901px) and (max-width: 1099px), (max-width: 640px) {
+  .panel-switch .segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; border-radius: 13px; }
+}
+/* Under the count of a group below min_group: quiet words, not a sentence in place of the bar. */
+.bar-few { display: block; font-size: 12px; line-height: 1.15; color: var(--muted); white-space: nowrap; }
+.panel-note + .panel-note { margin-top: -6px; }
+.flow { list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; gap: 10px; height: 150px; }
+.flow li { flex: 0 1 68px; min-width: 0; display: flex; flex-direction: column; font-size: 12px; text-align: center; }
+.flow-n { font-variant-numeric: tabular-nums; color: var(--muted); }
+.flow-col { flex: 1 1 auto; display: flex; flex-direction: column-reverse; margin: 2px 0 4px; }
+.flow-col i { display: block; background: var(--ink); }
+.flow-col i.won { background: var(--red); }
+.swatch-inline { display: inline-block; width: 0.75em; height: 0.75em; background: var(--red); vertical-align: -0.05em; }
+.flow-x { line-height: 1.2; text-wrap: balance; min-height: 2.4em; hyphens: auto; }
+
+/* Legend bar: a full-width ink rule, panel d, then key/value rows. Two grids share one key column width. */
+.legend {
+  margin: 0 40px; padding: 0 0 18px;
+  display: grid; grid-template-columns: 6.5rem 1fr; gap: 6px 18px; align-items: center;
+  font-size: 13px; line-height: 1.5; color: var(--muted);
+}
+.legend-d { padding: 12px 0 18px; border-top: 1px solid var(--ink); margin-top: 0; }
+.legend-k { color: var(--ink); font-weight: 700; align-self: start; padding-top: 3px; }
+.legend-v { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
+.pill { display: inline-flex; align-items: center; gap: 6px; }
+.pill-n { font-variant-numeric: tabular-nums; color: var(--muted); }
+.swatch { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
+.swatch.ring { background: transparent; }
+.swatch.none { border-color: var(--rule); } /* the pale unknown ground needs a hairline to read on the plate */
+/* A narrowing toggle ("Results posted"): off means "show all", so it sits quiet like a dropdown at
+   rest; on is solid ink. Its count is tabular. */
+.explore .pill.narrowing { margin-left: 8px; gap: 7px; }
+.explore .pill.narrowing[aria-pressed="false"] { color: var(--ink); border-color: var(--muted); }
+.explore .pill.narrowing[aria-pressed="false"]:hover { border-color: var(--ink); }
+.explore .pill.narrowing[aria-pressed="true"] { background: var(--ink); color: var(--plate); border-color: var(--ink); }
+.explore .pill.narrowing[aria-pressed="true"] .pill-n { color: var(--plate); }
+
+/* A trial list handed over by another page (?nct=): one ink line under the toolbar, cleared by a word. */
+.explore-only { margin: 0; padding: 10px 40px 0; font-size: 13px; line-height: 1.4; color: var(--ink); }
+.explore .explore-only .text-button { font-size: 13px; margin-left: 4px; }
+@media (max-width: 640px) { .explore-only { padding: 8px 16px 0; } }
+
+/* The short sticky line for a selected trial exists only on narrow screens. */
+.selected-bar { display: none; }
+
+/* Panel d leads the legend, right under the ink rule. */
+.legend > .panel-l { margin: 0; padding-top: 0; }
+.selected { display: block; color: var(--ink); max-width: 75ch; }
+.selected p { margin: 0; }
+.selected-empty { color: var(--muted); }
+.selected-facts b { font-weight: 800; }
+.selected-summary { margin-top: 2px !important; }
+.selected-src { font-weight: 700; color: var(--muted); }
+.selected-wait { color: var(--muted); }
+.selected-links { display: flex; gap: 18px; margin-top: 4px !important; }
+
+/* Loading: the plate's shape, without content. */
+.skeleton-line { height: 1.2em; width: min(42rem, calc(100% - 80px)); margin: 22px 40px 8px; padding: 0; background: var(--pale); }
+.skeleton-block { background: var(--pale); }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-line, .skeleton-block { animation: plate-pulse 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate; }
+}
+@keyframes plate-pulse { from { opacity: 1; } to { opacity: 0.55; } }
+
+/* Laptop widths: the right column takes two fifths, so panel b's bars stay long enough to compare. */
+@media (min-width: 901px) and (max-width: 1279px) {
+  .plate { grid-template-columns: 3fr 2fr; }
+  .bars { grid-template-columns: minmax(5rem, 8.5rem) minmax(110px, 1fr) 2.6rem minmax(3.6rem, max-content); }
+}
+@media (max-width: 900px) {
+  .plate { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .panel-a { grid-row: auto; min-height: 60vh; padding-bottom: 18px; }
+  /* Once a trial is chosen, only its facts line stays in view at the bottom, with a link down to d. */
+  .selected-bar {
+    position: sticky; bottom: 0; z-index: 1;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 40px; font-size: 13px; line-height: 1.4;
+    background: var(--plate); border-top: 1px solid var(--rule);
+  }
+  .selected-bar .selected-facts { margin: 0; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .selected-bar .selected-facts b { font-weight: 800; }
+  .selected-bar .selected-more { flex: none; }
+}
+@media (max-width: 640px) {
+  .plate-title { padding: 18px 16px 6px; }
+  .skeleton-line { margin: 18px 16px 6px; width: calc(100% - 32px); }
+  .plate { padding: 10px 16px; }
+  .panel-a { min-height: 0; }
+  .panel-a-body { flex: none; aspect-ratio: 1 / 1; }
+  .legend { margin: 0 16px; grid-template-columns: 1fr; gap: 4px; }
+  .legend-v + .legend-k { margin-top: 8px; }
+  .flow { gap: 4px; }
+  /* Phone: the label and its numbers share a line, the track runs the full width beneath them. */
+  .bars { gap: 10px; }
+  .bars { grid-template-columns: 1fr; }
+  .bar { grid-template-columns: 1fr auto auto; grid-template-areas: "label n k" "track track track"; gap: 3px 8px; align-items: baseline; }
+  .bar-label { grid-area: label; }
+  .bar-n { grid-area: n; }
+  .bar-k { grid-area: k; min-width: 3.6rem; text-align: right; }
+  .bar-track { grid-area: track; }
+  .flow li { font-size: 12px; }
+  .explore-message { padding: 16px; }
+  .selected-bar { padding: 8px 16px; }
+}
+
+/* Play/pause and Reset view: quiet text and a drawn glyph in the corner of panel a, not filled pills. */
+.explore .plate-controls {
+  position: absolute; top: -2px; right: -8px; z-index: 1; /* text, not padding, meets the panel edge */
+  display: flex; align-items: center; gap: 2px;
+  background: var(--plate); border-radius: 999px; /* knocks out dots behind the words, as the labels' halo does */
+}
+.explore .plate-control {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 8px; font-size: 13px; font-weight: 500; line-height: 1.2;
+  color: var(--ink); background: transparent; border-color: transparent;
+}
+.explore .plate-control:hover { border-color: var(--rule); }
+.spin-glyph { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5px; stroke-linejoin: miter; stroke-linecap: butt; }
+/* Labels: Clusters · Diseases · Off. Quiet words in Play's text style; the chosen one is ink, underlined
+   in ink, the others muted until hovered. Never a filled pill, never red. */
+.explore .label-switch {
+  display: inline-flex; align-items: baseline; padding: 5px 8px;
+  font-size: 13px; font-weight: 500; line-height: 1.2; color: var(--muted); white-space: nowrap;
+}
+.label-switch-k { margin-right: 7px; }
+.label-switch-sep { margin: 0 5px; }
+.explore .label-switch button {
+  padding: 0; border: 0; border-radius: 0; background: transparent;
+  font: inherit; color: var(--muted);
+  text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; text-decoration-thickness: 1px;
+}
+.explore .label-switch button:hover { color: var(--ink); text-decoration-color: var(--muted); }
+.explore .label-switch button[aria-pressed="true"] { background: transparent; color: var(--ink); text-decoration-color: var(--ink); }
+
+/* Hover card: two lines on the trial under the pointer, a flat plate with a 1px ink rule; never takes the pointer. */
+.hover-card {
+  position: absolute; left: 0; top: 0; z-index: 2;
+  width: max-content; max-width: min(18rem, calc(100% - 8px));
+  padding: 7px 10px 8px; pointer-events: none;
+  background: var(--plate); border: 1px solid var(--ink);
+  font-size: 12px; line-height: 1.4; color: var(--muted);
+}
+.hover-card p { margin: 0; }
+.hover-leader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; overflow: visible; pointer-events: none; }
+.hover-leader line { stroke: var(--ink); stroke-width: 1; shape-rendering: crispEdges; }
+.hover-card-head {
+  color: var(--ink); font-weight: 500; text-wrap: pretty;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+.hover-card-head b { font-weight: 800; font-variant-numeric: tabular-nums; }
+.hover-card-facts { margin-top: 3px !important; font-variant-numeric: tabular-nums; }
+
+/* Toolbar dropdowns (MultiSelect, YearRange): a pill button with a hairline ink chevron, opening a flat
+   plate-ground sheet with a 1px hairline frame and an ink rule along its top edge, like a figure inset. */
+.dropdown { position: relative; display: inline-block; }
+.explore .dropdown-button { display: inline-flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dropdown-button .chevron { flex: none; fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: square; }
+.dropdown-button[aria-expanded="true"] { border-color: var(--ink); }
+.dropdown-button[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .dropdown-button .chevron { transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1); }
+}
+.popover {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20;
+  min-width: 16rem; max-width: min(24rem, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px;
+  background: var(--plate); color: var(--ink);
+  border: 1px solid var(--rule); border-top-color: var(--ink);
+  font-size: 13px; line-height: 1.4;
+}
+/* The filter field: a hairline pill; focus is one 2px ink outline at 2px offset, on :focus-visible only,
+   the hairline giving way to it so only one ring shows (no native ring). */
+.popover-search {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; width: 100%; box-sizing: border-box;
+  appearance: none; -webkit-appearance: none;
+}
+.explore .popover-search:focus { outline: none; }
+.explore .popover-search:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-color: transparent; }
+.popover-search::placeholder { color: var(--muted); }
+.popover-search:hover { border-color: var(--ink); }
+.popover-search::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
+.popover-hint { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-ui); line-height: 1.35; }
+.popover-actions { display: flex; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+/* Select all / none are words, not pills: ink text with a muted underline that darkens on hover. */
+.explore .text-button {
+  border: 0; border-radius: 0; padding: 0; background: none; font-size: 12px; color: var(--ink);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted);
+}
+.explore .text-button:hover { text-decoration-color: var(--ink); }
+
+/* The checklist: a square 11px hairline box with an ink check, label, then the count flush right. */
+.checklist { display: flex; flex-direction: column; max-height: 18rem; overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; scrollbar-width: thin; }
+.check { position: relative; display: flex; align-items: center; gap: 8px; padding: 4px 6px; cursor: pointer; }
+.check:hover { background: var(--pale); }
+.check input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.check-box { flex: none; display: grid; place-items: center; width: 11px; height: 11px; border: 1px solid var(--ink); background: var(--plate); }
+.check-box svg { width: 9px; height: 9px; fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: square; visibility: hidden; }
+.check input:checked + .check-box svg { visibility: visible; }
+.check input:focus-visible + .check-box { outline: 2px solid var(--ink); outline-offset: 2px; }
+.check-label { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.check:has(input:not(:checked)) .check-label { color: var(--muted); }
+.check:has(input:not(:checked)) .swatch { opacity: 0.35; }
+.check-n { flex: none; margin-left: 12px; font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+.checklist-empty { margin: 0; padding: 4px 6px; color: var(--muted); }
+
+/* Year range: From – To fields over a hairline track; the chosen span is an ink bar between two
+   square-ended handles. Thumbs are 10px wide, so the bar is inset by half a thumb at each end. */
+.years { display: flex; flex-direction: column; gap: 12px; min-width: 15rem; }
+.years-fields { display: flex; align-items: flex-end; gap: 10px; }
+.years-field { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.years-field input {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  font-variant-numeric: tabular-nums; box-sizing: content-box; width: 4.5ch; padding: 4px 12px; /* four digits, never clipped */
+  border: 1px solid var(--muted); border-radius: 999px; appearance: textfield; -moz-appearance: textfield;
+}
+.years-field input:hover { border-color: var(--ink); }
+.years-field input::-webkit-outer-spin-button, .years-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.years-dash { padding-bottom: 5px; color: var(--muted); }
+.years-track { position: relative; height: 18px; }
+.years-track::before, .years-track::after { content: ""; position: absolute; top: 50%; height: 1px; margin-top: -0.5px; pointer-events: none; }
+.years-track::before { left: 5px; right: 5px; background: var(--rule); }
+.years-track::after {
+  height: 2px; margin-top: -1px; background: var(--ink);
+  left: calc(5px + (100% - 10px) * var(--from)); right: calc(5px + (100% - 10px) * (1 - var(--to)));
+}
+.years-track input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; z-index: 1;
+  appearance: none; -webkit-appearance: none; background: none; pointer-events: none;
+}
+.years-track input::-webkit-slider-runnable-track { background: none; border: 0; height: 18px; }
+.years-track input::-moz-range-track { background: none; border: 0; }
+.years-track input::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; cursor: ew-resize;
+  width: 10px; height: 18px; border: 1px solid var(--ink); border-radius: 0; background: var(--plate); box-sizing: border-box;
+}
+.years-track input::-moz-range-thumb {
+  pointer-events: auto; cursor: ew-resize;
+  width: 10px; height: 18px; border: 1px solid var(--ink); border-radius: 0; background: var(--plate); box-sizing: border-box;
+}
+.years-track input:focus-visible { outline: none; }
+.years-track input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--ink); outline-offset: 2px; }
+.years-track input:focus-visible::-moz-range-thumb { outline: 2px solid var(--ink); outline-offset: 2px; }
+.years-scale { display: flex; justify-content: space-between; margin-top: -8px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Phone: the popover becomes a sheet across the bottom of the viewport, ink rule on top. */
+@media (max-width: 640px) {
+  .popover {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 30;
+    min-width: 0; max-width: none; max-height: 44dvh; /* the map stays in view above it */
+    padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0; border-top-color: var(--ink);
+  }
+  .checklist { max-height: none; flex: 1 1 auto; min-height: 0; margin: 0 -16px; }
+  .check { padding: 8px 16px; }
+  .years { min-width: 0; }
+  .years-track { height: 28px; }
+  .years-track input::-webkit-slider-runnable-track { height: 28px; }
+  .years-track input::-webkit-slider-thumb { width: 14px; height: 28px; }
+  .years-track input::-moz-range-thumb { width: 14px; height: 28px; }
+  .years-track::before { left: 7px; right: 7px; }
+  .years-track::after { left: calc(7px + (100% - 14px) * var(--from)); right: calc(7px + (100% - 14px) * (1 - var(--to))); }
+}
+/* From's thumb sits above To's once it is in the upper half of the range (see YearRange). */
+.years-track input.front { z-index: 2; }
+
+/* Toolbar: one line of controls above the plate, read like a figure's legend line. Groups sit 18px
+   apart, controls within a group 6px; every item shares one 28px line so the text baselines align. */
+.toolbar {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  padding: 10px 40px 12px; font-size: 13px; color: var(--muted);
+}
+/* A hairline under the controls, inside the gutters, so they read as the figure's legend line. */
+.toolbar::after { content: ""; position: absolute; left: 40px; right: 40px; bottom: 0; height: 1px; background: var(--rule); pointer-events: none; }
+.toolbar > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.toolbar .tb-filters { flex-wrap: wrap; row-gap: 8px; }
+.toolbar .tb-count { margin-left: auto; }
+.tb-k { color: var(--ink); font-weight: 700; margin-right: 4px; }
+.toolbar .tb-count { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Find: a pill with a drawn magnifier inside its left edge. */
+.tb-find { position: relative; }
+.tb-find input {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--plate); caret-color: var(--ink);
+  border: 1px solid var(--muted); border-radius: 999px; padding: 4px 12px 4px 28px; width: 12.5rem; line-height: 18px;
+}
+.tb-find input:hover { border-color: var(--ink); }
+.tb-find input::placeholder { color: var(--muted); }
+.tb-find input::-webkit-search-cancel-button { filter: grayscale(1); cursor: pointer; }
+.find-glyph { position: absolute; left: 11px; top: 50%; margin-top: -6px; fill: none; stroke: var(--ink); stroke-width: 1.25; pointer-events: none; }
+
+/* Colour: one pill split in three; the chosen mode is solid ink. */
+.segmented { display: inline-flex; border: 1px solid var(--muted); border-radius: 999px; padding: 1px; }
+.explore .segmented button { border: 0; padding: 3px 10px; line-height: 18px; }
+.explore .segmented button:hover:not([aria-pressed="true"]) { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
+
+.explore .toolbar .dropdown-button, .explore .toolbar .pill { line-height: 18px; }
+
+/* Filters read as a figure's legend line, not a filter bar: at rest ("all") a dropdown is a hairline
+   pill with its value muted; once it narrows the map it turns ink, its value set in 700. */
+.explore .dropdown-button[data-narrowed="false"] { border-color: var(--rule); }
+.explore .dropdown-button[data-narrowed="false"] .dropdown-value { color: var(--muted); }
+.explore .dropdown-button[data-narrowed="true"] { border-color: var(--ink); }
+.explore .dropdown-button[data-narrowed="true"] .dropdown-value { font-weight: 700; }
+.explore .dropdown-button:hover, .explore .dropdown-button[aria-expanded="true"] { border-color: var(--ink); }
+
+/* Reset all: a word, idle (muted, no underline) until there is something to reset. */
+.explore .text-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+
+/* A popover that would run off the right edge opens from its button's right edge instead. */
+.popover[data-align="end"] { left: auto; right: 0; }
+/* The sheet header (title and Done) exists only on the phone sheet. */
+.sheet-head { display: none; }
+
+/* The figure key: one 12px line of swatches and words under panel a's heading, like the key printed
+   under a figure panel's title; a quiet link to the list closes it. */
+.figure-key {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+  margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--muted); column-gap: 14px;
+}
+/* The list's items share the key's one wrapping line with the link, which keeps to the line's end. */
+.key-list { list-style: none; margin: 0; padding: 0; display: contents; color: var(--ink); }
+.key-list li { display: inline-flex; align-items: center; gap: 5px; }
+.key-list .swatch { width: 8px; height: 8px; }
+.key-list-link { white-space: nowrap; margin-left: auto; }
+
+/* Side by side the full set needs about 1,600px, so it is always set on two deliberate lines instead
+   of wrapping wherever it breaks: find, colour, Results posted and the count on the first; the filters
+   and Reset all under them. Only the count (not focusable) sits out of DOM order, so Tab still follows
+   the eye. */
+@media (min-width: 901px) {
+  .toolbar {
+    display: grid; grid-template-columns: auto auto 1fr auto auto;
+    grid-template-areas: "find colour . results count" "filters filters filters filters reset";
+    justify-items: start;
+  }
+  .toolbar .tb-find { grid-area: find; }
+  .toolbar .tb-colour { grid-area: colour; }
+  .toolbar .tb-results { grid-area: results; justify-self: end; }
+  .explore .toolbar .pill.narrowing { margin-left: 0; }
+  .toolbar .tb-filters { grid-area: filters; }
+  .toolbar .tb-reset { grid-area: reset; justify-self: end; align-self: start; min-height: 28px; } /* level with the first filter line when they wrap */
+  .toolbar .tb-count { grid-area: count; justify-self: end; margin-left: 0; }
+}
+/* Six colour modes on the first line: below 1200px the find field and the colour parts give up a
+   little width so find, colour, Results posted and the count still share one line. Below 1100px even
+   that does not fit: Results posted opens the filters' line instead (it narrows, as they do). */
+@media (min-width: 901px) and (max-width: 1199px) {
+  .tb-find input { width: 11.5rem; }
+  .explore .toolbar .segmented button { padding: 3px 7px; }
+}
+@media (min-width: 901px) and (max-width: 1099px) {
+  .toolbar {
+    grid-template-columns: auto auto auto 1fr auto;
+    grid-template-areas: "find colour colour . count" "results filters filters filters reset";
+  }
+  .toolbar .tb-results { justify-self: start; align-self: start; }
+}
+@media (max-width: 900px) {
+  .toolbar .tb-count { margin-left: auto; }
+}
+@media (max-width: 640px) {
+  .toolbar { padding: 8px 16px 10px; gap: 10px 14px; }
+  .toolbar .tb-find { width: 100%; }
+  .explore .toolbar .pill.narrowing { margin-left: 0; } /* flush with the line start when it wraps */
+  .toolbar::after { left: 16px; right: 16px; }
+  .tb-find input { width: 100%; box-sizing: border-box; font-size: 1rem; } /* 16px: no iOS zoom on focus */
+  /* Six colour modes do not fit one phone line: the split pill becomes a three-by-two block spanning
+     the line, the same hairline frame with softer corners, its parts sharing the width. */
+  .toolbar .tb-colour { width: 100%; display: flex; align-items: flex-start; }
+  .toolbar .tb-colour .tb-k { padding-top: 4px; }
+  .toolbar .segmented { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-radius: 13px; }
+  .explore .toolbar .segmented button { padding: 3px 4px; }
+  .sheet-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+  }
+  .sheet-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .popover[data-align="end"] { left: 0; right: 0; }
+  .explore .sheet-head .text-button { font-size: 13px; padding: 6px 0; }
+}

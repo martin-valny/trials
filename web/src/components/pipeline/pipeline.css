@@ -1,0 +1,252 @@
+/* The pipeline figure (front page). Tokens live on :root (plate.css). */
+.pipeline, .target-page {
+  font-family: "Hanken Grotesk", system-ui, sans-serif; font-size: var(--fs-ui); line-height: 1.5;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  color: var(--ink); background: var(--plate);
+  max-width: 1440px; margin: 0 auto;
+}
+main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; margin: 0; padding: 0; }
+.pipeline a, .target-page a { color: inherit; }
+.pipeline button { font: inherit; color: inherit; }
+
+.lede { padding: 24px 40px 2px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: end; }
+.kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+/* Display step: 30px; 42ch is the narrowest measure that sets today's sentence on two lines at 1280 (34ch gives three). */
+.headline { font-size: 30px; font-weight: 500; line-height: 1.15; letter-spacing: -.018em; margin: 0; max-width: 42ch; text-wrap: balance; }
+.headline b { font-weight: 800; }
+.headline em { font-style: normal; color: var(--red); }
+.headline .runw { color: var(--run); }
+.lede.unavailable { display: block; }
+.lede.unavailable .headline { max-width: 30ch; }
+.keys { display: flex; gap: 34px; }
+.key b { display: block; font-size: 30px; font-weight: 500; letter-spacing: -.02em; line-height: 1; }
+.key b.k-adv { color: var(--red); }
+.key span { display: block; font-size: 12px; color: var(--muted); margin-top: 6px; max-width: 13ch; line-height: 1.3; }
+.source { padding: 8px 40px 0; margin: 0; font-size: 12px; color: var(--muted); max-width: 110ch; }
+.lede.unavailable .source { padding: 14px 0 0; }
+.source a { color: var(--ink); }
+.source.dg-line { padding-top: 2px; font-size: var(--fs-meta); }
+
+.controls { display: flex; gap: 12px 18px; align-items: center; padding: 14px 40px 10px; flex-wrap: wrap; }
+/* From 1100px the controls take two lines: arrangement, disease and company lens, then the sort with the legend at the right. */
+/* The break is a flex line of its own, so the row gap counts twice around it: halve it. */
+.ctl-break { flex-basis: 100%; height: 0; }
+.controls:has(> .ctl-break) { row-gap: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 2px; }
+.seg button { border: 0; background: none; color: var(--muted); font-size: 13px; padding: 5px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.seg button:hover { color: var(--ink); }
+.seg button.on { background: var(--ink); color: var(--plate); }
+/* Only the arrangement switch is ink-filled; the disease selection is quieter: tinted, with an ink underline. */
+.seg-dz button.on { background: var(--pale); color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 999px 999px 4px 4px; }
+.find { position: relative; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; min-width: 240px; color: var(--muted); font-size: 13px; }
+.find input { border: 0; background: none; outline: none; font: inherit; color: var(--ink); width: 100%; }
+.find:focus-within { border-color: var(--ink); }
+.find-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 4px; list-style: none; background: var(--plate); border: 1px solid var(--ink); border-radius: 12px; max-height: 280px; overflow: auto; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); }
+.find-list li { padding: 6px 10px; border-radius: 8px; color: var(--ink); cursor: pointer; }
+.find-list li.on, .find-list li:hover { background: var(--pale); }
+.lens-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--plate); border-radius: 999px; padding: 5px 8px 5px 12px; font-size: 13px; }
+.lens-chip button { border: 0; background: var(--plate); color: var(--ink); width: 18px; height: 18px; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+.sortby { margin-left: auto; font-size: 13px; color: var(--muted); }
+.sortby select { font: inherit; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rule); padding: 2px 0; border-radius: 0; }
+.pipeline :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* The front-door key is "p-legend": explore.css owns the global "legend" class (Explore's key bar), so neither stylesheet can match the other. */
+.controls > .p-legend { display: flex; gap: 6px 18px; font-size: 12px; line-height: 1.5; color: var(--muted); flex-wrap: wrap; align-items: center; margin: 0 0 0 auto; padding: 0; }
+.p-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.controls .sortby { margin-left: 0; }
+
+/* Marks: one dot per trial. */
+.m { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; position: relative; box-sizing: border-box; }
+.m6 { width: 6px; height: 6px; }
+.m.adv { background: var(--red); }
+.m.run { border: 1.6px solid var(--run); background: transparent; }
+.m6.run { border-width: 1.3px; }
+.m.stop { background: var(--stop); }
+.m.fin { background: var(--fin); }
+.m.unk { border: 1.2px dashed var(--unk); }
+.m.cb::before { content: ""; position: absolute; left: -5px; top: 3px; width: 5px; height: 1.4px; background: var(--muted); opacity: .7; }
+.m6.cb::before { top: 2px; left: -4px; width: 4px; }
+.cell .m { cursor: pointer; }
+.cell .m::after { content: ""; position: absolute; inset: -2px; }
+.lensed .m { opacity: .13; }
+.lensed .m.hit { opacity: 1; outline: 1.5px solid var(--ink); outline-offset: 1px; }
+.lensed .p-legend .m, .lensed .trial-card .m { opacity: 1; }
+
+.fig { padding: 0 40px 10px; position: relative; }
+.fig-body { animation: pfade .16s ease-out; }
+@keyframes pfade { from { opacity: 0; } to { opacity: 1; } }
+.grid { --lab: 200px; --stat: 116px; --note: 210px; }
+.grid-head, .row { display: grid; grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat) var(--note); }
+.colhead { font-size: 12px; font-weight: 700; color: var(--muted); padding: 6px 12px 6px; border-bottom: 1px solid var(--ink); letter-spacing: .02em; }
+.colhead.first { padding-left: 0; }
+.colhead small { font-weight: 400; display: block; font-size: 12px; letter-spacing: 0; }
+/* The first band sits right under the column heads' ink rule, so it needs less air above it. */
+.grid-head + .fam, .pcol + .pfam { padding-top: 12px; }
+.fam { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--fam); padding: 20px 0 6px; border-bottom: 1px solid var(--rule); }
+.row { position: relative; border-bottom: 1px solid var(--rule); transition: background .15s; }
+.row:hover { background: var(--pale); }
+.row > div { padding: 10px 12px; min-height: 58px; }
+.row-link { position: absolute; inset: 0; z-index: 1; border-radius: 2px; }
+.row-link:focus-visible { outline-offset: -2px; }
+.lab, .cell, .stat, .note { position: relative; }
+.lab { padding-left: 0 !important; }
+.lab b { font-size: 15px; font-weight: 700; letter-spacing: -.005em; display: block; line-height: 1.2; }
+.lab .sub { font-size: 12px; color: var(--muted); }
+.cos { font-size: 12px; margin-top: 4px; line-height: 1.35; }
+.cos .more { color: var(--muted); }
+/* A company name reads as a text link that wraps with its sentence: inline, left-aligned, one dotted underline. */
+.co-link { position: relative; z-index: 2; display: inline; border: 0; background: none; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.co-link:hover { text-decoration-color: var(--ink); }
+.cell { display: flex; flex-wrap: wrap; gap: 3px; align-content: flex-start; border-left: 1px dotted var(--rule); z-index: 2; pointer-events: none; }
+.cell .m { pointer-events: auto; }
+.nodot { width: 4px; height: 4px; border-radius: 50%; background: var(--fin); margin: 22px auto 0; opacity: .8; pointer-events: auto; position: relative; }
+.nodot::after { content: ""; position: absolute; inset: -9px; }
+.cell:has(.nodot) { justify-content: center; }
+.stat { font-size: 12px; color: var(--muted); line-height: 1.3; pointer-events: none; }
+.stat b { font-size: 19px; font-weight: 500; color: var(--run); display: inline-block; min-width: 24px; letter-spacing: -.01em; }
+.stat .bar { height: 3px; background: var(--pale); margin: 5px 0 4px; border-radius: 2px; overflow: hidden; }
+.row:hover .stat .bar { background: var(--plate); }
+.stat .bar i { display: block; height: 100%; background: var(--run); }
+.note { font-size: 12px; line-height: 1.38; padding-left: 26px !important; pointer-events: none; }
+.note .nk { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--red); margin-bottom: 2px; }
+.note::before { content: ""; position: absolute; left: 4px; top: 22px; width: 16px; border-top: 1px solid var(--red); }
+.past { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 26px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.past::after { content: ""; flex: 1; border-top: 1px dashed var(--rule); }
+.past em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12px; order: 1; }
+.past::after { order: 2; }
+.row.hist > div:not(.cell), .row.hist > .cell > :not(.floor),
+.prow.hist > div:not(.strip), .prow.hist > .strip > .cell > :not(.floor) { opacity: .62; }
+.lensed .row.miss > div:not(.cell), .lensed .prow.miss > div:not(.strip),
+.lensed .row.miss > .cell > :not(.floor), .lensed .prow.miss > .strip > .cell > :not(.floor) { opacity: .45; }
+
+.plate-empty { margin: 18px 40px 40px; padding: 28px 0; border-top: 1px solid var(--ink); font-size: 15px; color: var(--ink); }
+.plate-empty button { border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+.foot-source { flex-basis: 100%; margin: 0; max-width: 110ch; }
+.foot { padding: 22px 40px 40px; font-size: 12px; color: var(--muted); display: flex; gap: 10px 30px; flex-wrap: wrap; border-top: 1px solid var(--rule); margin-top: 24px; }
+.foot a { color: var(--ink); }
+
+.tip { position: absolute; z-index: 20; pointer-events: none; background: var(--ink); color: var(--plate); font-size: 12px; padding: 9px 11px; border-radius: 8px; max-width: 280px; line-height: 1.4; box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
+.tip b { display: block; font-weight: 600; margin-bottom: 3px; }
+.tip span { display: block; opacity: .75; }
+
+/* Trial card: popover next to a mark, or a bottom sheet on a phone. */
+.trial-card { background: var(--plate); color: var(--ink); border: 1px solid var(--ink); border-radius: 10px; padding: 14px 16px 12px; font-size: 13px; box-shadow: 0 12px 32px rgba(0, 0, 0, .18); }
+.trial-card.popover { position: absolute; z-index: 25; width: 330px; max-width: calc(100% - 16px); }
+.trial-card.sheet { position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; border-radius: 14px 14px 0 0; border-width: 1px 0 0; max-height: 80dvh; overflow: auto; padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+.tc-head { display: flex; align-items: center; justify-content: space-between; }
+.tc-nct { font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.tc-x { border: 0; background: none; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; color: var(--muted); }
+.tc-x:hover { background: var(--pale); color: var(--ink); }
+.tc-title { margin: 4px 0 10px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.tc-facts { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 4px 10px; margin: 0; }
+.tc-facts dt { color: var(--muted); }
+.tc-facts dd { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tc-facts dd small { color: var(--muted); }
+.tc-facts .m { display: inline-block; }
+.tc-why { margin: 10px 0 0; padding: 0 0 0 10px; border-left: 2px solid var(--ink); font-size: 13px; line-height: 1.4; }
+.tc-why::before { content: "\201C"; }
+.tc-why::after { content: "\201D"; }
+.tc-actions { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.tc-actions a { font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--ink); }
+
+/* Skeleton */
+.sk { background: var(--pale); border-radius: 4px; }
+.sk-head { height: 36px; width: min(22ch, 90%); margin-bottom: 10px; }
+.sk-head.short { width: 14ch; }
+.sk-num { height: 30px; width: 44px; }
+.sk-cap { height: 12px; width: 80px; margin-top: 8px; }
+.sk-row { height: 58px; margin-top: 12px; opacity: .6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fig-body { animation: none; }
+  .row { transition: none; }
+}
+
+@media (max-width: 1099px) {
+  .lede, .controls, .fig, .source, .foot { padding-left: 24px; padding-right: 24px; }
+  /* The legend keeps its own line under the controls, the sort back at the right of the controls' line. */
+  .ctl-break { display: none; }
+  .controls:has(> .ctl-break) { row-gap: 12px; }
+  .controls .sortby { margin-left: auto; }
+  .controls > .p-legend { flex-basis: 100%; margin-left: 0; gap: 6px 18px; }
+  .p-legend .p-legend-note { margin-left: auto; }
+  .grid { --lab: 168px; --stat: 100px; }
+  .grid-head { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
+  .grid-head .colhead:last-child { display: none; }
+  .row { grid-template-columns: var(--lab) var(--cols, repeat(var(--n), minmax(0, 1fr))) var(--stat); }
+  /* The margin note drops under the row, beside nothing: it keeps its red kicker and leader. */
+  .row > .note, .row > .note-empty { grid-column: 1 / -1; grid-row: 2; min-height: 0; padding-top: 0; padding-bottom: 10px; }
+  .row > .note-empty { display: none; }
+  .row > .note::before { top: 8px; }
+  .row > .note { padding-left: 26px !important; }
+  .plate-empty { margin-left: 24px; margin-right: 24px; }
+}
+
+/* Phone */
+.pstrip { position: relative; }
+.pcol { display: grid; grid-template-columns: var(--cols, repeat(var(--n), minmax(0, 1fr))); font-size: 12px; font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 0; position: sticky; top: 0; background: var(--plate); z-index: 3; }
+.pcol span { padding-left: 4px; }
+.prow { position: relative; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.prow .top { display: flex; align-items: baseline; gap: 8px; }
+.prow .top b { font-size: 15px; }
+.prow .top .sub { font-size: 12px; color: var(--muted); }
+.prow .top .rn { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.prow .top .rn b { color: var(--run); font-weight: 600; font-size: 13px; }
+.prow .strip { display: grid; grid-template-columns: var(--cols, repeat(var(--n), minmax(0, 1fr))); margin-top: 8px; }
+.prow .strip .cell { gap: 2.5px; padding: 0 4px; min-height: 14px; }
+.prow .cos { font-size: 12px; color: var(--muted); margin-top: 6px; position: relative; z-index: 2; pointer-events: none; }
+.prow .cos .co-link { pointer-events: auto; color: var(--muted); }
+.prow .pn { font-size: 12px; margin-top: 6px; position: relative; pointer-events: none; }
+.prow .pn b { color: var(--red); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-right: 4px; }
+.prow .top, .prow .strip { position: relative; pointer-events: none; }
+.pfam { font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--fam); padding: 18px 0 4px; }
+
+@media (max-width: 640px) {
+  .lede { display: block; padding: 24px 18px 0; }
+  /* Ruling R15: the kicker line goes on a phone; the headline says what the page is. */
+  .kicker { display: none; }
+  .headline { font-size: 24px; max-width: none; }
+  /* The two keys sit on one line, each number beside its caption. */
+  .keys { gap: 24px; margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; }
+  .key { display: flex; align-items: center; gap: 8px; }
+  .key b { font-size: 22px; }
+  .key span { font-size: 12px; margin-top: 0; }
+  .source { padding: 14px 18px 0; font-size: 12px; }
+  .controls:has(> .ctl-break), .controls { padding: 12px 18px 8px; gap: 8px; }
+  .seg-scroll { overflow-x: auto; max-width: 100%; flex-wrap: nowrap; scrollbar-width: none; }
+  .find { min-width: 0; flex: 1; }
+  .controls .sortby { margin-left: 0; }
+  .controls > .p-legend { gap: 4px 14px; padding-top: 2px; }
+  .fig { padding: 0 18px; }
+  .foot { padding: 18px; font-size: 12px; }
+  .plate-empty { margin-left: 18px; margin-right: 18px; }
+  .trial-card.sheet { font-size: 14px; }
+}
+
+.other-rows { display: block; width: 100%; margin: 14px 0 4px; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.other-rows:hover { border-color: var(--ink); }
+
+/* By year: equal-width start-year bins, marks stacked bottom-up, a hairline at the data snapshot. */
+.grid { position: relative; --tail: calc(var(--stat) + var(--note)); }
+.grid.by-year .colhead:not(.first) { padding-left: 4px; padding-right: 0; white-space: nowrap; }
+.grid.by-year .cell { border-left: 0; padding: 10px 4px; gap: 2px; flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; }
+.grid.by-year .cell[data-tick] { border-left: 1px dotted var(--rule); }
+.grid.by-year .colhead[data-tick] { border-left: 1px dotted var(--rule); }
+.asof { position: absolute; z-index: 2; top: 0; bottom: 0; width: 0; border-left: 1px solid var(--ink); pointer-events: none; left: calc(var(--lab) + (100% - var(--lab) - var(--tail)) * var(--asof, 1)); }
+.pstrip.by-year .asof { top: 30px; left: calc(100% * var(--asof, 1)); }
+.pstrip.by-year .pcol span { padding-left: 4px; white-space: nowrap; }
+.pstrip.by-year .strip .cell { flex-direction: row; flex-wrap: wrap-reverse; align-content: flex-start; align-items: flex-end; gap: 2px; padding: 0 3px; min-height: 28px; }
+@media (max-width: 1099px) {
+  .grid { --tail: var(--stat); }
+}
+
+/* Approved for this disease (By disease): a 2px ink rule along the cell's floor. Ink, not red: red only means advanced. */
+.cell.ap { padding-bottom: 12px; }
+.cell .floor { position: absolute; left: 6px; right: 6px; bottom: 4px; border-top: 2px solid var(--ink); pointer-events: auto; }
+.cell .floor::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
+/* Phone strip: no tooltip, so no hit area; the rule alone, with nothing reaching up into the marks. */
+.prow .strip .cell .floor { pointer-events: none; }
+.prow .strip .cell.ap { padding-bottom: 8px; }
+.prow .strip .cell .floor { left: 3px; right: 3px; bottom: 1px; }
+.floor-swatch { display: inline-block; width: 18px; border-top: 2px solid var(--ink); }

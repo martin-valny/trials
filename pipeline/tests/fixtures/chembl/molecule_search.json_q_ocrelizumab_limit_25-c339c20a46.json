@@ -1,0 +1,65 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL2108041",
+   "molecule_hierarchy": {
+    "parent_chembl_id": "CHEMBL2108041"
+   },
+   "molecule_synonyms": [
+    {
+     "molecule_synonym": "2H7"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab component of ocrevus zunovo"
+    },
+    {
+     "molecule_synonym": "Ocrelizumab-ocsq"
+    },
+    {
+     "molecule_synonym": "Ocrevus"
+    },
+    {
+     "molecule_synonym": "PR-070769"
+    },
+    {
+     "molecule_synonym": "PR070769"
+    },
+    {
+     "molecule_synonym": "R-1594"
+    },
+    {
+     "molecule_synonym": "RG-1594"
+    }
+   ],
+   "molecule_type": "Antibody",
+   "pref_name": "OCRELIZUMAB"
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}

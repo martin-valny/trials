@@ -1,0 +1,186 @@
+{
+  "run_id": "a1dd2bc95ace47c0b1c7c05a66f74e3e",
+  "target": "cd20",
+  "disease": "MS",
+  "fingerprint": "580d7f1dd34bcba8a2bc66b41d1f54d5b798ac2f09d0877d9a5dda8c15d14003",
+  "agent_version": "0.1.0",
+  "status": "done",
+  "started_at": "2026-11-09T12:00:00Z",
+  "finished_at": "2026-11-09T12:00:00Z",
+  "steps": [
+    {
+      "n": 1,
+      "kind": "plan",
+      "text": "Planning: CD20 · MS",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 0,
+      "tokens_out": 0
+    },
+    {
+      "n": 2,
+      "kind": "tool",
+      "text": "3 trials on this target (1 stopped)",
+      "tool": "site_target",
+      "ids": [
+        "NCT90000001",
+        "NCT90000002",
+        "NCT90000004"
+      ],
+      "ms": 0,
+      "tokens_in": 900,
+      "tokens_out": 80
+    },
+    {
+      "n": 3,
+      "kind": "tool",
+      "text": "Stop-risk estimates for 2 running trials",
+      "tool": "site_risk",
+      "ids": [
+        "NCT90000002",
+        "NCT90000004"
+      ],
+      "ms": 0,
+      "tokens_in": 0,
+      "tokens_out": 0
+    },
+    {
+      "n": 4,
+      "kind": "note",
+      "text": "Gathering done; writing the memo",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 2400,
+      "tokens_out": 40
+    },
+    {
+      "n": 5,
+      "kind": "write",
+      "text": "Memo written: 5 sentences",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 2600,
+      "tokens_out": 480
+    },
+    {
+      "n": 6,
+      "kind": "check",
+      "text": "checking 5 claims … 3 supported, 1 partly, 1 removed",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 700,
+      "tokens_out": 120
+    },
+    {
+      "n": 7,
+      "kind": "done",
+      "text": "Done",
+      "tool": null,
+      "ids": [],
+      "ms": 0,
+      "tokens_in": 0,
+      "tokens_out": 0
+    }
+  ],
+  "memo": {
+    "sections": [
+      {
+        "id": "s1",
+        "section": "landscape",
+        "text": "Three trials of CD20 in MS are listed, one of them stopped.",
+        "cites": [
+          "NCT90000001"
+        ]
+      },
+      {
+        "id": "s2",
+        "section": "track_record",
+        "text": "The stopped trial ended after an interim safety review.",
+        "cites": [
+          "NCT90000001"
+        ]
+      },
+      {
+        "id": "s3",
+        "section": "landscape",
+        "text": "The two running trials carry a stop risk near a quarter.",
+        "cites": [
+          "NCT90000002",
+          "NCT90000004"
+        ]
+      },
+      {
+        "id": "s5",
+        "section": "competition",
+        "text": "The site's stop-risk model covers 14 trials of this target in MS and gives the first running trial a 24% chance of stopping early.",
+        "cites": [
+          "NCT90000002"
+        ]
+      }
+    ],
+    "read": [
+      "CD20 depletion is established in MS.",
+      "Few trials remain running here.",
+      "Whether the stopped trial signals a class issue is open."
+    ],
+    "judgement": {
+      "stance": "mixed",
+      "confidence": "low",
+      "reasons": [
+        "s1",
+        "s3"
+      ]
+    },
+    "would_change": [
+      "A phase 3 readout in the running trials."
+    ]
+  },
+  "verdicts": [
+    {
+      "sentence_id": "s1",
+      "verdict": "supported",
+      "reason": "Three listed, one stopped."
+    },
+    {
+      "sentence_id": "s2",
+      "verdict": "partly",
+      "reason": "The source says sponsor decision after interim safety review, not a cause."
+    },
+    {
+      "sentence_id": "s3",
+      "verdict": "supported",
+      "reason": "Risk estimates are near 0.24."
+    },
+    {
+      "sentence_id": "s4",
+      "verdict": "unsupported",
+      "reason": "Nothing in the source says this."
+    },
+    {
+      "sentence_id": "s5",
+      "verdict": "supported",
+      "reason": "Summary n is 14; p is 0.244."
+    }
+  ],
+  "removed": [
+    {
+      "sentence_id": "s4",
+      "text": "A competing programme reported a positive phase 3 result.",
+      "reason": "Nothing in the source says this."
+    }
+  ],
+  "judgement_shown": true,
+  "models": {
+    "writer": "REPLACE_WITH_WRITER_MODEL_ID",
+    "planner": "REPLACE_WITH_PLANNER_MODEL_ID",
+    "checker": "REPLACE_WITH_CHECKER_MODEL_ID"
+  },
+  "tokens_in": 6600,
+  "tokens_out": 720,
+  "cost_usd": 0,
+  "data_date": "2026-11-04"
+}

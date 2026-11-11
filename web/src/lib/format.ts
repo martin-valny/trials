@@ -1,6 +1,6 @@
-import type { DateInfo } from "../types";
+import type { DateInfo, Outcome, MarkState } from "../types";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DASH = "—";
 
 export function isDateInfo(v: unknown): v is DateInfo {
@@ -42,6 +42,9 @@ export function formatValue(field: string, v: unknown): string {
   return String(v);
 }
 
+/** True for a value short enough to keep on one line in a change row (a date, a status, a number). */
+export const keepWhole = (text: string): boolean => text.length <= 28;
+
 export function formatDelta(days: number | null): string {
   if (days === null || days === 0) return "";
   const n = Math.abs(days);
@@ -78,3 +81,106 @@ export function reasonLabel(reason: string | null): string {
 
 /** "7 days" / "1 day". */
 export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "days"}`;
+
+const OUTCOME_LABELS: Record<Outcome, string> = {
+  succeeded: "Advanced to next phase",
+  stopped: "Stopped early",
+  completed_unknown: "Finished, no follow-on",
+  running: "Still running",
+  unknown: "Status unknown",
+};
+
+export const outcomeLabel = (o: Outcome): string => OUTCOME_LABELS[o];
+
+/** "PHASE2" -> "Phase 2", "EARLY_PHASE1" -> "Early phase 1", "NA" or null -> "Not applicable". */
+export function phaseLabel(p: string | null): string {
+  if (p === null || p === "NA") return "Not applicable";
+  if (p === "EARLY_PHASE1") return "Early phase 1";
+  const m = /^PHASE(\d)$/.exec(p);
+  return m ? `Phase ${m[1]}` : p;
+}
+
+/** Plain registry phase list: ["PHASE1", "PHASE2"] -> "Phase 1/2"; ["NA"] -> "No phase"; [] -> "—". */
+export function phasesLabel(phases: string[]): string {
+  if (phases.length === 0) return DASH;
+  if (phases.every((p) => p === "NA")) return "No phase";
+  const numbered = phases.map((p) => /^PHASE(\d)$/.exec(p)?.[1]);
+  if (phases.length === 2 && numbered[0] && numbered[1]) return `Phase ${numbered[0]}/${numbered[1]}`;
+  return phases.map(phaseLabel).join(", ");
+}
+
+const STATUS: Record<string, string> = {
+  RECRUITING: "Recruiting",
+  ACTIVE_NOT_RECRUITING: "Active, not recruiting",
+  NOT_YET_RECRUITING: "Not yet recruiting",
+  ENROLLING_BY_INVITATION: "Enrolling by invitation",
+  COMPLETED: "Completed",
+  TERMINATED: "Terminated",
+  WITHDRAWN: "Withdrawn",
+  SUSPENDED: "Suspended",
+  UNKNOWN: "Unknown",
+};
+
+/** Registry overall status: "NOT_YET_RECRUITING" -> "Not yet recruiting"; unlisted values fall back to sentence case. */
+export function statusLabel(s: string): string {
+  if (Object.prototype.hasOwnProperty.call(STATUS, s)) return STATUS[s] as string;
+  const t = s.replace(/_/g, " ").toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** Registry intervention type in sentence case: "DIETARY_SUPPLEMENT" -> "Dietary supplement". */
+export function treatmentLabel(t: string): string {
+  const s = t.replace(/_/g, " ").toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** The first n sentences; a sentence ends at ". ", "? " or "! " followed by a capital letter. */
+export function firstSentences(text: string, n = 2): string {
+  return text
+    .trim()
+    .split(/(?<=[.?!])\s+(?=[A-Z])/)
+    .slice(0, n)
+    .join(" ");
+}
+
+const ageParts = (y: number): [string, "month" | "year"] => {
+  if (y < 1) return [String(Math.max(1, Math.round(y * 12))), "month"];
+  return [String(Math.round(y * 10) / 10), "year"];
+};
+const unitText = (n: string, u: string) => `${n} ${u}${n === "1" ? "" : "s"}`;
+
+/** Registry age bounds in natural words: "18–55 years", "18 years and over", "6 months–17 years". */
+export function formatAgeRange(min: number | null, max: number | null): string {
+  if (min === null && max === null) return "";
+  if (max === null) {
+    const [n, u] = ageParts(min as number);
+    return `${unitText(n, u)} and over`;
+  }
+  const [mx, mu] = ageParts(max);
+  if (min === null) return `up to ${unitText(mx, mu)}`;
+  const [mn, nu] = ageParts(min);
+  if (mn === mx && nu === mu) return unitText(mn, mu);
+  return nu === mu ? `${mn}–${unitText(mx, mu)}` : `${unitText(mn, nu)}–${unitText(mx, mu)}`;
+}
+
+const SEX: Record<string, string> = { ALL: "All sexes", FEMALE: "Female only", MALE: "Male only" };
+export const sexLabel = (s: string): string => SEX[s] ?? s;
+
+/** The plate mark for a registry status: running ring, stopped dot, finished pale dot, unknown dashed. */
+export function markState(status: string): MarkState {
+  switch (status) {
+    case "RECRUITING":
+    case "ACTIVE_NOT_RECRUITING":
+    case "NOT_YET_RECRUITING":
+    case "ENROLLING_BY_INVITATION":
+      return "run";
+    case "TERMINATED":
+    case "WITHDRAWN":
+    case "SUSPENDED":
+      return "stop";
+    case "COMPLETED":
+      return "fin";
+    default:
+      return "unk";
+  }
+}

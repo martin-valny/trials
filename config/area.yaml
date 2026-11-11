@@ -2,16 +2,53 @@ name: neuroimmunology
 conditions:
   - label: Multiple sclerosis
     synonyms: ["multiple sclerosis", "relapsing remitting multiple sclerosis"]
+    short: MS
+    code: MS
+    figure_order: 1
+    approvals:
+      mesh:
+        - Multiple Sclerosis
+        - Multiple Sclerosis, Chronic Progressive
+        - Multiple Sclerosis, Relapsing-Remitting
+      label_terms: ["multiple sclerosis"]
   - label: NMOSD
     synonyms: ["neuromyelitis optica", "NMOSD"]
+    code: NMOSD
+    figure_order: 3
+    approvals:
+      mesh: ["Neuromyelitis Optica"]
+      label_terms: ["neuromyelitis optica"]
   - label: MOGAD
     synonyms: ["MOG antibody disease", "MOGAD", "myelin oligodendrocyte glycoprotein"]
+    code: MOGAD
+    figure_order: 5
+    approvals:
+      mesh: []
+      label_terms: ["myelin oligodendrocyte glycoprotein antibody", "MOGAD"]
   - label: Myasthenia gravis
     synonyms: ["myasthenia gravis"]
+    code: MG
+    figure_order: 2
+    approvals:
+      mesh: ["Myasthenia Gravis"]
+      label_terms: ["myasthenia gravis"]
   - label: CIDP
     synonyms: ["chronic inflammatory demyelinating polyneuropathy", "CIDP"]
+    code: CIDP
+    figure_order: 4
+    approvals:
+      mesh: ["Polyradiculoneuropathy, Chronic Inflammatory Demyelinating"]
+      label_terms:
+        - chronic inflammatory demyelinating polyneuropathy
+        - chronic inflammatory demyelinating polyradiculoneuropathy
   - label: Autoimmune encephalitis
     synonyms: ["autoimmune encephalitis", "anti-NMDA receptor encephalitis", "limbic encephalitis"]
+    code: AE
+    figure_order: 6
+    approvals:
+      efo:
+        - ["Autoimmune Diseases of the Nervous System", "autoimmune encephalitis"]
+      label_terms: ["autoimmune encephalitis"]
 study_type: INTERVENTIONAL
 phases: [EARLY_PHASE1, PHASE1, PHASE2, PHASE3, PHASE4, NA]
 tracked_fields:
@@ -38,3 +75,35 @@ thresholds:
   min_relevant_share: 0.5
   max_null_rate: 0.0
 aliases_dir: aliases
+explorer:
+  permutations: 10000
+  clusters:
+    min_cluster_size: 25
+    min_samples: 10
+    disease_share: 0.6
+    mechanism_share: 0.4
+    mechanism_min_overall: 0.25
+    type_share: 0.5
+    drug_share: 0.15
+  weights:
+    disease: 1.0
+    treatment_type: 0.6
+    molecule: 1.0
+    mechanism: 1.0
+    population: 0.4
+  exclude_terms:
+    - placebo
+    - sham
+    - saline
+    - sodium chloride
+    - normal saline
+    - vehicle
+    - standard of care
+    - best supportive care
+    - usual care
+    - no intervention
+    - observation
+risk:
+  enabled: true
+  per_trial: false
+  dir: risk

@@ -17,3 +17,18 @@ def build_params(cfg: AreaConfig) -> dict[str, str]:
         "pageSize": str(PAGE_SIZE),
         "format": "json",
     }
+
+
+def build_training_params(start_year: int) -> dict[str, str]:
+    """Registry-wide query for the stop-risk training set: finished phase 1-3 drug trials that
+    started in ``start_year`` (no condition filter)."""
+    advanced = " AND ".join(
+        [
+            "AREA[StudyType]INTERVENTIONAL",
+            "(AREA[Phase]PHASE1 OR AREA[Phase]PHASE2 OR AREA[Phase]PHASE3)",
+            "AREA[OverallStatus](COMPLETED OR TERMINATED)",
+            "AREA[InterventionType](DRUG OR BIOLOGICAL)",
+            f"AREA[StartDate]RANGE[{start_year}-01-01,{start_year}-12-31]",
+        ]
+    )
+    return {"filter.advanced": advanced, "pageSize": str(PAGE_SIZE), "format": "json"}

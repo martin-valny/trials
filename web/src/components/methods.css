@@ -1,0 +1,59 @@
+/* Methods on the Figure Plate (spec section 7): a reading page. From 1100px a sticky contents column on the left and
+   the prose in a reading column beside it; below that the contents as a block at the top, then the prose. Prose at the
+   scale's reading step (15/1.6); headings on the scale. Figures and tables in the stop-risk and diligence sections may
+   run wider than the measure, inside the prose column. Plate tokens only. */
+.methods-body { margin-top: 32px; padding-bottom: 96px; }
+.methods-toc { margin-bottom: 40px; }
+.methods-toc-h { margin: 0 0 10px; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
+/* Below 1100px the list is a block at the top that wraps into as many columns as fit. */
+.methods-toc .contents-column ul { columns: 15rem 3; column-gap: 32px; border-left: 0; }
+.methods-toc .contents-column li { border-left: 1px solid var(--rule); }
+
+.methods { min-width: 0; font-size: var(--fs-read); line-height: var(--lh-read); }
+/* The measure: 29.4rem is 56ch of Hanken Grotesk at 15px, which holds the longest line to 75 characters (68ch let
+   lines reach 92, because the "0" that sets 1ch is wider than the average letter). Headings share it, so the ink rule
+   over each one ends where the prose does. The stop-risk section's 14px notes keep 56ch of their own size. */
+.methods { --measure: 29.4rem; }
+.methods p, .methods ul, .methods h2, .methods h3, .methods h4, .methods .rk-m p, .methods .rk-m ul { max-width: var(--measure); }
+.methods .rk-m-note { max-width: 56ch; }
+.methods p { margin: 0 0 12px; text-wrap: pretty; }
+.methods ul { margin: 0 0 14px; padding-left: 1.25em; }
+.methods li { margin: 0 0 4px; }
+.methods li::marker { color: var(--muted); }
+.methods code { font-size: var(--fs-body); }
+/* An old #fragment and the contents land a section clear of the top edge; nothing sticky covers the prose. */
+.methods [id] { scroll-margin-top: 24px; }
+
+.methods section + section { margin-top: 56px; }
+.methods h2 {
+  margin: 0 0 14px; padding-top: 14px; border-top: 1px solid var(--ink);
+  font-size: var(--fs-lede); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em;
+}
+.methods h2:focus { outline: none; }
+.methods h2:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.methods h3 { margin: 28px 0 8px; font-size: var(--fs-read); font-weight: 700; line-height: 1.4; }
+.methods h4 { margin: 20px 0 6px; font-size: var(--fs-body); font-weight: 700; line-height: var(--lh-body); }
+.methods section section { margin-top: 0; }
+.methods .side-muted { color: var(--muted); font-size: var(--fs-ui); }
+.methods .text-button { font-size: var(--fs-ui); }
+
+@media (min-width: 1100px) {
+  .methods-body { display: grid; grid-template-columns: 16rem minmax(0, 1fr); column-gap: 64px; align-items: start; }
+  .methods-toc {
+    position: sticky; top: 24px; margin-bottom: 0;
+    max-height: calc(100vh - 48px); overflow-y: auto; scrollbar-width: thin;
+    /* Room for the links' 2px focus ring, which the scroll box would otherwise clip; the margin keeps the edge. */
+    padding: 0 3px 3px; margin-left: -3px;
+  }
+  /* In the column the list is one rule down the left, not wrapped. */
+  .methods-toc .contents-column ul { columns: auto; border-left: 1px solid var(--rule); }
+  .methods-toc .contents-column li { border-left: 0; }
+}
+@media (max-width: 640px) {
+  .methods-body { margin-top: 24px; padding-bottom: 64px; }
+  .methods-toc { margin-bottom: 32px; }
+  .methods section + section { margin-top: 44px; }
+}
+@media print {
+  .methods-toc { display: none; }
+}

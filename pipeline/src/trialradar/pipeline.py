@@ -31,12 +31,21 @@ from typing import Any, Literal
 import polars as pl
 
 from trialradar import quality
+from trialradar.approvals.io import Approval, ApprovalsError, read_approvals
 from trialradar.config import AreaConfig
 from trialradar.ctgov.client import CtGovClient
 from trialradar.diff import diff
+from trialradar.explorer.approaches import mapping_names
+from trialradar.explorer.build import build_explorer
+from trialradar.explorer.extras import StudyExtras, empty_extras, extract_extras
+from trialradar.explorer.graph import load_graph
 from trialradar.export import export
 from trialradar.normalize import normalize
+from trialradar.pipeline_figure.build import build_pipeline_doc
+from trialradar.pipeline_figure.io import read_figure_config
 from trialradar.relevance import filter_relevant
+from trialradar.risk.apply import build_risk_doc
+from trialradar.risk.artefacts import load as load_risk
 from trialradar.snapshot import (
     list_snapshots,
     promote_staged,
@@ -45,7 +54,7 @@ from trialradar.snapshot import (
     read_snapshot,
     stage_snapshot,
 )
-from trialradar.store import RUN_LOG_SCHEMA, Store
+from trialradar.store import RUN_LOG_SCHEMA, Store, StoreError
 from trialradar.tables import Tables
 from trialradar.textnorm import Aliases, load_alias_set
 from trialradar.tracked import registry_dates, snapshot_frame, tracked_state
@@ -111,8 +120,10 @@ def _stage(name: str, **extra: Any) -> Iterator[dict[str, Any]]:
 
 def _prepare(
     raw: list[dict[str, Any]], cfg: AreaConfig, aliases_dir: Path
-) -> tuple[list[dict[str, Any]], Tables]:
-    """Schema check, relevance filter and normalize; ``DataError`` for bad data."""
+) -> tuple[list[dict[str, Any]], Tables, dict[str, StudyExtras], list[str]]:
+    """Schema check, relevance filter, normalize and the explorer's extra fields;
+    ``DataError`` for bad data. The extra fields only feed the explorer and the trial
+    pages, so a malformed one is a warning (returned), never a failed run (R19)."""
     with _stage("check_raw") as info:
         info["rows"] = len(raw)
         errors = quality.check_raw(raw)
@@ -127,7 +138,149 @@ def _prepare(
         except Exception as exc:  # malformed data inside a study
             raise DataError([f"normalize: {_describe(exc)}"]) from exc
         info["rows"] = tables.trial.height
-    return relevant, tables
+    with _stage("extras") as info:
+        extras, extras_warnings = extract_extras(relevant, cfg)
+        info["rows"], info["warnings"] = len(extras), extras_warnings
+    return relevant, tables, extras, extras_warnings
+
+
+def _explorer(
+    tables: Tables,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    aliases: Aliases,
+    previous: Callable[[], dict[str, tuple[float, float, float]]],
+    day: date,
+    *,
+    log_day: bool = False,
+) -> tuple[dict[str, Any] | None, pl.DataFrame | None, list[str]]:
+    """Build the explorer document and coordinates in one logged stage, plus its warnings.
+
+    Unreadable saved coordinates are only cosmetic (alignment): warn and lay out afresh.
+    The map is optional (R19): if the build fails, the stage logs the error and this
+    returns no document and no coordinates with an ``explorer:`` warning, so the run
+    still exports the site, without a map, and keeps yesterday's saved coordinates."""
+    extra = {"day": day.isoformat()} if log_day else {}
+    warnings: list[str] = []
+    try:
+        with _stage("explorer", **extra) as info:
+            info["warnings"] = warnings
+            try:
+                prev = previous()
+            except StoreError as exc:
+                warnings.append(f"explorer_coords_unreadable: {exc}")
+                prev = {}
+            doc, coords = build_explorer(
+                tables, extras, cfg, aliases.intervention, prev, day, warnings=warnings
+            )
+            info["rows"] = len(doc["trials"])
+    except Exception as exc:  # noqa: BLE001 - the map never fails the daily run
+        return None, None, [*warnings, f"explorer: {_describe(exc)}"]
+    return doc, coords, warnings
+
+
+def _mechanism_graph(
+    explorer: dict[str, Any] | None,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    aliases: Aliases,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The mechanism graph (``mechanisms.json``) for a built map, plus its warnings.
+
+    Optional (R19): missing or invalid mapping or pathway files, or any failure, give one
+    ``mechanism_graph:`` warning and no graph; the run continues. No map, no graph (the map's
+    own warning already says why)."""
+    if explorer is None:
+        return None, []
+    extra = {"day": day.isoformat()} if day is not None else {}
+    try:
+        with _stage("mechanism_graph", **extra) as info:
+            ids = [t["nct_id"] for t in explorer["trials"]]
+            full = {nct: extras.get(nct) or empty_extras(nct) for nct in ids}
+            names = mapping_names(full, aliases.intervention, cfg)
+            graph = load_graph(explorer, cfg, names)
+            info["rows"] = len(graph["nodes"])
+    except Exception as exc:  # noqa: BLE001 - the graph never fails the daily run
+        return None, [f"mechanism_graph: {_describe(exc)}"]
+    return graph, []
+
+
+def _read_approvals(cfg: AreaConfig, warnings: list[str]) -> list[Approval] | None:
+    """The committed ``approvals.csv``; a missing or malformed file is a warning, not a
+    failure, and gives ``None`` (an empty file gives ``[]``)."""
+    try:
+        return read_approvals(cfg.approvals_dir / "approvals.csv")
+    except FileNotFoundError:
+        warnings.append("approvals: missing")
+    except ApprovalsError as exc:
+        warnings.append(f"approvals: {exc}")
+    except (OSError, ValueError) as exc:  # unreadable, or not UTF-8 (UnicodeDecodeError)
+        warnings.append(f"approvals: {cfg.approvals_dir / 'approvals.csv'}: {_describe(exc)}")
+    return None
+
+
+def _pipeline_figure(
+    explorer: dict[str, Any] | None,
+    tables: Tables,
+    cfg: AreaConfig,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The front-door Pipeline figure (``pipeline.json``) for a built map, plus its warnings.
+
+    Optional (R19): a missing or invalid config file, or any failure, gives one
+    ``pipeline_figure:`` warning and no figure; the run continues. No map, no figure (the
+    map's own warning already says why). Unlisted classes and sponsors are warnings too."""
+    if explorer is None:
+        return None, []
+    extra = {"day": day.isoformat()} if day is not None else {}
+    warnings: list[str] = []
+    try:
+        with _stage("pipeline_figure", **extra) as info:
+            info["warnings"] = warnings
+            fig = read_figure_config(cfg.pipeline_dir, cfg.sponsors_dir, cfg.stop_reasons)
+            for_day = day or date.fromisoformat(explorer["generated_for"])
+            approvals = _read_approvals(cfg, warnings)
+            doc = build_pipeline_doc(
+                explorer, tables.trial, cfg, fig, for_day, warnings, approvals=approvals
+            )
+            info["rows"] = len(doc["trials"])
+    except Exception as exc:  # noqa: BLE001 - the figure never fails the daily run
+        return None, [f"pipeline_figure: {_describe(exc)}"]
+    return doc, warnings
+
+
+def _stop_risk(
+    tables: Tables,
+    extras: dict[str, StudyExtras],
+    cfg: AreaConfig,
+    figure: dict[str, Any] | None,
+    *,
+    day: date | None = None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The stop-risk document (``risk.json``) for the day's running trials, plus warnings.
+
+    Optional (R19): disabled config gives no document and no warning; unreadable or
+    mismatched artefacts, or any other failure, give one ``stop_risk:`` warning and no
+    document, and the run continues."""
+    if not cfg.risk.enabled:
+        return None, []
+    for_day = day or (date.fromisoformat(figure["generated_for"]) if figure else date.today())
+    try:
+        with _stage("stop_risk", day=for_day.isoformat()) as info:
+            doc = build_risk_doc(tables, extras, cfg, load_risk(cfg.risk.dir), figure, for_day)
+            info["rows"] = len(doc.get("trials", ())) or len(doc["not_scored"])
+    except Exception as exc:  # noqa: BLE001 - the risk stage never fails the daily run
+        return None, [f"stop_risk: {_describe(exc)}"]
+    return doc, []
+
+
+def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
+    with _stage("explorer_coords", **extra) as info:
+        store.save_explorer_coords(coords)
+        info["rows"] = coords.height
 
 
 def _gate(
@@ -223,8 +376,8 @@ def run(
 
     Stage order: rewind check -> version check (skip if unchanged) -> fetch ->
     staged snapshot -> schema check -> relevance filter -> normalize -> previous
-    state -> quality gate -> diff -> store -> promote snapshot -> export ->
-    success run_log row.
+    state -> quality gate -> diff -> store -> promote snapshot -> explorer ->
+    mechanism graph -> export -> save explorer coords -> success run_log row.
     """
     clock = now or _utcnow
     started_at, t0 = clock(), time.monotonic()
@@ -259,23 +412,36 @@ def run(
             staged = True
             info["rows"] = len(raw)
 
-        relevant, tables = _prepare(raw, cfg, aliases_dir)
+        relevant, tables, extras, extras_warnings = _prepare(raw, cfg, aliases_dir)
         with _stage("state_before") as info:
             # A StoreError here is not the data's fault: the snapshot is not quarantined.
             found = store.state_before(day)
             prev = found[0] if found else None
             info["rows"] = prev.trial.height if prev else 0
         prev_count = (prev.trial.height or None) if prev else None
-        warnings = _gate(raw, relevant, tables, prev_count, cfg, accept_drop)
+        warnings = [*_gate(raw, relevant, tables, prev_count, cfg, accept_drop), *extras_warnings]
 
         staged = False  # past the gate: a later failure is not the data's fault
-        changes, snaps = _changes(prev, tables, cfg, load_alias_set(aliases_dir), day)
+        aliases = load_alias_set(aliases_dir)
+        changes, snaps = _changes(prev, tables, cfg, aliases, day)
         _persist(store, tables, day, ts, changes, snaps)
         # Promote only once the store holds this data, so a raw snapshot always
         # matches what was stored (rebuild replays it); before export, so a failed
         # export (the data was fine) keeps it. A diff/store failure leaves it in
         # staging, which the next run clears.
         promote_staged(raw_dir, day)
+        # A failed explorer build is a warning (R19): the site is exported without a map
+        # and the saved coordinates are left as they were.
+        explorer, coords, explorer_warnings = _explorer(
+            tables, extras, cfg, aliases, store.load_explorer_coords, day
+        )
+        warnings += explorer_warnings
+        figure, figure_warnings = _pipeline_figure(explorer, tables, cfg)
+        warnings += figure_warnings
+        risk, risk_warnings = _stop_risk(tables, extras, cfg, figure, day=day)
+        warnings += risk_warnings
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
+        warnings += graph_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -285,8 +451,23 @@ def run(
             # after save_state/replace_day, a same-day rerun is idempotent, and the
             # next run with an unchanged timestamp is NOT skipped (no success row).
             log = pl.concat([store.run_log(), pl.DataFrame([row], schema=RUN_LOG_SCHEMA)])
-            export(tables, store.changes(), log, cfg, day, site_dir)
+            export(
+                tables,
+                store.changes(),
+                log,
+                cfg,
+                day,
+                site_dir,
+                extras=extras,
+                explorer=explorer,
+                mechanisms=graph,
+                pipeline=figure,
+                risk=risk,
+            )
             info["rows"] = tables.trial.height
+        # Only a layout that reached the site becomes the next day's alignment target.
+        if coords is not None:
+            _save_coords(store, coords)
         with _stage("run_log", status="success") as info:
             store.append_run(row)
             info["rows"] = 1
@@ -379,7 +560,10 @@ def rebuild(
     try:
         store = Store(tmp_root)
         prev: Tables | None = None
-        last: tuple[Tables, date] | None = None
+        last: tuple[Tables, dict[str, StudyExtras], date] | None = None
+        # The last replayed day's row is appended after the map is built, so it can
+        # carry the map's warnings.
+        pending: dict[str, Any] | None = None
         for day, path in snapshots:
             t0 = time.monotonic()
             meta = read_sidecar(path)
@@ -387,10 +571,11 @@ def rebuild(
                 with _stage("read_snapshot", day=day.isoformat()) as info:
                     raw = read_snapshot(path)
                     info["rows"] = len(raw)
-                relevant, tables = _prepare(raw, cfg, aliases_dir)
+                relevant, tables, extras, extras_warnings = _prepare(raw, cfg, aliases_dir)
                 prev_count = (prev.trial.height or None) if prev else None
                 accepted = meta.get("accept_drop") is True
-                warnings = _gate(raw, relevant, tables, prev_count, cfg, accepted)
+                warnings = [*_gate(raw, relevant, tables, prev_count, cfg, accepted)]
+                warnings += extras_warnings
             except Exception as exc:  # noqa: BLE001 - an unusable day is skipped, not fatal
                 errors = exc.errors if isinstance(exc, DataError) else [_describe(exc)]
                 with _stage("rebuild_skip", day=day.isoformat()) as info:
@@ -410,14 +595,43 @@ def rebuild(
                 changes.height,
                 warnings,
             )
-            store.append_run(row)
-            prev, last = tables, (tables, day)
-        if last is None:
+            if pending is not None:
+                store.append_run(pending)
+            pending = row
+            prev, last = tables, (tables, extras, day)
+        if last is None or pending is None:
             raise RebuildError(f"none of the {len(snapshots)} raw snapshots could be replayed")
-        tables, day = last
+        tables, extras, day = last
+        # Only the last replayed day gets a map, laid out afresh (no previous coords).
+        explorer, coords, explorer_warnings = _explorer(
+            tables, extras, cfg, aliases, dict, day, log_day=True
+        )
+        figure, figure_warnings = _pipeline_figure(explorer, tables, cfg, day=day)
+        risk, risk_warnings = _stop_risk(tables, extras, cfg, figure, day=day)
+        graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
+        explorer_warnings = [*explorer_warnings, *figure_warnings, *risk_warnings, *graph_warnings]
+        if explorer_warnings:
+            pending["warnings"] = json.dumps(
+                [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
+            )
+        store.append_run(pending)
         with _stage("export", day=day.isoformat()) as info:
-            export(tables, store.changes(), store.run_log(), cfg, day, site_dir)
+            export(
+                tables,
+                store.changes(),
+                store.run_log(),
+                cfg,
+                day,
+                site_dir,
+                extras=extras,
+                explorer=explorer,
+                mechanisms=graph,
+                pipeline=figure,
+                risk=risk,
+            )
             info["rows"] = tables.trial.height
+        if coords is not None:
+            _save_coords(store, coords, day=day.isoformat())
         # Everything succeeded: swap the rebuilt store in.
         Store(store_root).wipe()
         store_root.mkdir(parents=True, exist_ok=True)

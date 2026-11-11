@@ -1,0 +1,37 @@
+{
+ "pageInfo": {
+  "resultsPerPage": 100,
+  "current": 1,
+  "total": 1
+ },
+ "results": [
+  {
+   "id": "P31358",
+   "symbol": "CD52",
+   "databaseSubset": "Swiss-Prot",
+   "taxonId": 9606,
+   "name": "CAMPATH-1 antigen"
+  },
+  {
+   "id": "Q9UJ81",
+   "symbol": "CD52",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CAMPATH-1 antigen"
+  },
+  {
+   "id": "V9HWN9",
+   "symbol": "HEL-S-171mP",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CAMPATH-1 antigen"
+  },
+  {
+   "id": "Q6IBD0",
+   "symbol": "CDW52",
+   "databaseSubset": "TrEMBL",
+   "taxonId": 9606,
+   "name": "CAMPATH-1 antigen"
+  }
+ ]
+}

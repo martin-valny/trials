@@ -1,0 +1,120 @@
+/* Panel g: the diligence agent. Plate tokens only (--ink --muted --rule --pale --plate); no red (red means "advanced").
+   The trace is a typeset log, not chat; checker marks carry words, and shape (a dotted underline), never colour alone. */
+.dg-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 12px; }
+.dg-status { margin: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dg .dg-run { border: 1px solid var(--ink); border-radius: 999px; background: var(--plate); color: var(--ink); font-size: 13px; font-weight: 600; padding: 6px 16px; min-height: 32px; cursor: pointer; }
+.dg .dg-run:hover { background: var(--ink); color: var(--plate); }
+.dg-notice { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--ink); max-width: 80ch; }
+.dg-wait, .dg-next { margin: 0; font-size: 13px; color: var(--muted); }
+.dg-next { padding: 8px 0 0 2.25rem; }
+.dg-intro p { margin: 0; font-size: 14px; line-height: 1.5; max-width: 72ch; color: var(--muted); }
+.dg-intro b { color: var(--ink); font-weight: 700; }
+.dg-intro a { color: var(--ink); font-weight: 600; }
+
+/* Two columns side by side: the trace on the left (narrow, a log), the memo on the right. */
+.dg-grid { display: grid; grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr); gap: 0 56px; align-items: start; }
+.dg-grid.solo { grid-template-columns: minmax(0, 40rem); }
+.dg-h { display: flex; align-items: baseline; gap: 10px; margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.dg-h span { font-weight: 400; color: var(--muted); font-size: 12px; }
+.dg-pending { margin: 0; padding-top: 8px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); max-width: 52ch; }
+
+/* The trace: step number, kind (a word), tool and its one-line result, time taken. */
+.dg-steps { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.dg-step { display: grid; grid-template-columns: 1.25rem 2.5rem minmax(0, 1fr) auto; gap: 0 8px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 13px; line-height: 1.4; }
+.dg-n { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.dg-k { color: var(--muted); font-size: 12px; }
+.dg-x { min-width: 0; overflow-wrap: anywhere; }
+.dg-x b { font-weight: 700; }
+.dg-t { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dg-step.k-error .dg-k, .dg-step.k-limit .dg-k, .dg-step.k-error .dg-x, .dg-step.k-limit .dg-x { color: var(--ink); font-weight: 700; }
+.dg-step.k-done .dg-k { color: var(--ink); font-weight: 700; }
+
+/* The memo. */
+.dg-memo { min-width: 0; max-width: 46rem; }
+.dg-ai { margin: 0 0 18px; font-size: 12px; line-height: 1.45; color: var(--muted); max-width: 72ch; }
+.dg-ai a { color: var(--ink); }
+.dg-memo h4 { margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.dg-memo section + section { margin-top: 18px; }
+
+/* The summary block: Read, Judgement, What would change, under one ink rule. */
+.dg-sum { border-top: 1px solid var(--ink); padding: 12px 0 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 36px; border-bottom: 1px solid var(--rule); margin-bottom: 20px; }
+.dg-sum > section + section { margin-top: 0; }
+.dg-sum .dg-j { grid-row: span 2; }
+.dg-read ol, .dg-wc ul { margin: 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.45; }
+.dg-read li + li, .dg-wc li + li { margin-top: 4px; }
+.dg-read ol { counter-reset: rd; }
+.dg-read li { counter-increment: rd; display: grid; grid-template-columns: 1.1rem minmax(0, 1fr); }
+.dg-read li::before { content: counter(rd); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.dg-stance { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: -.005em; max-width: 34ch; }
+.dg-stance.withheld { font-size: 14px; }
+.dg-conf { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.dg-because { margin: 10px 0 2px; font-size: 12px; color: var(--muted); }
+.dg-reasons { margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.45; }
+.dg-reasons li { padding: 3px 0; }
+.dg .dg-to { border: 0; background: none; padding: 0; margin: 0; font: inherit; text-align: left; cursor: pointer; color: var(--ink); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.dg .dg-to:hover { text-decoration-color: var(--ink); }
+.dg-reasons.plain { margin-top: 8px; }
+.dg-reasons small, .dg-removed small { display: block; font-size: 12px; color: var(--muted); }
+.dg-gone { color: var(--muted); }
+.dg-label { margin: 12px 0 0; font-size: 12px; font-weight: 700; color: var(--ink); }
+.dg-label.solo { margin-top: 16px; }
+
+/* Claims: sentence, citation chips, the checker's mark in words, Flag. */
+.dg-sens { list-style: none; margin: 0; padding: 0; }
+.dg-s { font-size: 14px; line-height: 1.55; padding: 3px 0 5px; border-radius: 2px; scroll-margin: 80px; }
+.dg-s:focus { outline: none; }
+.dg-s:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dg-s.partly .dg-st { text-decoration: underline dotted var(--muted); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.dg-cites { white-space: normal; }
+.dg-cite { display: inline-block; margin: 0 4px 0 0; padding: 0 6px; border: 1px solid var(--rule); border-radius: 999px; font-size: 12px; line-height: 17px; font-weight: 600; color: var(--muted); text-decoration: none; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+a.dg-cite:hover { border-color: var(--ink); color: var(--ink); }
+.dg-mark { display: block; font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 1px; }
+.dg-mark::before { content: ""; display: inline-block; width: 7px; height: 7px; border: 1px solid var(--muted); border-radius: 50%; margin-right: 6px; vertical-align: 0; background: linear-gradient(90deg, var(--muted) 50%, transparent 50%); }
+.dg-mark.unchecked::before { background: none; }
+.dg .dg-flag { border: 0; background: none; padding: 0 0 0 2px; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
+.dg .dg-flag:hover { color: var(--ink); text-decoration-color: var(--ink); }
+.dg-flagged { display: block; font-size: 12px; color: var(--ink); margin-top: 2px; }
+.dg-none { margin: 0; font-size: 13px; color: var(--muted); }
+
+.dg-form { margin: 6px 0 4px; max-width: 34rem; }
+.dg-form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.dg-form textarea { display: block; width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; line-height: 1.4; color: var(--ink); background: var(--plate); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 9px; resize: vertical; }
+.dg-form textarea:focus { outline: none; border-color: var(--ink); }
+.dg-form textarea:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dg-form-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; }
+.dg-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-right: auto; }
+.dg-err { font-size: 12px; font-weight: 600; flex-basis: 100%; order: -1; }
+.dg .dg-send, .dg .dg-cancel { font-size: 13px; border-radius: 999px; padding: 3px 12px; cursor: pointer; min-height: 28px; }
+.dg .dg-send { border: 1px solid var(--ink); background: var(--ink); color: var(--plate); }
+.dg .dg-send:disabled { opacity: .45; cursor: default; }
+.dg .dg-cancel { border: 1px solid var(--rule); background: none; color: var(--ink); }
+.dg .dg-cancel:hover { border-color: var(--ink); }
+
+/* Removed by the checker: plain text only (the IDs may be invented, so nothing here is a link). */
+.dg-memo .dg-removed { margin-top: 22px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.dg-removed ul { list-style: none; margin: 0; padding: 0; }
+.dg-removed li { font-size: 13px; line-height: 1.45; padding: 3px 0; }
+.dg-rm-t { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); text-decoration-thickness: 1px; }
+
+/* Run details. */
+.dg-meta { margin: 22px 0 0; padding-top: 10px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: repeat(3, minmax(0, auto)); justify-content: start; gap: 6px 32px; font-size: 12px; }
+.dg-meta div { min-width: 0; }
+.dg-meta dt { color: var(--muted); }
+.dg-meta dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dg-meta div:first-child { grid-column: 1 / -1; }
+
+@media (min-width: 1100px) {
+  /* The trace stays in view while the memo is read, below the sticky contents strip. */
+  .dg-tr { position: sticky; top: calc(var(--strip-h, 0px) + 16px); }
+}
+@media (max-width: 1099px) {
+  .dg-grid { grid-template-columns: minmax(0, 1fr); }
+  .dg-tr { margin-bottom: 26px; max-width: 40rem; }
+}
+@media (max-width: 640px) {
+  .dg-sum { grid-template-columns: minmax(0, 1fr); }
+  .dg-sum .dg-j { grid-row: auto; }
+  .dg-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; }
+  .dg-next { padding-left: 0; }
+  .dg-form textarea { font-size: 1rem; } /* iOS does not zoom */
+}

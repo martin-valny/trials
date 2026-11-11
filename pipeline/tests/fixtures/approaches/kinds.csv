@@ -1,0 +1,22 @@
+kind,approach,group,label,rationale,source_url
+ahsct,cell,Haematopoietic reset,aHSCT,Proposed immune reset by ablation and stem-cell rescue; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D018380
+msc,cell,Mesenchymal cells,Mesenchymal stem cells,Proposed paracrine immunomodulation; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D059630
+immunoglobulin,plasma,Immunoglobulin replacement,IVIG / SCIG,Proposed pooled-antibody immunomodulation; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D016756
+atg,plasma,Polyclonal depletion,Anti-thymocyte globulin,Proposed polyclonal T-cell depletion; no single molecular target,https://meshb.nlm.nih.gov/record/ui?ui=D000961
+plasma_exchange,plasma,Removal,Plasma exchange,Proposed removal of circulating antibodies,https://meshb.nlm.nih.gov/record/ui?ui=D010956
+myelin_peptide,tolerisation,Antigen-specific tolerisation,Myelin peptides,Proposed antigen-specific tolerance,https://example.org/myelin-peptides
+glatiramer,diffuse,Glatiramer,Glatiramer acetate,Proposed broad immunomodulation; no defined target,https://example.org/glatiramer
+exercise,nondrug,Rehabilitation & exercise,Exercise,Proposed functional benefit through training,https://meshb.nlm.nih.gov/record/ui?ui=D015444
+tms,nondrug,Devices & neuromodulation,TMS,Proposed cortical neuromodulation,https://meshb.nlm.nih.gov/record/ui?ui=D050781
+type:BEHAVIORAL,nondrug,Behavioural & psychological,other behavioural,,
+type:DEVICE,nondrug,Devices & neuromodulation,other device,,
+type:PROCEDURE,nondrug,Procedures,other procedure,,
+type:RADIATION,nondrug,Procedures,radiation,,
+type:DIETARY_SUPPLEMENT,nondrug,Diet & supplements,other supplement,,
+type:DIAGNOSTIC_TEST,unclassified,Not a treatment,diagnostic test,,
+not_a_treatment,unclassified,Not a treatment,not a treatment,,
+type:OTHER,unclassified,Not yet sorted,other,,
+type:GENETIC,unclassified,Not yet sorted,genetic,,
+type:COMBINATION_PRODUCT,unclassified,Not yet sorted,combination product,,
+type:DRUG,unclassified,Not yet sorted,unmapped drug,,
+type:BIOLOGICAL,unclassified,Not yet sorted,unmapped biological,,

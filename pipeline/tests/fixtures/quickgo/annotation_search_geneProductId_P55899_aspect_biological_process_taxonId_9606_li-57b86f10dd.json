@@ -1,0 +1,27 @@
+{
+ "pageInfo": {
+  "resultsPerPage": 100,
+  "current": 1,
+  "total": 1
+ },
+ "results": [
+  {
+   "id": "UniProtKB:P55899!297737818",
+   "symbol": "FCGRT",
+   "taxonId": 9606,
+   "goId": "GO:0002416",
+   "goEvidence": "NAS",
+   "qualifier": "involved_in",
+   "name": null
+  },
+  {
+   "id": "UniProtKB:P55899!297737819",
+   "symbol": "FCGRT",
+   "taxonId": 9606,
+   "goId": "GO:0006955",
+   "goEvidence": "IBA",
+   "qualifier": "involved_in",
+   "name": null
+  }
+ ]
+}

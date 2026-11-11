@@ -401,7 +401,15 @@ def test_crashed_rotation_recovers_from_previous(tmp_path: Path) -> None:
 
 def test_wipe_removes_only_store_entries(tmp_path: Path) -> None:
     store = Store(tmp_path)
-    for name in ("current", "previous", "history", ".state-old", ".state-new-abc", ".git"):
+    for name in (
+        "current",
+        "previous",
+        "history",
+        "explorer",
+        ".state-old",
+        ".state-new-abc",
+        ".git",
+    ):
         (tmp_path / name).mkdir()
         (tmp_path / name / "f").write_text("x")
     (tmp_path / "README").write_text("keep")
@@ -422,3 +430,28 @@ def test_require_no_rewind(tmp_path: Path) -> None:
         store.require_no_rewind(date(2026, 1, 1))
     with pytest.raises(ValueError, match="refusing to rewind"):
         store.save_state(Tables.empty(), date(2026, 1, 1), "ts")
+
+
+# ----- explorer coordinates -----
+
+
+def test_explorer_coords_round_trip(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+    assert store.load_explorer_coords() == {}
+    df = pl.DataFrame(
+        {"nct_id": ["NCT1", "NCT2"], "x": [0.1, 0.2], "y": [0.3, 0.4], "z": [0.5, -0.6]},
+        schema={"nct_id": pl.Utf8(), "x": pl.Float64(), "y": pl.Float64(), "z": pl.Float64()},
+    )
+    store.save_explorer_coords(df)
+    assert store.load_explorer_coords() == {"NCT1": (0.1, 0.3, 0.5), "NCT2": (0.2, 0.4, -0.6)}
+    assert sorted(p.name for p in (tmp_path / "explorer").iterdir()) == ["coords.parquet"]
+
+
+def test_explorer_coords_schema_is_checked(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+    with pytest.raises(ValueError, match="schema"):
+        store.save_explorer_coords(pl.DataFrame({"nct_id": ["NCT1"], "x": [1]}))
+    (tmp_path / "explorer").mkdir()
+    (tmp_path / "explorer" / "coords.parquet").write_bytes(b"garbage")
+    with pytest.raises(StoreError, match="coords"):
+        store.load_explorer_coords()

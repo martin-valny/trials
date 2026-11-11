@@ -15,7 +15,16 @@ from trialradar.config import AreaConfig
 from trialradar.pipeline import RebuildError, rebuild
 from trialradar.store import Store
 
-from .conftest import Env, FakeClient, day1_studies, day2_studies, nct, relevant_ids, tree_bytes
+from .conftest import (
+    Env,
+    FakeClient,
+    day1_studies,
+    day2_studies,
+    nct,
+    relevant_ids,
+    tree_bytes,
+    without_coords,
+)
 from .test_pipeline import D1, D2, D3, TS1, TS2, TS3, drop_study
 
 D4 = date(2026, 3, 4)
@@ -42,7 +51,11 @@ def assert_same_history(a: Store, b: Store) -> None:
 
 
 def assert_same_site(a: Path, b: Path) -> None:
-    assert tree_bytes(a, exclude=("meta.json",)) == tree_bytes(b, exclude=("meta.json",))
+    # A rebuild lays the map out afresh (no previous coordinates, spec 6.4a), so
+    # only the explorer coordinates may differ from the incremental site.
+    skip = ("meta.json", "explorer.json")
+    assert tree_bytes(a, exclude=skip) == tree_bytes(b, exclude=skip)
+    assert without_coords(a) == without_coords(b)
 
 
 def test_rebuild_equals_incremental_after_a_failed_day(
@@ -234,3 +247,59 @@ def test_failed_snapshots_are_not_replayed(env: Env, cfg: AreaConfig, tmp_path: 
     assert store.snapshots()["snapshot_date"].unique().to_list() == [D1]
     expected = len(relevant_ids(cfg, day1_studies(cfg)))
     assert store.snapshots().filter(pl.col("snapshot_date") == D1).height == expected
+
+
+def test_rebuild_builds_the_explorer_for_the_last_day_only(
+    env: Env, cfg: AreaConfig, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    capsys.readouterr()
+
+    store, site = rebuilt(env, tmp_path)
+
+    lines = [json.loads(ln) for ln in capsys.readouterr().err.splitlines() if ln]
+    explorer = [ln for ln in lines if ln["stage"] == "explorer"]
+    assert [ln["day"] for ln in explorer] == [D2.isoformat()]
+    doc = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == D2.isoformat()
+    ids = relevant_ids(cfg, day2_studies(cfg))
+    assert sorted(store.load_explorer_coords()) == ids
+    assert [t["nct_id"] for t in doc["trials"]] == ids
+
+
+def test_rebuild_survives_an_explorer_failure(
+    env: Env, cfg: AreaConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R19: the rebuild still swaps in the store and exports the site, without a map
+    (a stale explorer.json is removed) and without saved coordinates; the last day's
+    run_log row carries the warning."""
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    root, site = tmp_path / "rebuilt-data", tmp_path / "rebuilt-site"
+    site.mkdir()
+    (site / "explorer.json").write_text("{}", encoding="utf-8")
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("umap exploded")
+
+    monkeypatch.setattr(pipeline, "build_explorer", boom)
+    rebuild(env.cfg, root, env.raw_dir, site, env.aliases_dir)
+
+    assert not (site / "explorer.json").exists()
+    assert (site / "trials.json").exists()
+    store = Store(root)
+    assert store.load_explorer_coords() == {}
+    last = json.loads(store.run_log().row(-1, named=True)["warnings"])
+    assert "explorer: RuntimeError: umap exploded" in last
+    meta = json.loads((site / "meta.json").read_text(encoding="utf-8"))
+    assert "explorer: RuntimeError: umap exploded" in meta["warnings"]
+
+
+def test_rebuild_writes_risk_json(env: Env, cfg: AreaConfig, tmp_path: Path) -> None:
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+    _, site = rebuilt(env, tmp_path)
+    doc = json.loads((site / "risk.json").read_text(encoding="utf-8"))
+    assert doc["generated_for"] == D2.isoformat()
+    assert doc["model"]["version"] == "stop-risk-fixture"

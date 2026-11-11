@@ -1,0 +1,99 @@
+key,label
+MS4A1,CD20
+CD52,CD52
+ITGA4,α4-integrin
+FCGRT,FcRn
+IL6R,IL-6R
+C5,C5
+BTK,BTK
+S1PR1,S1P receptor
+S1PR1;S1PR5,S1P receptor
+S1PR1;S1PR2;S1PR3;S1PR4;S1PR5,S1P receptor
+DHODH,DHODH
+CD19,CD19
+TNFRSF13B,TACI
+IFNAR1;IFNAR2,IFN-α/β receptor
+NFE2L2,NRF2
+CHRNA1,AChR
+CHEMBL2093872,GABA-A receptor
+CHEMBL2109238,α9/α10 nicotinic receptor
+OPRD1;OPRK1;OPRM1,opioid receptor
+ACHE;BCHE,cholinesterase
+ACHE,AChE
+CHEMBL2331043,sodium channel
+CHEMBL2362996,Kv channel
+CHEMBL2363032,calcium channel
+CHEMBL2094124,NMDA receptor
+GRIN2A,NMDA receptor
+CHEMBL2363062,JAK
+HRH1,H1 receptor
+HRH2,H2 receptor
+HRH3,H3 receptor
+PTGS1;PTGS2,COX
+PTGS2,COX-2
+SLC6A3,dopamine transporter
+SLC6A2,noradrenaline transporter
+SLC6A4,serotonin transporter
+MC2R,ACTH receptor
+NR3C1,glucocorticoid receptor
+PPARG,PPARγ
+PPARA,PPARα
+ADRB2,β2-adrenergic receptor
+ADRB3,β3-adrenergic receptor
+ADRA1A;ADRA1B;ADRA1D,α1-adrenergic receptor
+ADRA1A,α1-adrenergic receptor
+ADRA2A;ADRA2B;ADRA2C,α2-adrenergic receptor
+TNFSF13B,BAFF
+TNFSF13,APRIL
+TNFRSF13C,BAFF-R
+TNFRSF17,BCMA
+HMGCR,HMG-CoA reductase
+CD3D;CD3E;CD3G,CD3
+CNR1,CB1 receptor
+FKBP1A,FKBP12
+VDR,vitamin D receptor
+IL2RA;IL2RB;IL2RG,IL-2 receptor
+ATP4A;ATP4B,proton pump
+S1PR5,S1P receptor
+RGMA,RGMa
+IL17A,IL-17A
+GABBR1;GABBR2,GABA-B receptor
+ESR1,estrogen receptor
+ESR1;ESR2,estrogen receptor
+PGR,progesterone receptor
+AR,androgen receptor
+SNAP25,SNAP-25
+CD38,CD38
+CHRM2,muscarinic receptor
+CHRM3,muscarinic receptor
+PDE4A;PDE4B;PDE4C;PDE4D,PDE4
+CCR2,CCR2
+IMPDH1;IMPDH2,IMPDH
+IL1R1,IL-1 receptor
+LINGO1,LINGO-1
+SEMA4D,SEMA4D
+ERVW-1,syncytin-1
+IL12A;IL12B,IL-12
+IL12B;IL23A,IL-23
+DRD2,D2 receptor
+EPOR,EPO receptor
+CSF3R,G-CSF receptor
+CSF2,GM-CSF
+CSF2RA;CSF2RB,GM-CSF receptor
+INSR,insulin receptor
+GLP1R,GLP-1 receptor
+TSPO,TSPO
+CTLA4,CTLA-4
+PDCD1,PD-1
+VEGFA,VEGF-A
+IL6R;IL6ST,IL-6R
+ITGA2,α2-integrin
+RTN4,Nogo-A
+FCGR2B,FcγRIIb
+CD80,CD80
+CD86,CD86
+KEAP1,KEAP1
+MTNR1A;MTNR1B,melatonin receptor
+TOP2A;TOP2B,topoisomerase II
+TOP2A,topoisomerase II
+DHFR,DHFR

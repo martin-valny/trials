@@ -1,0 +1,14 @@
+{
+ "mechanisms": [
+  {
+   "action_type": "BINDING AGENT",
+   "mechanism_of_action": "B-lymphocyte antigen CD20 binding agent",
+   "molecule_chembl_id": "CHEMBL2108041",
+   "parent_molecule_chembl_id": "CHEMBL2108041",
+   "target_chembl_id": "CHEMBL2058"
+  }
+ ],
+ "page_meta": {
+  "next": null
+ }
+}

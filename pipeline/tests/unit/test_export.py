@@ -12,6 +12,7 @@ from conftest import REPO_ROOT
 
 from trialradar.config import AreaConfig
 from trialradar.diff import TRIAL_CHANGE_SCHEMA
+from trialradar.explorer.extras import StudyExtras
 from trialradar.export import export
 from trialradar.normalize import normalize
 from trialradar.store import RUN_LOG_SCHEMA
@@ -58,6 +59,9 @@ TRIAL_KEYS = {
     "secondary_outcomes",
     "changes",
     "source_url",
+    "brief_summary",
+    "eligibility",
+    "has_results",
 }
 
 
@@ -446,3 +450,135 @@ def test_stale_sweep_skips_directories(tmp_path: Path, cfg: AreaConfig) -> None:
     (trials / "NCT1.json").mkdir(parents=True)
     run(tmp_path, [], cfg=cfg)
     assert (trials / "NCT1.json").is_dir()
+
+
+def _extras(nct: str) -> StudyExtras:
+    return StudyExtras(
+        nct_id=nct,
+        brief_summary="A short summary.",
+        sex="FEMALE",
+        min_age_years=18.0,
+        max_age_years=None,
+        has_results=True,
+        experimental_drugs=("foo",),
+        mesh_terms=(),
+        condition_labels=(),
+    )
+
+
+def test_trial_index_disease_codes(tmp_path: Path, cfg: AreaConfig) -> None:
+    def with_labels(nct: str, labels: tuple[str, ...]) -> StudyExtras:
+        return replace(_extras(nct), condition_labels=labels)
+
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        # Label order is the reverse of figure order (MS 1, MG 2); a repeat must not repeat.
+        extras={
+            "NCT00000001": with_labels(
+                "NCT00000001", ("Myasthenia gravis", "Multiple sclerosis", "Myasthenia gravis")
+            )
+        },
+    )
+    first, second = load(tmp_path / "trials.json")["trials"]
+    assert first["dz"] == ["MS", "MG"]
+    assert "dz" not in second  # no extras entry: omitted, not empty
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        extras={"NCT00000001": with_labels("NCT00000001", ())},
+    )
+    assert all("dz" not in t for t in load(tmp_path / "trials.json")["trials"])
+
+
+def test_export_trial_doc_has_summary(tmp_path: Path, cfg: AreaConfig) -> None:
+    export(
+        small_tables(),
+        changes_df([]),
+        runlog([{}]),
+        cfg,
+        DAY,
+        tmp_path,
+        extras={"NCT00000001": _extras("NCT00000001")},
+    )
+    t1 = load(tmp_path / "trials" / "NCT00000001.json")
+    assert set(t1) == TRIAL_KEYS
+    assert t1["brief_summary"] == "A short summary."
+    assert t1["eligibility"] == {"sex": "FEMALE", "min_age_years": 18.0, "max_age_years": None}
+    assert t1["has_results"] is True
+    t2 = load(tmp_path / "trials" / "NCT00000002.json")
+    assert t2["brief_summary"] is None
+    assert t2["eligibility"] == {"sex": None, "min_age_years": None, "max_age_years": None}
+    assert t2["has_results"] is False
+
+
+def test_export_without_extras_has_null_summary(tmp_path: Path, cfg: AreaConfig) -> None:
+    run(tmp_path, [], cfg=cfg)
+    t1 = load(tmp_path / "trials" / "NCT00000001.json")
+    assert t1["brief_summary"] is None and t1["has_results"] is False
+
+
+def test_explorer_json_written_only_when_given(tmp_path: Path, cfg: AreaConfig) -> None:
+    run(tmp_path, [], cfg=cfg)
+    assert not (tmp_path / "explorer.json").exists()
+    doc = {"generated_for": DAY.isoformat(), "trials": [{"nct_id": "NCT00000001", "x": 0.5}]}
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
+    text = (tmp_path / "explorer.json").read_text(encoding="utf-8")
+    assert json.loads(text) == doc
+    assert text.endswith("\n") and ", " not in text  # compact like the other files
+
+
+def test_export_without_explorer_removes_a_stale_map(tmp_path: Path, cfg: AreaConfig) -> None:
+    """explorer.json is present exactly when this export has a map, so a failed map
+    build never leaves yesterday's map over today's trials."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
+    assert (tmp_path / "explorer.json").exists()
+    export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    assert not (tmp_path / "explorer.json").exists()
+
+
+def test_mechanisms_json_written_and_removed(tmp_path: Path, cfg: AreaConfig) -> None:
+    """mechanisms.json is present exactly when this export has a graph (and a map)."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    graph = {"generated_for": DAY.isoformat(), "nodes": [], "edges": []}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, explorer=doc, mechanisms=graph)
+    assert json.loads((tmp_path / "mechanisms.json").read_text(encoding="utf-8")) == graph
+    export(*args, explorer=doc)
+    assert not (tmp_path / "mechanisms.json").exists()
+    export(*args, explorer=doc, mechanisms=graph)
+    export(*args, mechanisms=graph)  # no map: no graph either
+    assert not (tmp_path / "mechanisms.json").exists()
+
+
+def test_export_writes_and_removes_pipeline_json(tmp_path: Path, cfg: AreaConfig) -> None:
+    """pipeline.json is present exactly when this export has a figure (and a map)."""
+    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    fig = {"generated_for": DAY.isoformat(), "rows": []}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, explorer=doc, pipeline=fig)
+    assert json.loads((tmp_path / "pipeline.json").read_text(encoding="utf-8")) == fig
+    export(*args, explorer=doc)
+    assert not (tmp_path / "pipeline.json").exists()
+    export(*args, explorer=doc, pipeline=fig)
+    export(*args, pipeline=fig)  # no map: no figure either
+    assert not (tmp_path / "pipeline.json").exists()
+
+
+def test_export_writes_and_removes_risk_json(tmp_path: Path, cfg: AreaConfig) -> None:
+    """risk.json is present exactly when this export carries a risk document."""
+    doc = {"generated_for": DAY.isoformat(), "model": {}}
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, risk=doc)
+    assert json.loads((tmp_path / "risk.json").read_text(encoding="utf-8")) == doc
+    export(*args)
+    assert not (tmp_path / "risk.json").exists()

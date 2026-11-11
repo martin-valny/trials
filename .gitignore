@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
-node_modules/
+node_modules
 web/dist/
 web/public/data/
 /data/
@@ -11,3 +11,16 @@ web/public/data/
 .ruff_cache/
 test-results/
 playwright-report/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/questions/
+.impeccable/build/
+web/.shoot.cjs
+pipeline/.cache/
+
+# AWS SAM: build output and the config `sam deploy --guided` writes (stack, profile, parameters)
+agent/.aws-sam/
+agent/samconfig.toml
+
+# TypeScript incremental build info
+*.tsbuildinfo

@@ -48,6 +48,22 @@ def _pattern(cfg: AreaConfig) -> re.Pattern[str] | None:
     return re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)")
 
 
+def condition_labels(study: dict[str, Any], cfg: AreaConfig) -> list[str]:
+    """Config labels (config order) whose synonyms match the study's conditions,
+    keywords or MeSH terms, using the same matching as ``is_relevant``."""
+    texts = _texts(study)
+    labels: list[str] = []
+    for spec in cfg.conditions:
+        keys = {k for s in spec.synonyms if (k := norm_key(s))}
+        if not keys:
+            continue
+        alternatives = "|".join(re.escape(k) for k in sorted(keys, key=len, reverse=True))
+        pattern = re.compile(rf"(?<!\w)(?:{alternatives})(?!\w)")
+        if any(pattern.search(t) for t in texts):
+            labels.append(spec.label)
+    return labels
+
+
 def is_relevant(study: dict[str, Any], cfg: AreaConfig) -> bool:
     """True if a configured synonym occurs as a whole phrase in the study's conditions,
     keywords or MeSH condition terms (the title is deliberately not used)."""

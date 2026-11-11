@@ -1,0 +1,32 @@
+drug,reason
+methylprednisolone,corticosteroid given alongside other drugs
+prednisone,corticosteroid given alongside other drugs
+prednisolone,corticosteroid given alongside other drugs
+dexamethasone,corticosteroid given alongside other drugs
+cyclophosphamide,conditioning chemotherapy
+fludarabine,conditioning chemotherapy
+cyclophosphamide and fludarabine,conditioning chemotherapy
+standard lymphodepletion regimen,conditioning chemotherapy
+fludarabine for,conditioning chemotherapy
+chemotherapy: fludarabine,conditioning chemotherapy
+cetirizine,premedication
+ceterizine,premedication
+antihistamine,premedication
+diphenhydramine,premedication
+acetaminophen,premedication
+paracetamol,premedication
+acyclovir,antiviral prophylaxis
+methyloprednisolone,corticosteroid given alongside other drugs (misspelling in the registry)
+high-dose methylprednisolone,corticosteroid given alongside other drugs
+dexamethasone given orally,corticosteroid given alongside other drugs
+prednisone/prednisolone,corticosteroid given alongside other drugs
+corticosteroids,corticosteroid given alongside other drugs
+immediate treatment with corticosteroids,corticosteroid given alongside other drugs
+high-dose corticosteroid pulse therapy,corticosteroid given alongside other drugs
+interferon or glatiramer,comparator or background disease-modifying therapy
+interferon-β,comparator or background interferon
+interferon-beta,comparator or background interferon
+interferon beta-1a,comparator or background interferon
+beta-interferon,comparator or background interferon
+peginterferon beta-1a,comparator interferon
+rebif® new formulation,comparator interferon

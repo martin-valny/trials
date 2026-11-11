@@ -1,0 +1,100 @@
+/* The Diligence page on the Figure Plate (spec section 6.3). Root ".page.dp": .page gives the site's gutters, the head
+   is the shared PageHead. Below it a column held to 64rem on the head's left edge: plainly headed sections (h2 on an
+   ink rule, as Methods), three steps on rule lines, the Watchlist's hairline table, and the front door's key-number
+   figures. Flat, no cards, no shadows; plate tokens only, no colours of its own (no red: nothing here "advanced"). */
+.dp-label { margin: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
+/* The label stays under the sentence at every width, on the column's left edge, not out at the head's right. */
+@media (min-width: 1100px) {
+  .page-head.dp-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "crumb" "title" "sentence" "aside"; }
+  .page-head.dp-head .page-head-aside { margin-top: 12px; justify-self: start; }
+}
+
+.dp-body { max-width: 64rem; padding: 8px 0 96px; }
+.dp-sec { margin-top: 48px; }
+.dp-sec:first-child { margin-top: 32px; }
+.dp-sec h2 {
+  margin: 0 0 12px; padding-top: 14px; border-top: 1px solid var(--ink);
+  font-size: var(--fs-lede); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em;
+}
+.dp-intro { margin: 0 0 16px; max-width: 72ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--muted); text-wrap: pretty; }
+.dp-more { margin: 16px 0 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dp a { text-decoration-color: var(--muted); text-underline-offset: 3px; }
+.dp a:hover { text-decoration-color: var(--ink); }
+
+/* How it works: three steps in one row, each under a hairline; one column below 768px. */
+.dp-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; margin: 0; padding: 0; list-style: none; }
+.dp-steps li { padding-top: 12px; border-top: 1px solid var(--rule); }
+/* The number hangs in a 1.4em column, so a title that wraps lines up with itself and with the paragraph under it. */
+.dp-steps h3 { display: grid; grid-template-columns: 1.4em minmax(0, 1fr); margin: 0 0 6px; font-size: var(--fs-body); font-weight: 700; line-height: 1.35; }
+.dp-step-n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.dp-steps p { margin: 0; padding-left: 1.4em; max-width: 40ch; font-size: var(--fs-body); line-height: var(--lh-body); text-wrap: pretty; }
+@media (max-width: 767px) {
+  .dp-steps { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+
+/* Recorded memos: the Watchlist's table (13px, tabular, 12px muted head on an ink rule, hairline rows). */
+.dp-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-ui); line-height: var(--lh-ui); font-variant-numeric: tabular-nums; }
+.dp-table th {
+  text-align: left; vertical-align: bottom; font-size: var(--fs-meta); font-weight: 400; color: var(--muted);
+  padding: 0 20px 6px 0; border-bottom: 1px solid var(--ink);
+}
+.dp-table td { vertical-align: top; padding: 11px 20px 12px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
+.dp-table th:last-child, .dp-table td:last-child { padding-right: 0; text-align: right; }
+/* The AI read takes the slack: a stance and its confidence ("favours further investment, high confidence") hold one
+   line at 1280; the short columns keep only what their head and values need. */
+.dp-c-t { width: 11%; }
+.dp-c-d { width: 15%; }
+.dp-c-read { width: 34%; }
+.dp-c-n { width: 12%; }
+.dp-c-rm { width: 7%; }
+.dp-c-when { width: 10%; }
+.dp-c-go { width: 11%; }
+.dp-t { font-weight: 700; }
+.dp-conf, .dp-withheld { color: var(--muted); }
+.dp-go a { white-space: nowrap; }
+/* Words a phone row needs because its column heads are gone. */
+.dp-ph { display: none; }
+
+/* How well it does: the front door's key numbers (30px/500, a 12px muted label under each). */
+.dp-figures { display: flex; flex-wrap: wrap; gap: 20px 40px; margin: 4px 0 0; padding: 0; list-style: none; }
+.dp-figures li { min-width: 0; }
+.dp-figures b { display: block; font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.dp-figures span { display: block; margin-top: 6px; max-width: 16ch; font-size: var(--fs-meta); line-height: 1.3; color: var(--muted); }
+
+@media (max-width: 1099px) {
+  .dp-table th, .dp-table td { padding-right: 14px; }
+}
+
+@media (max-width: 640px) {
+  .dp-sec { margin-top: 40px; }
+  .dp-sec:first-child { margin-top: 28px; }
+  .dp-figures { gap: 18px 28px; }
+  .dp-figures b { font-size: 22px; }
+}
+
+/* Below 900px (phones and tablets): two lines per memo between hairlines, no cards, no labels; seven columns no
+   longer fit cleanly. Line 1: target, disease, the link. Line 2: the AI read, claims supported, removed, date. */
+@media (max-width: 899px) {
+  .dp-table, .dp-table tbody { display: block; width: auto; max-width: 100%; }
+  .dp-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  /* The row clips sideways by 4px past its own edges: line 2's "·" separators sit in the gap before each item, so one
+     that would open a wrapped line falls outside the row and is cut, and no line ends or starts on a "·". The 4px
+     keeps the link's focus ring clear of the clip. */
+  .dp-table tr {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 -4px; padding: 12px 4px 13px;
+    overflow-x: clip; border: 0;
+    /* The hairline is drawn inside the 4px, so it still ends on the column's edges. */
+    background: linear-gradient(var(--rule), var(--rule)) 4px 100% / calc(100% - 8px) 1px no-repeat;
+  }
+  .dp-table tr::after { content: ""; order: 4; flex: 0 0 100%; height: 0; }
+  .dp-table td { display: block; padding: 0; border: 0; text-align: left; }
+  .dp-table td:last-child { text-align: right; }
+  .dp-t { order: 1; }
+  .dp-d { order: 2; flex: 1 1 0; min-width: 0; margin-left: -6px; color: var(--muted); }
+  .dp-go { order: 3; }
+  .dp-read, .dp-n, .dp-rm, .dp-when { order: 5; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
+  .dp-read .dp-stance { color: var(--ink); }
+  .dp-n, .dp-rm, .dp-when { position: relative; white-space: nowrap; }
+  .dp-n::before, .dp-rm::before, .dp-when::before { content: "·"; position: absolute; right: 100%; width: 14px; text-align: center; }
+  .dp-ph { display: inline; }
+}

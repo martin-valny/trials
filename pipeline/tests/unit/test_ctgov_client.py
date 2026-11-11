@@ -244,3 +244,20 @@ def test_retry_after_is_sanitised(cfg: AreaConfig, header: str, expected: float)
     delays: list[float] = []
     list(_client(lambda req: next(responses), delays).iter_studies(cfg))
     assert delays == [expected]
+
+
+def test_iter_query_pages_and_dedupes() -> None:
+    requests: list[httpx.Request] = []
+    pages = [
+        _page(make_study("NCT00000001"), token="t2"),
+        _page(make_study("NCT00000001"), make_study("NCT00000002")),
+    ]
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        requests.append(req)
+        return pages[len(requests) - 1]
+
+    studies = list(_client(handler).iter_query({"pageSize": "1000", "format": "json"}))
+    assert _ids(studies) == ["NCT00000001", "NCT00000002"]
+    assert "pageToken" not in requests[0].url.params
+    assert requests[1].url.params["pageToken"] == "t2"

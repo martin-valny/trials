@@ -1,0 +1,41 @@
+row_id,disease,drug,chembl_id,sources,withdrawn,regulator,year,url
+acth,MS,corticotropin,CHEMBL1201610,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=110a17aa-6ed9-4458-8e67-1a742ce448e4
+alpha4-integrin,MS,natalizumab,CHEMBL1201607,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=6fa00cb8-4229-4770-9d2a-d4a8542b3180
+c5,MG,eculizumab,CHEMBL1201828,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=002f9748-b0e8-4b6e-a38b-56930a839491
+c5,MG,ravulizumab,CHEMBL3989986,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=a9a590d9-0217-43c7-908d-e62a71279791
+c5,MG,zilucoplan,CHEMBL4298207,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=9f1d53d6-e495-4a3a-8bb9-680a15d25034
+c5,NMOSD,eculizumab,CHEMBL1201828,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=002f9748-b0e8-4b6e-a38b-56930a839491
+c5,NMOSD,ravulizumab,CHEMBL3989986,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=a9a590d9-0217-43c7-908d-e62a71279791
+cannabinoids,MS,nabiximols,,hand,,MHRA,2010,https://www.geneesmiddeleninformatiebank.nl/pars/h111277.pdf
+cd19,MG,inebilizumab,CHEMBL2109334,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=834db232-afb0-4dcf-93e0-009ce8245c20
+cd19,NMOSD,inebilizumab,CHEMBL2109334,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0ce5e7f6-eb97-4738-8b10-43b89e16b5b3
+cd20,MS,ocrelizumab,CHEMBL2108041,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=9da42362-3bb5-4b83-b4bb-b59fd4e55f0d
+cd20,MS,ofatumumab,CHEMBL1201836,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=6a8a3f53-2062-48ff-9dbe-b939df133ca3
+cd20,MS,ublituximab,CHEMBL2108354,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=3a77cd8c-811b-407c-9140-d0c5c26435c2
+cd20,NMOSD,rituximab,,hand,,PMDA,2022,https://www.pmda.go.jp/files/000265591.pdf
+cd52,MS,alemtuzumab,CHEMBL1201587,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=6236b0bc-82e9-4447-9a78-f57d94770269
+cladribine,MS,cladribine,CHEMBL1619,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=407c52d5-6498-7da5-da35-acc9ca73ced3
+dhodh,MS,teriflunomide,CHEMBL973,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=01765bc3-4564-6447-9b2a-9cd0ad610050
+fampridine,MS,dalfampridine,CHEMBL284348,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=07fb1801-c6c4-4dc2-93ad-088e546f07a0
+fcrn,CIDP,efgartigimod alfa,CHEMBL4297551,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=7104d9e5-9910-47f5-9a93-741ac50f43b6
+fcrn,MG,efgartigimod alfa,CHEMBL4297551,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=7104d9e5-9910-47f5-9a93-741ac50f43b6
+fcrn,MG,nipocalimab,CHEMBL4594310,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=8886274c-f2b2-48af-85c1-2f90bfe304b8
+fcrn,MG,rozanolixizumab,CHEMBL4297820,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=3c0eb8c2-c042-4954-b451-3baa77f5e6d1
+fumarates,MS,dimethyl fumarate,CHEMBL2107333,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=074d2820-6cb4-437a-8f6f-a21cb0a8ee02
+fumarates,MS,diroximel fumarate,CHEMBL3989944,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=2d74414f-6b83-4ea2-9a95-3cecabbce774
+fumarates,MS,monomethyl fumarate,CHEMBL589586,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=a161f9d4-70f1-4097-957a-eafb35d3274f
+glucocorticoids,MS,betamethasone,CHEMBL632,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=024cd444-04e2-441a-9863-9e5db741e657
+glucocorticoids,MS,dexamethasone,CHEMBL384467,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=00f36d47-e971-4f05-be7b-8e354339ca62
+glucocorticoids,MS,hydrocortisone,CHEMBL389621,fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=059d7b92-7e47-4e93-9785-9fe6da441246
+glucocorticoids,MS,methylprednisolone,CHEMBL650,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=001d2245-2076-405b-90ab-780d6d38552f
+glucocorticoids,MS,prednisolone,CHEMBL131,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=06caccd6-07df-4ca5-a5ca-3564bde3192a
+glucocorticoids,MS,prednisone,CHEMBL635,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0060b86b-0b79-4c54-a7be-97683a933a05
+glucocorticoids,MS,triamcinolone,CHEMBL1451,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=05c2a9cf-a018-48c0-9c73-2d59d52211d2
+il-6-receptor,NMOSD,satralizumab,CHEMBL3833307,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=64c156a4-9bad-4d45-a294-0733c141f47b
+interferon-beta,MS,interferon beta-1a,CHEMBL1201562,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0de49d64-3e18-494c-bf14-bc152247c798
+interferon-beta,MS,interferon beta-1b,CHEMBL1201563,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=261fde67-efb2-4bd7-947e-4f68a56e76ff
+interferon-beta,MS,peginterferon beta-1a,CHEMBL2108677,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=08f0ea03-4e6d-195d-aef4-886e32befa95
+s1p-receptor,MS,fingolimod,CHEMBL314854,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0f638feb-6986-41e4-8f9c-2e6b84a5bb44
+s1p-receptor,MS,ozanimod,CHEMBL3707247,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=93ce2fab-edfb-4804-8074-963071de51e4
+s1p-receptor,MS,ponesimod,CHEMBL1096146,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0c025ba8-ba51-272e-e063-6294a90ad120
+s1p-receptor,MS,siponimod,CHEMBL2336071,chembl;fda_label,,,,https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=1faff053-2186-4059-a26d-37e232fdc21d

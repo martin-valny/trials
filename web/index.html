@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trial Radar</title>
+    <script>
+      (function () {
+        var c = "system";
+        try { c = localStorage.getItem("trialradar.theme") || "system"; } catch (e) {}
+        var dark = c === "dark" || (c !== "light" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

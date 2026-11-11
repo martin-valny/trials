@@ -39,10 +39,16 @@ def nct(study: dict[str, Any]) -> str:
 
 
 def clone(nct_id: str) -> dict[str, Any]:
+    # Clones differ in their number of secondary outcomes so the stop-risk estimates spread.
+    secondary = [
+        {"measure": f"Secondary outcome {k}", "timeFrame": "96 weeks"}
+        for k in range(int(nct_id[-2:]) % 6 * 2 + 1)
+    ]
     return make_study(
         nct_id,
         **{
             "conditionsModule.conditions": ["Multiple Sclerosis"],
+            "outcomesModule.secondaryOutcomes": secondary,
             "statusModule.primaryCompletionDateStruct": {"date": "2026-06-01", "type": "ESTIMATED"},
         },
     )
@@ -119,7 +125,16 @@ class Env:
     """Directories and a deterministic clock for one simulated deployment."""
 
     def __init__(self, root: Path, cfg: AreaConfig) -> None:
-        self.cfg = cfg
+        fixtures = Path(__file__).resolve().parents[1] / "fixtures"
+        self.cfg = cfg.model_copy(
+            update={
+                "mechanisms_dir": fixtures / "mechanisms",
+                "approaches_dir": fixtures / "approaches",
+                "sponsors_dir": fixtures / "sponsors",
+                "approvals_dir": fixtures / "approvals",
+                "risk": cfg.risk.model_copy(update={"dir": fixtures / "risk"}),
+            }
+        )
         self.store_root = root / "data"
         self.raw_dir = root / "raw"
         self.site_dir = root / "site"
@@ -161,6 +176,23 @@ def tree_bytes(root: Path, exclude: tuple[str, ...] = ()) -> dict[str, bytes]:
         for p in sorted(root.rglob("*"))
         if p.is_file() and p.relative_to(root).as_posix() not in exclude
     }
+
+
+def without_coords(site: Path) -> dict[str, Any]:
+    """``site/explorer.json`` with each trial's x/y/z removed: UMAP coordinates are
+    not byte-stable across platforms, and a rebuild lays the map out afresh."""
+    doc: dict[str, Any] = json.loads((site / "explorer.json").read_text(encoding="utf-8"))
+    for t in doc["trials"]:
+        del t["x"], t["y"], t["z"]
+    return doc
+
+
+def without_graph_coords(site: Path) -> dict[str, Any]:
+    """``site/mechanisms.json`` with each node's x/y removed (see ``without_coords``)."""
+    doc: dict[str, Any] = json.loads((site / "mechanisms.json").read_text(encoding="utf-8"))
+    for n in doc["nodes"]:
+        del n["x"], n["y"]
+    return doc
 
 
 @pytest.fixture

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal
 
@@ -42,9 +43,45 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ApprovalTerms(_Strict):
+    """Vocabulary that ties a condition to approval records: MeSH headings, (MeSH heading, EFO
+    term) pairs for EFO-only diseases, and plain label phrases for the label-text fallback."""
+
+    mesh: list[str] = []
+    efo: list[tuple[str, str]] = []
+    label_terms: list[str] = []
+
+    @model_validator(mode="after")
+    def _terms_not_blank(self) -> ApprovalTerms:
+        flat = [*self.mesh, *self.label_terms, *(t for pair in self.efo for t in pair)]
+        if any(not t.strip() for t in flat):
+            raise ValueError("approval terms must not be empty or whitespace-only")
+        return self
+
+
 class ConditionSpec(_Strict):
     label: str
     synonyms: list[str] = Field(min_length=1)
+    short: str | None = None  # an abbreviation for cluster names on the map
+    code: str | None = None  # the short disease code on the pipeline figure (MS, MG, ...)
+    figure_order: int | None = (
+        None  # position on the figure (1 first); unset sorts after, by config order
+    )
+    approvals: ApprovalTerms | None = None  # vocabulary for the approved-for-disease join
+
+    @field_validator("code")
+    @classmethod
+    def _code_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("condition code must not be blank")
+        return value
+
+    @field_validator("short")
+    @classmethod
+    def _short_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("condition short must not be blank")
+        return value
 
     @field_validator("label")
     @classmethod
@@ -84,6 +121,85 @@ class Thresholds(_Strict):
         return self
 
 
+class ClusterConfig(_Strict):
+    """HDBSCAN on the 3D map coordinates and the share thresholds for cluster names."""
+
+    min_cluster_size: int = Field(default=25, ge=2)
+    min_samples: int = Field(default=10, ge=1)
+    disease_share: float = Field(default=0.6, ge=0, le=1)
+    mechanism_share: float = Field(default=0.4, ge=0, le=1)
+    # a naming mechanism class must also cover at least this share of all members
+    mechanism_min_overall: float = Field(default=0.25, ge=0, le=1)
+    type_share: float = Field(default=0.5, ge=0, le=1)
+    drug_share: float = Field(default=0.15, ge=0, le=1)
+
+
+class GraphConfig(_Strict):
+    """The mechanism graph (``mechanisms.json``): the node cap, shared-gene links and layout.
+
+    ``max_nodes`` caps **all** nodes, drugs, targets and pathways together (spec 2026-11-06
+    §7.1 aims at ~150-300). ``pathway_share`` of the cap is reserved for pathways (never more
+    than the drugs could reach). Drugs fill the rest with the targets they act on: drugs
+    credited with a success first (most trials, then name), then whole tiers of the others by
+    trial count, most first, while they fit. Pathways are pruned into what is left
+    (single-target leaves first, then the leaves reached by the fewest trials; a kept pathway's
+    ancestors stay). The file's ``cut`` names every drug left out with its trials, so the page
+    can find it. The layout seed is ``ExplorerConfig.seed``."""
+
+    max_nodes: int = Field(default=300, ge=0)
+    pathway_share: float = Field(default=0.3, ge=0, le=1)
+    overlap_floor: float = Field(default=0.3, gt=0, le=1)
+    overlap_top_k: int = Field(default=3, ge=0)
+    layout_iterations: int = Field(default=300, ge=1)
+
+
+_Block = Literal["disease", "treatment_type", "molecule", "mechanism", "population"]
+
+
+class ExplorerConfig(_Strict):
+    weights: dict[_Block, float] = Field(default_factory=dict, validate_default=True)
+    exclude_terms: list[str] = []
+    n_neighbors: int = 15
+    min_dist: float = 0.1
+    seed: int = 42
+    k: int = 10
+    permutations: int = 10_000
+    min_successes: int = 30
+    min_group: int = 10
+    clusters: ClusterConfig = ClusterConfig()
+    graph: GraphConfig = GraphConfig()
+
+    @field_validator("min_group")
+    @classmethod
+    def _min_group_positive(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("min_group must be >= 1")
+        return value
+
+    @field_validator("weights")
+    @classmethod
+    def _fill_weights(cls, value: dict[_Block, float]) -> dict[_Block, float]:
+        if any(w < 0 for w in value.values()):
+            raise ValueError("explorer weights must be >= 0")
+        filled: dict[_Block, float] = {
+            "disease": 1.0,
+            "treatment_type": 1.0,
+            "molecule": 1.0,
+            "mechanism": 1.0,
+            "population": 1.0,
+        }
+        filled.update(value)
+        return filled
+
+
+class RiskConfig(_Strict):
+    """The stop-risk model: whether it runs, per-trial scores, and where its files live."""
+
+    enabled: bool = True
+    per_trial: bool = True
+    dir: Path = Path("risk")
+
+
 class AreaConfig(_Strict):
     name: str
     conditions: list[ConditionSpec] = Field(min_length=1)
@@ -94,6 +210,14 @@ class AreaConfig(_Strict):
     tracked_fields: list[str]
     thresholds: Thresholds = Thresholds()
     aliases_dir: Path
+    mechanisms_dir: Path = Path("mechanisms")
+    approaches_dir: Path = Path("approaches")
+    pipeline_dir: Path = Path("pipeline")
+    sponsors_dir: Path = Path("sponsors")
+    stop_reasons: Path = Path("stop_reasons.csv")
+    approvals_dir: Path = Path("approvals")
+    explorer: ExplorerConfig = ExplorerConfig()
+    risk: RiskConfig = RiskConfig()
 
     @field_validator("tracked_fields")
     @classmethod
@@ -107,9 +231,32 @@ class AreaConfig(_Strict):
             raise ValueError(f"unknown tracked_fields: {unknown}")
         return value
 
+    @model_validator(mode="after")
+    def _unique_conditions(self) -> AreaConfig:
+        labels = [c.label for c in self.conditions]
+        if len(set(labels)) != len(labels):
+            raise ValueError("conditions must not share a label")
+        codes = [c.code for c in self.conditions if c.code]
+        if len(set(codes)) != len(codes):
+            raise ValueError("conditions must not share a code")
+        return self
+
+    def disease_codes(self) -> dict[str, str]:
+        """Condition label -> disease code, for the coded conditions, in figure order
+        (unset ``figure_order`` sorts after; ties keep config order)."""
+        coded = [c for c in self.conditions if c.code]
+        coded.sort(key=lambda c: (c.figure_order is None, c.figure_order or 0))
+        return {c.label: c.code for c in coded if c.code}
+
+    def codes_for(self, labels: Iterable[str]) -> list[str]:
+        """Disease codes of the coded conditions among ``labels``, in figure order, no repeats."""
+        wanted = set(labels)
+        return [code for label, code in self.disease_codes().items() if label in wanted]
+
 
 def load_config(path: Path) -> AreaConfig:
-    """Load and validate a config YAML; ``aliases_dir`` resolves relative to the file."""
+    """Load and validate a config YAML; ``aliases_dir``, ``mechanisms_dir``, ``approaches_dir``,
+    ``pipeline_dir``, ``sponsors_dir``, ``approvals_dir``, ``risk.dir`` and ``stop_reasons`` resolve relative to the file."""
     try:
         raw = yaml.safe_load(path.read_text())
     except (OSError, yaml.YAMLError) as exc:
@@ -120,4 +267,15 @@ def load_config(path: Path) -> AreaConfig:
         cfg = AreaConfig.model_validate(raw)
     except ValidationError as exc:
         raise ConfigError(str(exc)) from exc
-    return cfg.model_copy(update={"aliases_dir": (path.parent / cfg.aliases_dir).resolve()})
+    return cfg.model_copy(
+        update={
+            "aliases_dir": (path.parent / cfg.aliases_dir).resolve(),
+            "mechanisms_dir": (path.parent / cfg.mechanisms_dir).resolve(),
+            "approaches_dir": (path.parent / cfg.approaches_dir).resolve(),
+            "pipeline_dir": (path.parent / cfg.pipeline_dir).resolve(),
+            "sponsors_dir": (path.parent / cfg.sponsors_dir).resolve(),
+            "approvals_dir": (path.parent / cfg.approvals_dir).resolve(),
+            "stop_reasons": (path.parent / cfg.stop_reasons).resolve(),
+            "risk": cfg.risk.model_copy(update={"dir": (path.parent / cfg.risk.dir).resolve()}),
+        }
+    )

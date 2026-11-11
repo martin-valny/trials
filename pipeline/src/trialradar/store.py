@@ -7,6 +7,7 @@ Layout under the store root::
     history/trial_change.parquet
     history/trial_snapshot.parquet
     history/run_log.parquet
+    explorer/coords.parquet   last explorer layout, for day-to-day alignment
 
 Every file is written to a temp name, fsynced and renamed into place.  A new
 state directory is built completely in a sibling temp directory and then
@@ -46,7 +47,14 @@ RUN_LOG_SCHEMA: dict[str, pl.DataType] = {
     "warnings": pl.Utf8(),  # JSON-encoded list
 }
 
-__all__ = ["RUN_LOG_SCHEMA", "SNAPSHOT_SCHEMA", "Store", "StoreError"]
+COORDS_SCHEMA: dict[str, pl.DataType] = {
+    "nct_id": pl.Utf8(),
+    "x": pl.Float64(),
+    "y": pl.Float64(),
+    "z": pl.Float64(),
+}
+
+__all__ = ["COORDS_SCHEMA", "RUN_LOG_SCHEMA", "SNAPSHOT_SCHEMA", "Store", "StoreError"]
 
 _TABLE_NAMES = [f.name for f in fields(Tables)]
 _STATE_FILE = "state.json"
@@ -147,7 +155,7 @@ class Store:
 
     def wipe(self) -> None:
         """Remove every store-owned entry under the root; anything else (``.git``) stays."""
-        for name in ("current", "previous", "history", _OLD_DIR):
+        for name in ("current", "previous", "history", "explorer", _OLD_DIR):
             shutil.rmtree(self.root / name, ignore_errors=True)
         if self.root.is_dir():
             for stray in self.root.glob(".state-new-*"):
@@ -246,6 +254,29 @@ class Store:
             raise ValueError("run_log 'warnings' must be a JSON-encoded string")  # noqa: TRY004
         new = pl.DataFrame([{k: row[k] for k in RUN_LOG_SCHEMA}], schema=RUN_LOG_SCHEMA)
         self._write_history("run_log", pl.concat([self.run_log(), new]))
+
+    # ----- explorer coordinates -----
+
+    def _coords_path(self) -> Path:
+        return self.root / "explorer" / "coords.parquet"
+
+    def load_explorer_coords(self) -> dict[str, tuple[float, float, float]]:
+        """The last saved explorer layout (missing -> {}); ``StoreError`` if unreadable."""
+        path = self._coords_path()
+        if not path.exists():
+            return {}
+        try:
+            df = pl.read_parquet(path)
+            _check_schema(df, COORDS_SCHEMA, "explorer coords")
+        except (OSError, ValueError, pl.exceptions.PolarsError) as exc:
+            raise StoreError(f"explorer coords {path} are unreadable: {exc}") from exc
+        return {n: (x, y, z) for n, x, y, z in df.iter_rows()}
+
+    def save_explorer_coords(self, df: pl.DataFrame) -> None:
+        _check_schema(df, COORDS_SCHEMA, "explorer coords")
+        path = self._coords_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _write_parquet(df, path)
 
     def last_success_timestamp(self) -> str | None:
         ok = self.run_log().filter(pl.col("status") == "success")
