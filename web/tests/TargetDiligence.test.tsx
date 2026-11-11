@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DiligenceRunProvider } from "../src/components/target/DiligenceRunContext";
 import { FIXED_LABEL, TargetDiligence } from "../src/components/target/TargetDiligence";
 import * as lib from "../src/lib/diligence";
+import { isOpen, panelLetters, type DiligenceRelease } from "../src/lib/diligenceRelease";
 import type { DiligenceStep, PipelineFile, PipelineRow, RunRecord } from "../src/types";
 import { readFixture } from "./helpers";
 
@@ -30,11 +31,18 @@ const row: PipelineRow = readFixture<PipelineFile>("pipeline.json").rows.find((r
 
 const online = () => m.diligenceEndpoint.mockReturnValue("https://agent.test/");
 
-function renderPanel(disease: string | null = "MS") {
+function renderPanel(disease: string | null = "MS", release: DiligenceRelease = m.diligenceEndpoint() ? "live" : "closed") {
   return render(
     <MemoryRouter initialEntries={["/target/cd20"]}>
       <DiligenceRunProvider key={disease ?? "all"} row={row} disease={disease}>
-        <TargetDiligence row={row} disease={disease} label="CD20" diseaseLabel={disease === "MS" ? "Multiple sclerosis" : "All diseases"} />
+        <TargetDiligence
+          row={row}
+          disease={disease}
+          label="CD20"
+          diseaseLabel={disease === "MS" ? "Multiple sclerosis" : "All diseases"}
+          letter={panelLetters(isOpen(release)).diligence}
+          release={release}
+        />
       </DiligenceRunProvider>
     </MemoryRouter>,
   );
@@ -88,6 +96,29 @@ test("no recorded example link while the example has no recording (R47)", async 
   expect(m.loadRecorded).toHaveBeenCalledWith("cd20", "MS");
   expect(screen.queryByRole("link", { name: /recorded example/i })).toBeNull();
   expect(screen.getByText(/No run has been recorded for this target yet/)).toBeInTheDocument();
+});
+
+test("recorded, no memo for this pair: one line and a link to the recorded memos, never 'offline'", async () => {
+  renderPanel(null, "recorded");
+  expect(await screen.findByText("No recorded memo for this target yet.")).toBeInTheDocument();
+  expect(within(panel()).getByRole("link", { name: "See recorded memos →" })).toHaveAttribute("href", "/diligence");
+  expect(panel()).not.toHaveTextContent("The diligence agent is offline.");
+  expect(within(panel()).queryByRole("link", { name: /recorded example/i })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Run/ })).toBeNull();
+});
+
+test("the heading's id and letter follow the panel's letter: a once open, g while closed", async () => {
+  m.loadRecorded.mockResolvedValue(fixture());
+  const { unmount } = renderPanel("MS", "recorded");
+  await screen.findByText("Recorded run, 9 Nov 2026");
+  expect(within(panel()).getByRole("heading", { level: 2, name: "Diligence (AI agent)" })).toHaveAttribute("id", "pa");
+  expect(panel()).toHaveAttribute("aria-labelledby", "pa");
+  expect(panel().querySelector(".ltr")).toHaveTextContent(/^a$/);
+  unmount();
+  renderPanel("MS", "closed");
+  await screen.findByText("Recorded run, 9 Nov 2026");
+  expect(within(panel()).getByRole("heading", { level: 2, name: "Diligence (AI agent)" })).toHaveAttribute("id", "pg");
+  expect(panel().querySelector(".ltr")).toHaveTextContent(/^g$/);
 });
 
 test("online: the backend's run is asked for first and shown over the committed one (R45)", async () => {

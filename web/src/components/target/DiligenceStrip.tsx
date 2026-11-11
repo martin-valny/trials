@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { stripView } from "../../lib/diligence";
+import type { DiligenceRelease } from "../../lib/diligenceRelease";
 import { usePhone } from "../../lib/useMediaQuery";
 import { useDiligence } from "./DiligenceRunContext";
 import { FIXED_LABEL } from "./TargetDiligence";
@@ -9,11 +10,11 @@ const WHAT = "AI diligence: an agent searches ClinicalTrials.gov, ChEMBL, Europe
 const WHAT_PHONE = "AI diligence: a cited memo from public sources, checked claim by claim.";
 const CAPPED = "daily run limit reached, try again tomorrow";
 
-/** One line in the target header that says what panel g's diligence run is doing, and goes there (spec section 5). */
-export function DiligenceStrip({ onGo }: { onGo(): void }) {
+/** One line in the target header that says what the diligence panel's run is doing, and goes there (spec section 5). */
+export function DiligenceStrip({ onGo, release }: { onGo(): void; release: DiligenceRelease }) {
   const d = useDiligence();
   const phone = usePhone();
-  const v = stripView(d);
+  const v = stripView(d, release);
   if (v.kind === "hidden") return null;
   // A pale line at the strip's height while the recorded run is looked for, so nothing below moves.
   if (v.kind === "loading") return <p className="dstrip" data-state="loading" aria-hidden="true" />;
@@ -51,7 +52,9 @@ export function DiligenceStrip({ onGo }: { onGo(): void }) {
       }
       break;
     case "unrecorded":
-      text = "No diligence run recorded for this pair.";
+      // Recorded memos exist for other pairs: point to them rather than call the agent offline (spec section 6.4).
+      text = "AI diligence: no memo recorded for this target yet ·";
+      action = <Link to="/diligence">See recorded memos →</Link>;
       break;
     case "running":
       text = `AI diligence running · ${v.seconds} s`;

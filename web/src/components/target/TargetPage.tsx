@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { contentsWord } from "../../lib/diligence";
+import { isOpen, panelLetters, useDiligenceRelease, type DiligenceRelease } from "../../lib/diligenceRelease";
 import { DEFAULT_FIGURE_STATE, diseaseLines, figureSearch, markState, normKey, parseFigureState, targetCompanies, trialsLink } from "../../lib/pipeline";
 import { countAbove } from "../../lib/risk";
 import type { PipelineFile, PipelineMark, PipelineRow } from "../../types";
@@ -22,6 +23,8 @@ import { TargetStops } from "./TargetStops";
 import { TargetTimeline } from "./TargetTimeline";
 
 const n = (x: number): string => x.toLocaleString("en-US");
+/** A panel's heading id from its letter (pa, pb, …). */
+const id = (letter: string): string => `p${letter}`;
 
 interface Open {
   nct: string;
@@ -34,8 +37,10 @@ export function TargetPage() {
   const { slug = "" } = useParams();
   const load = usePipeline();
   const [params] = useSearchParams();
+  // The panels' order depends on the release, so nothing is drawn until it is known (no panel jumps once it is).
+  const { release } = useDiligenceRelease();
   const file = load.s === "ready" ? load.file : null;
-  if (load.s === "loading") return <Skeleton />;
+  if (load.s === "loading" || release === "pending") return <Skeleton />;
   if (!file) return <Unavailable />;
   const row = file.rows.find((r) => r.id === slug);
   if (!row)
@@ -49,7 +54,7 @@ export function TargetPage() {
         </div>
       </div>
     );
-  return <Ready file={file} row={row} disease={parseFigureState(params, file).disease} />;
+  return <Ready file={file} row={row} disease={parseFigureState(params, file).disease} release={release} />;
 }
 
 /** "{run} of {n} trials are running, from {k} companies and academic groups. {a} advanced to a later phase; {s} stopped." */
@@ -59,13 +64,16 @@ function ledeParts(run: number, total: number, groups: number, adv: number, stop
   return { head, tail: `${from} `, rest: `${n(adv)} advanced to a later phase; ${n(stop)} stopped.`, adv: `${n(adv)} advanced` };
 }
 
-function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; disease: string | null }) {
+function Ready({ file, row, disease, release }: { file: PipelineFile; row: PipelineRow; disease: string | null; release: DiligenceRelease }) {
   const phone = usePhone();
   const [params, setParams] = useSearchParams();
   const risk = useRisk();
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<Open | null>(null);
   const close = useCallback(() => setOpen(null), []);
+  // Once memos are recorded (or the agent is live) the diligence panel leads as a; while closed it trails as g.
+  const first = isOpen(release);
+  const L = useMemo(() => panelLetters(first), [first]);
 
   // One mark per trial: a row holds a trial once (the pipeline places it by row), but the counts and keys rely on it.
   const marks: PipelineMark[] = useMemo(() => {
@@ -103,22 +111,26 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
   const ncts = [...new Set(marks.map((m) => m.n))];
   const lede = ledeParts(stats.run, ncts.length, stats.groups, stats.adv, stats.stop);
   // The contents strip: one item per panel that renders, with the same numbers the panels compute (spec section 4).
+  // The diligence panel's item is added by PageContents, first or last as the panel itself is placed.
   const items: ContentsItem[] = useMemo(() => {
     const out: ContentsItem[] = [];
+    const add = (letter: string, name: string, count?: string) => out.push({ id: id(letter), letter, name, count });
     if (marks.length > 0) {
-      out.push({ id: "pa", letter: "a", name: "Timeline" });
-      out.push({ id: "pb", letter: "b", name: "Companies", count: n(targetCompanies(file, marks).length) });
-      out.push({ id: "pc", letter: "c", name: "Stops", count: n(stats.stop) });
-      out.push({ id: "pd", letter: "d", name: "Mechanism" });
+      add(L.timeline, "Timeline");
+      add(L.companies, "Companies", n(targetCompanies(file, marks).length));
+      add(L.stops, "Stops", n(stats.stop));
+      add(L.mechanism, "Mechanism");
     }
     const lines = diseaseLines(file, row).length;
-    if (lines > 0) out.push({ id: "pe", letter: "e", name: "Diseases", count: n(lines) });
+    if (lines > 0) add(L.diseases, "Diseases", n(lines));
     if (marks.length > 0 && risk) {
       const scored = riskRows(risk, marks, disease);
-      out.push({ id: "pf", letter: "f", name: "Stop chance", count: scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above` : undefined });
+      add(L.risk, "Stop chance", scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above` : undefined);
     }
     return out;
-  }, [file, row, marks, stats.stop, risk, disease]);
+  }, [file, row, marks, stats.stop, risk, disease, L]);
+  // The header strip's actions go to the diligence panel with the contents strip's scroller, so the heading clears the sticky strip.
+  const goToDiligence = useCallback(() => scrollToPanel(id(L.diligence)), [L.diligence]);
   // At 1100px and up the disease chips sit at the right of the title row; below, on one sideways line under the header.
   // Rendered in one place at a time so the reading and tab order match what is on screen.
   const wide = useMediaQuery("(min-width: 1100px)");
@@ -138,6 +150,17 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
     const flip = r.bottom + 300 > window.innerHeight;
     setOpen({ nct, flip, x: Math.max(8, Math.min(r.left - box.left, box.width - 346)), y: flip ? r.top - box.top - 8 : r.bottom - box.top + 8 });
   }, []);
+
+  const diligence = (
+    <TargetDiligence
+      row={row}
+      disease={disease}
+      label={row.label}
+      diseaseLabel={disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases"}
+      letter={L.diligence}
+      release={release}
+    />
+  );
 
   return (
     <DiligenceRunProvider row={row} disease={disease}>
@@ -167,10 +190,12 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
               {lede.rest.slice(lede.adv.length)}
             </p>
           )}
-          <DiligenceStrip onGo={goToDiligence} />
+          <DiligenceStrip onGo={goToDiligence} release={release} />
         </header>
         {!wide && chips}
-        <PageContents items={items} pending={marks.length > 0 && risk === undefined} />
+        <PageContents items={items} pending={marks.length > 0 && risk === undefined} letter={L.diligence} first={first} release={release} />
+
+        {first && diligence}
 
         {marks.length === 0 ? (
           <p className="sec empty-line">
@@ -181,45 +206,40 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
           </p>
         ) : (
           <>
-            <section className="sec" aria-labelledby="pa">
+            <section className="sec" aria-labelledby={id(L.timeline)}>
               <div className="sec-h">
-                <span className="ltr" aria-hidden="true">a</span>
-                <h2 id="pa" tabIndex={-1}>Every {row.label} trial over time, by drug</h2>
+                <span className="ltr" aria-hidden="true">{L.timeline}</span>
+                <h2 id={id(L.timeline)} tabIndex={-1}>Every {row.label} trial over time, by drug</h2>
                 <p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>
               </div>
               <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
             </section>
             <section className="sec two" aria-label="Companies and stops">
-              <div role="group" aria-labelledby="pb">
+              <div role="group" aria-labelledby={id(L.companies)}>
                 <div className="sec-h">
-                  <span className="ltr" aria-hidden="true">b</span>
-                  <h2 id="pb" tabIndex={-1}>Who is working on {row.label}</h2>
+                  <span className="ltr" aria-hidden="true">{L.companies}</span>
+                  <h2 id={id(L.companies)} tabIndex={-1}>Who is working on {row.label}</h2>
                   <p>by parent company</p>
                 </div>
                 <TargetCompanies file={file} marks={marks} disease={disease} onOpen={onOpen} />
               </div>
-              <div role="group" aria-labelledby="pc">
+              <div role="group" aria-labelledby={id(L.stops)}>
                 <div className="sec-h">
-                  <span className="ltr" aria-hidden="true">c</span>
-                  <h2 id="pc" tabIndex={-1}>What stopped, and why</h2>
+                  <span className="ltr" aria-hidden="true">{L.stops}</span>
+                  <h2 id={id(L.stops)} tabIndex={-1}>What stopped, and why</h2>
                   <p>{n(stats.stop)} {stats.stop === 1 ? "trial" : "trials"}</p>
                 </div>
                 <TargetStops file={file} label={row.label} marks={marks} onOpen={onOpen} />
               </div>
             </section>
             <section className="sec" aria-label="How it works">
-              <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} />
+              <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} letter={L.mechanism} />
             </section>
           </>
         )}
-        <TargetDiseases file={file} row={row} disease={disease} phone={phone} />
-        {marks.length > 0 && <TargetRisk risk={risk} rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} />}
-        <TargetDiligence
-          row={row}
-          disease={disease}
-          label={row.label}
-          diseaseLabel={disease ? (file.diseases.find((d) => d.code === disease)?.label ?? disease) : "All diseases"}
-        />
+        <TargetDiseases file={file} row={row} disease={disease} phone={phone} letter={L.diseases} />
+        {marks.length > 0 && <TargetRisk risk={risk} rowId={row.id} disease={disease} file={file} label={row.label} marks={marks} letter={L.risk} />}
+        {!first && diligence}
 
         <footer className="foot">
           <span>ClinicalTrials.gov registered trials only. &lsquo;Advanced&rsquo; means the drug has a later-phase trial; it does not mean it worked.</span>
@@ -243,9 +263,6 @@ function Ready({ file, row, disease }: { file: PipelineFile; row: PipelineRow; d
     </DiligenceRunProvider>
   );
 }
-
-/** The header strip's actions go to panel g with the contents strip's scroller, so the heading clears the sticky strip. */
-const goToDiligence = () => scrollToPanel("pg");
 
 /** The disease chips: one line; where it overflows it scrolls sideways, and the selected chip is kept in view. */
 function DiseaseChips({ counts, disease, onPick }: { counts: { code: string; n: number }[]; disease: string | null; onPick: (code: string) => void }) {
@@ -278,10 +295,25 @@ function chipSearch(disease: string | null, panel: string | null): string {
   return q.toString();
 }
 
-/** The contents strip with panel g, whose word comes from the shared diligence run. */
-function PageContents({ items, pending }: { items: ContentsItem[]; pending: boolean }) {
-  const word = contentsWord(useDiligence());
-  const all = useMemo(() => [...items, { id: "pg", letter: "g", name: "Diligence", count: word ?? undefined }], [items, word]);
+/** The contents strip with the diligence panel, whose word comes from the shared diligence run: first when open, last when closed. */
+function PageContents({
+  items,
+  pending,
+  letter,
+  first,
+  release,
+}: {
+  items: ContentsItem[];
+  pending: boolean;
+  letter: string;
+  first: boolean;
+  release: DiligenceRelease;
+}) {
+  const word = contentsWord(useDiligence(), release);
+  const all = useMemo(() => {
+    const dg: ContentsItem = { id: id(letter), letter, name: "Diligence", count: word ?? undefined };
+    return first ? [dg, ...items] : [...items, dg];
+  }, [items, word, letter, first]);
   return <ContentsStrip items={all} label="Panels on this page" pending={pending} />;
 }
 

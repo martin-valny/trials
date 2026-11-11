@@ -40,15 +40,28 @@ function Approved({ line }: { line: DiseaseLine }) {
   );
 }
 
-export function TargetDiseases({ file, row, disease, phone }: { file: PipelineFile; row: PipelineRow; disease: string | null; phone: boolean }) {
+export function TargetDiseases({
+  file,
+  row,
+  disease,
+  phone,
+  letter,
+}: {
+  file: PipelineFile;
+  row: PipelineRow;
+  disease: string | null;
+  phone: boolean;
+  /** The panel's letter (e while the diligence panel trails, f once it leads). */
+  letter: string;
+}) {
   const lines = diseaseLines(file, row);
   if (lines.length === 0) return null;
   const withAp = hasApprovalData(file);
   return (
-    <section className="sec" aria-labelledby="pe">
+    <section className="sec" aria-labelledby={`p${letter}`}>
       <div className="sec-h pe-h">
-        <span className="ltr" aria-hidden="true">e</span>
-        <h2 id="pe" tabIndex={-1}>{row.label} by disease</h2>
+        <span className="ltr" aria-hidden="true">{letter}</span>
+        <h2 id={`p${letter}`} tabIndex={-1}>{row.label} by disease</h2>
         <p>
           <span className="cap">furthest phase reached by trials on the registry{withAp ? " · approved for the disease, by any regulator" : ""}</span>
           {!withAp && <span className="na"> · Approval data not available</span>}

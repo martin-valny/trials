@@ -4,6 +4,9 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+// Imported before the page: lib/diligence and lib/diligenceRelease import each other, and the release hook sees the
+// mocked diligenceEndpoint only when it is loaded first (otherwise it binds the real one while the mock is being built).
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import { TargetPage } from "../src/components/target/TargetPage";
 import * as lib from "../src/lib/diligence";
 import type { PipelineFile, RunRecord } from "../src/types";
@@ -17,6 +20,7 @@ const m = vi.mocked(lib);
 const rec = JSON.parse(readFileSync(join(__dirname, "fixtures", "diligence", "cd20__MS.json"), "utf-8")) as RunRecord;
 
 beforeEach(() => {
+  __resetDiligenceIndex();
   m.loadRecorded.mockReset().mockImplementation(async (_t, d) => (d === "MS" ? rec : null));
   m.startRun.mockReset().mockResolvedValue({ run_id: "r1" } as never);
   m.pollRun.mockReset();
@@ -79,7 +83,7 @@ describe("diligence strip", () => {
     Element.prototype.scrollIntoView = realScroll;
   });
 
-  test("no run, online: the desktop sentence and Run diligence, which starts the run and scrolls to g", async () => {
+  test("no run, online: the desktop sentence and Run diligence, which starts the run and scrolls to the diligence panel (a, live)", async () => {
     m.pollRun.mockReturnValue(new Promise<RunRecord>(() => undefined));
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
@@ -90,8 +94,8 @@ describe("diligence strip", () => {
     await userEvent.click(within(strip()!).getByRole("button", { name: "Run diligence →" }));
     expect(m.startRun).toHaveBeenCalledTimes(1);
     expect(scroll).toHaveBeenCalled();
-    expect(scroll.mock.contexts[0]).toBe(document.getElementById("pg"));
-    expect(document.activeElement).toBe(document.getElementById("pg"));
+    expect(scroll.mock.contexts[0]).toBe(document.getElementById("pa"));
+    expect(document.activeElement).toBe(document.getElementById("pa"));
     await waitFor(() => expect(strip()!.textContent).toMatch(/^AI diligence running · \d+ s/));
     expect(within(strip()!).getByRole("button", { name: "Follow it →" })).toBeInTheDocument();
   });
@@ -167,4 +171,138 @@ test("from 1100px the strip reserves one line and its fixed label sits inline af
   // Below 1100px the reserve for the label's own line stays.
   const base = /(^|\n)\.dstrip\s*\{([^}]*)\}/.exec(css)?.[2] ?? "";
   expect(base).toMatch(/min-height:\s*42px/);
+});
+
+// The release gate on the target page (spec section 6.4): closed keeps today's order; recorded or live puts diligence first.
+describe("release", () => {
+  const INDEX = { runs: [{ target: "cd20", disease: "MS" }] };
+  const realScroll = Element.prototype.scrollIntoView;
+  beforeEach(() => {
+    m.diligenceEndpoint.mockReturnValue(null);
+  });
+  afterEach(() => {
+    Element.prototype.scrollIntoView = realScroll;
+  });
+
+  /** The page with the shipped index: absent (404, closed) or the given body. */
+  function renderRelease(route: string, index?: unknown) {
+    stubFetch(index === undefined ? {} : { "/diligence/index.json": index });
+    return render(
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route path="/target/:slug" element={<TargetPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+  const contents = () => screen.getByRole("navigation", { name: "Panels on this page" });
+  const entries = () =>
+    within(contents())
+      .getAllByRole("link")
+      .map((l) => `${l.querySelector(".cs-l")?.textContent} ${l.querySelector(".cs-n")?.textContent}`);
+  const dgPanel = () => screen.getByRole("region", { name: "Diligence (AI agent)" });
+  const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  const NAMES = ["Timeline", "Companies", "Stops", "Mechanism", "Diseases", "Stop chance"];
+
+  test("closed keeps today's order", async () => {
+    renderRelease("/target/cd20");
+    await screen.findByRole("heading", { level: 2, name: "Running trials, estimated chance of stopping early" });
+    expect(entries()).toEqual([...NAMES.map((x, i) => `${"abcdef"[i]} ${x}`), "g Diligence"]);
+    for (const l of "abcdefg") expect(document.getElementById(`p${l}`), l).not.toBeNull();
+    expect(document.getElementById("pg")).toBe(within(dgPanel()).getByRole("heading", { level: 2 }));
+    const secs = [...document.querySelectorAll(".target-page > .sec")];
+    expect(secs[secs.length - 1]).toBe(dgPanel());
+    expect(within(contents()).getByRole("link", { name: /Diligence/ })).toHaveTextContent(/offline$/);
+  });
+
+  test("open puts diligence first", async () => {
+    renderRelease("/target/cd20", INDEX);
+    await screen.findByRole("heading", { level: 2, name: "Running trials, estimated chance of stopping early" });
+    expect(entries()).toEqual(["a Diligence", ...NAMES.map((x, i) => `${"bcdefg"[i]} ${x}`)]);
+    for (const l of "abcdefg") expect(document.getElementById(`p${l}`), l).not.toBeNull();
+    expect(document.getElementById("pa")).toBe(within(dgPanel()).getByRole("heading", { level: 2 }));
+    expect(dgPanel().querySelector(".ltr")).toHaveTextContent(/^a$/);
+    const timeline = screen.getByRole("heading", { level: 2, name: /trial over time/ });
+    expect(timeline).toHaveAttribute("id", "pb");
+    expect(follows(dgPanel(), timeline)).toBe(true);
+  });
+
+  test("open with no trials: the diligence panel is still a, first", async () => {
+    renderRelease("/target/cd20?disease=MOGAD", INDEX);
+    await screen.findByRole("heading", { level: 2, name: "CD20 by disease" });
+    expect(entries()).toEqual(["a Diligence", "f Diseases"]);
+    expect(document.getElementById("pa")).toBe(within(dgPanel()).getByRole("heading", { level: 2 }));
+    expect(follows(dgPanel(), document.querySelector(".sec.empty-line")!)).toBe(true);
+  });
+
+  test("the strip's action goes to the diligence panel: pg when closed, pa when open", async () => {
+    for (const [index, id] of [
+      [undefined, "pg"],
+      [INDEX, "pa"],
+    ] as const) {
+      __resetDiligenceIndex();
+      const scroll = vi.fn();
+      Element.prototype.scrollIntoView = scroll;
+      const { unmount } = renderRelease("/target/cd20?disease=MS", index);
+      await waitFor(() => expect(strip()?.dataset.state).toBe("read"));
+      await userEvent.click(within(strip()!).getByRole("button", { name: "Read the memo →" }));
+      expect(scroll.mock.contexts[0]).toBe(document.getElementById(id));
+      unmount();
+    }
+  });
+
+  test("recorded, no memo for the pair: the strip and panel say so and link to the recorded memos", async () => {
+    renderRelease("/target/cd20", INDEX);
+    await waitFor(() => expect(strip()?.dataset.state).toBe("unrecorded"));
+    expect(strip()!.textContent).toBe("AI diligence: no memo recorded for this target yet · See recorded memos →");
+    expect(within(strip()!).getByRole("link", { name: "See recorded memos →" })).toHaveAttribute("href", "/diligence");
+    expect(within(dgPanel()).getByText("No recorded memo for this target yet.")).toBeInTheDocument();
+    expect(within(dgPanel()).getByRole("link", { name: "See recorded memos →" })).toHaveAttribute("href", "/diligence");
+    expect(within(contents()).getByRole("link", { name: /Diligence/ })).toHaveTextContent(/not recorded$/);
+    expect(document.body).not.toHaveTextContent("The diligence agent is offline.");
+  });
+
+  test("recorded, memo present: the memo renders as today", async () => {
+    renderRelease("/target/cd20?disease=MS", INDEX);
+    await waitFor(() => expect(dgPanel()).toHaveTextContent("Recorded run, 9 Nov 2026"));
+    expect(within(dgPanel()).getAllByText("Three trials of CD20 in MS are listed, one of them stopped.").length).toBeGreaterThan(0);
+    expect(within(dgPanel()).getAllByText("AI judgement from public data, not investment advice").length).toBeGreaterThan(0);
+    expect(strip()?.dataset.state).toBe("read");
+  });
+
+  test("pending shows the skeleton: no panels until the index settles", async () => {
+    let settle!: (r: Response) => void;
+    const base = stubFetch();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => (String(url).endsWith("diligence/index.json") ? new Promise<Response>((res) => (settle = res)) : base(url))),
+    );
+    render(
+      <MemoryRouter initialEntries={["/target/cd20"]}>
+        <Routes>
+          <Route path="/target/:slug" element={<TargetPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(base).toHaveBeenCalledWith(expect.stringMatching(/pipeline\.json$/)));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.getByLabelText("Loading the target page")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(document.querySelector(".sec-h")).toBeNull();
+    settle(new Response(JSON.stringify(INDEX), { status: 200 }));
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("CD20");
+    expect(entries()[0]).toBe("a Diligence");
+  });
+
+  test("?panel=a when open lands on the diligence heading", async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    renderRelease("/target/cd20?disease=MS&panel=a", INDEX);
+    await screen.findByRole("heading", { level: 1 });
+    await waitFor(() => expect(scroll).toHaveBeenCalled());
+    expect(scroll.mock.contexts[0]).toBe(document.getElementById("pa"));
+    expect(document.getElementById("pa")).toBe(within(dgPanel()).getByRole("heading", { level: 2 }));
+  });
 });

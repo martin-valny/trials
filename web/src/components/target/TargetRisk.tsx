@@ -23,6 +23,8 @@ interface Props {
   file: PipelineFile;
   label: string;
   marks: PipelineMark[];
+  /** The panel's letter (f while the diligence panel trails, g once it leads). */
+  letter: string;
 }
 
 export interface Row {
@@ -40,13 +42,13 @@ export function riskRows(risk: RiskFile, marks: PipelineMark[], disease: string 
     .sort((a, b) => b.t.p - a.t.p || a.m.n.localeCompare(b.m.n));
 }
 
-/** Panel f: each running trial's estimated chance of stopping early against the typical rate. Absent without risk.json. */
+/** The stop-chance panel: each running trial's estimated chance of stopping early against the typical rate. Absent without risk.json. */
 export function TargetRisk({ risk, ...props }: Props) {
   if (!risk) return null;
   return <Panel {...props} risk={risk} />;
 }
 
-function Panel({ rowId, disease = null, file, label, marks, risk }: Omit<Props, "risk"> & { risk: RiskFile }) {
+function Panel({ rowId, disease = null, file, label, marks, risk, letter }: Omit<Props, "risk"> & { risk: RiskFile }) {
   const [all, setAll] = useState(false);
   const list = useRef<HTMLUListElement>(null);
   // "Show all" leaves the page; focus goes to the first row it revealed, not to the body.
@@ -103,10 +105,10 @@ function Panel({ rowId, disease = null, file, label, marks, risk }: Omit<Props, 
   }
 
   return (
-    <section className="sec rk" aria-labelledby="pf">
+    <section className="sec rk" aria-labelledby={`p${letter}`}>
       <div className="sec-h">
-        <span className="ltr" aria-hidden="true">f</span>
-        <h2 id="pf" tabIndex={-1}>
+        <span className="ltr" aria-hidden="true">{letter}</span>
+        <h2 id={`p${letter}`} tabIndex={-1}>
           Running trials, estimated chance of stopping early
         </h2>
       </div>

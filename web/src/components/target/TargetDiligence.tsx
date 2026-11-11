@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EXAMPLE, SECTION_ORDER, exampleHref, flagSentence, formatRunDate, loadRecorded, renderable } from "../../lib/diligence";
+import { isOpen, type DiligenceRelease } from "../../lib/diligenceRelease";
 import type { Shown } from "../../lib/useDiligenceRun";
 import { useDiligence } from "./DiligenceRunContext";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
@@ -54,10 +55,13 @@ interface Props {
   disease: string | null;
   label: string;
   diseaseLabel: string;
+  /** The panel's letter: a once memos are recorded or the agent is live, g while closed. */
+  letter: string;
+  release: DiligenceRelease;
 }
 
-/** Panel g: the diligence agent. Shows a recorded run, or runs the agent live and streams its trace, then the checked memo. */
-export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
+/** The diligence panel: the diligence agent. Shows a recorded run, or runs the agent live and streams its trace, then the checked memo. */
+export function TargetDiligence({ row, disease, label, diseaseLabel, letter, release }: Props) {
   const dz = disease ?? "all";
   const d = useDiligence();
   const { valid, online, elapsed, lastText, canRun, run } = d;
@@ -73,10 +77,10 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
   }
 
   return (
-    <section className="sec dg" aria-labelledby="pg" aria-busy={d.phase === "loading" || undefined}>
+    <section className="sec dg" aria-labelledby={`p${letter}`} aria-busy={d.phase === "loading" || undefined}>
       <div className="sec-h">
-        <span className="ltr" aria-hidden="true">g</span>
-        <h2 id="pg" tabIndex={-1}>
+        <span className="ltr" aria-hidden="true">{letter}</span>
+        <h2 id={`p${letter}`} tabIndex={-1}>
           Diligence (AI agent)
         </h2>
         <p>
@@ -105,7 +109,7 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
               {d.notice}
             </p>
           )}
-          {!shown && !trace && !d.capped && <Intro online={online} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
+          {!shown && !trace && !d.capped && <Intro online={online} release={release} here={row.id === EXAMPLE.target && dz === EXAMPLE.disease} />}
           {trace && (
             <div className={`dg-grid${shown?.rec.memo || d.phase === "running" ? "" : " solo"}`}>
               <Trace steps={trace} running={d.phase === "running"} />
@@ -129,12 +133,13 @@ export function TargetDiligence({ row, disease, label, diseaseLabel }: Props) {
   );
 }
 
-function Intro({ online, here }: { online: boolean; here: boolean }) {
-  const ex = exampleHref();
+function Intro({ online, here, release }: { online: boolean; here: boolean; release: DiligenceRelease }) {
+  const ex = exampleHref(isOpen(release));
+  const recorded = !online && release === "recorded";
   // The example link is offered only when that example's recording ships with the site (no dead end).
   const [example, setExample] = useState(false);
   useEffect(() => {
-    if (online || here) return;
+    if (online || here || recorded) return;
     let on = true;
     void loadRecorded(EXAMPLE.target, EXAMPLE.disease).then((rec) => {
       if (on) setExample(rec !== null);
@@ -142,7 +147,7 @@ function Intro({ online, here }: { online: boolean; here: boolean }) {
     return () => {
       on = false;
     };
-  }, [online, here]);
+  }, [online, here, recorded]);
   return (
     <div className="dg-intro">
       {online ? (
@@ -150,6 +155,11 @@ function Intro({ online, here }: { online: boolean; here: boolean }) {
           The agent plans its searches, calls ClinicalTrials.gov, ChEMBL, Europe PMC, openFDA and this site&rsquo;s own data, follows up on what
           it finds, then writes a short memo in which every sentence cites a record it retrieved. A second model checks each claim against
           its source before anything is shown.
+        </p>
+      ) : recorded ? (
+        // Memos are recorded for other pairs: point to them, never call the agent offline (spec section 6.4).
+        <p>
+          No recorded memo for this target yet. <Link to="/diligence">See recorded memos →</Link>
         </p>
       ) : (
         <p>

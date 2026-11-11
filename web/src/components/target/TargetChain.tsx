@@ -69,10 +69,12 @@ interface Props {
   marks: PipelineMark[];
   disease: string | null;
   phone?: boolean;
+  /** The panel's letter (d while the diligence panel trails, e once it leads). */
+  letter: string;
 }
 
-/** Panel d: drug, gene, pathway, top-level pathway; the graph link only when the graph holds the gene. */
-export function TargetChain({ file, row, marks, disease, phone = false }: Props) {
+/** The mechanism panel: drug, gene, pathway, top-level pathway; the graph link only when the graph holds the gene. */
+export function TargetChain({ file, row, marks, disease, phone = false, letter }: Props) {
   const graph = useGraph();
   const { names, total } = useMemo(() => drugsOf(marks), [marks]);
   const g = graph.s === "ready" ? graph.g : null;
@@ -87,8 +89,8 @@ export function TargetChain({ file, row, marks, disease, phone = false }: Props)
   return (
     <>
       <div className="sec-h">
-        <span className="ltr" aria-hidden="true">d</span>
-        <h3 id="pd" tabIndex={-1}>
+        <span className="ltr" aria-hidden="true">{letter}</span>
+        <h3 id={`p${letter}`} tabIndex={-1}>
           How it works
         </h3>
         {graphLink && !phone && <p>{graphLink}</p>}
