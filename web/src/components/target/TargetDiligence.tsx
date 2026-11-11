@@ -8,8 +8,6 @@ import { useDiligence } from "./DiligenceRunContext";
 import type { DiligenceJudgement, DiligenceSection, DiligenceSentence, DiligenceStep, DiligenceVerdict, PipelineRow, RunRecord } from "../../types";
 import "./diligence.css";
 
-/** Shown verbatim with every judgement, withheld or not (spec §2, anti-goals). */
-
 export { formatRunDate };
 
 const SECTION_TITLE: Record<DiligenceSection, string> = {

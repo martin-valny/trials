@@ -24,8 +24,9 @@
 /* How it works: three steps in one row, each under a hairline; one column below 768px. */
 .dp-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; margin: 0; padding: 0; list-style: none; }
 .dp-steps li { padding-top: 12px; border-top: 1px solid var(--rule); }
-.dp-steps h3 { margin: 0 0 6px; font-size: var(--fs-body); font-weight: 700; line-height: 1.35; }
-.dp-step-n { display: inline-block; min-width: 1.4em; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+/* The number hangs in a 1.4em column, so a title that wraps lines up with itself and with the paragraph under it. */
+.dp-steps h3 { display: grid; grid-template-columns: 1.4em minmax(0, 1fr); margin: 0 0 6px; font-size: var(--fs-body); font-weight: 700; line-height: 1.35; }
+.dp-step-n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
 .dp-steps p { margin: 0; padding-left: 1.4em; max-width: 40ch; font-size: var(--fs-body); line-height: var(--lh-body); text-wrap: pretty; }
 @media (max-width: 767px) {
   .dp-steps { grid-template-columns: minmax(0, 1fr); gap: 16px; }
@@ -64,11 +65,16 @@
   .dp-table th, .dp-table td { padding-right: 14px; }
 }
 
-/* Phone: two lines per memo between hairlines, no cards, no labels.
-   Line 1: target, disease, the link. Line 2: the AI read, claims supported, removed, date. */
 @media (max-width: 640px) {
   .dp-sec { margin-top: 40px; }
   .dp-sec:first-child { margin-top: 28px; }
+  .dp-figures { gap: 18px 28px; }
+  .dp-figures b { font-size: 22px; }
+}
+
+/* Below 900px (phones and tablets): two lines per memo between hairlines, no cards, no labels; seven columns no
+   longer fit cleanly. Line 1: target, disease, the link. Line 2: the AI read, claims supported, removed, date. */
+@media (max-width: 899px) {
   .dp-table, .dp-table tbody { display: block; width: auto; max-width: 100%; }
   .dp-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   /* The row clips sideways by 4px past its own edges: line 2's "·" separators sit in the gap before each item, so one
@@ -91,6 +97,4 @@
   .dp-n, .dp-rm, .dp-when { position: relative; white-space: nowrap; }
   .dp-n::before, .dp-rm::before, .dp-when::before { content: "·"; position: absolute; right: 100%; width: 14px; text-align: center; }
   .dp-ph { display: inline; }
-  .dp-figures { gap: 18px 28px; }
-  .dp-figures b { font-size: 22px; }
 }
