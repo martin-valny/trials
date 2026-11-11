@@ -41,6 +41,23 @@ def test_skips_failed_and_unreadable(tmp_path: Path) -> None:
     assert runs == [{"target": "a", "disease": "MS"}]
 
 
+def test_skips_records_without_a_named_target_or_disease(tmp_path: Path) -> None:
+    for name, target, disease in [
+        ("a__MS.json", "a", "MS"),
+        ("b__MS.json", None, "MS"),
+        ("c__x.json", "c", None),
+        ("d__MS.json", "", "MS"),
+        ("e__1.json", "e", 1),
+    ]:
+        (tmp_path / name).write_text(
+            json.dumps({"target": target, "disease": disease, "status": "done"})
+        )
+    assert write_index(tmp_path) == 1
+    assert json.loads((tmp_path / "index.json").read_text())["runs"] == [
+        {"target": "a", "disease": "MS"}
+    ]
+
+
 def test_empty_dir_writes_empty_runs(tmp_path: Path) -> None:
     assert write_index(tmp_path) == 0
     assert json.loads((tmp_path / "index.json").read_text()) == {"runs": []}

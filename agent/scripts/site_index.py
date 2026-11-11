@@ -15,6 +15,10 @@ WEB_DIR = ROOT / "web" / "public" / "diligence"
 _NOT_MEMOS = {"eval-report.json", "index.json"}
 
 
+def _named(v: object) -> bool:
+    return isinstance(v, str) and v != ""
+
+
 def write_index(web_dir: Path) -> int:
     """Rebuild index.json from the done memos in web_dir; returns the number of runs."""
     pairs: set[tuple[str, str]] = set()
@@ -23,8 +27,10 @@ def write_index(web_dir: Path) -> int:
             continue
         try:
             record = json.loads(path.read_text())
-            if record["status"] == "done":
-                pairs.add((str(record["target"]), str(record["disease"])))
+            target, disease = record["target"], record["disease"]
+            if record["status"] != "done" or not _named(target) or not _named(disease):
+                continue
+            pairs.add((target, disease))
         except (OSError, ValueError, KeyError, TypeError):
             continue
     runs = [{"target": t, "disease": d} for t, d in sorted(pairs)]

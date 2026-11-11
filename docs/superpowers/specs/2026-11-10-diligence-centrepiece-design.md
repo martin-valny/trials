@@ -83,6 +83,10 @@ the memo files or shrink to one entry. The memo-publishing rule in `record_pair`
 keeps only `eval-report.json` off the site, and the page then simply shows no quality numbers. The site never derives
 this list from file names.
 
+(Ruling during build.) The built index carries pairs only, `{"runs": [{"target", "disease"}]}`; the site derives
+stance, confidence, claim counts, removed sentences and the recorded date from each pair's memo, and shows only
+pairs whose target (and disease, unless `all`) is still in `pipeline.json`.
+
 ### 6.2 Front door band
 
 A band between the page head and the pipeline figure, replacing today's example line:
