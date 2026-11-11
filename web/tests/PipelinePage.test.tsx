@@ -486,7 +486,7 @@ test("on a phone the band sits above the figure with one link line and no picker
     expect(b.compareDocumentPosition(fig) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(b).getByText(BAND_SENTENCE)).toBeInTheDocument();
     expect(within(b).getByRole("link", { name: "Open a recorded memo →" })).toHaveAttribute("href", "/diligence");
-    expect(within(b).getByRole("link", { name: "Read how it works →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).getAllByRole("link")).toHaveLength(1);
     expect(within(b).getByText(FIXED_LABEL)).toBeInTheDocument();
     // Not rendered, so not in the tab order.
     expect(within(b).queryByRole("combobox")).not.toBeInTheDocument();
@@ -499,14 +499,15 @@ test("on a phone the band sits above the figure with one link line and no picker
   }
 });
 
-test("on a phone in the live state the band links to the Diligence page, the same line", async () => {
+test("on a phone in the live state the band's one link reads Choose a target", async () => {
   vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
   vi.stubEnv("VITE_DILIGENCE_URL", "https://agent.test/");
   try {
     stubFetch();
     renderPage();
     const b = await band();
-    expect(within(b).getByRole("link", { name: "Open a recorded memo →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).getByRole("link", { name: "Choose a target →" })).toHaveAttribute("href", "/diligence");
+    expect(within(b).getAllByRole("link")).toHaveLength(1);
     expect(within(b).queryByRole("combobox")).not.toBeInTheDocument();
   } finally {
     vi.unstubAllGlobals();
@@ -556,4 +557,18 @@ test("band carries the not-investment-advice label", async () => {
   const b = await band();
   expect(within(b).getByText(FIXED_LABEL)).toBeInTheDocument();
   expect(FIXED_LABEL).toBe("AI judgement from public data, not investment advice");
+});
+
+test("the band arriving keeps the same figure node, so the figure's entrance fade does not replay", async () => {
+  const served = stubFetch();
+  let release: (r: Response) => void = () => undefined;
+  const index = new Promise<Response>((r) => (release = r));
+  vi.stubGlobal("fetch", (url: string) => (String(url).endsWith("/diligence/index.json") ? index : served(url)));
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const before = container.querySelector(".fig-body");
+  expect(before).not.toBeNull();
+  release(new Response(JSON.stringify({ runs: [{ target: "cd20", disease: "MS" }] }), { status: 200 }));
+  await band();
+  expect(container.querySelector(".fig-body")).toBe(before);
 });

@@ -3,7 +3,7 @@
    sentence, the shared PairPicker and a quiet link, and the fixed label in 12px muted. Plate tokens only; no red
    (nothing here "advanced"). Wide: the name in its own column, the sentence beside it with the label at the right,
    the picker on the line under the sentence. Under 768px (no picker there, see DiligenceBand): the name runs into the
-   sentence, then one line of two links, then the label. */
+   sentence, then one link to the Diligence page, then the label. */
 .dg-band {
   display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) auto;
   grid-template-areas: "k s label" ". act act";
@@ -17,8 +17,10 @@
 .dg-band-act { grid-area: act; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; }
 .dg-band-how { font-size: var(--fs-ui); line-height: var(--lh-ui); text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 3px; }
 .dg-band-how:hover { text-decoration-color: var(--ink); }
-/* ".pipeline button { color: inherit }" would set the solid pill's text in ink on ink. */
-.dg-band .pp-go { color: var(--plate); }
+/* The band's button is an outline pill, so the figure's selected control stays the only filled ink control above the
+   fold; a pale fill on hover only. */
+.dg-band .pp-go { color: var(--ink); background: transparent; border-color: var(--ink); }
+.dg-band .pp-go:hover:not(:disabled) { background: var(--pale); }
 
 @media (max-width: 1099px) {
   .dg-band { margin-left: 24px; margin-right: 24px; }

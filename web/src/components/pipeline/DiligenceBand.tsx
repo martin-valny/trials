@@ -1,7 +1,7 @@
 // The front door's diligence band (spec section 6.2): shown between the page head and the figure once the agent is
 // open (recorded or live), in place of the one-line example. A target and disease picker opens that target page at
 // the diligence panel; it never starts a run (only the Run button on a target page does). Under 768px the band keeps
-// to the name, the sentence, one link line and the label: the picker is not rendered there, so the figure stays near
+// to the name, the sentence, one link to the Diligence page and the label: the picker is not rendered there, so the figure stays near
 // the top of a phone screen and the picker lives on the Diligence page.
 import { useId } from "react";
 import { Link } from "react-router-dom";
@@ -34,14 +34,16 @@ export function DiligenceBand({
       <div className="dg-band-act">
         {narrow ? (
           <Link className="dg-band-how" to="/diligence">
-            Open a recorded memo →
+            {live ? "Choose a target →" : "Open a recorded memo →"}
           </Link>
         ) : (
-          <PairPicker pairs={pairs} rows={rows} diseases={diseases} live={live} />
+          <>
+            <PairPicker pairs={pairs} rows={rows} diseases={diseases} live={live} />
+            <Link className="dg-band-how" to="/diligence">
+              Read how it works →
+            </Link>
+          </>
         )}
-        <Link className="dg-band-how" to="/diligence">
-          Read how it works →
-        </Link>
       </div>
       <p className="dg-band-label">{FIXED_LABEL}</p>
     </section>
