@@ -457,7 +457,17 @@ test("closed shows today's example line, no band", async () => {
 });
 
 test("recorded shows the band with recorded pairs only", async () => {
-  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }, { target: "btk", disease: "MS" }] } });
+  // btk is a row with no MS trial, so its MS pair is dropped; the gone target never shows.
+  stubFetch({
+    "/diligence/index.json": {
+      runs: [
+        { target: "cd20", disease: "MS" },
+        { target: "btk", disease: "all" },
+        { target: "btk", disease: "MS" },
+        { target: "gone", disease: "all" },
+      ],
+    },
+  });
   const { container } = renderPage();
   const b = await band();
   expect(within(b).getByText(BAND_SENTENCE)).toBeInTheDocument();
@@ -468,6 +478,8 @@ test("recorded shows the band with recorded pairs only", async () => {
   const target = within(b).getByRole("combobox", { name: "Target" });
   expect(within(target).getAllByRole("option").map((o) => o.textContent)).toEqual(["CD20", "BTK"]);
   expect(within(b).getByRole("link", { name: "Read how it works →" })).toHaveAttribute("href", "/diligence");
+  await userEvent.selectOptions(target, "btk");
+  expect(within(within(b).getByRole("combobox", { name: "Disease" })).getAllByRole("option").map((o) => o.getAttribute("value"))).toEqual(["all"]);
   await userEvent.selectOptions(target, "cd20");
   const disease = within(b).getByRole("combobox", { name: "Disease" });
   expect(within(disease).getAllByRole("option").map((o) => o.textContent)).toEqual(["Multiple sclerosis"]);

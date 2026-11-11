@@ -7,8 +7,8 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DiligencePage } from "../src/components/diligence/DiligencePage";
 import { claimCounts } from "../src/lib/diligence";
 import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
-import type { RunRecord } from "../src/types";
-import { stubFetch } from "./helpers";
+import type { PipelineFile, RunRecord } from "../src/types";
+import { readFixture, stubFetch } from "./helpers";
 
 const cd20 = JSON.parse(readFileSync(join(__dirname, "fixtures", "diligence", "cd20__MS.json"), "utf-8")) as RunRecord;
 const btk: RunRecord = { ...cd20, target: "btk", run_id: "b1" };
@@ -26,9 +26,17 @@ const REPORT = {
   generated_at: "2026-11-09T12:00:00Z",
 };
 
+/** The fixture pipeline with an MS trial on btk too, so both INDEX pairs name a known target and disease. */
+function pipelineWithBtkMs(): PipelineFile {
+  const f = readFixture<PipelineFile>("pipeline.json");
+  const ms = f.rows.find((r) => r.id === "cd20")!.marks.find((m) => m.dz.includes("MS"))!;
+  f.rows.find((r) => r.id === "btk")!.marks.push({ ...ms, n: "NCT99999999" });
+  return f;
+}
+
 /** Fixture data under /data/, plus the diligence files (BASE_URL is "/" in tests, so their keys keep the slash). */
 function serve(diligence: Record<string, unknown | number>) {
-  stubFetch(Object.fromEntries(Object.entries(diligence).map(([k, v]) => [`/diligence/${k}`, v])));
+  stubFetch({ "pipeline.json": pipelineWithBtkMs(), ...Object.fromEntries(Object.entries(diligence).map(([k, v]) => [`/diligence/${k}`, v])) });
 }
 
 function Where() {
@@ -86,6 +94,14 @@ test("skips a pair whose memo is missing", async () => {
   await waitFor(() => expect(bodyRows(t)).toHaveLength(1));
   expect(t).not.toHaveTextContent("BTK");
   expect(screen.queryByText(/error|could not|failed/i)).not.toBeInTheDocument();
+});
+
+test("leaves out a pair whose target has left the pipeline", async () => {
+  serve({ "index.json": { runs: [...INDEX.runs, { target: "gone", disease: "MS" }] }, "cd20__MS.json": cd20, "btk__MS.json": btk, "gone__MS.json": cd20 });
+  go();
+  const t = await table();
+  await waitFor(() => expect(bodyRows(t)).toHaveLength(2));
+  expect(within(t).getAllByRole("link").map((a) => a.getAttribute("href"))).not.toContain("/target/gone?disease=MS&panel=a");
 });
 
 test("withheld judgement reads withheld", async () => {
