@@ -137,6 +137,14 @@ def test_start_run_invokes_execute_and_returns_202(env: Env) -> None:
 
 
 def test_concurrent_start_returns_same_run(env: Env) -> None:
+    # Every request takes a quota slot before create_run dedupes (losers refund), so with more
+    # concurrent requests than the per-IP cap (3) a loser can see 429 instead of the run id. This
+    # test is about the dedupe, so the cap is lifted above the request count.
+    roomy = env.cfg.model_copy(
+        update={"daily": env.cfg.daily.model_copy(update={"per_ip_runs_per_day": 10})}
+    )
+    env.store.cfg = roomy
+    env.deps.cfg = roomy
     with ThreadPoolExecutor(max_workers=6) as pool:
         resps = list(pool.map(lambda _i: env.post_run(), range(6)))
     assert {r["statusCode"] for r in resps} == {202}
