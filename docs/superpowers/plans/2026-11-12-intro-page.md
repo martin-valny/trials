@@ -18,7 +18,7 @@
 - Red (`--red`) only for "moved on" (state `adv`). Colours only from theme tokens (`--red --run --stop --fin --unk --ink --muted --rule --plate`); approach hues as the Approach colour mode in DESIGN.md (light `#3c5488 #00a087 #8e5ea2 #4dbbd5 #e0a030 #7e6148`, dark `#8da3d6 #3cc7a8 #cf8fd6 #7fd3e6 #f0c060 #b8977a`, Unclassified `--fin`).
 - Hanken Grotesk only; type steps from `plate.css` (`--fs-meta` 12 … `--fs-read` 15); 12px floor except canvas axis ticks (11px allowed).
 - Missing-data copy: "The overview appears after the next daily update."
-- `intro.json` ≤ 150 KB raw on the real data.
+- `intro.json` ≤ 260 KB raw and ≤ 60 KB gzipped on the real data (raised from 150 KB raw, ruling 2026-11-12).
 - `prefers-reduced-motion: reduce` → no tour, no tweening.
 
 ## Review Focus
@@ -84,7 +84,7 @@ Change bins (field → bin): `completion_date, primary_completion_date, start_da
 - [ ] **Step 2: Run** `uv run pytest tests/unit/test_intro.py -q` → FAIL (module missing).
 - [ ] **Step 3: Implement `build_intro_doc`** in `intro.py`; in `export()` write `intro.json` when `explorer is not None` (using the 7-day `window` list), else `unlink(missing_ok=True)`, like `explorer.json`. Add `test_export_writes_intro_only_with_a_map` to `test_export.py`.
 - [ ] **Step 4: Fixtures.** Add `without_intro_coords(site)` (drops `trials.x`/`trials.y`) beside `without_coords`; in `test_web_fixtures.py` add `"intro.json"` to `skip` and assert `without_intro_coords(out) == without_intro_coords(COMMITTED)`. Regenerate fixtures; run `uv run pytest -q` → PASS.
-- [ ] **Step 5: Size check on real data.** Build it from the live site's JSON (download `explorer.json`, `pipeline.json`, `risk.json`, `changes/7d.json` from `https://martin-valny.github.io/trials/data/` into the scratchpad, call `build_intro_doc`, `len(json.dumps(doc, separators=(",", ":")))`) → ≤ 150 000. If over, shorten (e.g. drop `dz` for trials without marks) before committing.
+- [ ] **Step 5: Size check on real data.** Build it from the live site's JSON (download `explorer.json`, `pipeline.json`, `risk.json`, `changes/7d.json` from `https://martin-valny.github.io/trials/data/` into the scratchpad, call `build_intro_doc`, `len(json.dumps(doc, separators=(",", ":")))`) → ≤ 260 000 raw and ≤ 60 000 gzipped (`gzip.compress`). If over, shorten before committing.
 - [ ] **Step 6: Commit** `feat(export): intro.json for the intro page`.
 
 ### Task 3: Web data access for `intro.json`
