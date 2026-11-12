@@ -3,6 +3,7 @@ import { ChangesFeed } from "./components/ChangesFeed";
 import { DiligencePage } from "./components/diligence/DiligencePage";
 import { Explore } from "./components/explore/Explore";
 import { FreshnessBadge } from "./components/FreshnessBadge";
+import { IntroPage } from "./components/intro/IntroPage";
 import { MechanismsPage } from "./components/mechanisms/MechanismsPage";
 import { Methods } from "./components/Methods";
 import { PipelinePage } from "./components/pipeline/PipelinePage";
@@ -20,6 +21,12 @@ function MechanismsRedirect() {
   return <Navigate to={`/approaches${rest ? `/${rest}` : ""}${search}`} replace />;
 }
 
+/** The intro at /; an old figure link (/?view=...) carries on to /pipeline with its query. */
+function RootRoute() {
+  const { search } = useLocation();
+  return search ? <Navigate to={`/pipeline${search}`} replace /> : <IntroPage />;
+}
+
 /** The header and routes, inside whatever router the caller provides. */
 export function AppRoutes() {
   return (
@@ -32,7 +39,8 @@ export function AppRoutes() {
       </header>
       <main>
         <Routes>
-          <Route path="/" element={<PipelinePage />} />
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/pipeline" element={<PipelinePage />} />
           <Route path="/target/:slug" element={<TargetPage />} />
           <Route path="/diligence" element={<DiligencePage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />

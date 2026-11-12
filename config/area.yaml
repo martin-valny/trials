@@ -1,4 +1,5 @@
 name: neuroimmunology
+label: MS and autoimmune neurology
 conditions:
   - label: Multiple sclerosis
     synonyms: ["multiple sclerosis", "relapsing remitting multiple sclerosis"]

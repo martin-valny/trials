@@ -49,7 +49,7 @@ export function TargetPage() {
         <div className="notfound">
           <h1>{`No target called '${slug}'.`}</h1>
           <p>
-            <Link to="/">Back to the pipeline →</Link>
+            <Link to="/pipeline">Back to the pipeline →</Link>
           </p>
         </div>
       </div>
@@ -141,7 +141,7 @@ function Ready({ file, row, disease, release }: { file: PipelineFile; row: Pipel
       onPick={(code) => setParams(chipSearch(code === disease ? null : code, params.get("panel")), { replace: true })}
     />
   );
-  const back = disease ? `/?${figureSearch({ ...DEFAULT_FIGURE_STATE, disease })}` : "/";
+  const back = disease ? `/pipeline?${figureSearch({ ...DEFAULT_FIGURE_STATE, disease })}` : "/pipeline";
 
   const onOpen = useCallback((nct: string, el: Element) => {
     const box = root.current?.getBoundingClientRect();

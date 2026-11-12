@@ -46,6 +46,7 @@ test("fixture matches the exported meta shape", () => {
   expect(Object.keys(meta).sort()).toEqual(
     [
       "area",
+      "area_label",
       "conditions",
       "data_timestamp",
       "generated_for",

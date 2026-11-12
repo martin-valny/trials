@@ -67,7 +67,7 @@ const navLabels = (page: Page) => page.getByRole("navigation", { name: "Main" })
 
 test("closed: no band, no nav item, and /diligence goes to Methods", async ({ page, isMobile }) => {
   await close(page);
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("region", { name: "AI diligence" })).toHaveCount(0);
   if (!isMobile) {
@@ -86,14 +86,14 @@ test("closed: no band, no nav item, and /diligence goes to Methods", async ({ pa
 test("recorded: the nav lists Diligence second", async ({ page, isMobile }) => {
   test.skip(isMobile, "the nav is a menu on a phone");
   await record(page);
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await expect(page.getByRole("link", { name: "Diligence", exact: true })).toBeVisible();
   expect((await navLabels(page)).map((s) => s.trim())).toEqual(NAV_ORDER);
 });
 
 test("recorded: the front-door band opens the memo at the diligence panel", async ({ page, isMobile }) => {
   await record(page);
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   const band = page.getByRole("region", { name: "AI diligence" });
   await expect(band).toBeVisible();
   await expect(band.getByText(LABEL)).toBeVisible();

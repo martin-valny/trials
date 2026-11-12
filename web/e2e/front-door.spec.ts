@@ -7,7 +7,7 @@ const overflow = (page: Page) => page.evaluate(() => document.documentElement.sc
 test.beforeEach(({ page }) => noRecordedDiligence(page));
 
 test("the front door shows the pipeline headline and key numbers", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toBeVisible();
   await expect(h1).toContainText(/running/i);
@@ -16,7 +16,7 @@ test("the front door shows the pipeline headline and key numbers", async ({ page
 });
 
 test("the disease switch changes the URL", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   const disease = page.getByRole("group", { name: "Disease" });
   await disease.getByRole("button", { name: "MS", exact: true }).click();
   await expect(page).toHaveURL(/disease=MS/);
@@ -26,7 +26,7 @@ test("the disease switch changes the URL", async ({ page }) => {
 });
 
 test("a company name turns on the lens and the chip clears it", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await page.getByRole("combobox", { name: "Company lens" }).fill("Example");
   await page.getByRole("option", { name: "Example Pharma" }).click();
   await expect(page).toHaveURL(/company=/);
@@ -37,20 +37,20 @@ test("a company name turns on the lens and the chip clears it", async ({ page })
 });
 
 test("the nav has no Explore", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await expect(page.getByRole("navigation", { name: "Main" }).getByText(/Explore|Trial map/)).toHaveCount(0);
 });
 
 test("phone: By year has no horizontal scroll", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
-  await page.goto("/#/?view=year");
+  await page.goto("/#/pipeline?view=year");
   await expect(page.locator(".pstrip.by-year").first()).toBeVisible();
   const over = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(over).toBe(false);
 });
 
 test("row -> target page -> List these trials -> Trials with the banner", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   // Tap the row where a reader does, on the target's name (top left). The row's centre can fall on a company name,
   // which is its own button (the company lens) layered over the row link.
   await page.getByRole("link", { name: /^CD20: \d+ trials?/ }).click({ position: { x: 12, y: 14 } });
@@ -82,7 +82,7 @@ test("/mechanisms/targeted redirects to /approaches/targeted", async ({ page }) 
 
 test("no horizontal overflow on the front door and a target page at phone width", async ({ page }, info) => {
   test.skip(info.project.name !== "mobile", "phone width only");
-  for (const route of ["/", "/#/target/cd20"]) {
+  for (const route of ["/", "/#/pipeline", "/#/target/cd20"]) {
     await page.goto(route);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");
@@ -91,7 +91,7 @@ test("no horizontal overflow on the front door and a target page at phone width"
 });
 
 test("By disease marks approved cells with a floor rule", async ({ page }) => {
-  await page.goto("/#/?view=disease");
+  await page.goto("/#/pipeline?view=disease");
   await expect(page.locator(".cell.ap .floor").first()).toBeAttached();
 });
 
@@ -129,7 +129,7 @@ const opacities = (page: Page, sel: string) =>
 test("desktop: the floor rule stays fully opaque under a lens that misses the row", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop");
   await patchPipeline(page);
-  await page.goto("/#/?view=disease&company=Other%20Co");
+  await page.goto("/#/pipeline?view=disease&company=Other%20Co");
   const miss = page.locator('.row.miss[data-row="cd20"]');
   await expect(miss).toHaveCount(1);
   const ops = await opacities(page, '.row[data-row="cd20"] [data-cell="MS"] .floor');
@@ -142,7 +142,7 @@ test("desktop: the floor rule stays fully opaque under a lens that misses the ro
 test("desktop: the floor rule stays fully opaque in a Mostly historical row", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop");
   await patchPipeline(page);
-  await page.goto("/#/?view=disease");
+  await page.goto("/#/pipeline?view=disease");
   await expect(page.locator('.row.hist[data-row="cd19"]')).toHaveCount(1);
   const ops = await opacities(page, '.row[data-row="cd19"] [data-cell="MS"] .floor');
   expect(ops.length).toBeGreaterThan(1);

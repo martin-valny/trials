@@ -39,7 +39,7 @@ from trialradar.explorer.approaches import mapping_names
 from trialradar.explorer.build import build_explorer
 from trialradar.explorer.extras import StudyExtras, empty_extras, extract_extras
 from trialradar.explorer.graph import load_graph
-from trialradar.export import export
+from trialradar.export import build_intro, export
 from trialradar.normalize import normalize
 from trialradar.pipeline_figure.build import build_pipeline_doc
 from trialradar.pipeline_figure.io import read_figure_config
@@ -277,6 +277,29 @@ def _stop_risk(
     return doc, []
 
 
+def _intro(
+    tables: Tables,
+    changes: pl.DataFrame,
+    day: date,
+    explorer: dict[str, Any] | None,
+    figure: dict[str, Any] | None,
+    risk: dict[str, Any] | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """The intro page document (``intro.json``), plus warnings.
+
+    Optional like the map (R19): no map gives no document and no warning; a failed build
+    gives an ``intro:`` warning and no document, and the run still exports the site."""
+    if explorer is None:
+        return None, []
+    try:
+        with _stage("intro", day=day.isoformat()) as info:
+            doc = build_intro(tables, changes, day, explorer, figure, risk)
+            info["rows"] = len(doc["trials"]["id"])
+    except Exception as exc:  # noqa: BLE001 - the intro never fails the daily run
+        return None, [f"intro: {_describe(exc)}"]
+    return doc, []
+
+
 def _save_coords(store: Store, coords: pl.DataFrame, **extra: Any) -> None:
     with _stage("explorer_coords", **extra) as info:
         store.save_explorer_coords(coords)
@@ -442,6 +465,8 @@ def run(
         warnings += risk_warnings
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases)
         warnings += graph_warnings
+        intro, intro_warnings = _intro(tables, store.changes(), day, explorer, figure, risk)
+        warnings += intro_warnings
 
         row = _run_row(rid, started_at, t0, "success", ts, fetched, changes.height, warnings)
         with _stage("export") as info:
@@ -463,6 +488,7 @@ def run(
                 mechanisms=graph,
                 pipeline=figure,
                 risk=risk,
+                intro=intro,
             )
             info["rows"] = tables.trial.height
         # Only a layout that reached the site becomes the next day's alignment target.
@@ -609,7 +635,14 @@ def rebuild(
         figure, figure_warnings = _pipeline_figure(explorer, tables, cfg, day=day)
         risk, risk_warnings = _stop_risk(tables, extras, cfg, figure, day=day)
         graph, graph_warnings = _mechanism_graph(explorer, extras, cfg, aliases, day=day)
-        explorer_warnings = [*explorer_warnings, *figure_warnings, *risk_warnings, *graph_warnings]
+        intro, intro_warnings = _intro(tables, store.changes(), day, explorer, figure, risk)
+        explorer_warnings = [
+            *explorer_warnings,
+            *figure_warnings,
+            *risk_warnings,
+            *graph_warnings,
+            *intro_warnings,
+        ]
         if explorer_warnings:
             pending["warnings"] = json.dumps(
                 [*json.loads(pending["warnings"]), *explorer_warnings], ensure_ascii=False
@@ -628,6 +661,7 @@ def rebuild(
                 mechanisms=graph,
                 pipeline=figure,
                 risk=risk,
+                intro=intro,
             )
             info["rows"] = tables.trial.height
         if coords is not None:
