@@ -1,0 +1,31 @@
+# Model trial: Qwen3 235B A22B 2507 writes and plans; DeepSeek V3.2 checks (a second model, so the checker
+# is not grading its own writing).
+region: eu-north-1
+# Bedrock model or inference-profile IDs enabled in the account (eu-north-1, Stockholm).
+models:
+  writer: qwen.qwen3-235b-a22b-2507-v1:0
+  planner: qwen.qwen3-235b-a22b-2507-v1:0
+  checker: deepseek.v3.2
+limits:
+  max_tool_calls: 12
+  max_input_tokens: 150000
+  max_output_tokens: 8000
+  max_seconds: 90
+daily:
+  per_ip_runs_per_day: 3
+  global_runs_per_day: 30
+site_base_url: https://martin-valny.github.io/trials/data/
+allowed_origin: https://martin-valny.github.io
+tables:
+  runs: diligence-runs
+  limits: diligence-limits
+  flags: diligence-flags
+agent_version: "0.1.0"
+# Per model ID, USD per million tokens. Anthropic list prices (Haiku 5.5 below 100k-token
+# prompts; Sonnet 5.5 cache read before the Oct 2026 cut), so recorded costs err high. Check the
+# Bedrock console for the EU-profile prices. prompt_cache: false for models that reject cache points.
+prices:
+  qwen.qwen3-235b-a22b-2507-v1:0:
+    {input_per_mtok: 0.25, output_per_mtok: 1.00, prompt_cache: false, forced_tool: false}
+  deepseek.v3.2:
+    {input_per_mtok: 0.74, output_per_mtok: 2.22, prompt_cache: false, forced_tool: false}
