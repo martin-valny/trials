@@ -1,0 +1,9 @@
+/* Approach hues for the intro canvas, read per frame by DotCanvas. Targeted uses --run and Unclassified --fin. */
+:root {
+  --ap-cell: #00a087; --ap-plasma: #8e5ea2; --ap-tolerisation: #4dbbd5; --ap-diffuse: #e0a030; --ap-nondrug: #7e6148;
+}
+:root[data-theme="dark"] {
+  --ap-cell: #3cc7a8; --ap-plasma: #cf8fd6; --ap-tolerisation: #7fd3e6; --ap-diffuse: #f0c060; --ap-nondrug: #b8977a;
+}
+.dot-canvas { position: relative; width: 100%; height: 100%; min-height: 0; }
+.dot-canvas canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
