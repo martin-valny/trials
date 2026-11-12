@@ -10,6 +10,7 @@ const MOVE_MS = 1100;
 const STAGGER_MS = 320;
 const LABEL_AT = 700;
 const LABEL_FADE = 400;
+const SETTLE_MS = Math.max(MOVE_MS + STAGGER_MS, LABEL_AT + LABEL_FADE);
 const RINGS = new Set<Paint>(["run", "unk", "changed-ring", "multi"]);
 const AP_TOKEN: Record<string, string> = { targeted: "--run", cell: "--ap-cell", plasma: "--ap-plasma", tolerisation: "--ap-tolerisation", diffuse: "--ap-diffuse", nondrug: "--ap-nondrug", unclassified: "--fin" };
 const PAINT_TOKEN: Record<string, string> = { adv: "--red", run: "--run", stop: "--stop", fin: "--fin", unk: "--unk", ghost: "--fin", changed: "--ink", "changed-ring": "--ink", multi: "--ink" };
@@ -24,18 +25,16 @@ export function nextFrom(prev: Pos[] | null, targets: DotTarget[]): Pos[] {
   return targets.map(({ x, y, a, r }) => ({ x, y, a, r }));
 }
 
-/** Fit a label inside the canvas: 11px if it overruns, then truncate with an ellipsis. */
-function fit(ctx: CanvasRenderingContext2D, l: ViewLabel, w: number): { text: string; size: number } {
+/** Fit a label inside the canvas at its own size (12px floor): truncate with an ellipsis, measured with the ellipsis included. */
+export function fit(ctx: CanvasRenderingContext2D, l: ViewLabel, w: number): { text: string; size: number } {
   const align = l.align ?? "left";
   const room = Math.max(0, align === "center" ? 2 * Math.min(l.x, w - l.x) : align === "right" ? l.x : w - l.x);
-  const weight = l.weight ?? 400;
-  let size = l.size ?? 12;
-  const width = (t: string, s: number) => { ctx.font = FONT(weight, s); return ctx.measureText(t).width; };
-  if (width(l.text, size) <= room) return { text: l.text, size };
-  size = Math.min(size, 11);
+  const size = l.size ?? 12;
+  const width = (t: string) => { ctx.font = FONT(l.weight ?? 400, size); return ctx.measureText(t).width; };
+  if (width(l.text) <= room) return { text: l.text, size };
   let text = l.text;
-  while (text.length > 1 && width(text, size) > room) text = text.slice(0, -1);
-  return text === l.text ? { text, size } : { text: `${text.trimEnd().slice(0, -1)}…`, size };
+  while (text.length > 0 && width(`${text.trimEnd()}…`) > room) text = text.slice(0, -1);
+  return { text: `${text.trimEnd()}…`, size };
 }
 
 export function DotCanvas({ file, pairs, active, reduced, label }: { file: IntroFile; pairs: RecordedPair[]; active: ViewKey; reduced: boolean; label: string }) {
@@ -70,17 +69,21 @@ export function DotCanvas({ file, pairs, active, reduced, label }: { file: Intro
     if (!views || !canvas || !ctx) return;
     const cache = new WeakMap<ViewLabel, { text: string; size: number }>();
     let raf = 0;
+    const wake = () => { if (!raf) raf = requestAnimationFrame(draw); };
     const draw = (now: number) => {
-      raf = requestAnimationFrame(draw);
+      raf = 0;
       const a = anim.current;
       if (!a) return;
+      // Keep animating until the move and the label fade are done; after that only a wake-up repaints.
+      if (a.t0 !== 0 && !reduced && now - a.t0 < SETTLE_MS) raf = requestAnimationFrame(draw);
       const { w, h } = size;
       const dpr = window.devicePixelRatio || 1;
       if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       const cs = getComputedStyle(document.documentElement);
-      const tok = (name: string) => cs.getPropertyValue(name).trim();
+      const toks = new Map<string, string>();
+      const tok = (name: string) => { let v = toks.get(name); if (v === undefined) { v = cs.getPropertyValue(name).trim(); toks.set(name, v); } return v; };
       const colour = (p: Paint) => tok(p.startsWith("ap:") ? (AP_TOKEN[p.slice(3)] ?? "--fin") : (PAINT_TOKEN[p] ?? "--fin"));
       const view: IntroView = views[a.view];
       for (let i = 0; i < view.dots.length; i++) {
@@ -115,9 +118,15 @@ export function DotCanvas({ file, pairs, active, reduced, label }: { file: Intro
       }
       ctx.globalAlpha = 1;
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
-  }, [views, size, reduced]);
+    wake();
+    // Idle repaints: a theme change, or a pixel-ratio change (window moved between screens).
+    const mo = new MutationObserver(wake);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+    const dpr = window.devicePixelRatio || 1;
+    const mq = typeof window.matchMedia === "function" ? window.matchMedia(`(resolution: ${dpr}dppx)`) : null;
+    mq?.addEventListener?.("change", wake);
+    return () => { cancelAnimationFrame(raf); mo.disconnect(); mq?.removeEventListener?.("change", wake); };
+  }, [views, size, reduced, active]);
 
   return (
     <div className="dot-canvas" ref={wrap}>
