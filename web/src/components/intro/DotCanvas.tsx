@@ -25,16 +25,48 @@ export function nextFrom(prev: Pos[] | null, targets: DotTarget[]): Pos[] {
   return targets.map(({ x, y, a, r }) => ({ x, y, a, r }));
 }
 
-/** Fit a label inside the canvas at its own size (12px floor): truncate with an ellipsis, measured with the ellipsis included. */
-export function fit(ctx: CanvasRenderingContext2D, l: ViewLabel, w: number): { text: string; size: number } {
+/**
+ * Fit a label inside the canvas and its own maxW at its own size (12px floor). It wraps on spaces up to maxLines
+ * (2 when maxW is set, else 1) and the last line is truncated with an ellipsis, measured with the ellipsis included.
+ * A label that would be cut to fewer than 3 characters is dropped (no lines).
+ */
+export function fit(ctx: CanvasRenderingContext2D, l: ViewLabel, w: number): { lines: string[]; size: number } {
   const align = l.align ?? "left";
-  const room = Math.max(0, align === "center" ? 2 * Math.min(l.x, w - l.x) : align === "right" ? l.x : w - l.x);
+  const edge = Math.max(0, align === "center" ? 2 * Math.min(l.x, w - l.x) : align === "right" ? l.x : w - l.x);
+  const room = l.maxW === undefined ? edge : Math.min(edge, l.maxW);
   const size = l.size ?? 12;
+  const maxLines = l.maxLines ?? (l.maxW === undefined ? 1 : 2);
   const width = (t: string) => { ctx.font = FONT(l.weight ?? 400, size); return ctx.measureText(t).width; };
-  if (width(l.text) <= room) return { text: l.text, size };
-  let text = l.text;
-  while (text.length > 0 && width(`${text.trimEnd()}…`) > room) text = text.slice(0, -1);
-  return { text: `${text.trimEnd()}…`, size };
+  const none = { lines: [] as string[], size };
+  const cut = (t: string) => {
+    let c = t;
+    while (c.length > 0 && width(`${c.trimEnd()}…`) > room) c = c.slice(0, -1);
+    return c.trimEnd();
+  };
+  let words = l.text.split(" ");
+  const lines: string[] = [];
+  for (let li = 0; li < maxLines && words.length > 0; li++) {
+    const whole = words.join(" ");
+    if (width(whole) <= room) { lines.push(whole); break; }
+    if (li === maxLines - 1) {
+      const c = cut(whole);
+      if (c.length < 3) return none;
+      lines.push(`${c}…`);
+      break;
+    }
+    let k = 0, line = "";
+    while (k < words.length && width(line ? `${line} ${words[k]}` : words[k]) <= room) { line = line ? `${line} ${words[k]}` : words[k]; k++; }
+    if (k === 0) {
+      const c = cut(words[0]);
+      if (c.length < 3) return none;
+      lines.push(`${c}…`);
+      words = words.slice(1);
+    } else {
+      lines.push(line);
+      words = words.slice(k);
+    }
+  }
+  return { lines, size };
 }
 
 export function DotCanvas({ file, pairs, active, reduced, label }: { file: IntroFile; pairs: RecordedPair[]; active: ViewKey; reduced: boolean; label: string }) {
@@ -67,7 +99,7 @@ export function DotCanvas({ file, pairs, active, reduced, label }: { file: Intro
     const canvas = cvs.current;
     const ctx = canvas?.getContext("2d");
     if (!views || !canvas || !ctx) return;
-    const cache = new WeakMap<ViewLabel, { text: string; size: number }>();
+    const cache = new WeakMap<ViewLabel, { lines: string[]; size: number }>();
     let raf = 0;
     const wake = () => { if (!raf) raf = requestAnimationFrame(draw); };
     const draw = (now: number) => {
@@ -114,7 +146,7 @@ export function DotCanvas({ file, pairs, active, reduced, label }: { file: Intro
         ctx.font = FONT(l.weight ?? 400, f.size);
         ctx.textAlign = l.align ?? "left";
         ctx.fillStyle = tok(l.tone === "muted" ? "--muted" : "--ink");
-        ctx.fillText(f.text, l.x, l.y);
+        f.lines.forEach((t, k) => ctx.fillText(t, l.x, l.y + k * f.size * 1.25));
       }
       ctx.globalAlpha = 1;
     };

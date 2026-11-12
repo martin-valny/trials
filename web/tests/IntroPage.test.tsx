@@ -34,7 +34,7 @@ test("headline shows the trial count and the area label", async () => {
   show();
   const h1 = await screen.findByRole("heading", { level: 1 });
   expect(h1).toHaveTextContent("14 clinical trials in MS and autoimmune neurology. Six ways to look at them.");
-  expect(screen.getByText("MS and autoimmune neurology · rebuilt every morning")).toBeInTheDocument();
+  expect(screen.queryByText(/rebuilt every morning/i)).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Open the pipeline →" })).toHaveAttribute("href", "/pipeline");
 });
 
@@ -128,4 +128,37 @@ test("phone: first tap holds and offers an Open link, a tap on the active pill n
   expect(screen.queryByText(/Touring/)).not.toBeInTheDocument();
   fireEvent.click(pill);
   expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+});
+
+test("the phone layout follows the 760px query, not the site-wide 640px", async () => {
+  const asked: string[] = [];
+  vi.stubGlobal("matchMedia", (q: string) => {
+    asked.push(q);
+    return { matches: false, media: q, addEventListener: () => undefined, removeEventListener: () => undefined };
+  });
+  stubFetch(OPEN_INDEX);
+  show();
+  await screen.findByRole("list", { name: "The views" });
+  expect(asked).toContain("(max-width: 760px)");
+  expect(asked).not.toContain("(max-width: 640px)");
+});
+
+test("the Pipeline caption says Orange in dark and Red in light", async () => {
+  vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("prefers-color-scheme: dark"), media: q, addEventListener: () => undefined, removeEventListener: () => undefined }));
+  stubFetch(OPEN_INDEX);
+  show();
+  const list = await screen.findByRole("list", { name: "The views" });
+  await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
+  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Pipeline/ }));
+  expect(screen.getByText(/Orange ones moved on to the next phase/)).toBeInTheDocument();
+  expect(screen.queryByText(/Red ones moved on/)).not.toBeInTheDocument();
+});
+
+test("the approaches note is a line of the key, not canvas text", async () => {
+  stubFetch(OPEN_INDEX);
+  show();
+  const list = await screen.findByRole("list", { name: "The views" });
+  await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
+  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Approaches/ }));
+  expect(screen.getByText(/Trials in several approaches are under More than one/)).toBeInTheDocument();
 });

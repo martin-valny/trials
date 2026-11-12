@@ -2,14 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loadIntro, loadMeta } from "../../data";
 import { useDiligenceRelease } from "../../lib/diligenceRelease";
-import { VIEW_TEXT, visibleViews, type ViewKey } from "../../lib/intro";
-import { useMediaQuery, usePhone } from "../../lib/useMediaQuery";
+import { captionText, VIEW_TEXT, visibleViews, type ViewKey } from "../../lib/intro";
+import { useTheme } from "../../lib/theme";
+import { useMediaQuery } from "../../lib/useMediaQuery";
 import { useTour } from "../../lib/useTour";
 import type { IntroFile, Meta } from "../../types";
 import { DotCanvas } from "./DotCanvas";
 import { IntroKey } from "./IntroKey";
 import "./intro.css";
 
+/** The intro's phone layout (spec section 5), not the site-wide 640px. Keep in step with intro.css. */
+const PHONE_QUERY = "(max-width: 760px)";
 const MISSING = "The overview appears after the next daily update.";
 const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight"];
 const LETTERS = "abcdefgh";
@@ -56,7 +59,8 @@ function useHeaderHeight(ref: React.RefObject<HTMLElement | null>) {
 export function IntroPage() {
   const root = useRef<HTMLDivElement>(null);
   const nav = useNavigate();
-  const phone = usePhone();
+  const phone = useMediaQuery(PHONE_QUERY);
+  const { theme } = useTheme();
   const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
   const meta = useMeta();
   const intro = useIntro();
@@ -85,7 +89,6 @@ export function IntroPage() {
     <div className="intro" ref={root}>
       <div className="intro-head">
         <div>
-          <div className="kicker">{area ? `${area} · rebuilt every morning` : "Rebuilt every morning"}</div>
           <h1 className="intro-h1">
             <b>{meta ? `${count} clinical trials in ${area}.` : "Clinical trials."}</b> {WORDS[listed.length] ?? listed.length} ways to look at them.
           </h1>
@@ -112,13 +115,13 @@ export function IntroPage() {
         </ol>
         <div className="intro-fig">
           <p className="intro-cap">
-            <b>{letter(active) ? `${letter(active)} ` : ""}{text.name}.</b> {text.caption}
+            <b>{letter(active) ? `${letter(active)} ` : ""}{text.name}.</b> {captionText(active, theme)}
             {active === "all" && <> <Link to="/explore">Explore the map →</Link></>}
             {phone && tour.held && active !== "all" && <> <Link to={text.to}>Open {text.name} →</Link></>}
           </p>
           <div className="intro-canvas">
             {file ? (
-              <DotCanvas file={file} pairs={pairs} active={active} reduced={reduced} label={`${text.name}: ${text.caption}`} />
+              <DotCanvas file={file} pairs={pairs} active={active} reduced={reduced} label={`${text.name}: ${captionText(active, theme)}`} />
             ) : (
               <p className="intro-missing">{intro.s === "missing" ? MISSING : ""}</p>
             )}

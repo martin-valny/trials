@@ -127,20 +127,44 @@ test("token lookups per frame are per distinct paint, not per dot", () => {
   expect(spy.mock.calls.length).toBeLessThanOrEqual(20);
 });
 
+const ctx7 = () => ({ font: "", measureText: (t: string) => ({ width: t.length * 7 }) }) as unknown as CanvasRenderingContext2D;
+
 test("fit keeps the label size at 12px or more and the result inside the room", () => {
-  const ctx = { font: "", measureText: (t: string) => ({ width: t.length * 7 }) } as unknown as CanvasRenderingContext2D;
-  const r = fit(ctx, { text: "Trials in several approaches are under More than one", x: 20, y: 0, size: 12 }, 343);
+  const r = fit(ctx7(), { text: "Trials in several approaches are under More than one", x: 20, y: 0, size: 12 }, 343);
   expect(r.size).toBeGreaterThanOrEqual(12);
-  expect(r.text.endsWith("…")).toBe(true);
-  expect(r.text.length * 7).toBeLessThanOrEqual(343 - 20);
-  expect(fit(ctx, { text: "short", x: 0, y: 0 }, 343)).toEqual({ text: "short", size: 12 });
+  expect(r.lines).toHaveLength(1);
+  expect(r.lines[0].endsWith("…")).toBe(true);
+  expect(r.lines[0].length * 7).toBeLessThanOrEqual(343 - 20);
+  expect(fit(ctx7(), { text: "short", x: 0, y: 0 }, 343)).toEqual({ lines: ["short"], size: 12 });
 });
 
-test("labels that would run past the edge are shrunk or truncated", () => {
-  const texts: string[] = [];
+test("fit wraps to a second line inside maxW before it truncates", () => {
+  const l = { text: "Broad immunomodulators", x: 0, y: 0, weight: 700 as const, maxW: 100 };
+  const b = fit(ctx7(), l, 900).lines;
+  expect(b[0]).toBe("Broad");
+  expect(b[1].endsWith("…")).toBe(true);
+  expect(b[1].length * 7).toBeLessThanOrEqual(100);
+  const r = fit(ctx7(), { text: "Sites & countries", x: 0, y: 0, maxW: 100 }, 900);
+  expect(r.lines).toEqual(["Sites &", "countries"]);
+  for (const t of r.lines) expect(t.length * 7).toBeLessThanOrEqual(100);
+  const long = fit(ctx7(), { text: "alpha beta gamma delta epsilon zeta", x: 0, y: 0, maxW: 100 }, 900);
+  expect(long.lines).toHaveLength(2);
+  expect(long.lines[1].endsWith("…")).toBe(true);
+  expect(long.lines[1].length * 7).toBeLessThanOrEqual(100);
+  expect(fit(ctx7(), { text: "alpha beta gamma delta", x: 0, y: 0, maxW: 100, maxLines: 1 }, 900).lines).toHaveLength(1);
+});
+
+test("fit drops a label that would be cut to fewer than 3 characters", () => {
+  expect(fit(ctx7(), { text: "1995", x: 330, y: 0 }, 343).lines).toEqual([]);
+  expect(fit(ctx7(), { text: "1995", x: 0, y: 0 }, 343).lines).toEqual(["1995"]);
+  expect(fit(ctx7(), { text: "Immunomodulators", x: 0, y: 0, maxW: 20 }, 343).lines).toEqual([]);
+});
+
+test("a wrapped label is drawn on two baselines, 1.25 lines apart", () => {
+  const drawn: [string, number][] = [];
   const ctx = new Proxy({} as CanvasRenderingContext2D, {
     get: (_t, key) => {
-      if (key === "fillText") return (t: string) => texts.push(t);
+      if (key === "fillText") return (t: string, _x: number, y: number) => drawn.push([t, y]);
       if (key === "measureText") return (t: string) => ({ width: t.length * 7 });
       return () => undefined;
     },
@@ -148,11 +172,10 @@ test("labels that would run past the edge are shrunk or truncated", () => {
   });
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => ctx) as unknown as HTMLCanvasElement["getContext"]);
   render(<DotCanvas {...props} active="approaches" />);
-  resize(343, 600);
+  resize(900, 430);
   step();
   step();
-  const note = texts.find((t) => t.startsWith("Trials in several"));
-  expect(note).toBeDefined();
-  expect(note!.length * 7).toBeLessThanOrEqual(343);
-  expect(note!.endsWith("…")).toBe(true);
+  const names = drawn.filter(([t]) => t === "Broad" || t.startsWith("immuno"));
+  expect(names.length).toBeGreaterThanOrEqual(2);
+  expect(names[1][1] - names[0][1]).toBeCloseTo(15, 5);
 });

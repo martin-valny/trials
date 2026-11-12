@@ -1,5 +1,5 @@
 import type { IntroFile } from "../../types";
-import type { ViewKey } from "../../lib/intro";
+import { APPROACH_NOTE, type ViewKey } from "../../lib/intro";
 
 const HUE: Record<string, string> = { targeted: "--run", cell: "--ap-cell", plasma: "--ap-plasma", tolerisation: "--ap-tolerisation", diffuse: "--ap-diffuse", nondrug: "--ap-nondrug", unclassified: "--fin" };
 
@@ -17,6 +17,7 @@ export function IntroKey({ view, file }: { view: ViewKey; file: IntroFile | null
       <>
         {aps.map((a) => <Item key={a.key} cls="hue" style={{ background: `var(${HUE[a.key] ?? "--fin"})` }}>{a.label}</Item>)}
         <Item cls="multi">More than one approach</Item>
+        <span className="intro-keynote">{APPROACH_NOTE}</span>
       </>
     );
   }

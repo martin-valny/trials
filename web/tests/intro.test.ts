@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isIntroFile } from "../src/data";
-import { buildViews, cloudPositions, introPairs, visibleViews, VIEW_TEXT, type ViewKey } from "../src/lib/intro";
+import { APPROACH_NOTE, buildViews, buildViewsRaw, captionText, cloudPositions, introPairs, visibleViews, VIEW_TEXT, type ViewKey } from "../src/lib/intro";
 import type { IntroFile } from "../src/types";
 
 const fixture = (): Record<string, any> => JSON.parse(readFileSync("tests/fixtures/data/intro.json", "utf8"));
@@ -23,6 +23,9 @@ describe("isIntroFile", () => {
     expect(isIntroFile(f)).toBe(false);
   });
 });
+
+const BIN_NAMES = ["Dates", "Status", "Sites & countries", "Enrollment", "Outcomes", "Other details"];
+const l12 = (l: { size?: number }) => (l.size ?? 12);
 
 describe("intro layouts", () => {
   const fx = (): IntroFile => fixture() as IntroFile;
@@ -144,8 +147,11 @@ describe("intro layouts", () => {
     expect(v.dots[8].paint).toBe("changed-ring");
     expect(v.dots[8].r).toBe(5);
     const t = v.labels.map((l) => l.text);
-    expect(t).toContain("2 trials · 1 slipped 90+ days");
-    expect(t).toContain("1 trial · 1 notable");
+    expect(t).toContain("2 trials");
+    expect(t).toContain("1 slipped 90+ days");
+    expect(t).toContain("1 trial");
+    expect(t).toContain("1 notable");
+    expect(t).not.toContain("2 trials · 1 slipped 90+ days");
     expect(t).toContain("3 of 12 trials changed in the last 7 days · solid = flagged as notable");
     const e = hand();
     e.trials.change = e.trials.change.map(() => null);
@@ -183,7 +189,7 @@ describe("intro layouts", () => {
     expect(d.length).toBeGreaterThan(100);
   });
 
-  it("40 changed trials in one bin stay inside it at 343 wide", () => {
+  it("40 changed trials in one bin stay inside it at 343 wide (3 x 2 bins, no side inset)", () => {
     const f = hand();
     const n = 40;
     f.trials = {
@@ -191,13 +197,198 @@ describe("intro layouts", () => {
       outcome: Array(n).fill("running"), approaches: Array(n).fill([]), start: Array(n).fill(2020), dz: Array(n).fill([]),
       marks: Array(n).fill([]), risk: Array(n).fill(null), change: Array(n).fill(["dates", null]),
     } as IntroFile["trials"];
-    const w = 343, cw = (w - 100) / 6;
-    const d = buildViews(f, [], w, 380).changes.dots.filter((x) => x.a === 1);
-    expect(d).toHaveLength(40);
+    const w = 343, cw = w / 3;
+    const d = buildViewsRaw(f, [], w, 380).changes.dots.filter((x) => x.a === 1);
+    expect(d.length).toBeGreaterThan(10);
     for (const p of d) {
-      expect(p.x - 6).toBeGreaterThanOrEqual(50);
-      expect(p.x + 6).toBeLessThanOrEqual(50 + cw);
+      expect(p.x - p.r).toBeGreaterThanOrEqual(0);
+      expect(p.x + p.r).toBeLessThanOrEqual(cw);
     }
+  });
+
+
+  /** 3000 trials with the real column sizes: Non-drug care 1,199 and Targeted 1,014 are the tall ones. */
+  const bigApproaches = (): IntroFile => {
+    const f = fx();
+    const sizes: [string[], number][] = [[["targeted"], 1014], [["cell"], 150], [["plasma"], 100], [["tolerisation"], 60], [["diffuse"], 50], [["nondrug"], 1199], [["unclassified"], 400], [["targeted", "cell"], 27]];
+    const ap = sizes.flatMap(([a, c]) => Array.from({ length: c }, () => a));
+    const n = ap.length;
+    f.trials = {
+      id: ap.map((_, i) => `N${i}`), x: ap.map((_, i) => i % 50), y: ap.map((_, i) => Math.floor(i / 50)),
+      outcome: Array(n).fill("running"), approaches: ap, start: Array(n).fill(2020), dz: Array(n).fill([]),
+      marks: Array(n).fill([]), risk: Array(n).fill(null), change: Array(n).fill(null),
+    } as IntroFile["trials"];
+    f.trial_count = n;
+    return f;
+  };
+
+  it("approaches: nothing is off-canvas before the final clamp, at 900 x 430 and 343 x 380", () => {
+    for (const [w, h] of [[900, 430], [343, 380], [343, 300]] as const) {
+      const v = buildViewsRaw(bigApproaches(), [], w, h).approaches;
+      for (const d of v.dots) {
+        expect(d.x).toBeGreaterThanOrEqual(0);
+        expect(d.x).toBeLessThanOrEqual(w);
+        expect(d.y - d.r).toBeGreaterThanOrEqual(0);
+        expect(d.y).toBeLessThanOrEqual(h);
+      }
+    }
+  });
+
+  it("approaches: column heights stay proportional (1,199 is taller than 1,014) on the phone", () => {
+    const f = bigApproaches();
+    const v = buildViewsRaw(f, [], 343, 380).approaches;
+    const top = (from: number, to: number) => Math.min(...v.dots.slice(from, to).map((d) => d.y));
+    const targeted = top(0, 1014), nondrug = top(1374, 2573), unclassified = top(2573, 2973);
+    expect(nondrug).toBeLessThan(targeted);
+    expect(targeted).toBeLessThan(unclassified);
+  });
+
+  it("approaches: the note is not on the canvas; names are dropped when narrow and wrap when wide", () => {
+    const f = bigApproaches();
+    const narrow = buildViewsRaw(f, [], 343, 380).approaches.labels;
+    expect(narrow.map((l) => l.text)).not.toContain(APPROACH_NOTE);
+    expect(narrow.some((l) => l.text === "Non-drug care")).toBe(false);
+    expect(narrow.map((l) => l.text)).toContain("1,199");
+    const wide = buildViewsRaw(f, [], 900, 430).approaches.labels;
+    expect(wide.map((l) => l.text)).not.toContain(APPROACH_NOTE);
+    const name = wide.find((l) => l.text === "Broad immunomodulators")!;
+    expect(name.maxW).toBeGreaterThan(40);
+    expect(name.maxW).toBeLessThan(900 / 8 + 14);
+    const count = wide.find((l) => l.text === "50")!;
+    expect(count.y).toBeLessThan(name.y);
+  });
+
+  it("changes: below 500px wide, bins are 3 x 2 and the labels sit under their own bubble", () => {
+    const f = hand();
+    const v = buildViewsRaw(f, [], 343, 380).changes;
+    const names = v.labels.filter((l) => BIN_NAMES.includes(l.text));
+    expect(names.map((l) => l.x)).toEqual([343 / 6, 343 / 2, (343 * 5) / 6, 343 / 6, 343 / 2, (343 * 5) / 6]);
+    expect(names[3].y).toBeGreaterThan(names[0].y + 40);
+    for (const l of v.labels) expect(l.size ?? 12).toBeGreaterThanOrEqual(12);
+    for (const d of v.dots.filter((x) => x.a === 1)) expect(d.y + d.r).toBeLessThan(380 * 0.8);
+  });
+
+  it("changes: the label block under each bubble is derived from the bubble, never inside it", () => {
+    const f = hand();
+    for (const [w, h] of [[900, 430], [343, 380], [343, 300]] as const) {
+      const v = buildViewsRaw(f, [], w, h).changes;
+      const lowest = Math.max(...v.dots.filter((d) => d.a === 1 && d.y < h * 0.8).map((d) => d.y + d.r));
+      const first = v.labels.find((l) => l.text === "Dates")!;
+      expect(first.y - (l12(first))).toBeGreaterThan(lowest - 100);
+      const summary = v.labels.find((l) => l.x === 0);
+      if (summary) expect(summary.y).toBeGreaterThan(Math.max(...v.labels.filter((l) => l !== summary && l.x > 0).map((l) => l.y)));
+    }
+  });
+
+  it("changes: the bins are centred in the space above the grid band", () => {
+    const f = hand();
+    const n = 360;
+    f.trials = {
+      id: Array.from({ length: n }, (_, i) => `N${i}`), x: Array.from({ length: n }, (_, i) => i), y: Array(n).fill(0),
+      outcome: Array(n).fill("running"), approaches: Array(n).fill([]), start: Array(n).fill(2020), dz: Array(n).fill([]),
+      marks: Array(n).fill([]), risk: Array(n).fill(null),
+      change: Array.from({ length: n }, (_, i) => [["dates", "status", "sites", "enrollment", "outcomes", "other"][i % 6], "date_slip_ge_90d"]),
+    } as IntroFile["trials"];
+    const [w, h] = [890, 400];
+    const v = buildViewsRaw(f, [], w, h).changes;
+    const summary = v.labels.find((l) => l.x === 0)!;
+    const bins = v.labels.filter((l) => l !== summary);
+    const topGap = Math.min(...v.dots.filter((d) => d.a === 1).map((d) => d.y - d.r));
+    const bottomGap = summary.y - 12 - Math.max(...bins.map((l) => l.y));
+    expect(topGap).toBeGreaterThan(0);
+    expect(Math.abs(topGap - bottomGap)).toBeLessThan(40);
+  });
+
+  it("diligence: a target with an all memo is one cluster with every trial on its row", () => {
+    const f = hand();
+    const v = buildViewsRaw(f, [{ target: "cd20", disease: "ms" }, { target: "cd20", disease: "all" }, { target: "fcrn", disease: "all" }], 900, 430).diligence;
+    const names = v.labels.filter((l) => l.weight === 700).map((l) => l.text);
+    expect(names).toEqual(["CD20 · all", "FcRn · all"]);
+    expect(v.dots.filter((d) => d.a === 1)).toHaveLength(4);
+  });
+
+  it("diligence: the name sits under the cluster and +N more is its own muted line below", () => {
+    const f = hand();
+    const n = 3000;
+    f.trials = {
+      id: Array.from({ length: n }, (_, i) => `N${i}`), x: Array(n).fill(0), y: Array(n).fill(0), outcome: Array(n).fill("running"),
+      approaches: Array(n).fill([]), start: Array(n).fill(2020), dz: Array(n).fill([]), marks: Array(n).fill([[0, 1, "run"]]), risk: Array(n).fill(null), change: Array(n).fill(null),
+    } as IntroFile["trials"];
+    const v = buildViewsRaw(f, [{ target: "cd20", disease: "all" }], 343, 380).diligence;
+    const lit = v.dots.filter((d) => d.a === 1);
+    const lowest = Math.max(...lit.map((d) => d.y + d.r));
+    const name = v.labels.find((l) => l.text === "CD20 · all")!;
+    const more = v.labels.find((l) => /^\+\d+ more$/.test(l.text))!;
+    expect(more).toBeDefined();
+    expect(more.tone).toBe("muted");
+    expect(name.y - 12).toBeGreaterThanOrEqual(lowest - 1);
+    expect(more.y).toBeGreaterThan(name.y + 12);
+  });
+
+  it("watchlist: the dashed tick runs up to just under its label", () => {
+    const f = hand();
+    const v = buildViewsRaw(f, [], 900, 430).watchlist;
+    const tick = v.rules.find((r) => r.kind === "tick")!;
+    const label = v.labels.find((l) => l.text === "typical 20%")!;
+    expect(tick.y - tick.length).toBeGreaterThan(label.y);
+    expect(tick.y - tick.length).toBeLessThanOrEqual(label.y + 8);
+  });
+
+  it("trials: the first year reads <=1995 at the left edge, never a centred 1995", () => {
+    const f = hand();
+    for (const w of [900, 343]) {
+      const t = buildViewsRaw(f, [], w, 380).trials.labels;
+      const first = t.find((l) => l.text === "≤1995")!;
+      expect(first.x).toBe(0);
+      expect(first.align ?? "left").toBe("left");
+      expect(t.map((l) => l.text)).not.toContain("1995");
+    }
+  });
+
+  it("trials: below 500px wide, two start years share a column", () => {
+    const f = hand();
+    f.trials.start = f.trials.start.map((_, i) => (i === 0 ? 2011 : i === 1 ? 2012 : i === 2 ? 2013 : 2020));
+    const colW = 343 / Math.ceil(33 / 2);
+    const n = buildViewsRaw(f, [], 343, 380).trials.dots;
+    expect(Math.floor(n[0].x / colW)).toBe(Math.floor(n[1].x / colW));
+    expect(Math.floor(n[2].x / colW)).not.toBe(Math.floor(n[1].x / colW));
+    const wide = buildViewsRaw(f, [], 900, 380).trials.dots;
+    expect(Math.floor(wide[0].x / (900 / 33))).not.toBe(Math.floor(wide[1].x / (900 / 33)));
+  });
+
+  it("caption names the colour that is painted: Red in light, Orange in dark", () => {
+    expect(captionText("pipeline", "light")).toBe("Trials sorted onto their drug target's row and phase. Red ones moved on to the next phase.");
+    expect(captionText("pipeline", "dark")).toBe("Trials sorted onto their drug target's row and phase. Orange ones moved on to the next phase.");
+    expect(captionText("trials", "dark")).toBe(VIEW_TEXT.trials.caption);
+  });
+
+
+  it("approaches: names appear only where the longest word fits its column (668 wide drops them, 900 keeps them)", () => {
+    const f = bigApproaches();
+    expect(buildViewsRaw(f, [], 668, 330).approaches.labels.some((l) => l.text === "Non-drug care")).toBe(false);
+    expect(buildViewsRaw(f, [], 900, 430).approaches.labels.some((l) => l.text === "Non-drug care")).toBe(true);
+  });
+
+  it("changes: 668 wide uses three by two bins so no line is cut", () => {
+    const f = hand();
+    const names = buildViewsRaw(f, [], 668, 330).changes.labels.filter((l) => BIN_NAMES.includes(l.text));
+    expect(new Set(names.map((l) => l.x)).size).toBe(3);
+    expect(names[0].maxW).toBeGreaterThan(200);
+  });
+
+  it("diligence: with no height for a label under each cluster, clusters sit beside their labels in two columns", () => {
+    const f = fx();
+    const pairs = f.rows.map((r) => ({ target: r.id, disease: "all" }));
+    const v = buildViewsRaw(f, pairs, 343, 235).diligence;
+    const names = v.labels.filter((l) => l.weight === 700);
+    expect(names.length).toBe(introPairs(f, pairs).length);
+    expect(new Set(names.map((l) => l.x)).size).toBe(2);
+    expect(names.every((l) => (l.align ?? "left") === "left")).toBe(true);
+    const lit = v.dots.filter((d) => d.a === 1);
+    expect(lit.length).toBeGreaterThan(0);
+    for (const d of lit) expect(d.y).toBeLessThanOrEqual(235);
+    // a cluster never overlaps its own label
+    for (const n of names) for (const d of lit) if (Math.abs(d.y - n.y) < 8) expect(d.x + d.r).toBeLessThan(n.x);
   });
 
   it("visibleViews drops diligence without pairs and watchlist without risk", () => {
