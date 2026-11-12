@@ -1,9 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { AppRoutes } from "../src/App";
 import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import { stubFetch } from "./helpers";
+
+beforeEach(() => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => new Proxy({}, { get: () => () => ({ width: 0 }), set: () => true })) as unknown as HTMLCanvasElement["getContext"]);
+});
 
 function Where() {
   const loc = useLocation();
@@ -38,11 +42,36 @@ test("/approaches/unclassified lands on Methods, not-yet-categorised", async () 
   expect(await screen.findByRole("heading", { name: "Not yet categorised" })).toBeInTheDocument();
 });
 
-test("an unknown route goes to the pipeline", async () => {
+test("an unknown route goes to the intro", async () => {
   stubFetch();
   go("/nowhere/at/all");
   await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/"));
+  expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(/clinical trials in/);
+});
+
+test("/ renders the intro", async () => {
+  stubFetch();
+  go("/");
+  expect(await screen.findByRole("link", { name: "Open the pipeline →" })).toBeInTheDocument();
+});
+
+test("/?view=year lands on /pipeline?view=year", async () => {
+  stubFetch();
+  go("/?view=year");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/pipeline?view=year"));
+});
+
+test("/pipeline renders the pipeline figure", async () => {
+  stubFetch();
+  go("/pipeline");
   expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Open the pipeline →" })).not.toBeInTheDocument();
+});
+
+test("the nav Pipeline link goes to /pipeline", () => {
+  stubFetch();
+  go("/changes");
+  expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/pipeline");
 });
 
 test("the nav is Pipeline, Watchlist, Approaches, Changes, Trials, Methods: no Explore, no Trial map", () => {
@@ -61,7 +90,7 @@ test("/explore still renders the map for old bookmarks", async () => {
   expect(await screen.findByText(/similar trials sit close together/)).toBeInTheDocument();
 });
 
-test("the brand links to the pipeline", () => {
+test("the brand links to the intro", () => {
   stubFetch();
   go("/changes");
   expect(screen.getByRole("link", { name: /Trial Radar/ })).toHaveAttribute("href", "/");

@@ -42,7 +42,7 @@ export function SiteNav() {
         </button>
         {open && (
           <div className="nav-sheet">
-            <NavLink to="/" end>Pipeline</NavLink>
+            <NavLink to="/pipeline">Pipeline</NavLink>
             {diligence}
             <NavLink to="/watchlist">Watchlist</NavLink>
             <NavLink to="/approaches">Approaches</NavLink>
@@ -58,7 +58,7 @@ export function SiteNav() {
     );
   return (
     <nav aria-label="Main">
-      <NavLink to="/" end>Pipeline</NavLink>
+      <NavLink to="/pipeline">Pipeline</NavLink>
       {diligence}
       <NavLink to="/watchlist">Watchlist</NavLink>
       <NavLink to="/approaches">Approaches</NavLink>

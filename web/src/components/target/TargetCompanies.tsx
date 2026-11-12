@@ -24,7 +24,7 @@ export function TargetCompanies({ file, marks, disease, onOpen }: Props) {
         // Past the cap the lines stay in the page, hidden, so print shows every one.
         <div className="co" key={c.parent} hidden={!all && i >= COMPANIES_ON_TARGET}>
           <div className="co-nm">
-            {c.parent === OTHER ? c.parent : <Link to={`/?${figureSearch({ ...DEFAULT_FIGURE_STATE, company: c.parent, disease })}`}>{c.parent}</Link>}
+            {c.parent === OTHER ? c.parent : <Link to={`/pipeline?${figureSearch({ ...DEFAULT_FIGURE_STATE, company: c.parent, disease })}`}>{c.parent}</Link>}
             <small>{[...new Map(c.drugs.map((d) => [normKey(d), d])).values()].slice(0, DRUGS_SHOWN).join(", ")}</small>
           </div>
           <div className="co-bar">
