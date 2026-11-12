@@ -61,6 +61,7 @@ export interface TrialFile {
 
 export interface Meta {
   area: string;
+  area_label: string;
   conditions: string[];
   generated_for: string;
   trial_count: number;
@@ -522,4 +523,28 @@ export interface RunRecord {
   tokens_out: number;
   cost_usd: number;
   data_date: string;
+}
+
+export type RowState = "adv" | "run" | "stop" | "fin" | "unk";
+export type ChangeBin = "dates" | "status" | "sites" | "enrollment" | "outcomes" | "other";
+
+/** intro.json: one column per field, one entry per trial, all columns the same length. */
+export interface IntroFile {
+  generated_for: string;
+  trial_count: number;
+  approaches: { key: string; label: string }[];
+  rows: { id: string; label: string }[];
+  typical: number | null;
+  trials: {
+    id: string[];
+    x: number[];
+    y: number[];
+    outcome: Outcome[];
+    approaches: string[][];
+    start: (number | null)[];
+    dz: string[][];
+    marks: [number, number, RowState][][];
+    risk: (number | null)[];
+    change: ([ChangeBin, string | null] | null)[];
+  };
 }

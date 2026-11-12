@@ -202,6 +202,7 @@ class RiskConfig(_Strict):
 
 class AreaConfig(_Strict):
     name: str
+    label: str | None = None  # display name for the area; the site falls back to `name`
     conditions: list[ConditionSpec] = Field(min_length=1)
     study_type: Literal["INTERVENTIONAL"]
     phases: list[Literal["EARLY_PHASE1", "PHASE1", "PHASE2", "PHASE3", "PHASE4", "NA"]] = Field(
@@ -218,6 +219,13 @@ class AreaConfig(_Strict):
     approvals_dir: Path = Path("approvals")
     explorer: ExplorerConfig = ExplorerConfig()
     risk: RiskConfig = RiskConfig()
+
+    @field_validator("label")
+    @classmethod
+    def _label_not_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("area label must not be blank")
+        return value
 
     @field_validator("tracked_fields")
     @classmethod

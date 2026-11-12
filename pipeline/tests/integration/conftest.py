@@ -195,6 +195,13 @@ def without_graph_coords(site: Path) -> dict[str, Any]:
     return doc
 
 
+def without_intro_coords(site: Path) -> dict[str, Any]:
+    """``site/intro.json`` with the map coordinates removed (see ``without_coords``)."""
+    doc: dict[str, Any] = json.loads((site / "intro.json").read_text(encoding="utf-8"))
+    del doc["trials"]["x"], doc["trials"]["y"]
+    return doc
+
+
 @pytest.fixture
 def env(tmp_path: Path, cfg: AreaConfig) -> Env:
     return Env(tmp_path, cfg)

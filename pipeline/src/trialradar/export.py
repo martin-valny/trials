@@ -16,6 +16,7 @@ import polars as pl
 
 from trialradar.config import AreaConfig
 from trialradar.explorer.extras import StudyExtras
+from trialradar.intro import build_intro_doc
 from trialradar.tables import Tables
 
 WINDOWS: tuple[int, ...] = (1, 7, 30)
@@ -204,6 +205,7 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
             raise ValueError("run_log column 'warnings' must be a JSON list of strings")
     return {
         "area": cfg.name,
+        "area_label": cfg.label or cfg.name,
         "conditions": [c.label for c in cfg.conditions],
         "generated_for": day.isoformat(),
         "trial_count": tables.trial.height,
@@ -212,6 +214,23 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
         "data_timestamp": data_timestamp,
         "warnings": warnings,
     }
+
+
+def build_intro(
+    tables: Tables,
+    changes: pl.DataFrame,
+    day: date,
+    explorer: dict[str, Any],
+    pipeline: dict[str, Any] | None,
+    risk: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """The intro page's document over the map, figure, risk and the last week's changes."""
+    current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
+    lo = (day - timedelta(days=7)).isoformat()
+    week = [
+        i for i in _change_items(changes, current) if lo < i["detected_date"] <= day.isoformat()
+    ]
+    return build_intro_doc(explorer, pipeline, risk, week, day)
 
 
 def export(
@@ -227,6 +246,7 @@ def export(
     mechanisms: dict[str, Any] | None = None,
     pipeline: dict[str, Any] | None = None,
     risk: dict[str, Any] | None = None,
+    intro: dict[str, Any] | None = None,
 ) -> None:
     """Write the site JSON views for ``day`` into ``out_dir``.
 
@@ -236,7 +256,9 @@ def export(
     ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
     only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``).
     ``risk`` (the stop-risk estimates) is written as ``risk.json``, and a stale one is
-    removed when there is none; it does not depend on the map."""
+    removed when there is none; it does not depend on the map. ``intro`` (the intro page's
+    document, built by :func:`build_intro` and optional like the map) is written as
+    ``intro.json`` with a map, and a stale one is removed otherwise."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
@@ -267,6 +289,10 @@ def export(
     else:
         # No map this time: never leave an old map over the new trials.
         (out_dir / "explorer.json").unlink(missing_ok=True)
+    if explorer is not None and intro is not None:
+        _write_json(out_dir / "intro.json", intro)
+    else:
+        (out_dir / "intro.json").unlink(missing_ok=True)
     if explorer is not None and mechanisms is not None:
         _write_json(out_dir / "mechanisms.json", mechanisms)
     else:

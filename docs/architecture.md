@@ -17,7 +17,7 @@ flowchart LR
     STORE --> PROMOTE[promote raw snapshot<br/>raw/YYYY-MM-DD.jsonl.gz]
     PROMOTE --> EXPL[explorer stage<br/>features, UMAP layout, outcome labels,<br/>neighbourhood statistic]
     EXPL --> RISK[stop_risk stage<br/>score running trials, optional R19]
-    RISK --> EXPORT[export site JSON<br/>changes, trials, meta, explorer, risk]
+    RISK --> EXPORT[export site JSON<br/>changes, trials, meta, explorer, risk, intro]
     EXPORT --> COORDS[(save explorer/coords.parquet)]
     COORDS --> LOG[run_log: success]
     LOG --> DATA[(data branch<br/>orphan commit)]
@@ -35,6 +35,10 @@ After the store write and snapshot promotion, and before export, `pipeline._expl
 4. The result is written to the site as `explorer.json`. Trial files gain `brief_summary`, `eligibility` and `has_results`.
 
 Unlike the export, a failed explorer build does not fail the run: it becomes an `explorer:` run warning, the site is exported without `explorer.json` (a stale one is removed, so the page says the map appears after the next daily update) and the saved coordinates are kept. A UMAP failure that falls back to a flat layout is an `explorer_layout_fallback:` warning. `rebuild` runs the same stage for the final day, with the same handling.
+
+## Intro data
+
+The export also writes `intro.json` (`trialradar.intro.build_intro_doc`), the compact document behind the intro page at `/`: one columnar record per explorer trial, row labels, the median typical stop rate and counts. It is written whenever there is a map (`explorer`), built from the explorer, `pipeline`, `risk` and the last week's changes, and removed (a stale one never survives) when the run has no map; the web then shows "The overview appears after the next daily update". `meta.json` carries `area_label` (the area config's label) for the headline.
 
 ## Stop-risk stage
 
@@ -84,7 +88,8 @@ On page view the panel asks `GET /runs/latest` (read-only, no quota) for a cache
 | `risk/model`, `risk/evaluate` | Baseline logistic and calibrated boosted recipes, bootstrap ensemble; AUC, Brier, calibration |
 | `risk/sponsors`, `risk/explain` | Sponsor track record (point-in-time in training); contributions and plain-words factors |
 | `risk/artefacts`, `risk/apply` | Save and load of `config/risk/`; the daily scoring that builds `risk.json` |
-| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json`, `explorer.json`, `pipeline.json`, `mechanisms.json`, `risk.json` |
+| `export` | Site JSON: `changes/{1,7,30}d.json`, `trials/<NCT>.json`, `trials.json` (browse index), `meta.json`, `explorer.json`, `pipeline.json`, `mechanisms.json`, `risk.json`, `intro.json` |
+| `intro` | `build_intro_doc`: the intro page's compact columnar document (per trial: map position, outcome, approaches, start year, pipeline marks, risk estimate, change bin) over the explorer, pipeline, risk and the last 7 days of changes |
 | `pipeline`, `cli` | Orchestration, `rebuild`, `trialradar run`, `check`, `rebuild` |
 
 ## Workflows

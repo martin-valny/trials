@@ -47,7 +47,7 @@ test("renders the lede for cd20 from the fixture, stating each number once", asy
   expect(lede.querySelector("em")).toHaveTextContent("0 advanced");
   expect(lede.textContent).toMatch(/1 stopped\.$/);
   expect(screen.getByRole("group", { name: "Diseases" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/");
+  expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/pipeline");
 });
 
 test("panel c's reason chips are pills on a hairline, not tinted boxes (spec section 9)", async () => {
@@ -122,14 +122,14 @@ test("disease chip sets ?disease and refilters", async () => {
   await userEvent.click(screen.getByRole("button", { name: /^MG\s*1$/ }));
   expect(screen.getByTestId("where")).toHaveTextContent("/target/cd20?disease=MG");
   expect(screen.getByText(/1 of 1 trial is running/)).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/?disease=MG");
+  expect(screen.getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/pipeline?disease=MG");
 });
 
 test("unknown slug", async () => {
   stubFetch();
   renderPage("/target/nope");
   expect(await screen.findByText(/No target called 'nope'\./)).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /Back to the pipeline/ })).toHaveAttribute("href", "/");
+  expect(screen.getByRole("link", { name: /Back to the pipeline/ })).toHaveAttribute("href", "/pipeline");
 });
 
 test("timeline omits undated trials but the list keeps them", async () => {
@@ -149,11 +149,11 @@ test("timeline omits undated trials but the list keeps them", async () => {
   expect(within(list).getByRole("button", { name: "NCT90000004" }).closest("li")).toHaveTextContent("dates not given");
 });
 
-test("company link goes to /?company=", async () => {
+test("company link goes to /pipeline?company=", async () => {
   stubFetch();
   renderPage();
   await screen.findByRole("heading", { level: 1 });
-  expect(screen.getByRole("link", { name: "Example Pharma" })).toHaveAttribute("href", "/?company=Example+Pharma");
+  expect(screen.getByRole("link", { name: "Example Pharma" })).toHaveAttribute("href", "/pipeline?company=Example+Pharma");
 });
 
 test("stop groups hidden when showGroups is false", async () => {
@@ -262,7 +262,7 @@ test("with a disease set, every outgoing link carries it", async () => {
   expect(graph.getAttribute("href")).toBe("/approaches/targeted?node=target:MS4A1&from=cd20&disease=MS");
   expect(screen.getByRole("link", { name: /List these \d+ trials →/ }).getAttribute("href")).toMatch(/&disease=MS$/);
   const company = within(screen.getByText("Who is working on CD20").closest("div")!.parentElement!).getAllByRole("link")[0]!;
-  expect(company.getAttribute("href")).toMatch(/^\/\?.*disease=MS/);
+  expect(company.getAttribute("href")).toMatch(/^\/pipeline\?.*disease=MS/);
   expect(company.getAttribute("href")).toMatch(/company=/);
   expect(screen.getByRole("link", { name: "CD19" }).getAttribute("href")).toBe("/target/cd19?disease=MS");
 });

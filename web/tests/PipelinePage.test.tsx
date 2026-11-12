@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { PipelinePage } from "../src/components/pipeline/PipelinePage";
 import { FIXED_LABEL } from "../src/lib/diligencePanels";
 import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
-import type { PipelineFile } from "../src/types";
+import type { Meta, PipelineFile } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
 
 function Where() {
@@ -583,4 +583,12 @@ test("the band arriving keeps the same figure node, so the figure's entrance fad
   release(new Response(JSON.stringify({ runs: [{ target: "cd20", disease: "MS" }] }), { status: 200 }));
   await band();
   expect(container.querySelector(".fig-body")).toBe(before);
+});
+
+test("kicker uses the area label from meta", async () => {
+  const meta = { ...readFixture<Meta>("meta.json"), area_label: "Test area" };
+  stubFetch({ "meta.json": meta });
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  await waitFor(() => expect(container.querySelector(".kicker")!.textContent).toBe(`${meta.area_label} · drug pipeline`));
 });

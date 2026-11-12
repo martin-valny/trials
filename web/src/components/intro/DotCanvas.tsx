@@ -1,0 +1,179 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AP_TOKEN, buildDiligenceView, buildViews, type DotTarget, type IntroView, type Paint, type ViewKey, type ViewLabel } from "../../lib/intro";
+import type { RecordedPair } from "../../lib/diligenceRelease";
+import type { IntroFile } from "../../types";
+import "./intro.css";
+
+export interface Pos { x: number; y: number; a: number; r: number }
+
+const MOVE_MS = 1100;
+const STAGGER_MS = 320;
+const LABEL_AT = 700;
+const LABEL_FADE = 400;
+const SETTLE_MS = Math.max(MOVE_MS + STAGGER_MS, LABEL_AT + LABEL_FADE);
+const RINGS = new Set<Paint>(["run", "unk", "changed-ring", "multi"]);
+const PAINT_TOKEN: Record<string, string> = { adv: "--red", run: "--run", stop: "--stop", fin: "--fin", unk: "--unk", ghost: "--fin", changed: "--ink", "changed-ring": "--ink", multi: "--ink" };
+const RESIZE_DEBOUNCE_MS = 100;
+const FONT = (weight: number, size: number) => `${weight} ${size}px "Hanken Grotesk", system-ui, sans-serif`;
+
+const ease = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/** Where a transition starts: the dots' current positions when the count still matches (a resize or view change keeps them), else the new targets. */
+export function nextFrom(prev: Pos[] | null, targets: DotTarget[]): Pos[] {
+  if (prev && prev.length === targets.length) return prev.map((p) => ({ ...p }));
+  return targets.map(({ x, y, a, r }) => ({ x, y, a, r }));
+}
+
+/**
+ * Fit a label inside the canvas and its own maxW at its own size (12px floor). It wraps on spaces up to maxLines
+ * (2 when maxW is set, else 1) and the last line is truncated with an ellipsis, measured with the ellipsis included.
+ * A label that would be cut to fewer than 3 characters is dropped (no lines).
+ */
+export function fit(ctx: CanvasRenderingContext2D, l: ViewLabel, w: number): { lines: string[]; size: number } {
+  const align = l.align ?? "left";
+  const edge = Math.max(0, align === "center" ? 2 * Math.min(l.x, w - l.x) : align === "right" ? l.x : w - l.x);
+  const room = l.maxW === undefined ? edge : Math.min(edge, l.maxW);
+  const size = l.size ?? 12;
+  const maxLines = l.maxLines ?? (l.maxW === undefined ? 1 : 2);
+  const width = (t: string) => { ctx.font = FONT(l.weight ?? 400, size); return ctx.measureText(t).width; };
+  const none = { lines: [] as string[], size };
+  const cut = (t: string) => {
+    let c = t;
+    while (c.length > 0 && width(`${c.trimEnd()}…`) > room) c = c.slice(0, -1);
+    return c.trimEnd();
+  };
+  let words = l.text.split(" ");
+  const lines: string[] = [];
+  for (let li = 0; li < maxLines && words.length > 0; li++) {
+    const whole = words.join(" ");
+    if (width(whole) <= room) { lines.push(whole); break; }
+    if (li === maxLines - 1) {
+      const c = cut(whole);
+      if (c.length < 3) return none;
+      lines.push(`${c}…`);
+      break;
+    }
+    let k = 0, line = "";
+    while (k < words.length && width(line ? `${line} ${words[k]}` : words[k]) <= room) { line = line ? `${line} ${words[k]}` : words[k]; k++; }
+    if (k === 0) {
+      const c = cut(words[0]);
+      if (c.length < 3) return none;
+      lines.push(`${c}…`);
+      words = words.slice(1);
+    } else {
+      lines.push(line);
+      words = words.slice(k);
+    }
+  }
+  return { lines, size };
+}
+
+export function DotCanvas({ file, pairs, active, reduced, label }: { file: IntroFile; pairs: RecordedPair[]; active: ViewKey; reduced: boolean; label: string }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const cvs = useRef<HTMLCanvasElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const settle = useRef(0);
+  const sized = useRef(false);
+  // Layouts depend on file and size; only Diligence also depends on the pairs, so a pairs change rebuilds just that view.
+  const base = useMemo(() => (size.w > 0 && size.h > 0 ? buildViews(file, [], size.w, size.h) : null), [file, size]);
+  const diligence = useMemo(() => (size.w > 0 && size.h > 0 ? buildDiligenceView(file, pairs, size.w, size.h) : null), [file, pairs, size]);
+  const views = useMemo(() => (base && diligence ? { ...base, diligence } : null), [base, diligence]);
+  const anim = useRef<{ cur: Pos[]; from: Pos[]; t0: number; view: ViewKey } | null>(null);
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const apply = (w: number, h: number) => setSize((s) => (s.w === Math.floor(w) && s.h === Math.floor(h) ? s : { w: Math.floor(w), h: Math.floor(h) }));
+    // The first size lands at once; later ones wait for the resize to settle, the dots staying where they are meanwhile.
+    const set = (w: number, h: number) => {
+      window.clearTimeout(settle.current);
+      if (sized.current) settle.current = window.setTimeout(() => apply(w, h), RESIZE_DEBOUNCE_MS);
+      else { sized.current = true; apply(w, h); }
+    };
+    if (typeof ResizeObserver !== "function") { set(el.clientWidth, el.clientHeight); return; }
+    const ro = new ResizeObserver(([e]) => e && set(e.contentRect.width, e.contentRect.height));
+    ro.observe(el);
+    return () => { ro.disconnect(); window.clearTimeout(settle.current); };
+  }, []);
+
+  // A new view or layout starts a transition from wherever the dots are now.
+  useEffect(() => {
+    if (!views) return;
+    const targets = views[active].dots;
+    const prev = anim.current;
+    const from = nextFrom(prev ? prev.cur : null, targets);
+    anim.current = { cur: prev && prev.cur.length === targets.length ? prev.cur : from.map((p) => ({ ...p })), from, t0: prev && !reduced ? performance.now() : 0, view: active };
+  }, [views, active, reduced]);
+
+  useEffect(() => {
+    const canvas = cvs.current;
+    const ctx = canvas?.getContext("2d");
+    if (!views || !canvas || !ctx) return;
+    const cache = new WeakMap<ViewLabel, { lines: string[]; size: number }>();
+    let raf = 0;
+    const wake = () => { if (!raf) raf = requestAnimationFrame(draw); };
+    const draw = (now: number) => {
+      raf = 0;
+      const a = anim.current;
+      if (!a) return;
+      // Keep animating until the move and the label fade are done; after that only a wake-up repaints.
+      if (a.t0 !== 0 && !reduced && now - a.t0 < SETTLE_MS) raf = requestAnimationFrame(draw);
+      const { w, h } = size;
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const cs = getComputedStyle(document.documentElement);
+      const toks = new Map<string, string>();
+      const tok = (name: string) => { let v = toks.get(name); if (v === undefined) { v = cs.getPropertyValue(name).trim(); toks.set(name, v); } return v; };
+      const colour = (p: Paint) => tok(p.startsWith("ap:") ? (AP_TOKEN[p.slice(3)] ?? "--fin") : (PAINT_TOKEN[p] ?? "--fin"));
+      const view: IntroView = views[a.view];
+      for (let i = 0; i < view.dots.length; i++) {
+        const tg = view.dots[i], f = a.from[i], cur = a.cur[i];
+        const delay = reduced ? 0 : (tg.x / Math.max(1, w)) * STAGGER_MS;
+        const e = ease(a.t0 === 0 ? 1 : clamp01((now - a.t0 - delay) / MOVE_MS));
+        cur.x = f.x + (tg.x - f.x) * e; cur.y = f.y + (tg.y - f.y) * e; cur.a = f.a + (tg.a - f.a) * e; cur.r = f.r + (tg.r - f.r) * e;
+        ctx.globalAlpha = cur.a;
+        ctx.beginPath();
+        ctx.arc(cur.x, cur.y, Math.max(0.6, cur.r), 0, Math.PI * 2);
+        if (RINGS.has(tg.paint)) { ctx.strokeStyle = colour(tg.paint); ctx.lineWidth = 1.2; ctx.stroke(); }
+        else { ctx.fillStyle = colour(tg.paint); ctx.fill(); }
+      }
+      ctx.globalAlpha = a.t0 === 0 || reduced ? 1 : clamp01((now - a.t0 - LABEL_AT) / LABEL_FADE);
+      for (const r of view.rules) {
+        ctx.strokeStyle = tok("--ink");
+        ctx.lineWidth = 1;
+        ctx.setLineDash(r.kind === "tick" ? [3, 3] : []);
+        ctx.beginPath();
+        if (r.kind === "axis") { ctx.moveTo(r.x, r.y + 0.5); ctx.lineTo(r.x + r.length, r.y + 0.5); }
+        else { ctx.moveTo(r.x, r.y + 6); ctx.lineTo(r.x, r.y - r.length); }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      for (const l of view.labels) {
+        let f = cache.get(l);
+        if (!f) { f = fit(ctx, l, w); cache.set(l, f); }
+        ctx.font = FONT(l.weight ?? 400, f.size);
+        ctx.textAlign = l.align ?? "left";
+        ctx.fillStyle = tok(l.tone === "muted" ? "--muted" : "--ink");
+        f.lines.forEach((t, k) => ctx.fillText(t, l.x, l.y + k * f.size * 1.25));
+      }
+      ctx.globalAlpha = 1;
+    };
+    wake();
+    // Idle repaints: a theme change, or a pixel-ratio change (window moved between screens).
+    const mo = new MutationObserver(wake);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+    const dpr = window.devicePixelRatio || 1;
+    const mq = typeof window.matchMedia === "function" ? window.matchMedia(`(resolution: ${dpr}dppx)`) : null;
+    mq?.addEventListener?.("change", wake);
+    return () => { cancelAnimationFrame(raf); mo.disconnect(); mq?.removeEventListener?.("change", wake); };
+  }, [views, size, reduced, active]);
+
+  return (
+    <div className="dot-canvas" ref={wrap}>
+      <canvas ref={cvs} role="img" aria-label={label} />
+    </div>
+  );
+}

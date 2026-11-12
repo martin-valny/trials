@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { loadPipeline } from "../../data";
+import { loadMeta, loadPipeline } from "../../data";
 import {
   companyOptions,
   figureSearch,
@@ -41,6 +41,23 @@ export function usePipeline(): Load {
   return load;
 }
 
+/** The area's display name from meta.json; null until it is read, or when meta is missing. */
+function useAreaLabel(): string | null {
+  const [label, setLabel] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadMeta()
+      .then((m) => live && setLabel(m?.area_label ?? null))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return label;
+}
+
+const kickerText = (label: string | null) => (label ? `${label} · drug pipeline` : "Drug pipeline");
+
 const LEGEND: MarkState[] = ["adv", "run", "stop", "fin", "unk"];
 const LEGEND_TEXT: Record<MarkState, string> = {
   adv: "Advanced to next phase",
@@ -53,18 +70,19 @@ const dummy: PipelineMark = { n: "", c: 1, s: "run", y: null, y2: null, dz: [], 
 
 export function PipelinePage() {
   const load = usePipeline();
+  const areaLabel = useAreaLabel();
   const [params, setParams] = useSearchParams();
   const phone = usePhone();
   const file = load.s === "ready" ? load.file : null;
   const state = useMemo(() => parseFigureState(params, file), [params, file]);
   const change = (next: FigureState) => setParams(figureSearch(next), { replace: true });
 
-  if (load.s === "loading") return <Skeleton />;
-  if (load.s === "missing" || !file) return <Unavailable />;
-  return <Ready file={file} state={state} phone={phone} change={change} />;
+  if (load.s === "loading") return <Skeleton areaLabel={areaLabel} />;
+  if (load.s === "missing" || !file) return <Unavailable areaLabel={areaLabel} />;
+  return <Ready file={file} state={state} phone={phone} change={change} areaLabel={areaLabel} />;
 }
 
-function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; state: FigureState; phone: boolean; change: (s: FigureState) => void }) {
+function Ready({ file, state: urlState, phone, change, areaLabel }: { file: PipelineFile; state: FigureState; phone: boolean; change: (s: FigureState) => void; areaLabel: string | null }) {
   // By disease has the diseases as columns, so the disease filter does not apply there (it stays in the URL).
   const state = useMemo<FigureState>(() => (urlState.view === "disease" ? { ...urlState, disease: null } : urlState), [urlState]);
   // The year the data was generated for, so "newest" and "started since" do not drift with the clock.
@@ -99,7 +117,7 @@ function Ready({ file, state: urlState, phone, change }: { file: PipelineFile; s
     <div className="pipeline">
       <header className="lede">
         <div>
-          <div className="kicker">MS and autoimmune neurology · drug pipeline</div>
+          <div className="kicker">{kickerText(areaLabel)}</div>
           <h1 className="headline">
             <HeadlineText h={head} />
           </h1>
@@ -246,12 +264,12 @@ function Key({ n, label, tone }: { n: number; label: string; tone?: "adv" }) {
   );
 }
 
-function Skeleton() {
+function Skeleton({ areaLabel }: { areaLabel: string | null }) {
   return (
     <div className="pipeline" aria-busy="true" aria-label="Loading the pipeline figure">
       <header className="lede">
         <div>
-          <div className="kicker">MS and autoimmune neurology · drug pipeline</div>
+          <div className="kicker">{kickerText(areaLabel)}</div>
           <div className="sk sk-head" />
           <div className="sk sk-head short" />
         </div>
@@ -273,12 +291,12 @@ function Skeleton() {
   );
 }
 
-function Unavailable() {
+function Unavailable({ areaLabel }: { areaLabel: string | null }) {
   return (
     <div className="pipeline">
       <header className="lede unavailable">
         <div>
-          <div className="kicker">MS and autoimmune neurology · drug pipeline</div>
+          <div className="kicker">{kickerText(areaLabel)}</div>
           <h1 className="headline">The pipeline figure isn't available for this data refresh</h1>
           <p className="source">
             The rest of the data is. Browse the list of <Link to="/trials">Trials</Link>.
