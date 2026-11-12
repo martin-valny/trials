@@ -198,6 +198,10 @@ cannot cite a claim, leave it out.
 sentences, so everything they say must already be said, with a cite, in a section sentence.
 - Each sentence states one claim a reader can check against its cited sources. Do not combine \
 claims that need different sources in one sentence.
+- For totals over the whole target (how many trials, how many in each phase, sponsor counts, how \
+many stopped), cite IDs returned by site_target: each of them carries those totals. For the \
+stop-risk summary, cite its RISK ID and state its numbers as given, without adding words such as \
+"moderate" or "high".
 
 Example of the shape submit_memo takes (the IDs and facts here are invented; use only your own):
 {"sections": [

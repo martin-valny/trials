@@ -65,13 +65,13 @@ def test_every_model_id_needs_a_price(tmp_path: Path) -> None:
 
 def test_uncached_models_are_those_priced_without_prompt_cache(tmp_path: Path) -> None:
     raw = yaml.safe_load(DEFAULT_PATH.read_text())
+    for price in raw["prices"].values():
+        price["prompt_cache"] = True
     writer = raw["models"]["writer"]
-    raw["prices"][writer] = {**raw["prices"][writer], "prompt_cache": False}
+    raw["prices"][writer]["prompt_cache"] = False
     path = tmp_path / "c.yaml"
     path.write_text(yaml.safe_dump(raw))
-    cfg = load_config(path)
-    assert cfg.uncached_models() == frozenset({writer})
-    assert load_config(DEFAULT_PATH).uncached_models() == frozenset()
+    assert load_config(path).uncached_models() == frozenset({writer})
 
 
 def test_allowed_origins_is_a_comma_list(monkeypatch: pytest.MonkeyPatch) -> None:

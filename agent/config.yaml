@@ -1,9 +1,12 @@
+# Chosen 2026-11-12 after model trials on CD20 in MS (eval/setups/): Qwen3 235B writes and plans,
+# DeepSeek V3.2 checks, so the checker is a different model from the writer. The account's free
+# plan cannot call Anthropic or xAI models.
 region: eu-north-1
 # Bedrock model or inference-profile IDs enabled in the account (eu-north-1, Stockholm).
 models:
-  writer: eu.anthropic.claude-sonnet-5-5
-  planner: eu.anthropic.claude-haiku-5-5
-  checker: eu.anthropic.claude-haiku-5-5
+  writer: qwen.qwen3-235b-a22b-2507-v1:0
+  planner: qwen.qwen3-235b-a22b-2507-v1:0
+  checker: deepseek.v3.2
 limits:
   max_tool_calls: 12
   max_input_tokens: 150000
@@ -23,7 +26,7 @@ agent_version: "0.1.0"
 # prompts; Sonnet 5.5 cache read before the Oct 2026 cut), so recorded costs err high. Check the
 # Bedrock console for the EU-profile prices. prompt_cache: false for models that reject cache points.
 prices:
-  eu.anthropic.claude-sonnet-5-5:
-    {input_per_mtok: 2.00, output_per_mtok: 10.00, cache_read_per_mtok: 0.20, cache_write_per_mtok: 2.50}
-  eu.anthropic.claude-haiku-5-5:
-    {input_per_mtok: 0.10, output_per_mtok: 0.50, cache_read_per_mtok: 0.01, cache_write_per_mtok: 0.125}
+  qwen.qwen3-235b-a22b-2507-v1:0:
+    {input_per_mtok: 0.25, output_per_mtok: 1.00, prompt_cache: false, forced_tool: false}
+  deepseek.v3.2:
+    {input_per_mtok: 0.74, output_per_mtok: 2.22, prompt_cache: false, forced_tool: false}
