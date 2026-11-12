@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from diligence.lenient import tool_arguments
 from diligence.log import log_error
 from diligence.model import ModelClient, ModelResponse, ReplayMismatch
 from diligence.prompts import CHECKER_PROMPT, VERDICTS_TOOL
@@ -152,15 +153,8 @@ def _batch_message(batch: list[Sentence], sources: dict[str, str]) -> dict[str, 
 
 
 def _parse_verdicts(resp: ModelResponse, batch: list[Sentence]) -> dict[str, Verdict] | None:
-    use = next(
-        (
-            b["toolUse"]
-            for b in resp.content
-            if b.get("toolUse", {}).get("name") == "submit_verdicts"
-        ),
-        None,
-    )
-    items = use.get("input", {}).get("verdicts") if use else None
+    args = tool_arguments(resp.content, "submit_verdicts")
+    items = args.get("verdicts") if args else None
     if not isinstance(items, list):
         return None
     wanted = {s.id for s in batch}
