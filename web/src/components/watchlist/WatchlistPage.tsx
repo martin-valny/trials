@@ -342,7 +342,7 @@ function Row({
         <div className="wl-est-in">
           <RiskScale p={r.p} lo={r.lo} hi={r.hi} typical={r.typical} />
           <div className="rk-est-t">
-            <b>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)})
+            <b data-near={vsTypical(r.p, r.typical, r.lo, r.hi) === "near" || undefined}>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)})
             <small>
               {vsTypical(r.p, r.typical, r.lo, r.hi)} typical {formatPct(r.typical)}
             </small>

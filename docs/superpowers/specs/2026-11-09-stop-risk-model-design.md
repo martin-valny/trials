@@ -39,7 +39,7 @@ It serves two audiences at once (Martin, 2026-11-09: "ideally both"):
 - A new therapeutic area stays a config change only; nothing in source names a condition.
 - Stack: Python pipeline (polars, scikit-learn already a dependency), React + TypeScript web, Figure Plate design system (DESIGN.md), premium finish bar. Real data is never committed; fixtures only.
 - Honesty principles: name proxies, never claim unbuilt features, every view links to the CT.gov record.
-- Legal and reputational framing agreed with Martin 2026-11-09: neutral wording always next to the typical rate; top factors shown; a standing note ("Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy."); no people; the per-trial switch (G5). Martin may check with Immunai before going public; the switch makes that cheap.
+- Legal and reputational framing agreed with Martin 2026-11-09: neutral wording always next to the typical rate; top factors shown; a standing note ("Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy."); no people; the per-trial switch (G5). *Changed 2026-11-12 (Martin):* the note gains "It uses only the trial's design and knows nothing about the drug's results." after its second sentence, and an estimate whose range includes the typical rate is shown in the muted ink so "near typical" leads. Martin may check with Immunai before going public; the switch makes that cheap.
 
 ## 4. Approaches considered
 
