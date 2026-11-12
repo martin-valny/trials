@@ -142,7 +142,7 @@ function RiskRow({ row: { m, t }, file, hidden }: { row: Row; file: PipelineFile
       </div>
       <RiskScale p={t.p} lo={t.lo} hi={t.hi} typical={t.typical} />
       <div className="rk-est-t">
-        <b>{formatPct(t.p)}</b> ({formatRange(t.lo, t.hi)})
+        <b data-near={vsTypical(t.p, t.typical, t.lo, t.hi) === "near" || undefined}>{formatPct(t.p)}</b> ({formatRange(t.lo, t.hi)})
         <small>
           {vsTypical(t.p, t.typical, t.lo, t.hi)} typical {formatPct(t.typical)}
         </small>

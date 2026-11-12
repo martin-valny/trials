@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { loadPipeline, loadTrial } from "../data";
 import { fieldLabel, formatAgeRange, formatDate, formatValue, markState, phasesLabel, sexLabel, statusLabel } from "../lib/format";
-import { formatPct, formatRange } from "../lib/risk";
+import { formatPct, formatRange, vsTypical } from "../lib/risk";
 import { useRisk } from "../lib/useRisk";
 import type { DateInfo, PipelineFile, RiskFile, TrialFile } from "../types";
 import { ChangeTable } from "./ChangeTable";
@@ -202,7 +202,7 @@ function TrialRisk({ nct, risk }: { nct: string; risk: RiskFile | null }) {
       <p className="rk-line">
         Estimated chance of stopping early:{" "}
         <span className="rk-nb">
-          <b>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)})
+          <b data-near={vsTypical(r.p, r.typical, r.lo, r.hi) === "near" || undefined}>{formatPct(r.p)}</b> ({formatRange(r.lo, r.hi)})
         </span>
         , typical {formatPct(r.typical)} for {r.basis}
       </p>

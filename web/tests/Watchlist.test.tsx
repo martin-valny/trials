@@ -19,7 +19,7 @@ const renderPage = (route = "/watchlist") =>
   );
 
 const NOTE =
-  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy.";
+  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. It uses only the trial's design and knows nothing about the drug's results. The model is often wrong; see Methods for accuracy.";
 /** The page head's sentence for the unmodified fixture (7 scored trials; derived from risk.json's fixture). */
 const SENTENCE = "7 running drug trials, ranked by estimated chance of stopping early; 5 sit above their phase's typical rate.";
 const table = () => screen.findByRole("table", { name: /Running trials ranked/ });
@@ -312,4 +312,23 @@ test("each row's factors sit behind a Main factors disclosure (shown only on a p
   await userEvent.click(btn);
   expect(btn).toHaveAttribute("aria-expanded", "true");
   expect(box).toHaveAttribute("data-open", "true");
+});
+
+test("an estimate whose range includes the typical rate is muted; one above it is not", async () => {
+  // Widen the first scored trial's range so it spans the typical rate.
+  const risk = riskVariant((r) => {
+    const first = Object.values(r.trials!)[0]!;
+    first.lo = 0;
+    first.hi = 0.99;
+  });
+  stubFetch({ "risk.json": risk });
+  renderPage();
+  const t = await table();
+  const cells = within(t).getAllByRole("row").slice(1).map((r) => r.querySelector(".rk-est-t")!);
+  const near = cells.filter((c) => /near typical/.test(c.textContent ?? ""));
+  const other = cells.filter((c) => !/near typical/.test(c.textContent ?? ""));
+  expect(near.length).toBeGreaterThan(0);
+  expect(other.length).toBeGreaterThan(0);
+  for (const c of near) expect(c.querySelector("b")).toHaveAttribute("data-near", "true");
+  for (const c of other) expect(c.querySelector("b")).not.toHaveAttribute("data-near");
 });

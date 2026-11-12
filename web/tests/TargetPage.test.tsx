@@ -414,7 +414,7 @@ test("panel e on a phone is one block per disease", async () => {
 // ---------------------------------------------------------------- f. stop-risk estimates
 const RISK_H = "Running trials, estimated chance of stopping early";
 const NOTE =
-  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. The model is often wrong; see Methods for accuracy.";
+  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. It uses only the trial's design and knows nothing about the drug's results. The model is often wrong; see Methods for accuracy.";
 const riskPanel = () => screen.getByRole("region", { name: RISK_H });
 
 test("renders the risk panel with heading and rows", async () => {
