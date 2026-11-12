@@ -65,7 +65,7 @@ describe("intro layouts", () => {
     };
   };
 
-  const sizes: [number, number][] = [[900, 430], [343, 380]];
+  const sizes: [number, number][] = [[900, 430], [343, 380], [0, 0], [0, 300], [300, 0]];
   const files = (): [string, IntroFile][] => [["fixture", fx()], ["hand", hand()]];
 
   it("every view has one dot per trial", () => {
@@ -81,6 +81,7 @@ describe("intro layouts", () => {
         const v = buildViews(f, [{ target: "cd20", disease: "all" }], w, h);
         for (const k of Object.keys(v) as ViewKey[]) {
           for (const d of v[k].dots) {
+            expect(Number.isFinite(d.x) && Number.isFinite(d.y)).toBe(true);
             expect(d.x).toBeGreaterThanOrEqual(0);
             expect(d.x).toBeLessThanOrEqual(w);
             expect(d.y).toBeGreaterThanOrEqual(0);
@@ -159,6 +160,44 @@ describe("intro layouts", () => {
     expect(v.watchlist.dots.filter((d) => d.a === 1)).toHaveLength(6);
     expect(v.watchlist.rules.some((r) => r.kind === "tick")).toBe(true);
     expect(v.watchlist.labels.map((l) => l.text)).toContain("typical 20%");
+  });
+
+  it("300 trials in one pipeline cell stay inside it at 343 x 380", () => {
+    const f = hand();
+    const n = 300;
+    f.trials = {
+      id: Array.from({ length: n }, (_, i) => `N${i}`), x: Array.from({ length: n }, (_, i) => i), y: Array.from({ length: n }, () => 0),
+      outcome: Array(n).fill("running"), approaches: Array(n).fill([]), start: Array(n).fill(2020), dz: Array(n).fill([]),
+      marks: Array.from({ length: n }, (_, i) => (i < 150 ? [[0, 1, "run"]] : [[1, 1, "run"]])), risk: Array(n).fill(null), change: Array(n).fill(null),
+    } as IntroFile["trials"];
+    const [w, h] = [343, 380];
+    const d = buildViews(f, [], w, h).pipeline.dots.filter((x) => x.a === 1);
+    const top = 40, nRows = 2, rowH = (h - top) / nRows, labW = Math.min(130, w * 0.22), colW = (w - labW) / 4;
+    for (const p of d) {
+      const rk = Math.floor((p.y - top) / rowH);
+      expect(rk).toBeGreaterThanOrEqual(0);
+      expect(rk).toBeLessThan(nRows);
+      expect(p.x).toBeGreaterThanOrEqual(labW + 6);
+      expect(p.x).toBeLessThanOrEqual(labW + colW - 6);
+    }
+    expect(d.length).toBeGreaterThan(100);
+  });
+
+  it("40 changed trials in one bin stay inside it at 343 wide", () => {
+    const f = hand();
+    const n = 40;
+    f.trials = {
+      id: Array.from({ length: n }, (_, i) => `N${i}`), x: Array.from({ length: n }, (_, i) => i), y: Array.from({ length: n }, () => 0),
+      outcome: Array(n).fill("running"), approaches: Array(n).fill([]), start: Array(n).fill(2020), dz: Array(n).fill([]),
+      marks: Array(n).fill([]), risk: Array(n).fill(null), change: Array(n).fill(["dates", null]),
+    } as IntroFile["trials"];
+    const w = 343, cw = (w - 100) / 6;
+    const d = buildViews(f, [], w, 380).changes.dots.filter((x) => x.a === 1);
+    expect(d).toHaveLength(40);
+    for (const p of d) {
+      expect(p.x - 6).toBeGreaterThanOrEqual(50);
+      expect(p.x + 6).toBeLessThanOrEqual(50 + cw);
+    }
   });
 
   it("visibleViews drops diligence without pairs and watchlist without risk", () => {

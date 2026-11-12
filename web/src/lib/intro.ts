@@ -25,6 +25,8 @@ export const VIEW_TEXT: Record<ViewKey, { name: string; to: string; caption: str
 const MULTI_LABEL = "More than one approach";
 const APPROACH_NOTE = "Trials in several approaches are under More than one; the Approaches page counts them in each.";
 const GOLDEN = 2.39996;
+/** Smallest dot spacing a cell, bin or cluster shrinks to before it shows "+N" instead of more dots. */
+const MIN_STEP = 1.6;
 const num = (n: number) => n.toLocaleString("en-GB");
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -105,10 +107,13 @@ function pipelineView(file: IntroFile, rest: (i: number) => DotTarget, w: number
   shown.forEach((ri, rk) => labels.push({ text: file.rows[ri].label, x: 0, y: top + rk * rowH + rowH / 2 + 4, weight: 700, size: 13 }));
   for (const [key, items] of cells) {
     const [rk, cj] = key.split(":").map(Number);
-    const [cw, ch] = [colW - 12, rowH - 8];
-    const s = clamp(Math.sqrt((cw * ch) / items.length), 3.2, 7.5);
+    const [cw, ch] = [Math.max(1, colW - 12), Math.max(1, rowH - 8)];
+    let s = clamp(Math.sqrt((cw * ch) / items.length), MIN_STEP, 7.5);
+    while (s > MIN_STEP && Math.floor(cw / s) * Math.floor(ch / s) < items.length) s = Math.max(MIN_STEP, s - 0.2);
     const per = Math.max(1, Math.floor(cw / s));
-    items.forEach(({ i, st }, k) => {
+    const cap = per * Math.max(1, Math.floor(ch / s));
+    if (items.length > cap) labels.push({ text: `+${items.length - cap}`, x: labW + colW * (cj + 1) - 6, y: top + (rk + 1) * rowH - 4, align: "right", size: 12, tone: "muted" });
+    items.slice(0, cap).forEach(({ i, st }, k) => {
       dots[i] = { x: labW + colW * cj + 6 + (k % per) * s + s / 2, y: top + rk * rowH + 4 + Math.floor(k / per) * s + s / 2, a: 1, r: Math.min(2.8, s * 0.38), paint: st };
     });
   }
@@ -133,10 +138,13 @@ function diligenceView(file: IntroFile, pairs: RecordedPair[], rest: (i: number)
       if (p.disease === "all" || file.trials.dz[i].includes(p.disease)) ids.push(i);
     }
     ids.forEach((i) => used.add(i));
-    const s = clamp((Math.min(cw, chh) * 0.55) / Math.sqrt(Math.max(1, ids.length)) / 1.1, 3, 6);
-    ids.forEach((i, j) => {
-      const rad = s * 0.62 * Math.sqrt(j);
-      dots[i] = { x: cx + Math.cos(j * GOLDEN) * rad, y: cy + Math.sin(j * GOLDEN) * rad, a: 1, r: Math.min(2.6, s * 0.4), paint: paintOf(file, i) };
+    const maxRad = Math.max(0, Math.min(cw, chh) * 0.34 - 2.6);
+    const d = clamp(maxRad / Math.sqrt(Math.max(1, ids.length)), 1.2, 3.72);
+    const cap = Math.floor((maxRad / d) ** 2) + 1;
+    if (ids.length > cap) labels.push({ text: `+${ids.length - cap}`, x: cx + cw * 0.45, y: cy + Math.min(cw, chh) * 0.36 + 4, align: "right", size: 12, tone: "muted" });
+    ids.slice(0, cap).forEach((i, j) => {
+      const rad = d * Math.sqrt(j);
+      dots[i] = { x: cx + Math.cos(j * GOLDEN) * rad, y: cy + Math.sin(j * GOLDEN) * rad, a: 1, r: Math.min(2.6, d * 0.65), paint: paintOf(file, i) };
     });
     labels.push({ text: `${file.rows[ri].label} · ${p.disease}`, x: cx, y: cy + Math.min(cw, chh) * 0.36 + 4, align: "center", size: 12, weight: 700 });
   });
@@ -216,18 +224,21 @@ function changesView(file: IntroFile, w: number, h: number): IntroView {
   });
   const total = members.reduce((a, m) => a + m.length, 0);
   const inset = 50, cw = (w - 2 * inset) / BINS.length, cy = gy * 0.42;
-  const step = clamp((cw / 2 - 6) / Math.sqrt(Math.max(1, ...members.map((m) => m.length))), 7, 15);
+  const maxRad = Math.max(0, Math.min(cw / 2 - 6, 70));
   const labels: ViewLabel[] = [];
   members.forEach((m, bi) => {
     m.sort((a, b) => Number(b.reason !== null) - Number(a.reason !== null));
     const cx = inset + cw * bi + cw / 2;
-    m.forEach(({ i, reason }, k) => {
+    const step = clamp(maxRad / Math.sqrt(Math.max(1, m.length)), MIN_STEP, 15);
+    const cap = Math.floor((maxRad / step) ** 2) + 1;
+    m.slice(0, cap).forEach(({ i, reason }, k) => {
       const rad = step * Math.sqrt(k);
       dots[i] = { x: cx + Math.cos(k * GOLDEN) * rad, y: cy + Math.sin(k * GOLDEN) * rad, a: 1, r: reason ? 6 : 5, paint: reason ? "changed" : "changed-ring" };
     });
     const notable = m.filter((e) => e.reason !== null);
     const what = notable.length === 0 ? "" : ` · ${notable.length} ${notable.every((e) => e.reason === SLIP) ? "slipped 90+ days" : "notable"}`;
     labels.push({ text: BINS[bi].label, x: cx, y: cy + 82, align: "center", size: 13, weight: 700 });
+    if (m.length > cap) labels.push({ text: `+${m.length - cap}`, x: cx, y: cy + 116, align: "center", size: 12, tone: "muted" });
     labels.push({ text: m.length ? `${m.length} trial${m.length > 1 ? "s" : ""}${what}` : "none this week", x: cx, y: cy + 100, align: "center", size: 12, tone: "muted" });
   });
   labels.push({ text: total ? `${total} of ${num(n)} trials changed in the last 7 days · solid = flagged as notable` : "No changes in the last 7 days", x: 0, y: gy - 12, size: 12, tone: "muted" });
@@ -258,6 +269,10 @@ function trialsView(file: IntroFile, w: number, h: number): IntroView {
 }
 
 export function buildViews(file: IntroFile, pairs: RecordedPair[], w: number, h: number): Record<ViewKey, IntroView> {
+  if (!(w >= 1 && h >= 1)) {
+    const flat = (): IntroView => ({ dots: file.trials.id.map(() => ({ x: 0, y: 0, a: 0.035, r: 1.4, paint: "ghost" as const })), labels: [], rules: [] });
+    return { all: flat(), pipeline: flat(), diligence: flat(), watchlist: flat(), approaches: flat(), changes: flat(), trials: flat() };
+  }
   const cloud = cloudPositions(file, w, h);
   const rest = (i: number): DotTarget => ({ ...cloud[i], a: 0.035, r: 1.4, paint: "ghost" });
   const views: Record<ViewKey, IntroView> = {
