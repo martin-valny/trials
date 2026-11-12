@@ -19,6 +19,7 @@ dev = [
     "types-PyYAML",
     "boto3-stubs[bedrock-runtime,dynamodb,lambda]",
     "pip-audit",
+    "truststore>=0.10.5",
 ]
 
 [build-system]

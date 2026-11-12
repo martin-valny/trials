@@ -179,4 +179,10 @@ def record_all(
 
 
 if __name__ == "__main__":
+    # Use the operating system's trust store: a corporate network may re-sign HTTPS for some
+    # hosts (e.g. ebi.ac.uk) with a root only the OS trusts. Command-line runs only; tests and
+    # the Lambda keep certifi.
+    import truststore
+
+    truststore.inject_into_ssl()
     raise SystemExit(main())
