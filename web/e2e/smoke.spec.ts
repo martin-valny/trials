@@ -9,7 +9,7 @@ async function navTo(page: Page, name: string) {
 }
 
 test("feed -> trial -> methods", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("targeted-drug trials");
   await navTo(page, "Changes");
   await expect(page).toHaveURL(/#\/changes$/);
@@ -36,7 +36,7 @@ test("trials list opens a trial", async ({ page }) => {
 });
 
 test("no horizontal scroll", async ({ page }) => {
-  for (const route of ["#/", "#/explore", "#/approaches/cell", "#/changes", "#/trials", "#/methods"]) {
+  for (const route of ["#/", "#/pipeline", "#/explore", "#/approaches/cell", "#/changes", "#/trials", "#/methods"]) {
     await page.goto("/" + route);
     await page.waitForLoadState("networkidle");
     const overflow = await page.evaluate(
@@ -331,7 +331,7 @@ test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }
     f.trials[1] = { ...f.trials[1], approaches: ["cell"], kinds: ["msc"] };
     await route.fulfill({ response: res, json: f });
   });
-  await page.goto("/");
+  await page.goto("/#/pipeline");
   await navTo(page, "Approaches");
   await expect(page).toHaveURL(/#\/approaches\/targeted$/);
   const rail = page.getByRole("navigation", { name: /Approaches/ });
