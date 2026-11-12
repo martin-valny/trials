@@ -1,0 +1,383 @@
+{
+ "run_id": "a4666b412f364403aa6872636ff894e9",
+ "target": "cd19",
+ "disease": "NMOSD",
+ "fingerprint": "e8782fb8a7f0e0a95789b11c7d74a654d85259e5a71345a194350939bbbd50fe",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:41:49Z",
+ "finished_at": "2026-11-12T13:43:43Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD19 · NMOSD",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "4 trials on this target (0 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT07010302",
+    "NCT05549258",
+    "NCT02200770",
+    "NCT06212245"
+   ],
+   "ms": 893,
+   "tokens_in": 2081,
+   "tokens_out": 173
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 83,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1427 registry trials, 300 counted (24 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04888468",
+    "NCT05514327",
+    "NCT04880434",
+    "NCT05757700",
+    "NCT05988216",
+    "NCT04539444",
+    "NCT06503094",
+    "NCT04556266",
+    "NCT02848911",
+    "NCT06138132",
+    "NCT07439263",
+    "NCT05651100",
+    "NCT07388212",
+    "NCT00840853",
+    "NCT03685786",
+    "NCT06120166",
+    "NCT06212154",
+    "NCT00068003",
+    "NCT07093086",
+    "NCT07592754"
+   ],
+   "ms": 690,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 20637,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "6 abstracts since 2022",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42936601",
+    "PMID:42973689",
+    "PMID:42819529",
+    "PMID:42327972",
+    "PMID:42097701",
+    "PMID:42081370"
+   ],
+   "ms": 3695,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:834db232-afb0-4dcf-93e0-009ce8245c20"
+   ],
+   "ms": 1179,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7454,
+   "tokens_out": 26
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "7 abstracts since 2022",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42634159",
+    "PMID:42851430",
+    "PMID:43008529",
+    "PMID:42663933",
+    "PMID:42527908",
+    "PMID:42924580",
+    "PMID:42744600"
+   ],
+   "ms": 6292,
+   "tokens_in": 7514,
+   "tokens_out": 38
+  },
+  {
+   "n": 10,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 10094,
+   "tokens_out": 196
+  },
+  {
+   "n": 11,
+   "kind": "write",
+   "text": "Memo written: 12 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 10812,
+   "tokens_out": 1097
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Removed s12: no citation",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 13,
+   "kind": "check",
+   "text": "checking 12 claims … 6 supported, 2 partly, 4 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 4866,
+   "tokens_out": 931
+  },
+  {
+   "n": 14,
+   "kind": "note",
+   "text": "Judgement kept with 2 unsupported reasons dropped; confidence high → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 15,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Inebilizumab is the only CD19-targeting drug in development for NMOSD, developed by AstraZeneca and others.",
+    "cites": [
+     "NCT07010302"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "The mechanism involves CD19-directed cytolytic depletion of B cells, including plasmablasts.",
+    "cites": [
+     "NCT07010302"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Inebilizumab is approved for NMOSD in anti-AQP4 antibody-positive adults, as well as for IgG4-RD and generalized myasthenia gravis.",
+    "cites": [
+     "FDA:834db232-afb0-4dcf-93e0-009ce8245c20"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "The Phase 2/3 N-MOmentum trial (NCT02200770) completed and supported approval, showing significant reduction in NMOSD attacks.",
+    "cites": [
+     "NCT02200770"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "Serious infections are a known risk with inebilizumab, consistent with its class effect as a B-cell depleting agent.",
+    "cites": [
+     "FDA:834db232-afb0-4dcf-93e0-009ce8245c20"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "A 2026 real-world study found inebilizumab reduced annualized attack rates from 1.02 to 0.03 in AQP4-IgG-positive NMOSD patients.",
+    "cites": [
+     "PMID:42634159"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "A 2026 post-marketing surveillance in Japan reported a 32.5% rate of adverse drug reactions, with 13.6% being serious, primarily infections.",
+    "cites": [
+     "PMID:42663933"
+    ]
+   },
+   {
+    "id": "s11",
+    "section": "competition",
+    "text": "Inebilizumab demonstrates strong comparative effectiveness against conventional immunosuppressants and rituximab in real-world studies.",
+    "cites": [
+     "PMID:42744600"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: CD19 depletion via inebilizumab shows strong efficacy in reducing NMOSD attacks, supported by approval and real-world data.",
+   "Competitive position: Favourable versus conventional therapies; competes with other biologics but shows superior effectiveness in comparative studies.",
+   "Open questions: Long-term safety, especially infection risk, and outcomes in pediatric and pregnant populations remain monitoring points."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "low",
+   "reasons": [
+    "s4",
+    "s7"
+   ]
+  },
+  "would_change": [
+   "New safety signals from ongoing Phase 4 trials (e.g., NCT07010302) could reduce confidence.",
+   "Evidence of inferior efficacy compared to newer agents like ravulizumab or satralizumab would shift the stance."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "unsupported",
+   "reason": "Source only mentions one Phase 4 trial, not details about four trials or specific NCT numbers"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source confirms inebilizumab is a CD19-targeting drug in NMOSD but doesn't discuss being only one in development or AstraZeneca involvement"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source states inebilizumab is a CD19-directed cytolytic antibody that removes B cells including plasmablasts"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "FDA source confirms approval for NMOSD in anti-AQP4 positive adults, IgG4-RD, and generalized myasthenia gravis"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "partly",
+   "reason": "Source confirms Phase 2/3 N-MOmentum trial completed but doesn't mention approval support or attack reduction results"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "FDA source lists serious infections as risk with B-cell depleting therapies including UPLIZNA (inebilizumab)"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Study abstract reports annualized attack rate decreased from 1.02 to 0.03 in AQP4-IgG-positive patients"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "Study abstract reports 32.5% ADR rate with 13.6% serious, primarily infections in Japanese post-marketing surveillance"
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "unsupported",
+   "reason": "Source mentions comparison with azathioprine, MMF, and rituximab but doesn't state inebilizumab had superior outcomes to all three"
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "unsupported",
+   "reason": "Source mentions rituximab, ravulizumab, inebilizumab, satralizumab, and eculizumab but doesn't discuss competition between CD19-targeted therapy and complement/IL-6 inhibitors"
+  },
+  {
+   "sentence_id": "s11",
+   "verdict": "supported",
+   "reason": "Source reports inebilizumab has lower ARR than AZA, MMF, and RTX with respective IRRs of 4.78, 4.33, and 2.26, supporting comparative effectiveness."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s12",
+   "text": "The site's stop-risk model did not return an estimate for CD19 in NMOSD.",
+   "reason": "no citation"
+  },
+  {
+   "sentence_id": "s1",
+   "text": "Four trials test CD19 targeting in NMOSD: one Phase 3 (NCT02200770), one Phase 2 (NCT05549258), and two Phase 4 (NCT07010302, NCT06212245).",
+   "reason": "Source only mentions one Phase 4 trial, not details about four trials or specific NCT numbers"
+  },
+  {
+   "sentence_id": "s9",
+   "text": "A 2026 prospective cohort study showed inebilizumab had superior relapse and disability outcomes compared to azathioprine, mycophenolate mofetil, and rituximab.",
+   "reason": "Source mentions comparison with azathioprine, MMF, and rituximab but doesn't state inebilizumab had superior outcomes to all three"
+  },
+  {
+   "sentence_id": "s10",
+   "text": "CD19-targeted therapy faces competition from complement inhibitors (eculizumab, ravulizumab) and IL-6 inhibitors (satralizumab) in NMOSD.",
+   "reason": "Source mentions rituximab, ravulizumab, inebilizumab, satralizumab, and eculizumab but doesn't discuss competition between CD19-targeted therapy and complement/IL-6 inhibitors"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 2,
+  "confidence_was": "high"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 42821,
+ "tokens_out": 2461,
+ "cost_usd": 0.01668641,
+ "data_date": "2026-11-11"
+}

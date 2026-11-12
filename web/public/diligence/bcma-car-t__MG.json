@@ -1,0 +1,355 @@
+{
+ "run_id": "e98e86e69953477ba12ce4cc4660f907",
+ "target": "bcma-car-t",
+ "disease": "MG",
+ "fingerprint": "3bae3f3433c8f0be7221a3e94945696f94c6f89c220cb4e583bed75923822e51",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:40:11Z",
+ "finished_at": "2026-11-12T13:41:49Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: BCMA CAR-T · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "14 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06419166",
+    "NCT06626919",
+    "NCT06688435",
+    "NCT06249438",
+    "NCT06759948",
+    "NCT06978738",
+    "NCT07058298",
+    "NCT07089121",
+    "NCT07676266",
+    "NCT04146051",
+    "NCT06485232",
+    "NCT06799247",
+    "NCT07337785",
+    "NCT06371040"
+   ],
+   "ms": 717,
+   "tokens_in": 2081,
+   "tokens_out": 30
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 14% across 9 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:bcma-car-t:MG"
+   ],
+   "ms": 80,
+   "tokens_in": 3936,
+   "tokens_out": 31
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 31717,
+   "tokens_in": 4040,
+   "tokens_out": 27
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "8 abstracts since 2022",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42936601",
+    "PMID:42824951",
+    "PMID:42787283",
+    "PMID:42727567",
+    "PMID:42819529",
+    "PMID:42611613",
+    "PMID:41966710",
+    "PMID:41958278"
+   ],
+   "ms": 5760,
+   "tokens_in": 4101,
+   "tokens_out": 40
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "8 abstracts since 2022",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42019495",
+    "PMID:41514038",
+    "PMID:42824951",
+    "PMID:42819529",
+    "PMID:42787283",
+    "PMID:40856088",
+    "PMID:41514039",
+    "PMID:42633437"
+   ],
+   "ms": 1507,
+   "tokens_in": 6127,
+   "tokens_out": 42
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "No FDA label found",
+   "tool": "fda_label",
+   "ids": [],
+   "ms": 1115,
+   "tokens_in": 8530,
+   "tokens_out": 26
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "7 registry trials (2 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT07391605",
+    "NCT06038474",
+    "NCT04146051",
+    "NCT06799247",
+    "NCT03448978",
+    "NCT07089121",
+    "NCT04816526"
+   ],
+   "ms": 229,
+   "tokens_in": 8586,
+   "tokens_out": 26
+  },
+  {
+   "n": 9,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9288,
+   "tokens_out": 310
+  },
+  {
+   "n": 10,
+   "kind": "write",
+   "text": "Memo written: 10 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 10121,
+   "tokens_out": 880
+  },
+  {
+   "n": 11,
+   "kind": "note",
+   "text": "Removed s5: cites FDA:descartes-08, not retrieved in this run",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 12,
+   "kind": "check",
+   "text": "checking 10 claims … 5 supported, 3 partly, 2 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3411,
+   "tokens_out": 432
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Judgement kept with 1 unsupported reason dropped; confidence high → medium",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 14,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Fourteen trials test BCMA CAR-T in myasthenia gravis, with one in Phase 3, two in Phase 2, and eleven in Phase 1.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Thirteen of the fourteen trials are currently running, and one was withdrawn before enrolling any participants.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Trials are sponsored by multiple institutions and companies, including Cartesian Therapeutics, Gilead, and academic centers.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 phase 2b randomized, double-blind, placebo-controlled trial showed that Descartes-08 significantly improved the MG Composite score at month 3 compared to placebo.",
+    "cites": [
+     "PMID:41514038"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "The same trial reported that 66.7% of Descartes-08 recipients achieved a ≥5-point improvement in MGC score at month 3, versus 27.3% on placebo, with sustained improvement through month 12.",
+    "cites": [
+     "PMID:41514038"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "Recent literature from 2025–2026 highlights durable clinical improvement and favorable safety in refractory MG patients treated with BCMA CAR-T therapies, including minimal toxicity and no severe cytokine release syndrome.",
+    "cites": [
+     "PMID:40856088",
+     "PMID:41958278"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "The median trial stop risk for BCMA CAR-T in MG is estimated at 13.7%, based on nine running trials.",
+    "cites": [
+     "RISK:bcma-car-t:MG"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "competition",
+    "text": "Descartes-08 has demonstrated efficacy in an outpatient setting without lymphodepletion, differentiating it from conventional CAR-T approaches.",
+    "cites": [
+     "PMID:41514039"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: Strong, with positive Phase 2b results and consistent literature support for BCMA CAR-T in refractory MG.",
+   "Competitive position: Favorable, due to durable responses, outpatient administration, and no need for lymphodepletion.",
+   "Open questions: Long-term safety beyond 12 months and applicability to non-refractory MG populations."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "medium",
+   "reasons": [
+    "s6",
+    "s7",
+    "s10"
+   ]
+  },
+  "would_change": [
+   "New long-term safety data showing severe adverse events beyond 12 months would change this judgement.",
+   "Failure of the Phase 3 trial (NCT06799247) to replicate efficacy would weaken the stance."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source states 14 trials total with 11 Phase 1, 2 Phase 2, and 1 Phase 3"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source confirms 13 running and 1 stopped, but says 'WITHDRAWN' not 'withdrawn before enrolling any participants'"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "partly",
+   "reason": "Source lists Cartesian and Gilead among companies, but doesn't mention academic centers specifically"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "unsupported",
+   "reason": "Sources mention terminated trials but don't state Descartes-08 was tested in multiple non-MG indications"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source confirms phase 2b randomized double-blind placebo-controlled trial showing significant MGC improvement at month 3"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source matches exact percentages and sustained improvement through month 12"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Sources discuss durable improvement and favorable safety, but don't mention 'no severe cytokine release syndrome' specifically"
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Risk source states median 0.137 (13.7%) based on n=9 running trials"
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "supported",
+   "reason": "Source describes outpatient administration without lymphodepletion differentiating it from conventional approaches"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s5",
+   "text": "No FDA label exists for descartes-08 as of the data date.",
+   "reason": "cites FDA:descartes-08, not retrieved in this run"
+  },
+  {
+   "sentence_id": "s4",
+   "text": "Descartes-08, a BCMA-directed mRNA CAR-T therapy, was tested in multiple non-MG indications, with one Phase 1 multiple myeloma trial terminated after completion and another terminated due to sponsor decision.",
+   "reason": "Sources mention terminated trials but don't state Descartes-08 was tested in multiple non-MG indications"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 1,
+  "confidence_was": "high"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 60221,
+ "tokens_out": 1844,
+ "cost_usd": 0.01909768,
+ "data_date": "2026-11-11"
+}

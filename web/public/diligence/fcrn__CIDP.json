@@ -1,0 +1,307 @@
+{
+ "run_id": "1f55e5b5c7264ea19645c7dca5779f23",
+ "target": "fcrn",
+ "disease": "CIDP",
+ "fingerprint": "86c51a0cd1325d70b5d4dcb82b936b0801fab711872ebf00441c4536b6d4225e",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:35:40Z",
+ "finished_at": "2026-11-12T13:36:29Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: FcRn · CIDP",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "8 trials on this target (2 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05581199",
+    "NCT07188844",
+    "NCT07032662",
+    "NCT04280718",
+    "NCT06637072",
+    "NCT04281472",
+    "NCT03861481",
+    "NCT04051944"
+   ],
+   "ms": 611,
+   "tokens_in": 2081,
+   "tokens_out": 205
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 82,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1 registry trials (1 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT05581199"
+   ],
+   "ms": 223,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42749655",
+    "PMID:42921078",
+    "PMID:42807841",
+    "PMID:42154647",
+    "PMID:42813052",
+    "PMID:41890726",
+    "PMID:42057292"
+   ],
+   "ms": 646,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 16381,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:7104d9e5-9910-47f5-9a93-741ac50f43b6"
+   ],
+   "ms": 1518,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 1,
+   "tokens_in": 6526,
+   "tokens_out": 25
+  },
+  {
+   "n": 10,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 6585,
+   "tokens_out": 212
+  },
+  {
+   "n": 11,
+   "kind": "write",
+   "text": "Memo written: 8 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7319,
+   "tokens_out": 790
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Removed s8: cites RISK:fcrn:CIDP, not retrieved in this run",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 13,
+   "kind": "check",
+   "text": "checking 8 claims … 1 supported, 5 partly, 2 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 4524,
+   "tokens_out": 437
+  },
+  {
+   "n": 14,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Eight trials test FcRn inhibitors in CIDP, including two Phase 2 trials that terminated for sponsor decision and two currently running Phase 2 studies.",
+    "cites": [
+     "NCT05581199",
+     "NCT07032662",
+     "NCT04280718"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "track_record",
+    "text": "Efgartigimod alfa is approved for CIDP in the U.S. as a subcutaneous formulation in combination with hyaluronidase.",
+    "cites": [
+     "FDA:7104d9e5-9910-47f5-9a93-741ac50f43b6"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Two trials of batoclimab in CIDP were terminated due to sponsor decision, with no safety concerns cited.",
+    "cites": [
+     "NCT05581199",
+     "NCT07188844"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "literature",
+    "text": "A 2026 review highlights FcRn inhibitors as transformative in CIDP therapy, noting their role in accelerating IgG autoantibody degradation.",
+    "cites": [
+     "PMID:42749655"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 network meta-analysis found FcRn inhibitors effective in CIDP with favorable safety and functional outcomes compared to conventional therapies.",
+    "cites": [
+     "PMID:42807841"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "competition",
+    "text": "FcRn inhibitors compete with IVIg, corticosteroids and plasma exchange, with efgartigimod offering targeted IgG reduction and subcutaneous administration.",
+    "cites": [
+     "PMID:42921078",
+     "FDA:7104d9e5-9910-47f5-9a93-741ac50f43b6"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: FcRn inhibition shows strong efficacy in reducing pathogenic IgG in CIDP, supported by approval and meta-analyses.",
+   "Competitive position: Approved subcutaneous option available; distinct from IVIg but targets same pathway.",
+   "Open questions: Long-term safety and comparative effectiveness against IVIg remain under study."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "high",
+   "reasons": [
+    "s3",
+    "s6",
+    "s7"
+   ]
+  },
+  "would_change": [
+   "New safety signals from ongoing trials would alter the risk profile.",
+   "Evidence of inferior functional outcomes compared to IVIg would weaken the position."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "partly",
+   "reason": "Sources mention 8 total FcRn trials with 2 stopped and 2 running, but don't confirm all eight specifically test FcRn inhibitors in CIDP or that the two Phase 2 trials terminated for sponsor decision"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "unsupported",
+   "reason": "Sources mention companies argenx, Immunovant, and UCB but don't confirm sponsors include Immunovant, argenx and UCB or that argenx completed two Phase 2 studies"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "partly",
+   "reason": "FDA source indicates efgartigimod alfa is approved for CIDP but doesn't specify subcutaneous formulation with hyaluronidase or mention U.S. approval"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "Both NCT sources show batoclimab trials terminated due to sponsor decision with no safety concerns mentioned"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "partly",
+   "reason": "Review mentions FcRn inhibitors as transformative in CIDP therapy but doesn't specifically highlight 2026 date or note their role in accelerating IgG autoantibody degradation"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "partly",
+   "reason": "Meta-analysis mentions comparing FcRn inhibitors to conventional therapies but doesn't confirm favorable safety and functional outcomes or specify 2026 date"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Sources mention FcRn inhibitors and efgartigimod but don't confirm competition with IVIg, corticosteroids and plasma exchange or subcutaneous administration details"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s8",
+   "text": "The site's stop-risk estimate for FcRn in CIDP is unavailable.",
+   "reason": "cites RISK:fcrn:CIDP, not retrieved in this run"
+  },
+  {
+   "sentence_id": "s2",
+   "text": "Sponsors include Immunovant, argenx and UCB, with argenx and Immunovant each running multiple trials and argenx having completed two Phase 2 studies.",
+   "reason": "Sources mention companies argenx, Immunovant, and UCB but don't confirm sponsors include Immunovant, argenx and UCB or that argenx completed two Phase 2 studies"
+  }
+ ],
+ "judgement_shown": false,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 27035,
+ "tokens_out": 1669,
+ "cost_usd": 0.01117765,
+ "data_date": "2026-11-11"
+}

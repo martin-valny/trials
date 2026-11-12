@@ -1,0 +1,368 @@
+{
+ "run_id": "cdd72b62c32f4642836db7a1dee588e6",
+ "target": "c5",
+ "disease": "MG",
+ "fingerprint": "df820c04a8b61ebd3c63b349f8bb6b5b5a9439caac635b46b704ba5e1d0e25d6",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:36:29Z",
+ "finished_at": "2026-11-12T13:37:45Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: C5 · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "18 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT00727194",
+    "NCT06055959",
+    "NCT06435312",
+    "NCT07215949",
+    "NCT07221838",
+    "NCT07596784",
+    "NCT05644561",
+    "NCT05070858",
+    "NCT03315130",
+    "NCT04225871",
+    "NCT06471361",
+    "NCT06764160",
+    "NCT05514873",
+    "NCT03759366",
+    "NCT03920293",
+    "NCT04115293",
+    "NCT02301624",
+    "NCT01997229"
+   ],
+   "ms": 648,
+   "tokens_in": 2077,
+   "tokens_out": 130
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 28% across 5 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:c5:MG"
+   ],
+   "ms": 73,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "6 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT05556096",
+    "NCT06607627",
+    "NCT07221838",
+    "NCT04202341",
+    "NCT07818291",
+    "NCT07250750"
+   ],
+   "ms": 219,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42964369",
+    "PMID:42683805",
+    "PMID:42591413",
+    "PMID:42845921",
+    "PMID:42931254",
+    "PMID:42717567",
+    "PMID:42604018"
+   ],
+   "ms": 19054,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 20837,
+   "tokens_in": 6728,
+   "tokens_out": 103
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:002f9748-b0e8-4b6e-a38b-56930a839491"
+   ],
+   "ms": 1147,
+   "tokens_in": 6945,
+   "tokens_out": 51
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:a9a590d9-0217-43c7-908d-e62a71279791"
+   ],
+   "ms": 329,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9237,
+   "tokens_out": 182
+  },
+  {
+   "n": 13,
+   "kind": "write",
+   "text": "Memo written: 9 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9941,
+   "tokens_out": 875
+  },
+  {
+   "n": 14,
+   "kind": "check",
+   "text": "checking 9 claims … 6 supported, 2 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 4895,
+   "tokens_out": 546
+  },
+  {
+   "n": 15,
+   "kind": "note",
+   "text": "Judgement kept with 1 unsupported reason dropped; confidence medium → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 16,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Eighteen trials test C5 inhibition in myasthenia gravis, including fifteen in Phase 3, one in Phase 4, and two in Phase 2.",
+    "cites": [
+     "NCT00727194"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "track_record",
+    "text": "Eculizumab, ravulizumab, and zilucoplan are approved for use in myasthenia gravis according to the site_target data.",
+    "cites": [
+     "NCT00727194"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "One Phase 2 trial of eculizumab in refractory generalized myasthenia gravis was terminated due to slow enrollment.",
+    "cites": [
+     "NCT00727194"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "Eculizumab and ravulizumab carry FDA black box warnings for serious meningococcal infections, including cases despite vaccination.",
+    "cites": [
+     "FDA:002f9748-b0e8-4b6e-a38b-56930a839491",
+     "FDA:a9a590d9-0217-43c7-908d-e62a71279791"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 case report describes rapid and durable improvement in two patients with refractory myasthenic crisis or impending crisis treated with zilucoplan.",
+    "cites": [
+     "PMID:42591413"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "Another 2026 case report details fulminant meningococcal meningitis in a vaccinated patient receiving ravulizumab, highlighting the persistent risk despite preventive measures.",
+    "cites": [
+     "PMID:42845921"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "competition",
+    "text": "The site_risk tool reports a median stop risk of 0.279 for ongoing C5 inhibition trials in myasthenia gravis.",
+    "cites": [
+     "RISK:c5:MG"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "C5 inhibitors are part of a broader landscape including FcRn antagonists and rituximab, with recent reviews discussing sequencing and comparative effectiveness.",
+    "cites": [
+     "PMID:42964369",
+     "PMID:42717567"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: C5 inhibition shows efficacy in refractory and acute myasthenia gravis, including life-threatening crises.",
+   "Competitive position: Multiple approved drugs and late-phase trials indicate a mature, competitive class with known safety risks.",
+   "Open questions: How to optimally sequence C5 inhibitors with other biologics, and how to mitigate meningococcal infection risk despite vaccination."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "low",
+   "reasons": [
+    "s3",
+    "s6",
+    "s8"
+   ]
+  },
+  "would_change": [
+   "New safety signals, especially from ongoing Phase 3 or 4 trials, could increase the stop risk and shift the stance to mixed or against.",
+   "Demonstrated efficacy in head-to-head comparisons with other mechanisms like FcRn antagonists would strengthen the competitive position."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "partly",
+   "reason": "Source shows 18 trials total with Phase 2:2, Phase 3:15, Phase 4:1, but doesn't explicitly state 'eighteen trials test C5 inhibition in myasthenia gravis' nor that they all test C5 inhibition in MG."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "unsupported",
+   "reason": "Source shows AstraZeneca:9, UCB:7, Regeneron:1, Miriam Freimer:1, not Alexion 9, UCB Biopharma SRL 7, Miriam Freimer 1, Regeneron 1."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source shows drugs eculizumab, ravulizumab, zilucoplan are approved for MG according to approved.MG array."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "NCT00727194 is Phase 2 trial of eculizumab in refractory generalized MG that was terminated (stopped)."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Both FDA sources show black box warnings for serious meningococcal infections for eculizumab and ravulizumab products."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source describes rapid improvement in two patients with refractory myasthenic crisis/impending crisis treated with zilucoplan in 2026 case report."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source describes fulminant meningococcal meningitis in vaccinated patient receiving ravulizumab in 2026 case report."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "RISK source reports median stop risk of 0.279 for ongoing C5 inhibition trials in MG."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "partly",
+   "reason": "Sources mention C5 inhibitors, FcRn antagonists, and reviews discussing sequencing, but don't explicitly include rituximab in the discussion or state they are part of broader landscape."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s2",
+   "text": "The trials are sponsored by Alexion Pharmaceuticals, Inc. (9), UCB Biopharma SRL (7), Miriam Freimer (1), and Regeneron Pharmaceuticals (1).",
+   "reason": "Source shows AstraZeneca:9, UCB:7, Regeneron:1, Miriam Freimer:1, not Alexion 9, UCB Biopharma SRL 7, Miriam Freimer 1, Regeneron 1."
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 1,
+  "confidence_was": "medium"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 39823,
+ "tokens_out": 1887,
+ "cost_usd": 0.014907420000000001,
+ "data_date": "2026-11-11"
+}

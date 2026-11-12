@@ -1,0 +1,444 @@
+{
+ "run_id": "671e454a3ac149c9b05aa5f6d49e8d74",
+ "target": "btk",
+ "disease": "MS",
+ "fingerprint": "26aa81c0aeb052e59d2df960e3c5194bc013dc8377cf9dc0328b71bc67aefba1",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T15:32:15Z",
+ "finished_at": "2026-11-12T15:34:25Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: BTK · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "33 trials on this target (6 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06104683",
+    "NCT04338022",
+    "NCT04338061",
+    "NCT04032158",
+    "NCT04032171",
+    "NCT02975349",
+    "NCT07067463",
+    "NCT07222956",
+    "NCT07225504",
+    "NCT07299019",
+    "NCT06372145",
+    "NCT06846281",
+    "NCT07776743",
+    "NCT07161258",
+    "NCT04586010",
+    "NCT05147220",
+    "NCT05156281",
+    "NCT04544449",
+    "NCT04586023",
+    "NCT05119569"
+   ],
+   "ms": 773,
+   "tokens_in": 2077,
+   "tokens_out": 28
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 24% across 8 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:btk:MS"
+   ],
+   "ms": 82,
+   "tokens_in": 4806,
+   "tokens_out": 29
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "5 registry trials (5 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04338061",
+    "NCT02975349",
+    "NCT04032158",
+    "NCT04032171",
+    "NCT04338022"
+   ],
+   "ms": 274,
+   "tokens_in": 4904,
+   "tokens_out": 32
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "10 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04410978",
+    "NCT06372145",
+    "NCT07898371",
+    "NCT06106074",
+    "NCT04411641",
+    "NCT04458051",
+    "NCT04410991",
+    "NCT04742400",
+    "NCT06064539",
+    "NCT03996291"
+   ],
+   "ms": 146,
+   "tokens_in": 5596,
+   "tokens_out": 33
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "6 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT05147220",
+    "NCT07225504",
+    "NCT06846281",
+    "NCT07758270",
+    "NCT05156281",
+    "NCT07222956"
+   ],
+   "ms": 154,
+   "tokens_in": 6630,
+   "tokens_out": 32
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "5 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04544449",
+    "NCT04586023",
+    "NCT04586010",
+    "NCT05119569",
+    "NCT07161258"
+   ],
+   "ms": 620,
+   "tokens_in": 7265,
+   "tokens_out": 33
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "EVOBRUTINIB: max phase 3, 1 mechanism",
+   "tool": "chembl_drug",
+   "ids": [
+    "CHEMBL4072833"
+   ],
+   "ms": 7018,
+   "tokens_in": 7807,
+   "tokens_out": 26
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 28534,
+   "tokens_in": 8028,
+   "tokens_out": 27
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "6 abstracts since 2022",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:43003991",
+    "PMID:41710977",
+    "PMID:42970053",
+    "PMID:42858119",
+    "PMID:42518914",
+    "PMID:42812772"
+   ],
+   "ms": 8646,
+   "tokens_in": 8089,
+   "tokens_out": 35
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "7 abstracts since 2024",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42518914",
+    "PMID:42126690",
+    "PMID:42075951",
+    "PMID:42814369",
+    "PMID:42827714",
+    "PMID:42518007",
+    "PMID:42787283"
+   ],
+   "ms": 334,
+   "tokens_in": 10026,
+   "tokens_out": 41
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 12191,
+   "tokens_out": 274
+  },
+  {
+   "n": 13,
+   "kind": "write",
+   "text": "Memo written: 13 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 12988,
+   "tokens_out": 1202
+  },
+  {
+   "n": 14,
+   "kind": "check",
+   "text": "checking 13 claims … 6 supported, 5 partly, 2 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 6599,
+   "tokens_out": 753
+  },
+  {
+   "n": 15,
+   "kind": "note",
+   "text": "Judgement kept with 2 unsupported reasons dropped; confidence medium → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 16,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Thirty-three trials of BTK inhibitors are recorded in multiple sclerosis (MS), with 18 in Phase 3, 11 in Phase 2, and 4 in Phase 1.",
+    "cites": [
+     "NCT06104683"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Sponsors include Sanofi (10 trials), Roche and Merck KGaA (5 each), Novartis (4), and smaller contributions from Zenas BioPharma, Guangzhou Lupeng, and others.",
+    "cites": [
+     "NCT06104683"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Six trials have stopped, including five evobrutinib trials (Merck KGaA) terminated due to lack of efficacy or changes in trial design.",
+    "cites": [
+     "NCT04338022"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "Evobrutinib failed to meet its primary endpoint of annualized relapse rate in two Phase 3 trials (NCT04338022, NCT04338061) and one Phase 2 trial (NCT02975349), all terminated.",
+    "cites": [
+     "NCT02975349"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "Evobrutinib’s maximum phase in MS is 3, with no approvals, and its development in relapsing MS was stopped due to lack of efficacy versus teriflunomide.",
+    "cites": [
+     "CHEMBL4072833"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "track_record",
+    "text": "Pirtobrutinib (Loxo Oncology) was withdrawn from a Phase 2 MS trial (NCT06104683) for sponsor decision, with no plans to continue.",
+    "cites": [
+     "NCT06104683"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "A 2026 review notes that BTK inhibitors target both adaptive and innate immunity, with modulation of myeloid cell and microglial activation relevant to MS pathology.",
+    "cites": [
+     "PMID:42518914"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "literature",
+    "text": "Recent literature (2026) indicates BTK inhibitors show promising effects on inflammatory activity in MS, with emerging signals on disability progression.",
+    "cites": [
+     "PMID:42518914"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "literature",
+    "text": "A 2026 review highlights that fenebrutinib, tolebrutinib, and other BTK inhibitors are in late development for MS with potential to target both relapsing and progressive forms via CNS penetration.",
+    "cites": [
+     "PMID:42075951"
+    ]
+   },
+   {
+    "id": "s11",
+    "section": "competition",
+    "text": "The site’s risk model estimates a median 24% stop risk across ongoing BTK inhibitor trials in MS, with 8 trials analyzed.",
+    "cites": [
+     "RISK:btk:MS"
+    ]
+   },
+   {
+    "id": "s13",
+    "section": "competition",
+    "text": "BTK inhibitors are positioned as oral agents with potential CNS penetration to modulate microglia, differing from anti-CD20 biologics that primarily target peripheral B cells.",
+    "cites": [
+     "NCT06104683"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: BTK inhibition targets both B cells and CNS-resident microglia, with preclinical and clinical signals in MS inflammation and progression.",
+   "Competitive position: Despite evobrutinib's failure, the mechanism remains active with multiple Phase 3 programs; median stop risk is 24%.",
+   "Open questions: Will any BTK inhibitor demonstrate superiority over current therapies in relapsing or progressive MS, and can safety risks like liver toxicity or infection be managed long-term?"
+  ],
+  "judgement": {
+   "stance": "mixed",
+   "confidence": "low",
+   "reasons": [
+    "s8",
+    "s11"
+   ]
+  },
+  "would_change": [
+   "A Phase 3 success from tolebrutinib or remibrutinib would strengthen support.",
+   "A safety signal or new termination in an ongoing Phase 3 trial would increase risk."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source NCT06104683 shows 33 total trials, with Phase 1:4, Phase 2:11, Phase 3:18, matching all numbers."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source shows sponsor counts but does not specify trials by Sanofi (10), Roche and Merck KGaA (5 each), Novartis (4) as claimed."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "partly",
+   "reason": "Source shows evobrutinib trial terminated but doesn't mention five evobrutinib trials or reasons for termination."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "unsupported",
+   "reason": "Source only mentions fenebrutinib Phase 3 trial, not remibrutinib, tolebrutinib, rocbrutinib, or orelabrutinib trials."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "partly",
+   "reason": "Source confirms evobrutinib failed primary endpoint in this Phase 2 trial, but not two Phase 3 trials or all terminations."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source shows max phase 3 for evobrutinib in MS, no approvals mentioned."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source states pirtobrutinib trial withdrawn due to sponsor decision with no plans to continue."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "Source describes BTK inhibition targets both adaptive and innate immunity and modulates myeloid cell activation."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Source states BTK inhibitors show promising effects on inflammatory activity and emerging signals on disability progression in MS."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "partly",
+   "reason": "Source mentions BTK inhibitors in Phase II-III development including fenebrutinib and tolebrutinib, but not specifically 'late development' or CNS penetration claims."
+  },
+  {
+   "sentence_id": "s11",
+   "verdict": "supported",
+   "reason": "Source RISK:btk:MS shows median 0.24 (24%) with n=8, matching the sentence's claims exactly."
+  },
+  {
+   "sentence_id": "s12",
+   "verdict": "unsupported",
+   "reason": "Source NCT04586010 doesn't mention evobrutinib setbacks or continued investment in the mechanism."
+  },
+  {
+   "sentence_id": "s13",
+   "verdict": "partly",
+   "reason": "BTK inhibitors are described as oral drugs acting on B cells and microglia, but source doesn't mention CNS penetration or comparison with anti-CD20 biologics."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s4",
+   "text": "Current development includes Phase 3 trials of fenebrutinib (Roche), remibrutinib (Novartis), and tolebrutinib (Sanofi), and Phase 2 studies of rocbrutinib (Lupeng) and orelabrutinib (Zenas).",
+   "reason": "Source only mentions fenebrutinib Phase 3 trial, not remibrutinib, tolebrutinib, rocbrutinib, or orelabrutinib trials."
+  },
+  {
+   "sentence_id": "s12",
+   "text": "Despite setbacks with evobrutinib, multiple BTK inhibitors remain in Phase 3 development, suggesting continued investment in the mechanism.",
+   "reason": "Source NCT04586010 doesn't mention evobrutinib setbacks or continued investment in the mechanism."
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 2,
+  "confidence_was": "medium"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 97006,
+ "tokens_out": 2545,
+ "cost_usd": 0.030948669999999998,
+ "data_date": "2026-11-11"
+}

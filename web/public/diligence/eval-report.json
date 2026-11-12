@@ -1,0 +1,24 @@
+{
+  "citation_validity": 1.0,
+  "unretrieved_removal_rate": 0.022727272727272728,
+  "support_rate": 0.5868263473053892,
+  "checker_agreement": null,
+  "judgement_shown_rate": 0.7777777777777778,
+  "cost_usd_mean": 0.017994120555555555,
+  "seconds_mean": 83.94444444444444,
+  "n_runs": 18,
+  "models": {
+    "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+    "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+    "checker": "deepseek.v3.2"
+  },
+  "agent_version": "0.1.0",
+  "generated_at": "2026-11-12T15:34:25Z",
+  "baseline": {
+    "citation_validity": 1.0,
+    "support_rate": 0.569620253164557,
+    "judgement_shown_rate": 0.6111111111111112,
+    "cost_usd_mean": 0.018009576666666666,
+    "seconds_mean": 86.55555555555556
+  }
+}

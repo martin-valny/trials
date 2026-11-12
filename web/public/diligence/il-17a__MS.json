@@ -1,0 +1,320 @@
+{
+ "run_id": "78803c3b41d54129a74421ca4bf1fb12",
+ "target": "il-17a",
+ "disease": "MS",
+ "fingerprint": "52141af5945e799565bcd7bf5433a6ae5380a5c89cd8fe8606719cf78b104635",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:47:26Z",
+ "finished_at": "2026-11-12T13:49:08Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: IL-17A · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "3 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT01874340",
+    "NCT01433250",
+    "NCT01051817"
+   ],
+   "ms": 341,
+   "tokens_in": 2083,
+   "tokens_out": 248
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 70,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT01433250"
+   ],
+   "ms": 223,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "3 registry trials (1 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT01433250",
+    "NCT01051817",
+    "NCT01874340"
+   ],
+   "ms": 153,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "0 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [],
+   "ms": 147,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "SECUKINUMAB: max phase 4, 1 mechanism",
+   "tool": "chembl_drug",
+   "ids": [
+    "CHEMBL1743068"
+   ],
+   "ms": 42145,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "IXEKIZUMAB: max phase 4, 1 mechanism",
+   "tool": "chembl_drug",
+   "ids": [
+    "CHEMBL1743034"
+   ],
+   "ms": 18603,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "8 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42876168",
+    "PMID:43011814",
+    "PMID:42544141",
+    "PMID:42630219",
+    "PMID:42688129",
+    "PMID:42816471",
+    "PMID:42984851",
+    "PMID:42401310"
+   ],
+   "ms": 5126,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:77c4b13e-7df3-42d4-81db-3d0cddb7f67a"
+   ],
+   "ms": 1214,
+   "tokens_in": 6529,
+   "tokens_out": 25
+  },
+  {
+   "n": 11,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7419,
+   "tokens_out": 147
+  },
+  {
+   "n": 12,
+   "kind": "write",
+   "text": "Memo written: 8 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 8088,
+   "tokens_out": 809
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Removed s8: cites RISK:il-17a:MS, not retrieved in this run",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 14,
+   "kind": "check",
+   "text": "checking 8 claims … 6 supported, 1 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3788,
+   "tokens_out": 873
+  },
+  {
+   "n": 15,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Three Phase 2 trials of IL-17A inhibition in multiple sclerosis have been conducted, all by Novartis using secukinumab (AIN457).",
+    "cites": [
+     "NCT01874340"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "One of the three trials was terminated early due to strategic development priorities, not safety concerns, with Novartis shifting to another anti-IL-17 antibody deemed to have better potential for MS.",
+    "cites": [
+     "NCT01874340"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "track_record",
+    "text": "Secukinumab has reached Phase 4 for psoriasis, psoriatic arthritis, and ankylosing spondylitis, but not for multiple sclerosis.",
+    "cites": [
+     "CHEMBL1743068"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Ixekizumab, another IL-17A inhibitor, has also reached Phase 4 for psoriasis and psoriatic arthritis but has not advanced in multiple sclerosis.",
+    "cites": [
+     "CHEMBL1743034"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "The FDA label for secukinumab includes no indication for multiple sclerosis and notes an increased risk of infections and candidiasis, with caution advised for inflammatory bowel disease.",
+    "cites": [
+     "FDA:77c4b13e-7df3-42d4-81db-3d0cddb7f67a"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 study in HLA-DR3 transgenic mice with EAE found that IL-17A is dispensable for brain-predominant disease in the absence of IFNγ, suggesting it may not be essential for all forms of neuroinflammation in MS models.",
+    "cites": [
+     "PMID:42876168"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "Recent literature indicates Th17 cells and IL-17A are involved in MS pathogenesis, but their necessity is unclear, with studies showing disease can develop in their absence depending on immune context.",
+    "cites": [
+     "PMID:43011814"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: IL-17A inhibition has been tested in three Phase 2 trials for MS with no advancement, and recent studies suggest it may not be essential in all neuroinflammatory contexts.",
+   "Competitive position: IL-17A inhibitors are approved for other autoimmune conditions but have not progressed in MS; development was deprioritized despite no major safety signals.",
+   "Open questions: Is IL-17A necessary for MS pathogenesis given evidence of disease in its absence? Could other Th17-related pathways be more critical?"
+  ],
+  "judgement": {
+   "stance": "against",
+   "confidence": "medium",
+   "reasons": [
+    "s1",
+    "s2",
+    "s6"
+   ]
+  },
+  "would_change": [
+   "New evidence of clinical efficacy in a Phase 2 or Phase 3 trial would change this judgement.",
+   "Stronger mechanistic evidence linking IL-17A directly to MS pathology in human-relevant models would support reconsideration."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source confirms three Phase 2 trials, all by Novartis using secukinumab for MS"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source confirms early termination due to development of another anti-IL-17 antibody with better potential for MS"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source shows Phase 4 for psoriasis, psoriatic arthritis, ankylosing spondylitis, and no MS indication"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "Source shows Phase 4 for psoriasis and psoriatic arthritis, with no MS indication mentioned"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Source shows no MS indication and mentions increased infection risk, candidiasis, and IBD caution"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source abstract states IL-17A is dispensable for brain-predominant EAE in absence of IFNγ"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Source confirms Th17/IL-17A involvement in MS but doesn't discuss necessity or disease development in their absence"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s8",
+   "text": "No stop-risk estimates are available from the site for IL-17A in MS.",
+   "reason": "cites RISK:il-17a:MS, not retrieved in this run"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 27907,
+ "tokens_out": 2102,
+ "cost_usd": 0.01199993,
+ "data_date": "2026-11-11"
+}
