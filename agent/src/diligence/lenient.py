@@ -12,13 +12,14 @@ _WRAPPER_KEYS = ("arguments", "input", "parameters")
 
 
 def json_from_text(content: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """The JSON object in the response's text blocks, if any (code fences allowed)."""
-    text = "".join(b.get("text", "") for b in content).strip()
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end <= start:
+    """The first JSON object in the response's text blocks, if any (code fences allowed)."""
+    text = "".join(b.get("text", "") for b in content)
+    start = text.find("{")
+    if start == -1:
         return None
     try:
-        value = json.loads(text[start : end + 1])
+        # The first complete object; trailing text (a stray brace, a closing fence) is ignored.
+        value, _ = json.JSONDecoder().raw_decode(text, start)
     except ValueError:
         return None
     return value if isinstance(value, dict) else None

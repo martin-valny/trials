@@ -42,3 +42,10 @@ def test_other_tools_and_plain_strings_are_left_alone() -> None:
         "arguments": {"a": 1},
     }
     assert decode_string_fields({"text": "plain", "n": "[oops"}) == {"text": "plain", "n": "[oops"}
+
+
+def test_trailing_junk_after_the_object_is_ignored() -> None:
+    """Qwen3 closed the clemastine/MS memo with a stray brace, then with ', "error": null}'."""
+    memo = {"sections": [], "read": ["a", "b", "c"]}
+    for tail in ("}", ', "error": null}', "\n```"):
+        assert tool_arguments([{"text": json.dumps(memo) + tail}], "submit_memo") == memo
