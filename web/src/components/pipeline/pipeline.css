@@ -37,7 +37,7 @@ main:has(> .pipeline), main:has(> .target-page) { max-width: none; width: 100%; 
 .seg button:hover { color: var(--ink); }
 .seg button.on { background: var(--ink); color: var(--plate); }
 /* Only the arrangement switch is ink-filled; the disease selection is quieter: tinted, with an ink underline. */
-.seg-dz button.on { background: var(--pale); color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 999px 999px 4px 4px; }
+.seg-dz button.on { background: var(--pale); color: var(--ink); font-weight: 700; border-radius: 999px; }
 .find { position: relative; display: flex; align-items: center; gap: 8px; border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; min-width: 240px; color: var(--muted); font-size: 13px; }
 .find input { border: 0; background: none; outline: none; font: inherit; color: var(--ink); width: 100%; }
 .find:focus-within { border-color: var(--ink); }
