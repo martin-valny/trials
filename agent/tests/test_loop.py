@@ -513,6 +513,12 @@ def test_sink_receives_steps_as_they_happen(ctx: ToolContext) -> None:
         ("site_risk", {"trials": [{}, {}]}, None, "Stop-risk estimates for 2 running trials"),
         (
             "site_risk",
+            {"summary": {"median": 0.244, "n": 14}, "per_trial": False},
+            None,
+            "Stop-risk summary: median 24% across 14 running trials",
+        ),
+        (
+            "site_risk",
             {"note": "Stop-risk estimates unavailable"},
             None,
             "Stop-risk estimates unavailable",

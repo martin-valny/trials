@@ -195,14 +195,23 @@ def site_risk(target: str, disease: str, *, base_url: str, http: httpx.Client) -
             for m in marks
             if (s := scored.get(m["n"]))
         ]
-        if not trials:
-            return ToolResult(name="site_risk", args=args, data=note)
         target_summary = (risk.get("targets") or {}).get(target) or {}
         summary = (
             target_summary.get("all")
             if disease == "all"
             else (target_summary.get("by_disease") or {}).get(disease)
         )
+        if not trials:
+            if summary and "trials" not in risk:
+                # Per-trial estimates are switched off on the site (risk.per_trial: false): only
+                # the target's summary is published, so that is all the agent may use.
+                data = {
+                    "summary": summary,
+                    "per_trial": False,
+                    "generated_for": risk.get("generated_for"),
+                }
+                return ToolResult(name="site_risk", args=args, data=data)
+            return ToolResult(name="site_risk", args=args, data=note)
         data = {"trials": trials, "summary": summary, "generated_for": risk.get("generated_for")}
         return ToolResult(name="site_risk", args=args, data=data, ids=[t["nct"] for t in trials])
     except (ToolError, ValueError, KeyError, TypeError) as exc:

@@ -47,6 +47,24 @@ def test_site_risk_happy(make_http: Callable[..., httpx.Client]) -> None:
     assert res.data["summary"]["n"] == 14
 
 
+def test_site_risk_summary_only_when_per_trial_is_off(
+    make_http: Callable[..., httpx.Client],
+) -> None:
+    risk = fixture("site/risk.json")
+    risk.pop("trials")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("risk.json"):
+            return httpx.Response(200, json=risk)
+        return _site_handler(request)
+
+    res = site_risk("cd20", "MS", base_url=BASE, http=make_http(handler))
+    assert res.error is None and res.ids == []
+    assert res.data["per_trial"] is False
+    assert res.data["summary"]["n"] == 14
+    assert "trials" not in res.data
+
+
 def test_site_risk_missing_file_note(make_http: Callable[..., httpx.Client]) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith("risk.json"):

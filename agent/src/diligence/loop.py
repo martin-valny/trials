@@ -68,6 +68,11 @@ def summary_line(result: ToolResult) -> str:
             )
         case "site_risk":
             if "trials" not in d:
+                if summary := d.get("summary"):
+                    return (
+                        f"Stop-risk summary: median {round(summary['median'] * 100)}% across "
+                        f"{_plural(summary['n'], 'running trial')}"
+                    )
                 return str(note or "Stop-risk estimates unavailable")
             return f"Stop-risk estimates for {_plural(len(d['trials']), 'running trial')}"
         case "registry_search":
