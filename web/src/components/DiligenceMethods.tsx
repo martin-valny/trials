@@ -130,8 +130,9 @@ export function DiligenceMethods() {
         sources, rounded or to one decimal (24% or 24.4% for 0.244). A cited record&apos;s sources include the totals and
         summaries of the search that returned it. A sentence that fails is removed. Then a second model gives each remaining
         sentence a verdict: supported, partly supported or unsupported. Unsupported sentences are removed from the memo and
-        listed, with the reason, under &ldquo;Removed by the checker&rdquo;. A judgement is shown only when every reason
-        behind it is supported; otherwise the page says it is withheld. The three-line Read and &ldquo;What would change this
+        listed, with the reason, under &ldquo;Removed by the checker&rdquo;. A judgement is shown when every reason
+        behind it is supported, or when at least two are: then the failed reasons are dropped, the confidence is lowered one
+        level for each, and the page says so. With fewer than two supported reasons the page says it is withheld. The three-line Read and &ldquo;What would change this
         view&rdquo; are summaries, not checked by the second model: an identifier in them that the run did not retrieve is
         replaced by &ldquo;[reference removed]&rdquo;. Text from tools, such as abstracts and registry fields,
         is untrusted data: it is passed to the model as data and the instructions say never to follow it.
