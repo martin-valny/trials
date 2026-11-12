@@ -64,14 +64,26 @@ test("dark theme: no console errors and the canvas is not blank", async ({ page 
   const button = page.getByRole("button", { name: /^theme:/i });
   for (let i = 0; i < 3 && !/theme: dark/i.test((await button.getAttribute("aria-label")) ?? (await button.innerText())); i++) await button.click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.waitForTimeout(1500);
-  const differs = await page.locator(".intro-canvas canvas").evaluate((c: HTMLCanvasElement) => {
-    const ctx = c.getContext("2d")!;
-    const d = ctx.getImageData(0, 0, c.width, c.height).data;
-    const bg = [d[0], d[1], d[2], d[3]];
-    for (let i = 0; i < d.length; i += 4) if (d[i] !== bg[0] || d[i + 1] !== bg[1] || d[i + 2] !== bg[2] || d[i + 3] !== bg[3]) return true;
-    return false;
+  // The dark plate is in force: the page background is the dark --plate token.
+  const plate = await page.evaluate(() => {
+    const el = document.createElement("div");
+    el.style.color = "var(--plate)";
+    document.body.appendChild(el);
+    const c = getComputedStyle(el).color;
+    el.remove();
+    return { token: c, body: getComputedStyle(document.body).backgroundColor };
   });
-  expect(differs).toBe(true);
+  expect(plate.body).toBe(plate.token);
+  const rgb = (plate.token.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+  expect(rgb.length).toBe(3);
+  expect(Math.max(...rgb)).toBeLessThan(128);
+  // Some opaque canvas pixel differs from the plate (a transparent or plate-only canvas fails).
+  await expect.poll(() => page.locator(".intro-canvas canvas").evaluate((c: HTMLCanvasElement, p: number[]) => {
+    const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] > 200 && (Math.abs(d[i] - p[0]) > 8 || Math.abs(d[i + 1] - p[1]) > 8 || Math.abs(d[i + 2] - p[2]) > 8)) return true;
+    }
+    return false;
+  }, rgb), { timeout: 5000 }).toBe(true);
   expect(errors).toEqual([]);
 });

@@ -82,7 +82,7 @@ test("/mechanisms/targeted redirects to /approaches/targeted", async ({ page }) 
 
 test("no horizontal overflow on the front door and a target page at phone width", async ({ page }, info) => {
   test.skip(info.project.name !== "mobile", "phone width only");
-  for (const route of ["/", "/#/target/cd20"]) {
+  for (const route of ["/", "/#/pipeline", "/#/target/cd20"]) {
     await page.goto(route);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");
