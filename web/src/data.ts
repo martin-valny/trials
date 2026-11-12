@@ -1,5 +1,5 @@
 import { normalizeFile } from "./lib/explorer";
-import type { ChangesFile, ExplorerFile, GraphFile, Meta, PipelineFile, RiskFile, TrialFile, TrialsIndex, Window } from "./types";
+import type { ChangesFile, ExplorerFile, GraphFile, IntroFile, Meta, PipelineFile, RiskFile, TrialFile, TrialsIndex, Window } from "./types";
 
 const base = (): string => import.meta.env.BASE_URL + "data/";
 
@@ -32,3 +32,20 @@ export const loadPipeline = (): Promise<PipelineFile | null> => fetchJson<Pipeli
 
 /** The stop-risk estimates (risk.json); null when the refresh did not write it. */
 export const loadRisk = (): Promise<RiskFile | null> => fetchJson<RiskFile>("risk.json");
+
+const INTRO_COLUMNS = ["id", "x", "y", "outcome", "approaches", "start", "dz", "marks", "risk", "change"] as const;
+
+/** True when raw has the intro.json shape: every trials column present and as long as `id`. */
+export function isIntroFile(raw: unknown): raw is IntroFile {
+  if (typeof raw !== "object" || raw === null) return false;
+  const f = raw as Record<string, unknown>;
+  if (!Array.isArray(f.approaches) || !Array.isArray(f.rows)) return false;
+  const t = f.trials as Record<string, unknown> | null | undefined;
+  if (typeof t !== "object" || t === null) return false;
+  const n = Array.isArray(t.id) ? t.id.length : -1;
+  return n >= 0 && INTRO_COLUMNS.every((k) => Array.isArray(t[k]) && (t[k] as unknown[]).length === n);
+}
+
+/** The intro page's dots (intro.json); null when missing or malformed. */
+export const loadIntro = (): Promise<IntroFile | null> =>
+  fetchJson<unknown>("intro.json").then((f) => (isIntroFile(f) ? f : null));
