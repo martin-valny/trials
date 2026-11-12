@@ -63,7 +63,7 @@ test("hovering Watchlist sets the caption; leaving the list releases", async () 
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Watchlist/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Watchlist/ }));
   expect(screen.getByText(/Running trials by their estimated chance of stopping early/)).toBeInTheDocument();
   expect(screen.getByText(/c Watchlist\./)).toBeInTheDocument();
   expect(screen.queryByText(/Touring the/)).not.toBeInTheDocument();
@@ -82,7 +82,7 @@ test("clicking Approaches goes to /approaches", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.click(within(list).getByRole("button", { name: /Approaches/ }));
+  fireEvent.click(within(list).getByRole("link", { name: /Approaches/ }));
   expect(screen.getByTestId("where").textContent).toBe("/approaches");
 });
 
@@ -92,12 +92,12 @@ test("each view has its own key", async () => {
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
   expect(screen.getByText("moved on")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Approaches/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Approaches/ }));
   expect(screen.getByText("More than one approach")).toBeInTheDocument();
   expect(screen.getByText("Broad immunomodulators")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Changes/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Changes/ }));
   expect(screen.getByText("notable")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Watchlist/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Watchlist/ }));
   expect(screen.getByText("typical rate")).toBeInTheDocument();
 });
 
@@ -121,7 +121,7 @@ test("phone: first tap holds and offers an Open link, a tap on the active pill n
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  const pill = within(list).getByRole("button", { name: /Watchlist/ });
+  const pill = within(list).getByRole("link", { name: /Watchlist/ });
   fireEvent.click(pill);
   expect(screen.getByTestId("where").textContent).toBe("/");
   expect(screen.getByRole("link", { name: "Open Watchlist →" })).toHaveAttribute("href", "/watchlist");
@@ -149,7 +149,7 @@ test("the Pipeline caption says Orange in dark and Red in light", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Pipeline/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Pipeline/ }));
   expect(screen.getByText(/Orange ones moved on to the next phase/)).toBeInTheDocument();
   expect(screen.queryByText(/Red ones moved on/)).not.toBeInTheDocument();
 });
@@ -159,6 +159,57 @@ test("the approaches note is a line of the key, not canvas text", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("button", { name: /Approaches/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Approaches/ }));
   expect(screen.getByText(/Trials in several approaches are under More than one/)).toBeInTheDocument();
+});
+
+test("while loading, no number word and no letters are shown, then six with no re-lettering", async () => {
+  stubFetch({ ...OPEN_INDEX });
+  show();
+  // First paint: nothing guessed.
+  const h1 = screen.getByRole("heading", { level: 1 });
+  expect(h1).not.toHaveTextContent(/Five|Six/);
+  expect(h1.querySelector(".intro-hold")).toHaveAttribute("aria-hidden", "true");
+  expect(screen.queryByRole("list", { name: "The views" })).not.toBeInTheDocument();
+  const seen: string[] = [];
+  const watch = new MutationObserver(() => {
+    const list = screen.queryByRole("list", { name: "The views" });
+    if (list) seen.push(Array.from(list.querySelectorAll("em")).map((e) => e.textContent).join(""));
+    const t = h1.textContent ?? "";
+    if (/ways/.test(t)) seen.push(t);
+  });
+  watch.observe(document.body, { childList: true, subtree: true, characterData: true });
+  await waitFor(() => expect(within(screen.getByRole("list", { name: "The views" })).getAllByRole("listitem")).toHaveLength(6));
+  await waitFor(() => expect(h1).toHaveTextContent("Six ways"));
+  watch.disconnect();
+  expect(seen.filter((x) => /^[a-h]+$/.test(x))).not.toContain("abcde");
+  expect(seen.filter((x) => /ways/.test(x)).every((x) => x.includes("Six"))).toBe(true);
+});
+
+test("a view's item is a link: focus holds the view, Enter's target is its page, modifier-click is left to the browser", async () => {
+  stubFetch(OPEN_INDEX);
+  show();
+  const list = await screen.findByRole("list", { name: "The views" });
+  await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
+  const link = within(list).getByRole("link", { name: /Watchlist/ });
+  expect(link).toHaveAttribute("href", "/watchlist");
+  expect(link.querySelector(".go")).toHaveAttribute("aria-hidden", "true");
+  fireEvent.focus(link);
+  expect(screen.getByText(/c Watchlist\./)).toBeInTheDocument();
+  expect(screen.queryByText(/Touring the/)).not.toBeInTheDocument();
+  fireEvent.blur(link);
+  expect(screen.getByText(/Touring the six views/)).toBeInTheDocument();
+  fireEvent.click(link);
+  expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+});
+
+test("the Trials key says how many trials have no start date", async () => {
+  const fx = JSON.parse(JSON.stringify((await import("./helpers")).readFixture("intro.json")));
+  fx.trials.start[0] = null;
+  stubFetch({ ...OPEN_INDEX, "intro.json": fx });
+  show();
+  const list = await screen.findByRole("list", { name: "The views" });
+  await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Trials/ }));
+  expect(screen.getByText("1 trial without a start date is not shown")).toBeInTheDocument();
 });

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { loadIntro, loadMeta } from "../../data";
 import { useDiligenceRelease } from "../../lib/diligenceRelease";
 import { captionText, VIEW_TEXT, visibleViews, type ViewKey } from "../../lib/intro";
@@ -33,11 +33,12 @@ function useIntro(): IntroLoad {
   return load;
 }
 
-function useMeta(): Meta | null {
-  const [meta, setMeta] = useState<Meta | null>(null);
+/** undefined while loading, null when it could not be read. */
+function useMeta(): Meta | null | undefined {
+  const [meta, setMeta] = useState<Meta | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    loadMeta().then((m) => live && setMeta(m)).catch(() => undefined);
+    loadMeta().then((m) => live && setMeta(m)).catch(() => live && setMeta(null));
     return () => { live = false; };
   }, []);
   return meta;
@@ -58,13 +59,12 @@ function useHeaderHeight(ref: React.RefObject<HTMLElement | null>) {
 
 export function IntroPage() {
   const root = useRef<HTMLDivElement>(null);
-  const nav = useNavigate();
-  const phone = useMediaQuery(PHONE_QUERY);
+    const phone = useMediaQuery(PHONE_QUERY);
   const { theme } = useTheme();
   const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
   const meta = useMeta();
   const intro = useIntro();
-  const { pairs } = useDiligenceRelease();
+  const { release, pairs } = useDiligenceRelease();
   const file = intro.s === "ready" ? intro.file : null;
   useHeaderHeight(root);
 
@@ -77,12 +77,21 @@ export function IntroPage() {
   const active = keys.includes(tour.active) ? tour.active : "all";
   const letter = (k: ViewKey) => (k === "all" ? "" : LETTERS[listed.indexOf(k)]);
   const text = VIEW_TEXT[active];
+  // The count of views and their letters are known only once intro.json and the diligence index have settled;
+  // until then the headline and the list reserve their space instead of showing a guess that re-letters.
+  const settled = intro.s !== "loading" && release !== "pending";
+  const headReady = meta !== undefined;
   const area = meta?.area_label ?? "";
   const count = meta ? meta.trial_count.toLocaleString("en-GB") : "";
+  const lead = meta ? `${count} clinical trials in ${area}.` : "Clinical trials.";
+  const tail = settled ? `${WORDS[listed.length] ?? listed.length} ways to look at them.` : "";
 
-  const tapPill = (k: ViewKey) => {
-    if (tour.held && active === k) nav(VIEW_TEXT[k].to);
-    else tour.hold(k);
+  /** Phone: the first tap on a pill holds its view; a tap on the held one follows the link. Desktop: the link just opens. */
+  const onPill = (e: React.MouseEvent, k: ViewKey) => {
+    if (phone && !(tour.held && active === k)) {
+      e.preventDefault();
+      tour.hold(k);
+    }
   };
 
   return (
@@ -90,29 +99,41 @@ export function IntroPage() {
       <div className="intro-head">
         <div>
           <h1 className="intro-h1">
-            <b>{meta ? `${count} clinical trials in ${area}.` : "Clinical trials."}</b> {WORDS[listed.length] ?? listed.length} ways to look at them.
+            {headReady ? (
+              <><b>{lead}</b> {tail}</>
+            ) : (
+              <span className="intro-hold" aria-hidden="true">0,000 clinical trials in the area. Xxxx ways to look at them.</span>
+            )}
           </h1>
         </div>
         <Link className="intro-btn" to="/pipeline">Open the pipeline →</Link>
       </div>
       <div className="intro-body">
-        <ol className="intro-list" aria-label="The views" onMouseLeave={() => { if (!phone) tour.release(); }}>
-          {listed.map((k) => (
-            <li key={k}>
-              <button
-                type="button"
-                className={k === active ? "on" : ""}
-                aria-current={k === active ? "true" : undefined}
-                onMouseEnter={() => { if (!phone) tour.hold(k); }}
-                onFocus={() => { if (!phone) tour.hold(k); }}
-                onBlur={() => { if (!phone) tour.release(); }}
-                onClick={() => (phone ? tapPill(k) : nav(VIEW_TEXT[k].to))}
-              >
-                <em>{letter(k)}</em><span className="nm">{VIEW_TEXT[k].name}</span><span className="go">Open →</span>
-              </button>
-            </li>
-          ))}
-        </ol>
+        {settled ? (
+          <ol className="intro-list" aria-label="The views" onMouseLeave={() => { if (!phone) tour.release(); }}>
+            {listed.map((k) => (
+              <li key={k}>
+                <Link
+                  to={VIEW_TEXT[k].to}
+                  className={k === active ? "on" : ""}
+                  aria-current={k === active ? "true" : undefined}
+                  onMouseEnter={() => { if (!phone) tour.hold(k); }}
+                  onFocus={() => { if (!phone) tour.hold(k); }}
+                  onBlur={() => { if (!phone) tour.release(); }}
+                  onClick={(e) => onPill(e, k)}
+                >
+                  <em>{letter(k)}</em><span className="nm">{VIEW_TEXT[k].name}</span><span className="go" aria-hidden="true">Open →</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ol className="intro-list intro-hold" aria-hidden="true">
+            {FALLBACK.filter((k) => k !== "all").map((k) => (
+              <li key={k}><a><em>&nbsp;</em><span className="nm">&nbsp;</span></a></li>
+            ))}
+          </ol>
+        )}
         <div className="intro-fig">
           <p className="intro-cap">
             <b>{letter(active) ? `${letter(active)} ` : ""}{text.name}.</b> {captionText(active, theme)}
@@ -128,7 +149,7 @@ export function IntroPage() {
           </div>
           <div className="intro-key">
             <IntroKey view={active} file={file} />
-            {!phone && !reduced && !tour.held && file && <span className="intro-note">Touring the {WORDS[listed.length].toLowerCase()} views · hover one to hold it</span>}
+            {!phone && !reduced && !tour.held && file && <span className="intro-note">Touring the {(WORDS[listed.length] ?? String(listed.length)).toLowerCase()} views · hover one to hold it</span>}
           </div>
         </div>
       </div>

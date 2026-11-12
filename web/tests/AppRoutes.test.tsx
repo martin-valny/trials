@@ -61,6 +61,20 @@ test("/?view=year lands on /pipeline?view=year", async () => {
   await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/pipeline?view=year"));
 });
 
+test("/?view=disease&company=Other%20Co lands on /pipeline with the whole query", async () => {
+  stubFetch();
+  go("/?view=disease&company=Other%20Co");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/pipeline?view=disease&company=Other%20Co"));
+});
+
+test("the nav marks Pipeline as the current page on /pipeline", async () => {
+  stubFetch();
+  go("/pipeline");
+  const nav = screen.getByRole("navigation", { name: "Main" });
+  expect(within(nav).getByRole("link", { name: "Pipeline" })).toHaveAttribute("aria-current", "page");
+  expect(within(nav).getByRole("link", { name: "Watchlist" })).not.toHaveAttribute("aria-current");
+});
+
 test("/pipeline renders the pipeline figure", async () => {
   stubFetch();
   go("/pipeline");

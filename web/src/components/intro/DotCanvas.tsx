@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildViews, type DotTarget, type IntroView, type Paint, type ViewKey, type ViewLabel } from "../../lib/intro";
+import { AP_TOKEN, buildDiligenceView, buildViews, type DotTarget, type IntroView, type Paint, type ViewKey, type ViewLabel } from "../../lib/intro";
 import type { RecordedPair } from "../../lib/diligenceRelease";
 import type { IntroFile } from "../../types";
 import "./intro.css";
@@ -12,8 +12,8 @@ const LABEL_AT = 700;
 const LABEL_FADE = 400;
 const SETTLE_MS = Math.max(MOVE_MS + STAGGER_MS, LABEL_AT + LABEL_FADE);
 const RINGS = new Set<Paint>(["run", "unk", "changed-ring", "multi"]);
-const AP_TOKEN: Record<string, string> = { targeted: "--run", cell: "--ap-cell", plasma: "--ap-plasma", tolerisation: "--ap-tolerisation", diffuse: "--ap-diffuse", nondrug: "--ap-nondrug", unclassified: "--fin" };
 const PAINT_TOKEN: Record<string, string> = { adv: "--red", run: "--run", stop: "--stop", fin: "--fin", unk: "--unk", ghost: "--fin", changed: "--ink", "changed-ring": "--ink", multi: "--ink" };
+const RESIZE_DEBOUNCE_MS = 100;
 const FONT = (weight: number, size: number) => `${weight} ${size}px "Hanken Grotesk", system-ui, sans-serif`;
 
 const ease = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
@@ -73,17 +73,28 @@ export function DotCanvas({ file, pairs, active, reduced, label }: { file: Intro
   const wrap = useRef<HTMLDivElement>(null);
   const cvs = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const views = useMemo(() => (size.w > 0 && size.h > 0 ? buildViews(file, pairs, size.w, size.h) : null), [file, pairs, size]);
+  const settle = useRef(0);
+  const sized = useRef(false);
+  // Layouts depend on file and size; only Diligence also depends on the pairs, so a pairs change rebuilds just that view.
+  const base = useMemo(() => (size.w > 0 && size.h > 0 ? buildViews(file, [], size.w, size.h) : null), [file, size]);
+  const diligence = useMemo(() => (size.w > 0 && size.h > 0 ? buildDiligenceView(file, pairs, size.w, size.h) : null), [file, pairs, size]);
+  const views = useMemo(() => (base && diligence ? { ...base, diligence } : null), [base, diligence]);
   const anim = useRef<{ cur: Pos[]; from: Pos[]; t0: number; view: ViewKey } | null>(null);
 
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
-    const set = (w: number, h: number) => setSize((s) => (s.w === Math.floor(w) && s.h === Math.floor(h) ? s : { w: Math.floor(w), h: Math.floor(h) }));
+    const apply = (w: number, h: number) => setSize((s) => (s.w === Math.floor(w) && s.h === Math.floor(h) ? s : { w: Math.floor(w), h: Math.floor(h) }));
+    // The first size lands at once; later ones wait for the resize to settle, the dots staying where they are meanwhile.
+    const set = (w: number, h: number) => {
+      window.clearTimeout(settle.current);
+      if (sized.current) settle.current = window.setTimeout(() => apply(w, h), RESIZE_DEBOUNCE_MS);
+      else { sized.current = true; apply(w, h); }
+    };
     if (typeof ResizeObserver !== "function") { set(el.clientWidth, el.clientHeight); return; }
     const ro = new ResizeObserver(([e]) => e && set(e.contentRect.width, e.contentRect.height));
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); window.clearTimeout(settle.current); };
   }, []);
 
   // A new view or layout starts a transition from wherever the dots are now.

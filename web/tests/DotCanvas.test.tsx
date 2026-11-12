@@ -20,7 +20,11 @@ const step = (at: number = performance.now()) =>
 const resize = (w: number, h: number) =>
   act(() => sizeCb?.([{ contentRect: { width: w, height: h } } as ResizeObserverEntry], {} as ResizeObserver));
 
+/** The first size lands at once; later ones wait out the 100 ms debounce. */
+const settle = () => act(() => { vi.advanceTimersByTime(150); });
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   frames = [];
   fills = [];
   arcs = [];
@@ -46,6 +50,7 @@ beforeEach(() => {
   document.documentElement.style.cssText = "--red: #c8102e; --ink: #111; --muted: #5b6268; --run: #3c5488; --stop: #222; --fin: #c9d1d8; --unk: #aab3bb;";
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.documentElement.removeAttribute("style");
@@ -93,10 +98,25 @@ test("a resize mid-transition re-targets from the current positions, not from (0
   const mid = arcs.slice(-file.trials.id.length).map((a) => ({ ...a }));
   arcs = [];
   resize(500, 380);
+  settle();
   step();
   const first = arcs.slice(0, file.trials.id.length);
   expect(first.some((p) => p.x === 0 && p.y === 0)).toBe(false);
   expect(Math.max(...first.map((p, i) => Math.hypot(p.x - mid[i].x, p.y - mid[i].y)))).toBeLessThan(60);
+});
+
+test("a burst of resizes waits for the debounce and keeps the dots where they are meanwhile", () => {
+  render(<DotCanvas {...props} />);
+  resize(600, 400);
+  step();
+  arcs = [];
+  resize(500, 380);
+  resize(450, 360);
+  step();
+  expect(arcs.length).toBe(0);
+  settle();
+  step();
+  expect(arcs.length).toBeGreaterThan(0);
 });
 
 test("the loop stops scheduling frames once the transition and label fade are done", () => {
@@ -120,6 +140,7 @@ test("token lookups per frame are per distinct paint, not per dot", () => {
   frames.length = 0;
   document.documentElement.dataset.theme = "dark";
   act(() => { resize(601, 400); });
+  settle();
   spy.mockClear();
   step();
   expect(spy.mock.calls.length).toBeGreaterThan(0);

@@ -23,6 +23,9 @@ export const VIEW_TEXT: Record<ViewKey, { name: string; to: string; caption: str
   trials: { name: "Trials", to: "/trials", caption: "Every trial by the year it started. Open any one for its full record and history." },
 };
 
+/** Approach key -> colour token (read per frame by the canvas, and by the key's swatches). */
+export const AP_TOKEN: Record<string, string> = { targeted: "--run", cell: "--ap-cell", plasma: "--ap-plasma", tolerisation: "--ap-tolerisation", diffuse: "--ap-diffuse", nondrug: "--ap-nondrug", unclassified: "--fin" };
+
 const MULTI_LABEL = "More than one approach";
 export const APPROACH_NOTE = "Trials in several approaches are under More than one; the Approaches page counts them in each.";
 const GOLDEN = 2.39996;
@@ -51,11 +54,27 @@ export function introPairs(file: IntroFile, pairs: RecordedPair[]): RecordedPair
   });
 }
 
+/** Spatial-hash key; positions stay within a few cells of the canvas, so the offsets keep both parts positive. */
+const cellKey = (gx: number, gy: number) => (gx + 4096) * 8192 + (gy + 4096);
+
+let cloudRuns = 0;
+/** How many times cloudPositions has actually run (tests: a pairs-only change must not recompute the cloud). */
+export const cloudRunCount = () => cloudRuns;
+let cloudHeld: { file: IntroFile; w: number; h: number; cloud: { x: number; y: number }[] } | null = null;
+/** The resting cloud for this file and canvas size, kept for the last one asked (views for new pairs reuse it). */
+export function cloudFor(file: IntroFile, w: number, h: number): { x: number; y: number }[] {
+  if (cloudHeld && cloudHeld.file === file && cloudHeld.w === w && cloudHeld.h === h) return cloudHeld.cloud;
+  const cloud = cloudPositions(file, w, h);
+  cloudHeld = { file, w, h, cloud };
+  return cloud;
+}
+
 /** Explorer x/y at rest: 1st-99th percentile box scaled to 0.82 of the fit, then collision relaxation on a spatial hash. */
 export function cloudPositions(file: IntroFile, w: number, h: number): { x: number; y: number }[] {
   const { x, y } = file.trials;
   const n = x.length;
   if (n === 0) return [];
+  cloudRuns++;
   const q = (a: number[], p: number) => [...a].sort((u, v) => u - v)[Math.floor(p * (a.length - 1))];
   const [x0, x1, y0, y1] = [q(x, 0.01), q(x, 0.99), q(y, 0.01), q(y, 0.99)];
   const sc = Math.min((w * 0.92) / Math.max(1e-9, x1 - x0), (h * 0.9) / Math.max(1e-9, y1 - y0));
@@ -63,16 +82,16 @@ export function cloudPositions(file: IntroFile, w: number, h: number): { x: numb
   const pts = x.map((_, i) => ({ x: w / 2 + (x[i] - cx) * sc * 0.82, y: h / 2 - (y[i] - cy) * sc * 0.82 }));
   const md = clamp(Math.sqrt((0.3 * w * h) / n), 4, 7);
   for (let it = 0; it < 60; it++) {
-    const grid = new Map<string, number[]>();
+    const grid = new Map<number, number[]>();
     pts.forEach((p, i) => {
-      const k = `${Math.floor(p.x / md)},${Math.floor(p.y / md)}`;
+      const k = cellKey(Math.floor(p.x / md), Math.floor(p.y / md));
       const cell = grid.get(k);
       if (cell) cell.push(i);
       else grid.set(k, [i]);
     });
     pts.forEach((p, i) => {
       const [gx, gy] = [Math.floor(p.x / md), Math.floor(p.y / md)];
-      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (const j of grid.get(`${gx + dx},${gy + dy}`) ?? []) {
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (const j of grid.get(cellKey(gx + dx, gy + dy)) ?? []) {
         if (j <= i) continue;
         const o = pts[j];
         let [vx, vy] = [o.x - p.x, o.y - p.y];
@@ -278,6 +297,8 @@ const BINS: { key: ChangeBin; label: string }[] = [
   { key: "dates", label: "Dates" }, { key: "status", label: "Status" }, { key: "sites", label: "Sites & countries" },
   { key: "enrollment", label: "Enrollment" }, { key: "outcomes", label: "Outcomes" }, { key: "other", label: "Other details" },
 ];
+/** An unknown change bin is an unclassified detail, not a date change. */
+const binIndex = (key: string) => { const k = BINS.findIndex((b) => b.key === key); return k >= 0 ? k : BINS.length - 1; };
 const SLIP = "date_slip_ge_90d";
 
 function changesView(file: IntroFile, w: number, h: number): IntroView {
@@ -288,7 +309,7 @@ function changesView(file: IntroFile, w: number, h: number): IntroView {
   for (let i = 0; i < n; i++) dots[i] = { x: (i % gper) * gs + gs / 2, y: gy + Math.floor(i / gper) * gs + gs / 2, a: 0.28, r: Math.min(1.6, gs * 0.3), paint: "fin" };
   const members = BINS.map(() => [] as { i: number; reason: string | null }[]);
   file.trials.change.forEach((c, i) => {
-    if (c) members[Math.max(0, BINS.findIndex((b) => b.key === c[0]))].push({ i, reason: c[1] });
+    if (c) members[binIndex(c[0])].push({ i, reason: c[1] });
   });
   const total = members.reduce((a, m) => a + m.length, 0);
   // Six bins in a row need about 120px each for their longest line ("6 slipped 90+ days"); below that, three by two.
@@ -331,31 +352,36 @@ function changesView(file: IntroFile, w: number, h: number): IntroView {
     if (m.length > cap) line(`+${m.length - cap} more`);
   });
   if (pl.summary) {
-    const full = `${total} of ${num(n)} trials changed in the last 7 days · solid = flagged as notable`;
-    const text = total ? (narrow ? `${total} of ${num(n)} trials changed in the last 7 days` : full) : "No changes in the last 7 days";
+    const full = `${num(total)} of ${num(n)} trials changed in the last 7 days · solid = flagged as notable`;
+    const text = total ? (narrow ? `${num(total)} of ${num(n)} trials changed in the last 7 days` : full) : "No changes in the last 7 days";
     labels.push({ text, x: 0, y: gy - 10, size: 12, tone: "muted", maxW: w, maxLines: 1 });
   }
   return { dots, labels, rules: [] };
 }
 
-function trialsView(file: IntroFile, w: number, h: number): IntroView {
+/** Trials with no start date: the Trials view leaves them as ghosts, and the key says so. */
+export const undatedCount = (file: IntroFile): number => file.trials.start.filter((y) => y === null || y === undefined).length;
+export const undatedNote = (n: number): string => `${num(n)} trial${n > 1 ? "s" : ""} without a start date ${n > 1 ? "are" : "is"} not shown`;
+
+function trialsView(file: IntroFile, rest: (i: number) => DotTarget, w: number, h: number): IntroView {
   const n = file.trials.id.length;
   const y0 = 1995, y1 = (Number(file.generated_for.slice(0, 4)) || new Date().getFullYear()) + 1;
   // Narrow canvases use two-year columns; years before 1995 fold into the first column, labelled "≤1995".
   const span = w < NARROW ? 2 : 1;
   const cols = Math.ceil((y1 - y0 + 1) / span), colW = w / cols, base = h - 40;
   const yearOf = (i: number) => clamp(file.trials.start[i] ?? y0, y0, y1);
+  const dated = (i: number) => file.trials.start[i] !== null && file.trials.start[i] !== undefined;
   const colOf = (yr: number) => Math.floor((yr - y0) / span);
   const counts = new Map<number, number>();
-  for (let i = 0; i < n; i++) counts.set(colOf(yearOf(i)), (counts.get(colOf(yearOf(i))) ?? 0) + 1);
+  for (let i = 0; i < n; i++) if (dated(i)) counts.set(colOf(yearOf(i)), (counts.get(colOf(yearOf(i))) ?? 0) + 1);
   // Dots per row so that the horizontal pitch and the vertical step come out about equal (no streaks).
   const tallest = Math.max(1, ...counts.values());
   const per = clamp(Math.round(Math.sqrt((colW * tallest) / Math.max(1, base - 10))), 1, Math.max(1, Math.floor(colW / 2.2)));
   const s = Math.min(colW / per, (base - 10) / Math.ceil(tallest / per));
   const rank: Record<Outcome, number> = { succeeded: 0, stopped: 1, running: 2, completed_unknown: 3, unknown: 3 };
-  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => rank[file.trials.outcome[a]] - rank[file.trials.outcome[b]]);
+  const order = Array.from({ length: n }, (_, i) => i).filter(dated).sort((a, b) => rank[file.trials.outcome[a]] - rank[file.trials.outcome[b]]);
   const next = new Map<number, number>();
-  const dots: DotTarget[] = new Array(n);
+  const dots: DotTarget[] = Array.from({ length: n }, (_, i) => rest(i));
   for (const i of order) {
     const cj = colOf(yearOf(i)), c = next.get(cj) ?? 0;
     next.set(cj, c + 1);
@@ -372,7 +398,7 @@ export function buildViewsRaw(file: IntroFile, pairs: RecordedPair[], w: number,
     const flat = (): IntroView => ({ dots: file.trials.id.map(() => ({ x: 0, y: 0, a: 0.035, r: 1.4, paint: "ghost" as const })), labels: [], rules: [] });
     return { all: flat(), pipeline: flat(), diligence: flat(), watchlist: flat(), approaches: flat(), changes: flat(), trials: flat() };
   }
-  const cloud = cloudPositions(file, w, h);
+  const cloud = cloudFor(file, w, h);
   const rest = (i: number): DotTarget => ({ ...cloud[i], a: 0.035, r: 1.4, paint: "ghost" });
   const views: Record<ViewKey, IntroView> = {
     all: { dots: cloud.map((p, i) => ({ ...p, a: 0.95, r: file.trials.outcome[i] === "succeeded" ? 2.9 : 2.2, paint: paintOf(file, i) })), labels: [], rules: [] },
@@ -381,7 +407,7 @@ export function buildViewsRaw(file: IntroFile, pairs: RecordedPair[], w: number,
     watchlist: watchlistView(file, rest, w, h),
     approaches: approachesView(file, w, h),
     changes: changesView(file, w, h),
-    trials: trialsView(file, w, h),
+    trials: trialsView(file, rest, w, h),
   };
   return views;
 }
@@ -390,6 +416,16 @@ export function buildViews(file: IntroFile, pairs: RecordedPair[], w: number, h:
   const views = buildViewsRaw(file, pairs, w, h);
   for (const k of VIEW_ORDER) for (const d of views[k].dots) { d.x = clamp(d.x, 0, w); d.y = clamp(d.y, 0, h); }
   return views;
+}
+
+/** Just the Diligence view (the only one that depends on the recorded pairs), clamped like buildViews; the cloud is reused. */
+export function buildDiligenceView(file: IntroFile, pairs: RecordedPair[], w: number, h: number): IntroView {
+  if (!(w >= 1 && h >= 1)) return buildViewsRaw(file, pairs, w, h).diligence;
+  const cloud = cloudFor(file, w, h);
+  const rest = (i: number): DotTarget => ({ ...cloud[i], a: 0.035, r: 1.4, paint: "ghost" });
+  const view = diligenceView(file, pairs, rest, w, h);
+  for (const d of view.dots) { d.x = clamp(d.x, 0, w); d.y = clamp(d.y, 0, h); }
+  return view;
 }
 
 /** The views worth showing: diligence needs a pair that still names a row, watchlist needs at least one risk value. */

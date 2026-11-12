@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isIntroFile } from "../src/data";
-import { APPROACH_NOTE, buildViews, buildViewsRaw, captionText, cloudPositions, introPairs, visibleViews, VIEW_TEXT, type ViewKey } from "../src/lib/intro";
+import { APPROACH_NOTE, buildViews, AP_TOKEN, buildDiligenceView, buildViewsRaw, captionText, cloudPositions, cloudRunCount, undatedCount, undatedNote, introPairs, visibleViews, VIEW_TEXT, type ViewKey } from "../src/lib/intro";
 import type { IntroFile } from "../src/types";
 
 const fixture = (): Record<string, any> => JSON.parse(readFileSync("tests/fixtures/data/intro.json", "utf8"));
@@ -398,5 +398,63 @@ describe("intro layouts", () => {
     f.trials.risk = f.trials.risk.map(() => null);
     expect(visibleViews(f, [{ target: "cd20", disease: "all" }])).not.toContain("watchlist");
     expect(Object.keys(VIEW_TEXT)).toHaveLength(7);
+  });
+
+  it("a new pairs list with the same file and size does not recompute the cloud", () => {
+    const f = hand();
+    buildViews(f, [], 900, 430);
+    const before = cloudRunCount();
+    buildViews(f, [{ target: "cd20", disease: "all" }], 900, 430);
+    buildDiligenceView(f, [{ target: "fcrn", disease: "all" }], 900, 430);
+    expect(cloudRunCount()).toBe(before);
+    buildViews(f, [], 901, 430);
+    expect(cloudRunCount()).toBe(before + 1);
+  });
+
+  it("diligence view alone equals the one inside buildViews", () => {
+    const f = hand();
+    const pairs = [{ target: "cd20", disease: "all" }];
+    expect(buildDiligenceView(f, pairs, 900, 430)).toEqual(buildViews(f, pairs, 900, 430).diligence);
+  });
+
+  it("trials: a trial with no start date is a ghost, not counted under <=1995, and the key says so", () => {
+    const f = hand();
+    f.trials.start[4] = null;
+    const v = buildViewsRaw(f, [], 900, 380).trials;
+    expect(v.dots[4].paint).toBe("ghost");
+    expect(v.dots[4].a).toBeLessThan(0.1);
+    expect(v.dots[5].paint).not.toBe("ghost");
+    expect(undatedCount(f)).toBe(1);
+    expect(undatedNote(1)).toBe("1 trial without a start date is not shown");
+    expect(undatedNote(2)).toBe("2 trials without a start date are not shown");
+    expect(undatedCount(hand())).toBe(0);
+  });
+
+  it("changes: the summary groups thousands like the other counts", () => {
+    const f = hand();
+    const big = 1500;
+    f.trials.id = Array.from({ length: big }, (_, i) => `N${i}`);
+    for (const k of ["x", "y", "start", "risk"] as const) f.trials[k] = Array.from({ length: big }, () => (k === "start" ? 2020 : k === "risk" ? null : 0) as never);
+    f.trials.outcome = f.trials.id.map(() => "running");
+    f.trials.approaches = f.trials.id.map(() => []);
+    f.trials.dz = f.trials.id.map(() => []);
+    f.trials.marks = f.trials.id.map(() => []);
+    f.trials.change = f.trials.id.map(() => ["dates", null]);
+    const t = buildViewsRaw(f, [], 900, 430).changes.labels.map((l) => l.text);
+    expect(t.some((x) => x.startsWith("1,500 of 1,500 trials changed"))).toBe(true);
+  });
+
+  it("changes: an unknown bin goes to Other details, not Dates", () => {
+    const f = hand();
+    f.trials.change = f.trials.change.map((_, i) => (i === 0 ? ["mystery", null] : null)) as IntroFile["trials"]["change"];
+    const v = buildViewsRaw(f, [], 900, 430).changes;
+    const other = v.labels.find((l) => l.text === "Other details")!;
+    expect(Math.abs(v.dots[0].x - other.x)).toBeLessThan(80);
+  });
+
+  it("one approach-token map covers every approach key", () => {
+    expect(AP_TOKEN.targeted).toBe("--run");
+    expect(AP_TOKEN.unclassified).toBe("--fin");
+    expect(Object.keys(AP_TOKEN)).toHaveLength(7);
   });
 });
