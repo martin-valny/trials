@@ -1,10 +1,57 @@
 # Trial Radar — Handoff for the next agent
 
-Rewritten 2026-11-05 at the end of session 3; updated 2026-11-06 at the end of sessions 4 and 5, and 2026-11-07 at the end of session 6 for the Explorer (branch `feat/explorer-figure-plate`, committed locally, not pushed — see section 00). Read this file top to bottom before doing anything. Everything here is true as of `main` at commit `97f223c` (plus this handoff PR). Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+Read section 00 (session 14, 2026-11-12) first: it is the current state. Older blocks below it are history, newest first; sections 0 to 8 date from 2026-11-05 to 11-07 and describe the project's foundations. Repository: `martin-valny/trials`, **public**, default branch **`main`**.
 
 ---
 
-## 00. Current state — session 13 (2026-11-11): diligence centrepiece built, read this first (session 12 below is the design revision)
+## 00. Current state — session 14 (2026-11-12): diligence agent LIVE on the public site, read this first
+
+**Where things stand — start here:**
+- **Live:** https://martin-valny.github.io/trials/ runs in the **live** release state. Target pages have a Run button; `/diligence` lists 18 recorded memos plus the "Any target" picker; the Watchlist ranks 237 running trials (per-trial estimates are **on** again, `risk.per_trial: true`).
+- **Git:** `main` holds everything (PR #10 merged 2026-11-11; PR #18, recorded memos, per_trial on, e2e isolation; PR #19, Lambda build fix; both merged 2026-11-12). The working branch `feat/explorer-figure-plate` equals `main` at `4555632` plus this docs commit. The session's 18 commits are `cf1514c..4555632`. Pushing from this Mac is blocked by the org: commits travel as a `git bundle` that Martin uploads into a GitHub Codespace and pushes from there; `gh` (PRs, checks, variables, workflow dispatch) works locally.
+- **Backend (AWS, account on the free plan, region locked to Stockholm `eu-north-1`):** CloudFormation stack `trialradar-diligence` from `agent/template.yaml`: Lambda (Python 3.12, 512 MB, timeout 240 s, reserved concurrency 0) behind a public function URL `https://2hpaczrt3gyfeailxezmeorgdq0hhypw.lambda-url.eu-north-1.on.aws/`, three DynamoDB tables (runs, limits, flags), a log group. CORS allows `https://martin-valny.github.io` and `http://localhost:4181`. The repository variable `DILIGENCE_URL` holds the URL; `daily.yml` passes it to the build as `VITE_DILIGENCE_URL`.
+- **Rule:** the agent session never calls AWS (no `aws`, no `sam deploy`). Martin runs those; the agent prepares the exact command. Plain HTTPS requests to the public function URL, like a browser would send, are fine for smoke tests.
+
+**Models (why not Claude):** Bedrock on this account refuses Anthropic and xAI models (Marketplace subscriptions are not allowed on the free plan, even after the use-case form). Open models work. After trial recordings (setups in `agent/eval/setups/`, selected with `DILIGENCE_CONFIG`), the default in `agent/config.yaml` is **Qwen3 235B** (`qwen.qwen3-235b-a22b-2507-v1:0`) as planner and writer, **DeepSeek V3.2** (`deepseek.v3.2`) as checker. Kimi K3.1 was dropped (its reasoning used up the writer's token budget; one failed run cost $0.92). Open models on Bedrock reject cache points and forced tool choice: per-model flags `prompt_cache: false`, `forced_tool: false` in `prices`. They also package answers loosely (memo as JSON text, `{"name","arguments"}` wrappers, list fields as JSON strings, trailing junk); `agent/src/diligence/lenient.py` reads all of these, covered by `tests/test_lenient.py` and a full Lambda-path test in `tests/test_handler.py`.
+
+**Agent behaviour changed this session:**
+- **Judgement rule:** shown when every reason is supported, or when at least two remain after dropping the ones the checker does not back; each dropped reason lowers the confidence one level (floor: low), recorded as `judgement_adjusted` and shown on the page. Otherwise withheld. "Partly supported" does not count as backing.
+- **Citable stop-risk summary:** `RISK:<target>:<disease>`, linked to the target page.
+- **Circuit breaker:** after one outage (transport error or 5xx) `chembl_drug` and `literature_search` are not called again in that run.
+- **Caps (unchanged):** 3 runs per visitor IP per day, 30 per day in total, 12 tool calls, 150k input tokens per run.
+
+**Recorded set (`agent/eval/report.json`, 18 pairs):** citation validity 1.0, support rate 0.59, judgement shown 0.78, mean cost $0.018, mean 84 s (slowest 140 s). **ChEMBL returned HTTP 500 at EBI throughout 2026-11-12**, so no memo has ChEMBL drug data.
+
+**First live run (CD19, all diseases, 2026-11-12):** 14 steps, 9 tool calls, 123 s, $0.03; the checker removed one wrong claim (phase counts); judgement withheld (one of four reasons fully supported). A second live run (CD19 · MS) showed Qwen calling a tool that does not exist ("chemistry"); dispatch returns an error and the run carries on.
+
+**Operations:**
+- **Redeploy the backend** (Martin, from `agent/`; the `IpSalt` was generated inline and never stored, so each deploy makes a new one, which only resets the per-IP counters):
+  ```
+  sam build && sam deploy --region eu-north-1 --profile trialradar --stack-name trialradar-diligence --resolve-s3 --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset --parameter-overrides "AllowedOrigins=https://martin-valny.github.io,http://localhost:4181" "IpSalt=$(openssl rand -hex 16)" "BedrockModelArns=arn:aws:bedrock:eu-north-1::foundation-model/qwen.qwen3-235b-a22b-2507-v1:0,arn:aws:bedrock:eu-north-1::foundation-model/deepseek.v3.2" "ReservedConcurrency=0"
+  ```
+  Changing models means changing `config.yaml` **and** `BedrockModelArns`.
+- **Turn the Run button off:** delete the `DILIGENCE_URL` variable and force a deploy; the site falls back to the recorded state. **Remove the backend:** `sam delete --stack-name trialradar-diligence --region eu-north-1 --profile trialradar`.
+- **Force a site deploy:** `gh workflow run daily.yml --ref main -f force=true` (an unforced run skips when the registry timestamp is unchanged).
+- **Re-record memos** (Martin, costs about $0.02 each): `cd agent && uv run python scripts/record_eval.py --pairs eval/pairs.yaml --out eval/recordings --profile trialradar` (`--only btk/MS` for one pair). It writes `eval/recordings/`, `eval/report.json` and `web/public/diligence/` (memos, `index.json`, `eval-report.json`). Run from the corporate network it uses the OS trust store for EBI calls (`truststore`, dev dependency only).
+- **Local live check:** build with `VITE_DILIGENCE_URL=<url> npx vite build --outDir <scratch>`, copy a deployed `data/` in (e.g. from the last `github-pages` artifact via `gh run download <id> -n github-pages`), serve on port 4181 (CORS allows it). Never use port 4173 (Martin's preview).
+- **e2e:** `PW_PORT=4185 PW_CHROMIUM="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npx playwright test` after `npm run build` and copying `tests/fixtures/data` to `dist/data`. The front-door, diligence and risk specs block the real `diligence/*.json` (`web/e2e/isolate.ts`): a real memo for a fixture target moves the Diligence panel to **a** and shifts every panel letter.
+
+**Gates at `4555632`:** agent 342 passed, ruff and mypy clean; pipeline 960 passed; web vitest 688 passed, e2e 87 passed (desktop and mobile); CI green on PRs #18 and #19.
+
+**Fixed this session that would bite again:**
+- `agent/Makefile` builds with `uv pip install --target … --python-platform x86_64-manylinux2014 --python-version 3.12`; macOS `python3` is 3.9 with pip 21 and fails.
+- `aws configure` and `sam deploy --guided` prompt for input: run them in a real Terminal, not through the agent's `!` shell.
+- Nine pipeline tests read the real `config/area.yaml`; they pin `per_trial: true` so the switch does not break them.
+
+**Next, in order of value:**
+1. An AWS budget alert (for example $5 a month) — Martin, in Billing → Budgets.
+2. Re-record the 18 memos once ChEMBL answers again.
+3. Watch live runs for how often the judgement is withheld; if too often, consider counting "partly supported" as half (a rule change: Methods, Diligence page copy and `checker.settle_judgement`).
+4. The memo's Read lines sometimes state facts no section sentence carries; tighten the prompt.
+5. 218 drugs still unmapped to a mechanism (live warning).
+6. The AWS free plan ends after six months; Claude models need a paid plan.
+
+## 00. Previous state — session 13 (2026-11-11): diligence centrepiece built (session 12 below is the design revision)
 
 - **Branch:** `feat/diligence-centrepiece` (cut from `feat/diligence-agent`). Spec `docs/superpowers/specs/2026-11-10-diligence-centrepiece-design.md`; six tasks, SDD; tasks 1 to 6 were each reviewed, the final whole-branch review is pending. **Nothing pushed.** Martin pushes. Ledger and per-task reports: `.superpowers/sdd/2026-11-11-diligence-centrepiece/`.
 - **What it is:** the diligence agent promoted to three entry points once it is open: a band on the front door above the figure, a `/diligence` page (second in the nav), and diligence as panel **a** on target pages (g while closed). Design: DESIGN.md "Diligence centrepiece".
