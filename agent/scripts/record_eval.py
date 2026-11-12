@@ -73,6 +73,21 @@ def record_pair(
     return rec.cost_usd
 
 
+def _os_trust_client() -> httpx.Client:
+    """The tool client, verifying HTTPS with the operating system's trust store.
+
+    A corporate network may re-sign HTTPS for some hosts (e.g. ebi.ac.uk) with a root only the
+    OS trusts. Only the tools' client gets it: botocore keeps its own (injecting truststore
+    globally recurses inside botocore). Local recording only; the Lambda uses client().
+    """
+    import ssl
+
+    import truststore
+
+    ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    return client(transport=httpx.HTTPTransport(verify=ctx))
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pairs", type=Path, required=True)
@@ -119,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     bedrock = session.client("bedrock-runtime", cfg.region, config=bedrock_client_config())
     model = bedrock_for(cfg, cfg.region, client=bedrock)
     return record_all(
-        pairs, cfg=cfg, model=model, http=client(), out_dir=args.out, web_dir=args.web_dir
+        pairs, cfg=cfg, model=model, http=_os_trust_client(), out_dir=args.out, web_dir=args.web_dir
     )
 
 
@@ -179,10 +194,4 @@ def record_all(
 
 
 if __name__ == "__main__":
-    # Use the operating system's trust store: a corporate network may re-sign HTTPS for some
-    # hosts (e.g. ebi.ac.uk) with a root only the OS trusts. Command-line runs only; tests and
-    # the Lambda keep certifi.
-    import truststore
-
-    truststore.inject_into_ssl()
     raise SystemExit(main())
