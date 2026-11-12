@@ -80,7 +80,7 @@ export function IntroPage() {
   // The count of views and their letters are known only once intro.json and the diligence index have settled;
   // until then the headline and the list reserve their space instead of showing a guess that re-letters.
   const settled = intro.s !== "loading" && release !== "pending";
-  const headReady = meta !== undefined;
+  const headReady = meta !== undefined && settled;
   const area = meta?.area_label ?? "";
   const count = meta ? meta.trial_count.toLocaleString("en-GB") : "";
   const lead = meta ? `${count} clinical trials in ${area}.` : "Clinical trials.";
@@ -149,7 +149,7 @@ export function IntroPage() {
           </div>
           <div className="intro-key">
             <IntroKey view={active} file={file} />
-            {!phone && !reduced && !tour.held && file && <span className="intro-note">Touring the {(WORDS[listed.length] ?? String(listed.length)).toLowerCase()} views · hover one to hold it</span>}
+            {!phone && !reduced && !tour.held && file && settled && <span className="intro-note">Touring the {(WORDS[listed.length] ?? String(listed.length)).toLowerCase()} views · hover one to hold it</span>}
           </div>
         </div>
       </div>

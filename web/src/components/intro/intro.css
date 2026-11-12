@@ -36,12 +36,12 @@ main:has(> .intro) { max-width: none; padding: 0; }
 .intro-key { display: flex; gap: 6px 16px; flex-wrap: wrap; align-items: center; font-size: var(--fs-meta); color: var(--muted); padding-top: 8px; }
 .intro-key span { display: inline-flex; align-items: center; gap: 6px; }
 .intro-key i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-sizing: border-box; }
-.k-adv { background: var(--red); } .k-stop { background: var(--stop); } .k-fin { background: var(--fin); } .k-unk { border: 1.5px solid var(--unk); }
-.k-run { border: 1.5px solid var(--run); } .k-solid { background: var(--ink); } .k-hollow { border: 1.5px solid var(--ink); }
-.k-multi { border: 1.5px solid var(--ink); }
-.intro-key .k-dash { width: 1.5px; height: 12px; border-radius: 0; background: repeating-linear-gradient(to bottom, var(--ink) 0 3px, transparent 3px 5px); }
+.intro-key .ik-adv { background: var(--red); } .intro-key .ik-stop { background: var(--stop); } .intro-key .ik-fin { background: var(--fin); } .intro-key .ik-unk { border: 1.5px solid var(--unk); }
+.intro-key .ik-run { border: 1.5px solid var(--run); } .intro-key .ik-solid { background: var(--ink); } .intro-key .ik-hollow { border: 1.5px solid var(--ink); }
+.intro-key .ik-multi { border: 1.5px solid var(--ink); }
+.intro-key .ik-dash { width: 1.5px; height: 12px; border-radius: 0; background: repeating-linear-gradient(to bottom, var(--ink) 0 3px, transparent 3px 5px); }
 .intro-keynote { flex-basis: 100%; }
-.intro-note, .intro-undated { margin-left: auto; }
+.intro-note { margin-left: auto; }
 
 @media (max-width: 760px) {
   .intro { padding: 14px 16px 10px; min-height: 0; }

@@ -4,7 +4,7 @@ import { AP_TOKEN, APPROACH_NOTE, undatedCount, undatedNote, type ViewKey } from
 const OUTCOME: [string, string][] = [["adv", "moved on"], ["run", "running"], ["stop", "stopped"], ["fin", "finished"], ["unk", "status unknown"]];
 
 function Item({ cls, style, children }: { cls: string; style?: React.CSSProperties; children: string }) {
-  return <span><i className={`k-${cls}`} style={style} aria-hidden="true" />{children}</span>;
+  return <span><i className={`ik-${cls}`} style={style} aria-hidden="true" />{children}</span>;
 }
 
 /** The one-line key under the canvas: what the dots in the current view mean. */

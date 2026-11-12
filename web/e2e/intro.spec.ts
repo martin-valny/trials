@@ -102,3 +102,20 @@ test("dark theme: no console errors and the canvas is not blank", async ({ page 
   }, rgb), { timeout: 5000 }).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test("the intro's stylesheet does not leak into the pipeline key", async ({ page }) => {
+  await open(page, { width: 1280, height: 720 });
+  await page.getByRole("link", { name: "Open the pipeline →" }).click();
+  const adv = page.locator(".key b.k-adv").first();
+  await expect(adv).toBeVisible();
+  const got = await adv.evaluate((el) => {
+    const probe = document.createElement("i");
+    probe.style.color = "var(--red)";
+    document.body.appendChild(probe);
+    const red = getComputedStyle(probe).color;
+    probe.remove();
+    return { bg: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color, red };
+  });
+  expect(got.bg).toBe("rgba(0, 0, 0, 0)");
+  expect(got.color).toBe(got.red);
+});

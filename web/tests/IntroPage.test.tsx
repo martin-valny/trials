@@ -213,3 +213,23 @@ test("the Trials key says how many trials have no start date", async () => {
   fireEvent.mouseEnter(within(list).getByRole("link", { name: /Trials/ }));
   expect(screen.getByText("1 trial without a start date is not shown")).toBeInTheDocument();
 });
+
+test("with meta resolved but intro pending: no headline tail and no tour note; the full headline appears once settled", async () => {
+  const base = stubFetch(OPEN_INDEX);
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (String(url).includes("intro.json")) await gate;
+    return base(url);
+  }));
+  show();
+  const h1 = screen.getByRole("heading", { level: 1 });
+  await waitFor(() => expect(base).toHaveBeenCalled());
+  await new Promise((r) => setTimeout(r, 50));
+  expect(h1.querySelector("b")).toBeNull();
+  expect(h1.querySelector(".intro-hold")).not.toBeNull();
+  expect(screen.queryByText(/Touring the/)).not.toBeInTheDocument();
+  release();
+  await waitFor(() => expect(h1).toHaveTextContent("14 clinical trials in MS and autoimmune neurology. Six ways to look at them."));
+  expect(screen.getByText("Touring the six views · hover one to hold it")).toBeInTheDocument();
+});
