@@ -598,6 +598,12 @@ def test_export_writes_and_removes_risk_json(tmp_path: Path, cfg: AreaConfig) ->
     assert not (tmp_path / "risk.json").exists()
 
 
+def test_area_label_falls_back_to_name_when_label_unset(tmp_path: Path, cfg: AreaConfig) -> None:
+    bare = cfg.model_copy(update={"name": "area-x", "label": ""})
+    run(tmp_path, [], cfg=bare)
+    assert load(tmp_path / "meta.json")["area_label"] == "area-x"
+
+
 def test_export_writes_intro_only_with_a_map(tmp_path: Path, cfg: AreaConfig) -> None:
     doc = {
         "generated_for": DAY.isoformat(),
@@ -614,8 +620,11 @@ def test_export_writes_intro_only_with_a_map(tmp_path: Path, cfg: AreaConfig) ->
         ],
     }
     args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
-    export(*args, explorer=doc)
+    intro_doc = {"trials": {"id": ["NCT00000001"], "x": [0.123]}}
+    export(*args, explorer=doc, intro=intro_doc)
     intro = json.loads((tmp_path / "intro.json").read_text(encoding="utf-8"))
     assert intro["trials"]["id"] == ["NCT00000001"] and intro["trials"]["x"] == [0.123]
-    export(*args)
+    export(*args, intro=intro_doc)
+    assert not (tmp_path / "intro.json").exists()
+    export(*args, explorer=doc)
     assert not (tmp_path / "intro.json").exists()

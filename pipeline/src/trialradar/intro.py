@@ -49,7 +49,7 @@ def build_intro_doc(
             marks.setdefault(m["n"], []).append([i, m["c"], m["s"]])
             seen = dz.setdefault(m["n"], [])
             seen.extend(c for c in m.get("dz", ()) if c not in seen)
-    risks = risk["trials"] if risk else {}
+    risks = (risk or {}).get("trials", {})
     typical = [r["typical"] for r in risks.values() if r.get("typical") is not None]
     bins = _change_bins(changes)
     trials = explorer["trials"]

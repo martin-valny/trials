@@ -107,3 +107,9 @@ def test_no_pipeline_gives_empty_rows_and_marks() -> None:
 def test_coordinates_rounded_to_3dp() -> None:
     doc = build_intro_doc(explorer(trial("NCT1", 0.123456, -0.98765)), None, None, [], DAY)
     assert doc["trials"]["x"] == [0.123] and doc["trials"]["y"] == [-0.988]
+
+
+def test_risk_without_per_trial_gives_null_risk_and_typical() -> None:
+    risk = {"enabled": True, "not_scored": []}  # no "trials" key when per_trial is off
+    doc = build_intro_doc(explorer(trial("NCT1")), None, risk, [], DAY)
+    assert doc["typical"] is None and doc["trials"]["risk"] == [None]

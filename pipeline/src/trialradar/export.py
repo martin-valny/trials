@@ -216,6 +216,23 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
     }
 
 
+def build_intro(
+    tables: Tables,
+    changes: pl.DataFrame,
+    day: date,
+    explorer: dict[str, Any],
+    pipeline: dict[str, Any] | None,
+    risk: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """The intro page's document over the map, figure, risk and the last week's changes."""
+    current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
+    lo = (day - timedelta(days=7)).isoformat()
+    week = [
+        i for i in _change_items(changes, current) if lo < i["detected_date"] <= day.isoformat()
+    ]
+    return build_intro_doc(explorer, pipeline, risk, week, day)
+
+
 def export(
     tables: Tables,
     changes: pl.DataFrame,
@@ -229,6 +246,7 @@ def export(
     mechanisms: dict[str, Any] | None = None,
     pipeline: dict[str, Any] | None = None,
     risk: dict[str, Any] | None = None,
+    intro: dict[str, Any] | None = None,
 ) -> None:
     """Write the site JSON views for ``day`` into ``out_dir``.
 
@@ -238,22 +256,19 @@ def export(
     ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
     only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``).
     ``risk`` (the stop-risk estimates) is written as ``risk.json``, and a stale one is
-    removed when there is none; it does not depend on the map. ``intro.json`` (the intro
-    page's compact view over the map, figure, risk and the last week's changes) is written
-    whenever there is a map."""
+    removed when there is none; it does not depend on the map. ``intro`` (the intro page's
+    document, built by :func:`build_intro` and optional like the map) is written as
+    ``intro.json`` with a map, and a stale one is removed otherwise."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
             raise ValueError(f"invalid nct_id {nct!r}: expected NCT followed by digits")
     items = _change_items(changes, current)
 
-    week: list[dict[str, Any]] = []
     for n in WINDOWS:
         lo = (day - timedelta(days=n)).isoformat()
         hi = day.isoformat()
         window = [i for i in items if lo < i["detected_date"] <= hi]
-        if n == 7:
-            week = window
         _write_json(
             out_dir / "changes" / f"{n}d.json",
             {"window_days": n, "generated_for": hi, "changes": window},
@@ -274,8 +289,8 @@ def export(
     else:
         # No map this time: never leave an old map over the new trials.
         (out_dir / "explorer.json").unlink(missing_ok=True)
-    if explorer is not None:
-        _write_json(out_dir / "intro.json", build_intro_doc(explorer, pipeline, risk, week, day))
+    if explorer is not None and intro is not None:
+        _write_json(out_dir / "intro.json", intro)
     else:
         (out_dir / "intro.json").unlink(missing_ok=True)
     if explorer is not None and mechanisms is not None:

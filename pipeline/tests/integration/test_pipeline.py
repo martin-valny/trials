@@ -410,6 +410,7 @@ def test_each_stage_logs_one_json_line(
         "pipeline_figure",
         "stop_risk",
         "mechanism_graph",
+        "intro",
         "export",
         "explorer_coords",
         "run_log",
@@ -655,6 +656,27 @@ def test_explorer_failure_is_isolated(
     rerun = env.run(FakeClient(TS2, day2_studies(cfg)), D2, force=True)
     assert rerun.status == "success"
     assert json.loads((env.site_dir / "explorer.json").read_text())["generated_for"] == "2026-03-02"
+
+
+def test_intro_failure_is_isolated(
+    env: Env, cfg: AreaConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed intro build is a run warning: the site still exports, without intro.json
+    (a stale one is removed)."""
+    env.run(FakeClient(TS1, day1_studies(cfg)), D1)
+    assert (env.site_dir / "intro.json").exists()
+
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("intro exploded")
+
+    monkeypatch.setattr(pipeline, "build_intro", boom)
+    result = env.run(FakeClient(TS2, day2_studies(cfg)), D2)
+
+    assert result.status == "success"
+    assert "intro: RuntimeError: intro exploded" in result.warnings
+    assert not (env.site_dir / "intro.json").exists()
+    assert (env.site_dir / "explorer.json").exists()
+    assert json.loads((env.site_dir / "trials.json").read_text())["generated_for"] == "2026-03-02"
 
 
 def test_malformed_extras_warn_and_never_quarantine(
