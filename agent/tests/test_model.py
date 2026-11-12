@@ -394,3 +394,39 @@ def test_bedrock_sends_no_cache_points_to_uncached_models() -> None:
         stub.assert_no_pending_responses()
     # The caller's messages are not changed in place.
     assert cached_msgs[0]["content"][-1] == {"cachePoint": {"type": "default"}}
+
+
+def test_bedrock_does_not_force_a_tool_for_unforced_models() -> None:
+    client = boto3.client(
+        "bedrock-runtime",
+        region_name="eu-north-1",
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+    )
+    tools = [TOOL_SPECS[0]]
+    expected = {
+        "modelId": "qwen",
+        "system": [{"text": "sys"}],
+        "messages": MSG_A,
+        "toolConfig": {"tools": tools},
+        "inferenceConfig": {"maxTokens": 100},
+    }
+    reply = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "stopReason": "end_turn",
+        "usage": {"inputTokens": 7, "outputTokens": 3, "totalTokens": 10},
+        "metrics": {"latencyMs": 1},
+    }
+    with Stubber(client) as stub:
+        stub.add_response("converse", reply, expected)
+        BedrockModel(
+            "eu-north-1", client=client, uncached=frozenset({"qwen"}), unforced=frozenset({"qwen"})
+        ).converse(
+            model="qwen",
+            system="sys",
+            messages=MSG_A,
+            tools=tools,
+            max_tokens=100,
+            tool_choice=TOOL_SPECS[0]["toolSpec"]["name"],
+        )
+        stub.assert_no_pending_responses()

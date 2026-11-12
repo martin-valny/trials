@@ -25,7 +25,7 @@ import yaml
 
 from diligence.config import AgentConfig, load_config
 from diligence.loop import RunRequest
-from diligence.model import BedrockModel, ModelClient, bedrock_client_config
+from diligence.model import ModelClient, bedrock_client_config, bedrock_for
 from diligence.recording import record_run
 from diligence.tools.http import client
 from diligence.tools.registry_of_tools import ToolContext
@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
 
     session = boto3.Session(profile_name=args.profile) if args.profile else boto3.Session()
     bedrock = session.client("bedrock-runtime", cfg.region, config=bedrock_client_config())
-    model = BedrockModel(cfg.region, client=bedrock, uncached=cfg.uncached_models())
+    model = bedrock_for(cfg, cfg.region, client=bedrock)
     return record_all(
         pairs, cfg=cfg, model=model, http=client(), out_dir=args.out, web_dir=args.web_dir
     )
