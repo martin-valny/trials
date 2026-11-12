@@ -1,9 +1,12 @@
-region: eu-central-1
-# Placeholders: set to the Bedrock model / EU inference-profile IDs enabled in the account.
+# Chosen 2026-11-12 after model trials on CD20 in MS (eval/setups/): Qwen3 235B writes and plans,
+# DeepSeek V3.2 checks, so the checker is a different model from the writer. The account's free
+# plan cannot call Anthropic or xAI models.
+region: eu-north-1
+# Bedrock model or inference-profile IDs enabled in the account (eu-north-1, Stockholm).
 models:
-  writer: REPLACE_WITH_WRITER_MODEL_ID
-  planner: REPLACE_WITH_PLANNER_MODEL_ID
-  checker: REPLACE_WITH_CHECKER_MODEL_ID
+  writer: qwen.qwen3-235b-a22b-2507-v1:0
+  planner: qwen.qwen3-235b-a22b-2507-v1:0
+  checker: deepseek.v3.2
 limits:
   max_tool_calls: 12
   max_input_tokens: 150000
@@ -19,13 +22,11 @@ tables:
   limits: diligence-limits
   flags: diligence-flags
 agent_version: "0.1.0"
-# Per model ID, USD per million tokens. Placeholders: Martin enters the Bedrock pricing-page
-# values at the checkpoint (keys must match the model IDs above). cache_read_per_mtok and
-# cache_write_per_mtok are the prompt-cache prices; leave them out to price cached tokens as input.
+# Per model ID, USD per million tokens. Anthropic list prices (Haiku 5.5 below 100k-token
+# prompts; Sonnet 5.5 cache read before the Oct 2026 cut), so recorded costs err high. Check the
+# Bedrock console for the EU-profile prices. prompt_cache: false for models that reject cache points.
 prices:
-  REPLACE_WITH_WRITER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
-  REPLACE_WITH_PLANNER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
-  REPLACE_WITH_CHECKER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
+  qwen.qwen3-235b-a22b-2507-v1:0:
+    {input_per_mtok: 0.25, output_per_mtok: 1.00, prompt_cache: false, forced_tool: false}
+  deepseek.v3.2:
+    {input_per_mtok: 0.74, output_per_mtok: 2.22, prompt_cache: false, forced_tool: false}

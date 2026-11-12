@@ -1,0 +1,336 @@
+{
+ "run_id": "ecf7e1b939244915bbda85b8ae544b81",
+ "target": "cd20",
+ "disease": "MG",
+ "fingerprint": "3c92b29554dc2fbd8d552e2e2219f870e4d366949f5dfc9395f949b98c63003c",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T14:01:45Z",
+ "finished_at": "2026-11-12T14:02:52Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD20 · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "9 trials on this target (0 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06342544",
+    "NCT07673744",
+    "NCT07372807",
+    "NCT02110706",
+    "NCT00774462",
+    "NCT00619671",
+    "NCT02950155",
+    "NCT05868837",
+    "NCT05332587"
+   ],
+   "ms": 736,
+   "tokens_in": 2079,
+   "tokens_out": 158
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 37% across 3 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:cd20:MG"
+   ],
+   "ms": 128,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1035 registry trials, 300 counted (41 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT07614282",
+    "NCT02636322",
+    "NCT01622439",
+    "NCT00577993",
+    "NCT06503094",
+    "NCT01097057",
+    "NCT07309900",
+    "NCT07439263",
+    "NCT07362602",
+    "NCT04938141",
+    "NCT01695941",
+    "NCT00625729",
+    "NCT06284122",
+    "NCT01086540",
+    "NCT03259503",
+    "NCT07093086",
+    "NCT04914741",
+    "NCT00058461",
+    "NCT06002659",
+    "NCT00521560"
+   ],
+   "ms": 719,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 22532,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "6 abstracts since 2019",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42615883",
+    "PMID:42824951",
+    "PMID:42936601",
+    "PMID:42682685",
+    "PMID:42590908",
+    "PMID:42787283"
+   ],
+   "ms": 322,
+   "tokens_in": 5648,
+   "tokens_out": 39
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:3e5b7e82-f018-4eaf-ae78-d6145a906b20"
+   ],
+   "ms": 1379,
+   "tokens_in": 7796,
+   "tokens_out": 24
+  },
+  {
+   "n": 10,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9073,
+   "tokens_out": 246
+  },
+  {
+   "n": 11,
+   "kind": "write",
+   "text": "Memo written: 8 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9841,
+   "tokens_out": 744
+  },
+  {
+   "n": 12,
+   "kind": "check",
+   "text": "checking 8 claims … 4 supported, 3 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3363,
+   "tokens_out": 406
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Judgement kept with 1 unsupported reason dropped; confidence medium → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 14,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Nine trials test CD20-targeting agents in myasthenia gravis (MG), with four in Phase 3 and five in Phase 2.",
+    "cites": [
+     "NCT06342544"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Three ongoing trials evaluate rituximab, ublituximab, and ripertamab in generalized or refractory MG, with recruitment active or upcoming.",
+    "cites": [
+     "NCT06342544"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "track_record",
+    "text": "Rituximab is approved by the FDA for oncologic indications including follicular lymphoma, diffuse large B-cell lymphoma, and chronic lymphocytic leukemia, but not for non-malignant conditions such as MG.",
+    "cites": [
+     "FDA:3e5b7e82-f018-4eaf-ae78-d6145a906b20"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Completed trials of rituximab in MG show mixed results, with one Phase 3 trial completed and two Phase 3 trials listed with unknown status.",
+    "cites": [
+     "NCT06342544"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "literature",
+    "text": "A 2026 case report documents rapid clinical improvement in refractory generalized MG following off-label use of ofatumumab, with sustained minimal manifestation status over two years.",
+    "cites": [
+     "PMID:42615883"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 scoping review notes consistent efficacy signals for CD20-targeting therapies in refractory acetylcholine receptor antibody-positive generalized MG.",
+    "cites": [
+     "PMID:42824951"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "competition",
+    "text": "CAR-T therapies targeting CD19 or CD20 are emerging as experimental alternatives in refractory MG, with early clinical signals.",
+    "cites": [
+     "PMID:42824951"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: CD20 depletion shows clinical activity in refractory MG, with evidence from case reports and trials.",
+   "Competitive position: CD20 is a well-established target with multiple agents in development, but trial risk is moderate.",
+   "Open questions: Durability of response, optimal dosing, and long-term safety in MG remain to be fully characterized."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "low",
+   "reasons": [
+    "s1",
+    "s5",
+    "s6"
+   ]
+  },
+  "would_change": [
+   "New Phase 3 efficacy data from ongoing trials would strengthen the evidence.",
+   "Higher-than-expected discontinuation rates in current studies could reduce confidence.",
+   "Approval of a CD20 agent for MG by a major regulator would shift the competitive landscape."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows 9 total trials, with counts by phase: Phase 2:5, Phase 3:4"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source shows trials involving rituximab, ripertamab, ublituximab but status info incomplete"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "FDA label shows rituximab approved for FL, DLBCL, CLL and states not indicated for non-malignant conditions"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Source shows one finished trial and two unknown, but no explicit Phase 3 completion status"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Case report documents rapid improvement in refractory gMG with ofatumumab, sustained MMS for 2 years"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Review notes consistent efficacy signals for CD20-targeting therapies in refractory AChR+ gMG"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "unsupported",
+   "reason": "Source shows median 0.369 (36.9%) but doesn't specify this is for trial discontinuation"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Review mentions CAR-T targeting CD19/CD20 but doesn't specify early clinical signals or experimental alternatives"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s7",
+   "text": "The site's risk model estimates a median 36.9% chance of trial discontinuation for CD20-targeting agents in MG.",
+   "reason": "Source shows median 0.369 (36.9%) but doesn't specify this is for trial discontinuation"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 1,
+  "confidence_was": "medium"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 37800,
+ "tokens_out": 1617,
+ "cost_usd": 0.01321019,
+ "data_date": "2026-11-11"
+}

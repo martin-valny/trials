@@ -43,6 +43,10 @@ export function citeHref(id: string): { href: string; site: string } | null {
   if (/^PPR\d+$/.test(id)) return { href: `https://europepmc.org/article/PPR/${id}`, site: "Europe PMC" };
   if (/^CHEMBL\d+$/.test(id)) return { href: `https://www.ebi.ac.uk/chembl/compound_report_card/${id}/`, site: "ChEMBL" };
   if ((m = id.match(/^FDA:([A-Za-z0-9-]+)$/))) return { href: `https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=${m[1]}`, site: "DailyMed" };
+  if ((m = id.match(/^RISK:([a-z0-9-]+):([A-Za-z0-9_-]+)$/))) {
+    const q = m[2] === "all" ? "" : `?disease=${encodeURIComponent(m[2])}`;
+    return { href: `#/target/${m[1]}${q}`, site: "Trial Radar stop-risk estimates" };
+  }
   return null;
 }
 
@@ -252,6 +256,14 @@ function Memo({ shown, canFlag }: { shown: Shown; canFlag: boolean }) {
             <>
               <p className="dg-stance">{STANCE[memo.judgement.stance]}</p>
               <p className="dg-conf">Confidence: {memo.judgement.confidence}</p>
+              {rec.judgement_adjusted ? (
+                <p className="dg-adj">
+                  Lowered from {rec.judgement_adjusted.confidence_was}: the checker did not back{" "}
+                  {rec.judgement_adjusted.reasons_removed === 1
+                    ? "one of the reasons given, so it was dropped."
+                    : `${rec.judgement_adjusted.reasons_removed} of the reasons given, so they were dropped.`}
+                </p>
+              ) : null}
               <p className="dg-because">Because</p>
               <ul className="dg-reasons">
                 {memo.judgement.reasons.map((sid) => {

@@ -1,0 +1,434 @@
+{
+ "run_id": "1e9819c52a8c4dc9b76fe7bc692f6b39",
+ "target": "fcrn",
+ "disease": "MG",
+ "fingerprint": "98878a2f2941a34813b7c44fe8d0e2fc8e45044b32eb511c35c47315813a30f8",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:34:27Z",
+ "finished_at": "2026-11-12T13:35:40Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: FcRn · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "37 trials on this target (3 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05403541",
+    "NCT04982289",
+    "NCT03896295",
+    "NCT07465289",
+    "NCT05374590",
+    "NCT07284420",
+    "NCT07463521",
+    "NCT04833894",
+    "NCT05265273",
+    "NCT06392386",
+    "NCT06540144",
+    "NCT06765161",
+    "NCT07039916",
+    "NCT07072988",
+    "NCT07217587",
+    "NCT07246564",
+    "NCT06221501",
+    "NCT06860633",
+    "NCT06909214",
+    "NCT06298552"
+   ],
+   "ms": 696,
+   "tokens_in": 2080,
+   "tokens_out": 134
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 25% across 12 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:fcrn:MG"
+   ],
+   "ms": 80,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "8 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42964369",
+    "PMID:42920067",
+    "PMID:42903245",
+    "PMID:42683805",
+    "PMID:42768201",
+    "PMID:42590908",
+    "PMID:42839213",
+    "PMID:42931254"
+   ],
+   "ms": 651,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "0 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [],
+   "ms": 209,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "11 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT06149559",
+    "NCT06540144",
+    "NCT07465289",
+    "NCT03971422",
+    "NCT05681715",
+    "NCT03052751",
+    "NCT04650854",
+    "NCT07463521",
+    "NCT07570589",
+    "NCT07246564",
+    "NCT04124965"
+   ],
+   "ms": 143,
+   "tokens_in": 7480,
+   "tokens_out": 134
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "29 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04735432",
+    "NCT07294170",
+    "NCT06765161",
+    "NCT06909214",
+    "NCT05374590",
+    "NCT07284420",
+    "NCT06298565",
+    "NCT06392386",
+    "NCT07072988",
+    "NCT07595653",
+    "NCT06298552",
+    "NCT04818671",
+    "NCT02965573",
+    "NCT07217587",
+    "NCT07673627",
+    "NCT04833894",
+    "NCT06860633",
+    "NCT06688253",
+    "NCT07673744",
+    "NCT07231523"
+   ],
+   "ms": 156,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "3 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT05265273",
+    "NCT07217587",
+    "NCT04951622"
+   ],
+   "ms": 133,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 21329,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 2,
+   "tokens_in": 10977,
+   "tokens_out": 77
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 12,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:7104d9e5-9910-47f5-9a93-741ac50f43b6"
+   ],
+   "ms": 1104,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 11711,
+   "tokens_out": 121
+  },
+  {
+   "n": 14,
+   "kind": "write",
+   "text": "Memo written: 11 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 12354,
+   "tokens_out": 953
+  },
+  {
+   "n": 15,
+   "kind": "check",
+   "text": "checking 11 claims … 6 supported, 5 partly, 0 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 5218,
+   "tokens_out": 878
+  },
+  {
+   "n": 16,
+   "kind": "note",
+   "text": "Judgement kept with 2 unsupported reasons dropped; confidence high → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 17,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Thirty-seven trials test FcRn inhibitors in myasthenia gravis (MG), with 24 in Phase 3 and 8 in Phase 2.",
+    "cites": [
+     "NCT05403541"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "The main sponsors are argenx (11 trials), UCB (10 trials), J&J (5 trials), and Immunovant (3 trials).",
+    "cites": [
+     "NCT05403541"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Approved FcRn inhibitors for MG include efgartigimod alfa, nipocalimab, and rozanolixizumab.",
+    "cites": [
+     "NCT05403541"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "One Phase 3 trial of batoclimab was terminated due to a sponsor decision.",
+    "cites": [
+     "NCT05403541"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "A Phase 2 trial of ALXN1830 was withdrawn due to a sponsor decision to terminate the program.",
+    "cites": [
+     "NCT04982289"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "The site's risk model estimates a typical trial attrition risk of 13.6% and a median risk of 24.9% for FcRn inhibitors in MG.",
+    "cites": [
+     "RISK:fcrn:MG"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "A 2026 case series describes FcRn antagonists used for rapid symptom control and corticosteroid reduction in AChR-positive gMG.",
+    "cites": [
+     "PMID:42964369"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "A 2026 real-world study of 35 AChR-positive gMG patients showed a 79% response rate on MG-ADL and a mean 8 mg/day prednisone dose reduction with efgartigimod.",
+    "cites": [
+     "PMID:42903245"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "literature",
+    "text": "A 2026 umbrella review found that FcRn antagonists are generally associated with improvements in MG-ADL and QMG scores, though evidence quality varies.",
+    "cites": [
+     "PMID:42931254"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "competition",
+    "text": "FcRn inhibitors compete with complement inhibitors (e.g., eculizumab) and B-cell therapies (e.g., rituximab) in gMG.",
+    "cites": [
+     "PMID:42920067"
+    ]
+   },
+   {
+    "id": "s11",
+    "section": "competition",
+    "text": "A direct comparative Phase 3 trial (NCT07217587) is ongoing to evaluate nipocalimab versus efgartigimod in generalized MG.",
+    "cites": [
+     "NCT07217587"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: Strong real-world and clinical trial data support FcRn inhibition for symptom control and steroid-sparing in gMG.",
+   "Competitive position: FcRn inhibitors are established in the market with multiple approved agents and ongoing comparative trials.",
+   "Open questions: Long-term safety, comparative efficacy versus other biologics, and optimal sequencing remain active areas of study."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "low",
+   "reasons": [
+    "s1",
+    "s3"
+   ]
+  },
+  "would_change": [
+   "New head-to-head trial data showing inferiority to competing mechanisms (e.g., complement inhibitors) would change this judgement.",
+   "Emergence of significant long-term safety signals in post-marketing studies could shift the risk-benefit assessment."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "The source confirms 37 total trials, 24 in Phase 3, and 8 in Phase 2."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source confirms argenx (11), UCB (10), J&J (5), and Immunovant (3), but doesn't state they are 'main sponsors'."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source lists efgartigimod alfa, nipocalimab, and rozanolixizumab as approved for MG in the approved.MG section."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "Source shows batoclimab Phase 3 trial terminated due to Sponsor Decision."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Source shows ALXN1830 Phase 2 withdrawn due to 'Sponsor decision to terminate program'."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source shows median risk 0.249 (24.9%) and typical 0.136 (13.6%) from risk model."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Source describes FcRn antagonists for rapid symptom control and corticosteroid reduction, but doesn't specify '2026 case series' format."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Source confirms 35 patients, 79% MG-ADL response, 8 mg prednisone reduction, but doesn't specify 'real-world study' type."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "partly",
+   "reason": "Source confirms FcRn antagonists associated with MG-ADL/QMG improvements with varying evidence quality, but doesn't specify 'umbrella review' format."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "partly",
+   "reason": "Source mentions complement inhibitors and B-cell therapies but doesn't explicitly state they 'compete' with FcRn inhibitors."
+  },
+  {
+   "sentence_id": "s11",
+   "verdict": "supported",
+   "reason": "Source confirms comparative Phase 3 trial of nipocalimab vs efgartigimod for generalized MG is recruiting (ongoing)"
+  }
+ ],
+ "removed": [],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 2,
+  "confidence_was": "high"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 49820,
+ "tokens_out": 2297,
+ "cost_usd": 0.018379979999999997,
+ "data_date": "2026-11-11"
+}

@@ -67,7 +67,7 @@ const STEPS = [
   },
   {
     title: "Judgement only if its reasons survive",
-    text: "The memo's read on the target is shown only when every reason behind it is supported. Otherwise it is withheld.",
+    text: "The memo's read on the target is shown only when at least two reasons behind it are supported. A reason the checker does not back is dropped and lowers the confidence; with fewer than two, the read is withheld.",
   },
 ] as const;
 

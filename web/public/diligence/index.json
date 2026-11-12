@@ -1,0 +1,76 @@
+{
+ "runs": [
+  {
+   "target": "acth",
+   "disease": "MS"
+  },
+  {
+   "target": "alpha4-integrin",
+   "disease": "MS"
+  },
+  {
+   "target": "baff-april",
+   "disease": "MS"
+  },
+  {
+   "target": "bcma-car-t",
+   "disease": "MG"
+  },
+  {
+   "target": "btk",
+   "disease": "MS"
+  },
+  {
+   "target": "c5",
+   "disease": "MG"
+  },
+  {
+   "target": "c5",
+   "disease": "NMOSD"
+  },
+  {
+   "target": "cd19",
+   "disease": "NMOSD"
+  },
+  {
+   "target": "cd19-car-t",
+   "disease": "MG"
+  },
+  {
+   "target": "cd20",
+   "disease": "MG"
+  },
+  {
+   "target": "cd20",
+   "disease": "MS"
+  },
+  {
+   "target": "cd20",
+   "disease": "all"
+  },
+  {
+   "target": "cd38",
+   "disease": "MG"
+  },
+  {
+   "target": "clemastine",
+   "disease": "MS"
+  },
+  {
+   "target": "fcrn",
+   "disease": "CIDP"
+  },
+  {
+   "target": "fcrn",
+   "disease": "MG"
+  },
+  {
+   "target": "il-17a",
+   "disease": "MS"
+  },
+  {
+   "target": "il-6-receptor",
+   "disease": "NMOSD"
+  }
+ ]
+}

@@ -1,0 +1,411 @@
+{
+ "run_id": "c9ee05425a5f44518d3ad247b69353a9",
+ "target": "cd20",
+ "disease": "all",
+ "fingerprint": "9b8a77106d5d53fe5da81e519d899b74cc54ad515686ade0ff4525859d8fecf5",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:29:57Z",
+ "finished_at": "2026-11-12T13:31:29Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD20 · all",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "123 trials on this target (8 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06677710",
+    "NCT03829566",
+    "NCT05208840",
+    "NCT03085810",
+    "NCT04877457",
+    "NCT04878211",
+    "NCT04767698",
+    "NCT01212094",
+    "NCT04130997",
+    "NCT05285891",
+    "NCT05758831",
+    "NCT07220252",
+    "NCT07517185",
+    "NCT07685678",
+    "NCT07696377",
+    "NCT06675955",
+    "NCT07225361",
+    "NCT07503340",
+    "NCT07609719",
+    "NCT03650114"
+   ],
+   "ms": 502,
+   "tokens_in": 2079,
+   "tokens_out": 116
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 24% across 29 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:cd20:all"
+   ],
+   "ms": 69,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1035 registry trials, 300 counted (41 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT07614282",
+    "NCT02636322",
+    "NCT01622439",
+    "NCT00577993",
+    "NCT06503094",
+    "NCT01097057",
+    "NCT07309900",
+    "NCT07439263",
+    "NCT07362602",
+    "NCT04938141",
+    "NCT01695941",
+    "NCT00625729",
+    "NCT06284122",
+    "NCT01086540",
+    "NCT03259503",
+    "NCT07093086",
+    "NCT04914741",
+    "NCT00058461",
+    "NCT06002659",
+    "NCT00521560"
+   ],
+   "ms": 708,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "8 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42947820",
+    "PMID:42974628",
+    "PMID:42961681",
+    "PMID:42991313",
+    "PMID:42829227",
+    "PMID:42798844",
+    "PMID:42967966",
+    "PMID:42760488"
+   ],
+   "ms": 2703,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 27944,
+   "tokens_in": 9308,
+   "tokens_out": 102
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:3e5b7e82-f018-4eaf-ae78-d6145a906b20"
+   ],
+   "ms": 1127,
+   "tokens_in": 9524,
+   "tokens_out": 73
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:9da42362-3bb5-4b83-b4bb-b59fd4e55f0d"
+   ],
+   "ms": 333,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 12,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:6a8a3f53-2062-48ff-9dbe-b939df133ca3"
+   ],
+   "ms": 349,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 11989,
+   "tokens_out": 150
+  },
+  {
+   "n": 14,
+   "kind": "write",
+   "text": "Memo written: 10 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 12661,
+   "tokens_out": 1059
+  },
+  {
+   "n": 15,
+   "kind": "check",
+   "text": "checking 10 claims … 6 supported, 3 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7161,
+   "tokens_out": 576
+  },
+  {
+   "n": 16,
+   "kind": "note",
+   "text": "Judgement kept with 1 unsupported reason dropped; confidence high → medium",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 17,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "There are 123 trials testing CD20-targeting drugs across all diseases, with 59 in Phase 3 and 24 in Phase 4.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Roche leads with 35 trials, followed by Novartis with 16 and TG Therapeutics with 10.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Approved CD20 drugs include ocrelizumab, ofatumumab, and ublituximab for multiple sclerosis, and rituximab for neuromyelitis optica spectrum disorder in Japan.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Eight trials targeting CD20 have stopped, including for business reasons (NCT06677710), slow enrollment (NCT04877457), and geopolitical conflict (NCT05208840).",
+    "cites": [
+     "NCT06677710",
+     "NCT04877457",
+     "NCT05208840"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "Recent literature indicates that disease control under anti-CD20 therapy is pharmacologically maintained rather than biologically resolved, with uncertain outcomes upon discontinuation (PMID:42991313).",
+    "cites": [
+     "PMID:42991313"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "CD20 antigen loss is reported as a mechanism of immune escape in diffuse large B-cell lymphoma after anti-CD20 therapy (PMID:42967966).",
+    "cites": [
+     "PMID:42967966"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "Patients on anti-CD20 therapy are at increased risk of non-PML neuroinvasive infections and persistent COVID-19 (PMID:42947820, PMID:42974628).",
+    "cites": [
+     "PMID:42947820",
+     "PMID:42974628"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "The median stop-risk for CD20 trials across all diseases is 0.24, based on 29 trials with a typical risk of 0.128.",
+    "cites": [
+     "RISK:cd20:all"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "competition",
+    "text": "CD20-targeting drugs face competition from emerging therapies like CD19 CAR-T and bispecific antibodies, but remain central in B-cell-driven conditions.",
+    "cites": [
+     "NCT06677710",
+     "NCT06503094"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: CD20 depletion is well-established in MS and lymphomas but carries risks of infection and antigen escape.",
+   "Competitive position: Strong despite high trial count and moderate stop risk, due to proven efficacy and multiple approved agents.",
+   "Open questions: Can patients safely discontinue therapy? How to manage CD20-negative relapses?"
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "medium",
+   "reasons": [
+    "s3",
+    "s9"
+   ]
+  },
+  "would_change": [
+   "Evidence of frequent treatment failures due to CD20 antigen loss would weaken support.",
+   "Demonstrated safety and efficacy of CD19 or CD20 CAR-T in frontline settings could shift the landscape."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "NCT06677710 shows trials_total=123, counts_by_phase shows Phase 3:59, Phase 4:24"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "NCT06677710 shows companies: Roche=35, Novartis=16, TG Therapeutics=10"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "NCT06677710 shows approved drugs for MS: ocrelizumab, ofatumumab, ublituximab and NMOSD: rituximab with PMDA in Japan"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Sources show 8 stopped trials with the cited examples having correct reasons, but source shows 'stopped first, then running, advanced, finished' without confirming 'Eight trials targeting CD20 have stopped' as exclusive claim"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "unsupported",
+   "reason": "FDA sources only mention individual drug indications but don't collectively confirm all approved drugs in CD20 class or B-cell malignancies indications"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "PMID:42991313 abstract states disease control is pharmacologically maintained with uncertain outcomes upon discontinuation"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "PMID:42967966 abstract states CD20 antigen loss after anti-CD20 therapy is a mechanism of immune escape in DLBCL"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "PMID:42947820 mentions non-PML neuroinvasive infections, PMID:42974628 mentions persistent COVID-19, but sources don't explicitly state patients are at 'increased risk'"
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "RISK:cd20:all shows median=0.24, n=29, typical=0.128"
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "partly",
+   "reason": "NCT06677710 mentions related_targets include CD19 and CD20-CAR-T, but sources don't mention bispecific antibodies or explicitly state drugs remain central in B-cell-driven conditions"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s5",
+   "text": "Rituximab, ocrelizumab, ofatumumab, and ublituximab are approved drugs in the CD20 class, with indications in multiple sclerosis and B-cell malignancies.",
+   "reason": "FDA sources only mention individual drug indications but don't collectively confirm all approved drugs in CD20 class or B-cell malignancies indications"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 1,
+  "confidence_was": "high"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 52722,
+ "tokens_out": 2076,
+ "cost_usd": 0.01946811,
+ "data_date": "2026-11-11"
+}

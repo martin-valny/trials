@@ -7,9 +7,9 @@ from diligence.checker import (
     MAX_SOURCE_CHARS,
     apply_verdicts,
     deterministic_check,
-    gate_judgement,
     model_check,
     scrub_summary_lines,
+    settle_judgement,
 )
 from diligence.model import ModelResponse
 from diligence.prompts import CHECKER_PROMPT, VERDICTS_TOOL
@@ -272,34 +272,61 @@ def test_partly_kept_with_mark() -> None:
     assert removed == [{"sentence_id": "s2", "text": "Two.", "reason": "not stated"}]
 
 
-def test_judgement_withheld_if_reason_partly() -> None:
+def _sup(*ids: str) -> list[Verdict]:
+    return [Verdict(sentence_id=i, verdict="supported", reason="") for i in ids]
+
+
+def _memo3(confidence: str = "medium", reasons: list[str] | None = None) -> Memo:
     memo = memo_of(
-        ("s1", "One.", ["NCT90000001"]), ("s2", "Two.", ["NCT90000001"]), reasons=["s1", "s2"]
+        ("s1", "One.", ["NCT90000001"]),
+        ("s2", "Two.", ["NCT90000001"]),
+        ("s3", "Three.", ["NCT90000001"]),
+        reasons=reasons if reasons is not None else ["s1", "s2", "s3"],
     )
-    verdicts = [
-        Verdict(sentence_id="s1", verdict="supported", reason=""),
-        Verdict(sentence_id="s2", verdict="partly", reason="loose"),
-    ]
-    assert gate_judgement(memo, verdicts) is False
+    judgement = memo.judgement.model_copy(update={"confidence": confidence})
+    return memo.model_copy(update={"judgement": judgement})
 
 
-def test_judgement_shown_when_all_reasons_supported() -> None:
-    memo = memo_of(
-        ("s1", "One.", ["NCT90000001"]), ("s2", "Two.", ["NCT90000001"]), reasons=["s1", "s2"]
+def test_judgement_shown_unchanged_when_all_reasons_supported() -> None:
+    memo = _memo3()
+    out, shown, adjusted = settle_judgement(memo, _sup("s1", "s2", "s3"))
+    assert shown is True and adjusted is None and out == memo
+
+
+def test_failed_reason_is_dropped_and_confidence_lowered() -> None:
+    verdicts = [*_sup("s1", "s2"), Verdict(sentence_id="s3", verdict="partly", reason="loose")]
+    out, shown, adjusted = settle_judgement(_memo3("high"), verdicts)
+    assert shown is True
+    assert out.judgement.reasons == ["s1", "s2"] and out.judgement.confidence == "medium"
+    assert adjusted == {"reasons_removed": 1, "confidence_was": "high"}
+
+
+def test_confidence_drops_one_level_per_failed_reason_and_stops_at_low() -> None:
+    memo = _memo3("high", reasons=["s1", "s2", "s3", "s9"])  # s9 is not in the memo
+    verdicts = [*_sup("s1", "s2"), Verdict(sentence_id="s3", verdict="unsupported", reason="")]
+    out, shown, adjusted = settle_judgement(memo, verdicts)
+    assert shown is True and out.judgement.confidence == "low"
+    assert adjusted == {"reasons_removed": 2, "confidence_was": "high"}
+    out, _, _ = settle_judgement(_memo3("low"), [*_sup("s1", "s2")])
+    assert out.judgement.confidence == "low"
+
+
+def test_judgement_withheld_when_fewer_than_two_reasons_hold() -> None:
+    verdicts = [*_sup("s1"), Verdict(sentence_id="s2", verdict="partly", reason="")]
+    memo = _memo3()
+    out, shown, adjusted = settle_judgement(memo, verdicts)
+    assert shown is False and adjusted is None and out == memo
+
+
+def test_judgement_withheld_without_reasons_or_verdicts() -> None:
+    one = memo_of(("s1", "One.", ["NCT90000001"]), reasons=["s1"])
+    assert settle_judgement(one, [])[1] is False
+    assert (
+        settle_judgement(memo_of(("s1", "One.", ["NCT90000001"]), reasons=[]), _sup("s1"))[1]
+        is False
     )
-    verdicts = [Verdict(sentence_id=i, verdict="supported", reason="") for i in ("s1", "s2")]
-    assert gate_judgement(memo, verdicts) is True
-
-
-def test_judgement_withheld_for_removed_unknown_or_missing_reason_ids() -> None:
-    memo = memo_of(("s1", "One.", ["NCT90000001"]), reasons=["s1", "s9"])
-    sup = [
-        Verdict(sentence_id="s1", verdict="supported", reason=""),
-        Verdict(sentence_id="s9", verdict="supported", reason=""),
-    ]
-    assert gate_judgement(memo, sup) is False  # s9 is not in the memo
-    assert gate_judgement(memo_of(("s1", "One.", ["NCT90000001"]), reasons=["s1"]), []) is False
-    assert gate_judgement(memo_of(("s1", "One.", ["NCT90000001"]), reasons=[]), sup) is False
+    # A single reason that holds is shown as written: nothing was dropped.
+    assert settle_judgement(one, _sup("s1"))[1:] == (True, None)
 
 
 def test_json_serialisable_removed() -> None:

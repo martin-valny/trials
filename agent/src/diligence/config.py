@@ -42,6 +42,12 @@ class Price(_Strict):
     # Prompt-cache prices; unset means the input price is used for cached tokens too.
     cache_read_per_mtok: float | None = None
     cache_write_per_mtok: float | None = None
+    # False for models whose Bedrock Converse API rejects cache points (e.g. Kimi, Qwen,
+    # DeepSeek): requests to them are sent without any cachePoint block.
+    prompt_cache: bool = True
+    # False for models that reject a forced tool choice (toolChoice.tool): the request lets the
+    # model choose, and the prompt's "call submit_memo" instruction (with one retry) does the rest.
+    forced_tool: bool = True
 
 
 # Model IDs in the committed config.yaml start with this until Martin enters real ones.
@@ -70,6 +76,14 @@ class AgentConfig(_Strict):
     def allowed_origins(self) -> frozenset[str]:
         """`allowed_origin` may hold several origins, comma separated."""
         return frozenset(o.strip() for o in self.allowed_origin.split(",") if o.strip())
+
+    def uncached_models(self) -> frozenset[str]:
+        """Model IDs whose requests must carry no cache points."""
+        return frozenset(m for m, p in self.prices.items() if not p.prompt_cache)
+
+    def unforced_models(self) -> frozenset[str]:
+        """Model IDs whose requests must not force a tool choice."""
+        return frozenset(m for m, p in self.prices.items() if not p.forced_tool)
 
     def has_placeholder_models(self) -> bool:
         return any(PLACEHOLDER in m for m in self.models.model_dump().values())

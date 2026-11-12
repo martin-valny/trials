@@ -6,7 +6,9 @@ from typing import Annotated, Any, Literal
 from pydantic import AfterValidator, BaseModel, Field, model_validator
 
 # Citable ID formats, as one regex source shared by the types, the memo schema and the checker.
-CITE_REGEX = r"(?:NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+)"
+CITE_REGEX = (
+    r"(?:NCT\d{8}|PMID:\d+|PPR\d+|CHEMBL\d+|FDA:[A-Za-z0-9-]+|RISK:[a-z0-9-]+:[A-Za-z0-9_-]+)"
+)
 CITE_PATTERN = re.compile(CITE_REGEX)
 # Memo sentence ids: s1, s2, ... (reader flags address sentences by this id).
 SENTENCE_ID_REGEX = r"s\d{1,4}"
@@ -104,6 +106,10 @@ class RunRecord(BaseModel):
     # Entries: {"sentence_id": str, "text": str, "reason": str}
     removed: list[dict[str, Any]] = Field(default_factory=list)
     judgement_shown: bool = False
+    # Set when the judgement is shown after the checker failed some of its reasons: those reasons
+    # are dropped and the confidence lowered one level per dropped reason (spec 2026-11-12).
+    # {"reasons_removed": int, "confidence_was": "high" | "medium" | "low"}
+    judgement_adjusted: dict[str, Any] | None = None
     models: dict[str, Any] = Field(default_factory=dict)
     tokens_in: int = 0
     tokens_out: int = 0

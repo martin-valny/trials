@@ -1,0 +1,320 @@
+{
+ "run_id": "4406ed5a96d242d3ba6b0be35106f846",
+ "target": "clemastine",
+ "disease": "MS",
+ "fingerprint": "8bb506c5922be6bfb62b61a9478e9d563f03c1da4150542e7bd3fab226e25973",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T14:23:19Z",
+ "finished_at": "2026-11-12T14:24:18Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: Clemastine · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "4 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05338450",
+    "NCT02521311",
+    "NCT06065670",
+    "NCT05359653"
+   ],
+   "ms": 355,
+   "tokens_in": 2080,
+   "tokens_out": 177
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 17% across 3 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:clemastine:MS"
+   ],
+   "ms": 78,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "6 registry trials (1 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT05359653",
+    "NCT05338450",
+    "NCT05131828",
+    "NCT02040298",
+    "NCT06065670",
+    "NCT02521311"
+   ],
+   "ms": 229,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: upstream returned HTTP 500",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 28036,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "8 abstracts since 2018",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42842169",
+    "PPR1343903",
+    "PMID:42769598",
+    "PMID:42622843",
+    "PMID:42952812",
+    "PMID:42400702",
+    "PMID:42793204",
+    "PMID:42676031"
+   ],
+   "ms": 4020,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:5c99e7af-86a5-4c17-82d5-2d4119e4fe72"
+   ],
+   "ms": 1046,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "4 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05338450",
+    "NCT02521311",
+    "NCT06065670",
+    "NCT05359653"
+   ],
+   "ms": 386,
+   "tokens_in": 6442,
+   "tokens_out": 58
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7165,
+   "tokens_out": 222
+  },
+  {
+   "n": 11,
+   "kind": "write",
+   "text": "Memo written: 9 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 7909,
+   "tokens_out": 733
+  },
+  {
+   "n": 12,
+   "kind": "check",
+   "text": "checking 9 claims … 5 supported, 2 partly, 2 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3439,
+   "tokens_out": 441
+  },
+  {
+   "n": 13,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Four trials test clemastine in multiple sclerosis, including one Phase 3 and three earlier-phase studies.",
+    "cites": [
+     "NCT05338450"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "The Phase 3 trial (NCT05338450) was terminated due to slow recruitment and a futility analysis indicating no-go.",
+    "cites": [
+     "NCT05338450"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Clemastine is approved for allergic rhinitis and urticaria, not for any neurological indication.",
+    "cites": [
+     "FDA:5c99e7af-86a5-4c17-82d5-2d4119e4fe72"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "Recent preclinical studies show clemastine promotes oligodendrocyte differentiation and remyelination via M1 receptor antagonism.",
+    "cites": [
+     "PMID:42842169"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "A 2026 animal study found that clemastine, alone or combined with selenomethionine, promoted remyelination through PI3K/Akt/mTOR signaling.",
+    "cites": [
+     "PMID:42622843"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "competition",
+    "text": "The median probability of trial termination for clemastine in MS is 0.166, based on the site's risk model.",
+    "cites": [
+     "RISK:clemastine:MS"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "Clemastine faces competition from other remyelination strategies, including combination pharmacotherapies and non-invasive brain stimulation.",
+    "cites": [
+     "PMID:42952812"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: Clemastine promotes remyelination in preclinical models via M1 antagonism.",
+   "Competitive position: One Phase 3 failed; ongoing trials are early-phase and face moderate stop risk.",
+   "Open questions: Will clemastine show clinical remyelination benefit in larger trials? What is the optimal combination or patient subgroup?"
+  ],
+  "judgement": {
+   "stance": "mixed",
+   "confidence": "medium",
+   "reasons": [
+    "s2",
+    "s6",
+    "s8"
+   ]
+  },
+  "would_change": [
+   "Demonstration of remyelination in a completed Phase 2 trial would strengthen support.",
+   "A new Phase 3 initiation would indicate renewed sponsor confidence."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows 4 trials total: 1 Phase 3 and 3 Phase 2 (earlier-phase) studies."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source states trial was terminated due to slow recruitment and futility analysis resulting in 'no-go'."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "unsupported",
+   "reason": "Source only mentions University of California, San Francisco as sponsor, not three academic centers."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "FDA source indicates clemastine is indicated for allergic rhinitis and urticaria only."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "unsupported",
+   "reason": "Source does not mention approval status of M1/H1 remyelination class drugs for MS."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source states clemastine promotes oligodendrocyte differentiation and remyelination via M1 receptor antagonism."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Source mentions combination with selenomethionine and PI3K/Akt/mTOR signaling, but doesn't specify 'alone' or confirm 2026 animal study."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "Risk source shows median probability of 0.166 for trial termination."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "partly",
+   "reason": "Source discusses combination pharmacotherapies but doesn't mention non-invasive brain stimulation."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s3",
+   "text": "Three academic centers sponsor the running trials, all focused on remyelination outcomes using MRI or clinical measures.",
+   "reason": "Source only mentions University of California, San Francisco as sponsor, not three academic centers."
+  },
+  {
+   "sentence_id": "s5",
+   "text": "No drugs in the M1/H1 remyelination class have been approved for multiple sclerosis.",
+   "reason": "Source does not mention approval status of M1/H1 remyelination class drugs for MS."
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 27035,
+ "tokens_out": 1631,
+ "cost_usd": 0.01061288,
+ "data_date": "2026-11-11"
+}

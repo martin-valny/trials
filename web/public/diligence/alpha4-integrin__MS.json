@@ -1,0 +1,370 @@
+{
+ "run_id": "a71c4bce7de44f3cba36ecee43a2134f",
+ "target": "alpha4-integrin",
+ "disease": "MS",
+ "fingerprint": "cb585e17dca6187b61e7a15daf0cf2c2a5336e4acbc9b6f998cfa6241ebb0e41",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:52:48Z",
+ "finished_at": "2026-11-12T13:54:13Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: α4-integrin · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "31 trials on this target (9 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05265728",
+    "NCT05532163",
+    "NCT02241785",
+    "NCT02342704",
+    "NCT01416181",
+    "NCT02142192",
+    "NCT00297232",
+    "NCT01058005",
+    "NCT00771043",
+    "NCT03689972",
+    "NCT01405820",
+    "NCT01416155",
+    "NCT01884935",
+    "NCT02142205",
+    "NCT00871780",
+    "NCT01077466",
+    "NCT01440101",
+    "NCT00559702",
+    "NCT00942214",
+    "NCT00536120"
+   ],
+   "ms": 684,
+   "tokens_in": 2083,
+   "tokens_out": 180
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 81,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "128 registry trials (17 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT00493298",
+    "NCT04832399",
+    "NCT01416181",
+    "NCT04047628",
+    "NCT01071083",
+    "NCT00937677",
+    "NCT01981161",
+    "NCT01416155",
+    "NCT03516526",
+    "NCT04837651",
+    "NCT01058005",
+    "NCT05528666",
+    "NCT02904876",
+    "NCT05177718",
+    "NCT05701423",
+    "NCT00027300",
+    "NCT01539395",
+    "NCT01405820",
+    "NCT02277964",
+    "NCT05925049"
+   ],
+   "ms": 418,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 30051,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "8 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42664299",
+    "PMID:41864122",
+    "PMID:42934676",
+    "PMID:42558353",
+    "PMID:42930009",
+    "PMID:41671178",
+    "PMID:41014552",
+    "PMID:42660189"
+   ],
+   "ms": 315,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:c5fdde91-1989-4dd2-9129-4f3323ea2962"
+   ],
+   "ms": 1196,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42969026",
+    "PMID:42978183",
+    "PMID:42891510",
+    "PMID:42920560",
+    "PMID:42868842",
+    "PMID:42964802",
+    "PMID:42907929"
+   ],
+   "ms": 283,
+   "tokens_in": 10117,
+   "tokens_out": 36
+  },
+  {
+   "n": 9,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 12441,
+   "tokens_out": 410
+  },
+  {
+   "n": 10,
+   "kind": "write",
+   "text": "Memo written: 11 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 13374,
+   "tokens_out": 1071
+  },
+  {
+   "n": 11,
+   "kind": "check",
+   "text": "checking 11 claims … 7 supported, 3 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 5327,
+   "tokens_out": 900
+  },
+  {
+   "n": 12,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Thirty-one trials have tested α4-integrin blockade in multiple sclerosis, with Biogen as the lead sponsor in 26 of them.",
+    "cites": [
+     "NCT05265728"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Nine trials were terminated, including a Phase 3 study (NCT01416181) that did not achieve statistical significance on primary or secondary endpoints.",
+    "cites": [
+     "NCT01416181"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Natalizumab is approved for relapsing forms of multiple sclerosis and acts by blocking α4-integrin to inhibit lymphocyte trafficking into the central nervous system.",
+    "cites": [
+     "FDA:c5fdde91-1989-4dd2-9129-4f3323ea2962"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Natalizumab carries a FDA boxed warning for progressive multifocal leukoencephalopathy (PML), a risk that increases with anti-JCV antibody status, treatment duration, and prior immunosuppressant use.",
+    "cites": [
+     "FDA:c5fdde91-1989-4dd2-9129-4f3323ea2962"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "The risk of PML has led to restricted access via the TOUCH Prescribing Program, which limits broader use despite efficacy.",
+    "cites": [
+     "FDA:c5fdde91-1989-4dd2-9129-4f3323ea2962"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "No other drugs in the α4-integrin inhibitor class have been approved for multiple sclerosis.",
+    "cites": [
+     "FDA:c5fdde91-1989-4dd2-9129-4f3323ea2962"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "Recent observational data suggest that extended interval dosing of natalizumab may lead to low drug trough levels and emergence of neutralizing anti-drug antibodies, risking loss of efficacy.",
+    "cites": [
+     "PMID:42969026"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "Lack of expected lymphocytosis on treatment may serve as a biomarker for anti-drug antibody development.",
+    "cites": [
+     "PMID:42891510"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "literature",
+    "text": "Natalizumab may exacerbate neuromyelitis optica spectrum disorder due to blockade of endothelial VCAM1-astrocytic integrin α4 interaction.",
+    "cites": [
+     "PMID:41671178"
+    ]
+   },
+   {
+    "id": "s11",
+    "section": "competition",
+    "text": "Real-world evidence indicates durable efficacy after switching to alemtuzumab post-natalizumab, suggesting established exit strategies from high-risk therapies.",
+    "cites": [
+     "PMID:42868842"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: α4-integrin blockade remains a validated mechanism for reducing CNS inflammation in MS, but is limited by PML risk and immunogenicity concerns.",
+   "Competitive position: Natalizumab is a high-efficacy option with entrenched safety liabilities, facing competition from safer, high-efficacy alternatives.",
+   "Open questions: Can biomarker-guided monitoring (e.g., lymphocytosis, drug levels) mitigate immunogenicity and extend safe use? Does CNS immune restriction provide benefit in non-MS neurodegenerative conditions?"
+  ],
+  "judgement": {
+   "stance": "mixed",
+   "confidence": "high",
+   "reasons": [
+    "s4",
+    "s7",
+    "s10"
+   ]
+  },
+  "would_change": [
+   "Evidence of successful biomarker-guided extended interval dosing maintaining receptor saturation without immunogenicity would favour continued investment.",
+   "Demonstration of benefit in progressive MS or other neuroinflammatory conditions could shift the risk-benefit balance."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source states 31 total trials and Biogen as sponsor in 26 of them."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source confirms NCT01416181 was terminated and did not achieve statistical significance on primary/secondary endpoints."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "FDA source confirms natalizumab is approved for relapsing MS and is an integrin receptor antagonist."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "FDA boxed warning confirms PML risk and lists anti-JCV antibodies, duration, prior immunosuppressants as risk factors."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "FDA source mentions TOUCH Prescribing Program as restricted access due to PML risk."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Only natalizumab is listed in approved MS drugs in the α4-integrin chain from the source."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Source mentions ADA development with extended interval dosing and low trough levels, but not specifically 'neutralizing' ADAs or 'loss of efficacy'."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Source mentions lack of lymphocytosis as biomarker for ADA responses, but not specifically 'anti-drug antibody development'."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Source confirms natalizumab exacerbates NMOSD via blockade of VCAM1-astrocytic integrin α4 interaction."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "unsupported",
+   "reason": "FDA source doesn't mention competitive disadvantage or compare natalizumab to newer agents with better safety profiles."
+  },
+  {
+   "sentence_id": "s11",
+   "verdict": "partly",
+   "reason": "Source shows durable efficacy after switching but doesn't explicitly mention 'established exit strategies from high-risk therapies'"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s10",
+   "text": "Despite high efficacy, the PML risk profile places natalizumab at a competitive disadvantage compared to newer agents with more favorable safety profiles.",
+   "reason": "FDA source doesn't mention competitive disadvantage or compare natalizumab to newer agents with better safety profiles."
+  }
+ ],
+ "judgement_shown": false,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 43342,
+ "tokens_out": 2597,
+ "cost_usd": 0.01714073,
+ "data_date": "2026-11-11"
+}

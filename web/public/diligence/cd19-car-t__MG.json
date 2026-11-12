@@ -1,0 +1,310 @@
+{
+ "run_id": "30968d641fdd4449880bfbd1f67c5da2",
+ "target": "cd19-car-t",
+ "disease": "MG",
+ "fingerprint": "74cd88f54956e7ec886e463c02fe3c2c00c1d813ede0d8b23b2d1e6703678694",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:39:40Z",
+ "finished_at": "2026-11-12T13:40:11Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD19 CAR-T · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "13 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06419166",
+    "NCT06359041",
+    "NCT07304154",
+    "NCT06193889",
+    "NCT06220201",
+    "NCT06759948",
+    "NCT06978738",
+    "NCT07058298",
+    "NCT06485232",
+    "NCT06680037",
+    "NCT07337785",
+    "NCT06371040",
+    "NCT05828225"
+   ],
+   "ms": 586,
+   "tokens_in": 2083,
+   "tokens_out": 31
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 22% across 8 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:cd19-car-t:MG"
+   ],
+   "ms": 77,
+   "tokens_in": 3874,
+   "tokens_out": 32
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "1 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT06359041"
+   ],
+   "ms": 258,
+   "tokens_in": 3980,
+   "tokens_out": 37
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "1 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT06193889"
+   ],
+   "ms": 154,
+   "tokens_in": 4167,
+   "tokens_out": 37
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42936601",
+    "PMID:42824951",
+    "PMID:42727567",
+    "PMID:42787283",
+    "PMID:42628528",
+    "PMID:42611613",
+    "PMID:42819529"
+   ],
+   "ms": 1335,
+   "tokens_in": 4361,
+   "tokens_out": 41
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42936601",
+    "PMID:42824951",
+    "PMID:42628528",
+    "PMID:42787283",
+    "PMID:42819529",
+    "PMID:42611613",
+    "PMID:42633437"
+   ],
+   "ms": 251,
+   "tokens_in": 6178,
+   "tokens_out": 44
+  },
+  {
+   "n": 8,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 8089,
+   "tokens_out": 279
+  },
+  {
+   "n": 9,
+   "kind": "write",
+   "text": "Memo written: 9 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 8891,
+   "tokens_out": 889
+  },
+  {
+   "n": 10,
+   "kind": "check",
+   "text": "checking 9 claims … 6 supported, 2 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3404,
+   "tokens_out": 420
+  },
+  {
+   "n": 11,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Thirteen trials test CD19 CAR-T in myasthenia gravis (MG), with 11 currently running, one stopped before enrollment, and one with unknown status.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Among running trials, there is one Phase 2/3 trial (NCT06193889), one Phase 1/2 trial (NCT06359041), and nine Phase 1 or early Phase 1 trials.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Sponsors of active trials include Cabaletta Bio, Kyverna, BMS, Kite, TG Therapeutics, Zhejiang University, and several academic or hospital-based investigators.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "One trial (NCT06419166) was withdrawn before enrolling any participants due to the study stopping early.",
+    "cites": [
+     "NCT06419166"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 case series in Cell Reports Medicine (PMID:42628528) reported three patients with refractory MG achieving sustained clinical remission for at least 19 months after anti-CD19 CAR T-cell therapy, allowing discontinuation of other immunotherapies.",
+    "cites": [
+     "PMID:42628528"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "Recent reviews from 2026 (e.g., PMID:42936601, PMID:42824951) describe CD19 CAR-T as a promising strategy for deep and durable B-cell depletion in autoimmune neurologic diseases including MG.",
+    "cites": [
+     "PMID:42936601",
+     "PMID:42824951"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "competition",
+    "text": "The site's stop-risk model estimates a median 22.3% risk of termination across eight running CD19 CAR-T trials in MG, based on design and enrollment factors.",
+    "cites": [
+     "RISK:cd19-car-t:MG"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "CD19 CAR-T is being explored alongside other advanced cellular and biologic therapies for MG, but early clinical data suggest potential for durable, treatment-free remission in refractory cases.",
+    "cites": [
+     "PMID:42628528"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: Early clinical data support durable remission in refractory MG after CD19 CAR-T therapy.",
+   "Competitive position: Multiple companies and academic centers are advancing CD19 CAR-T in MG, with a modest estimated stop risk of 22.3%.",
+   "Open questions: Long-term safety, durability beyond two years, and optimal patient selection remain uncertain."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "medium",
+   "reasons": [
+    "s6",
+    "s7",
+    "s8"
+   ]
+  },
+  "would_change": [
+   "New safety signals from ongoing trials would shift the stance to mixed or against.",
+   "Failure of the Phase 2/3 KYV-101 trial (NCT06193889) to show efficacy would weaken the evidence base."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows 13 total trials, 11 running, 1 stopped, 1 unknown"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "partly",
+   "reason": "Source mentions Phase 1 (11), Phase 2 (1), Phase 3 (1) but not specific Phase 2/3 or Phase 1/2 trials"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source lists all mentioned sponsors in companies field"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "Source shows NCT06419166 withdrawn before enrolling any participants"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "unsupported",
+   "reason": "Source does not contain information about approvals or trial termination safety concerns"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Abstract reports three patients with refractory MG achieving at least 19 months remission allowing discontinuation of therapies"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Both sources from 2026 describe CD19 CAR-T as promising strategy for B-cell depletion in autoimmune neurologic diseases including MG"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "Risk model shows median 22.3% termination risk across eight running CD19 CAR-T trials in MG"
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "partly",
+   "reason": "Source supports durable treatment-free remission potential but does not mention other advanced cellular/biologic therapies"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s5",
+   "text": "No CD19 CAR-T therapy has been approved for MG, and no trial terminations were due to safety concerns in this indication.",
+   "reason": "Source does not contain information about approvals or trial termination safety concerns"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 45027,
+ "tokens_out": 1810,
+ "cost_usd": 0.015247110000000001,
+ "data_date": "2026-11-11"
+}

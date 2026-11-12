@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { noRecordedDiligence } from "./isolate";
 
 // The synthetic run lives only in the test fixtures (R6: nothing fake ships in web/public/diligence/),
 // so the recorded-run path is served by route interception. The build has no agent URL: this is the offline path.
@@ -9,6 +10,9 @@ const RUN = readFileSync(join(fileURLToPath(new URL(".", import.meta.url)), ".."
 const LABEL = "AI judgement from public data, not investment advice";
 const overflows = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+
+
+test.beforeEach(({ page }) => noRecordedDiligence(page));
 
 test("a target page shows a recorded diligence run with its checked memo", async ({ page }) => {
   await page.route("**/diligence/cd20__MS.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: RUN }));

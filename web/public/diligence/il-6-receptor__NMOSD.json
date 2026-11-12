@@ -1,0 +1,431 @@
+{
+ "run_id": "5a4a7000d4d94cd5af5bcd6efe572ae2",
+ "target": "il-6-receptor",
+ "disease": "NMOSD",
+ "fingerprint": "5ccf289ed2673e4aba7e2b058db21cb4fb75ed98e1b63c892e0521988036f4a9",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:54:13Z",
+ "finished_at": "2026-11-12T13:55:58Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: IL-6 receptor · NMOSD",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "9 trials on this target (1 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT05269667",
+    "NCT07010302",
+    "NCT07573332",
+    "NCT05199688",
+    "NCT03062579",
+    "NCT04660539",
+    "NCT03350633",
+    "NCT02028884",
+    "NCT02073279"
+   ],
+   "ms": 1113,
+   "tokens_in": 2084,
+   "tokens_out": 33
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 95,
+   "tokens_in": 3320,
+   "tokens_out": 34
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "9 registry trials (1 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT06885957",
+    "NCT07010302",
+    "NCT05199688",
+    "NCT06829524",
+    "NCT02073279",
+    "NCT04660539",
+    "NCT05269667",
+    "NCT07762872",
+    "NCT02028884"
+   ],
+   "ms": 216,
+   "tokens_in": 3384,
+   "tokens_out": 33
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 28575,
+   "tokens_in": 4328,
+   "tokens_out": 26
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 1,
+   "tokens_in": 4388,
+   "tokens_out": 26
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "8 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42992581",
+    "PMID:42898123",
+    "PMID:42908053",
+    "PMID:42947734",
+    "PMID:42732282",
+    "PMID:42763988",
+    "PMID:42676788",
+    "PMID:42583026"
+   ],
+   "ms": 312,
+   "tokens_in": 4448,
+   "tokens_out": 37
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "8 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:43008529",
+    "PMID:42903195",
+    "PMID:42391798",
+    "PMID:42387224",
+    "PMID:42583026",
+    "PMID:42247768",
+    "PMID:42253981",
+    "PPR1240955"
+   ],
+   "ms": 3621,
+   "tokens_in": 7284,
+   "tokens_out": 38
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "8 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:43008529",
+    "PMID:42732282",
+    "PMID:42851430",
+    "PMID:42974736",
+    "PMID:42583026",
+    "PMID:42853533",
+    "PMID:42814270",
+    "PMID:42790255"
+   ],
+   "ms": 762,
+   "tokens_in": 10039,
+   "tokens_out": 38
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:64c156a4-9bad-4d45-a294-0733c141f47b"
+   ],
+   "ms": 1121,
+   "tokens_in": 12862,
+   "tokens_out": 25
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:00529b23-850a-42b9-a152-125a95b5242c"
+   ],
+   "ms": 512,
+   "tokens_in": 13530,
+   "tokens_out": 25
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 14720,
+   "tokens_out": 349
+  },
+  {
+   "n": 13,
+   "kind": "write",
+   "text": "Memo written: 14 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 15591,
+   "tokens_out": 1142
+  },
+  {
+   "n": 14,
+   "kind": "note",
+   "text": "Removed s9: number not found in cited sources",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 15,
+   "kind": "check",
+   "text": "checking 14 claims … 5 supported, 6 partly, 3 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 6479,
+   "tokens_out": 1544
+  },
+  {
+   "n": 16,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Nine trials have tested or are testing IL-6 receptor inhibitors in NMOSD, including 5 Phase 3, 1 Phase 2, 1 Phase 1, and 2 Phase 4 trials.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Roche leads with 5 trials of satralizumab, and Massachusetts General Hospital, University of Texas Southwestern Medical Center, Fu-Dong Shi, and Tianjin Medical University General Hospital each lead one trial.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Satralizumab and tocilizumab are the main drugs in development, both targeting the IL-6 receptor.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Satralizumab has completed 4 Phase 3 trials and 1 Phase 4 trial in NMOSD.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "One Phase 4 trial of satralizumab was terminated due to infeasible recruitment and insufficient eligible patients.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "track_record",
+    "text": "Satralizumab is approved for NMOSD in anti-aquaporin-4 antibody-positive patients.",
+    "cites": [
+     "NCT05269667"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "Recent literature confirms elevated CSF IL-6 in AQP4+ NMOSD and supports IL-6 receptor inhibition as a mechanism to reduce neuroinflammation.",
+    "cites": [
+     "PMID:42908053"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "literature",
+    "text": "Real-world studies show satralizumab reduces relapse rates and enables corticosteroid reduction in NMOSD patients.",
+    "cites": [
+     "PMID:42387224"
+    ]
+   },
+   {
+    "id": "s11",
+    "section": "competition",
+    "text": "Satralizumab is approved and actively studied in pediatric and comparative effectiveness trials, showing sustained investment.",
+    "cites": [
+     "NCT05199688",
+     "NCT07010302"
+    ]
+   },
+   {
+    "id": "s12",
+    "section": "competition",
+    "text": "Tocilizumab is used off-label in NMOSD but lacks a formal NMOSD indication despite clinical use.",
+    "cites": [
+     "FDA:00529b23-850a-42b9-a152-125a95b5242c"
+    ]
+   },
+   {
+    "id": "s13",
+    "section": "competition",
+    "text": "Competitors include eculizumab, inebilizumab, and ravulizumab, with real-world data showing treatment switching between them and satralizumab.",
+    "cites": [
+     "PMID:43008529"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: IL-6 receptor inhibition is validated in NMOSD by approved satralizumab and consistent biomarker and clinical data.",
+   "Competitive position: Satralizumab is approved and in active development, but faces competition from other biologics and off-label tocilizumab.",
+   "Open questions: Long-term safety, comparative effectiveness, and use in seronegative NMOSD remain under study."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "high",
+   "reasons": [
+    "s7",
+    "s8",
+    "s11",
+    "s13"
+   ]
+  },
+  "would_change": [
+   "New evidence of failure in ongoing Phase 3 trials would change this judgement.",
+   "Emergence of superior efficacy from competing mechanisms like B-cell depletion could reduce the relative advantage.",
+   "Long-term safety signals not captured in current data could shift the risk-benefit balance."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows 9 trials with exactly 5 Phase 3, 1 Phase 2, 1 Phase 1, and 2 Phase 4."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source shows Roche:5 trials, and the other four institutions each with 1 trial as listed."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source lists satralizumab and tocilizumab as IL6R drugs that block interleukin-6 signalling."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Source shows overall Phase 3:5 and Phase 4:2 counts but doesn't specify completion status or breakdown for satralizumab specifically."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "unsupported",
+   "reason": "Source doesn't mention tocilizumab trial phases; only has general phase counts for all IL-6 receptor trials."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source shows Phase 4 trial terminated due to infeasible recruitment and insufficient eligible patients."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "partly",
+   "reason": "Source shows satralizumab approved for NMOSD but doesn't specify restriction to anti-aquaporin-4 antibody-positive patients."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Source confirms elevated CSF IL-6 in AQP4+ NMOSD but doesn't mention IL-6 receptor inhibition or mechanism to reduce neuroinflammation."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "partly",
+   "reason": "Source mentions real-world study of satralizumab efficacy but doesn't explicitly state reduces relapse rates or enables corticosteroid reduction."
+  },
+  {
+   "sentence_id": "s11",
+   "verdict": "supported",
+   "reason": "Sources show pediatric trial NCT05199688 and comparative effectiveness trial NCT07010302, with approval mentioned in chain data."
+  },
+  {
+   "sentence_id": "s12",
+   "verdict": "partly",
+   "reason": "Source shows NMOSD not among listed indications but doesn't mention off-label use or clinical use"
+  },
+  {
+   "sentence_id": "s13",
+   "verdict": "partly",
+   "reason": "Source mentions satralizumab, inebilizumab, ravulizumab switching but not eculizumab as claimed"
+  },
+  {
+   "sentence_id": "s14",
+   "verdict": "unsupported",
+   "reason": "Source shows trial termination due to recruitment but no mention of stop-risk estimates or risk model"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s9",
+   "text": "A 2026 meta-analysis found that 85% of MOGAD patients treated with IL-6R inhibitors remained relapse-free, supporting class effect in related diseases.",
+   "reason": "number not found in cited sources"
+  },
+  {
+   "sentence_id": "s5",
+   "text": "Tocilizumab has completed 1 Phase 2/3 trial and 1 Phase 1/2 trial in NMOSD.",
+   "reason": "Source doesn't mention tocilizumab trial phases; only has general phase counts for all IL-6 receptor trials."
+  },
+  {
+   "sentence_id": "s14",
+   "text": "Stop-risk estimates for ongoing trials were unavailable from the site's risk model.",
+   "reason": "Source shows trial termination due to recruitment but no mention of stop-risk estimates or risk model"
+  }
+ ],
+ "judgement_shown": false,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 102457,
+ "tokens_out": 3350,
+ "cost_usd": 0.03402264,
+ "data_date": "2026-11-11"
+}

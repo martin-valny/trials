@@ -1,5 +1,6 @@
 """Lambda handler: routing, validation, quotas, execute path (moto DynamoDB, fakes)."""
 
+import dataclasses
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -613,8 +614,16 @@ def test_stale_run_is_not_executed(env: Env) -> None:
 
 def test_placeholder_models_refuse_to_start_runs(env: Env, monkeypatch: pytest.MonkeyPatch) -> None:
     """Minor 5: a deploy with REPLACE_WITH_ model IDs must not spend quota on failing runs."""
-    assert env.cfg.has_placeholder_models()
-    monkeypatch.setattr(handler, "load_config", lambda: env.cfg)
+    ids = {k: f"REPLACE_WITH_{k.upper()}_MODEL_ID" for k in env.cfg.models.model_dump()}
+    price = next(iter(env.cfg.prices.values()))
+    placeholder = env.cfg.model_copy(
+        update={
+            "models": env.cfg.models.model_copy(update=ids),
+            "prices": {i: price for i in ids.values()},
+        }
+    )
+    assert placeholder.has_placeholder_models()
+    monkeypatch.setattr(handler, "load_config", lambda: placeholder)
     deps = handler.default_deps()
     assert deps.configured is False
     env.deps.configured = False
@@ -650,3 +659,37 @@ def test_lambda_invoker_is_async_self_invoke(monkeypatch: pytest.MonkeyPatch) ->
 
 def test_module_import_needs_no_aws() -> None:
     assert handler.lambda_handler is lambda_handler
+
+
+class _LooseModel:
+    """Wraps the scripted model and packages answers the way Qwen3 and DeepSeek V3.2 did on
+    Bedrock (2026-11-12): the memo as JSON text with a stray closing brace, the verdicts as a
+    JSON string."""
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+
+    def converse(self, **kw: Any) -> Any:
+        resp = self._inner.converse(**kw)
+        content = []
+        for b in resp.content:
+            use = b.get("toolUse")
+            if use and use["name"] == "submit_memo":
+                content.append({"text": json.dumps(use["input"]) + "}"})
+            elif use and use["name"] == "submit_verdicts":
+                loose = {**use["input"], "verdicts": json.dumps(use["input"]["verdicts"])}
+                content.append({"toolUse": {**use, "input": loose}})
+            else:
+                content.append(b)
+        return dataclasses.replace(resp, content=content)
+
+
+def test_live_run_completes_with_loosely_packaged_model_answers(env: Env) -> None:
+    env.model = lambda: _LooseModel(scripted_model())
+    run_id = body_of(env.post_run())["run_id"]
+    env.execute(run_id)
+    got = body_of(env.call("GET", f"/runs/{run_id}"))
+    assert got["status"] == "done" and got["memo"] is not None
+    assert got["verdicts"] and not any(
+        "checker unavailable" in v["reason"] for v in got["verdicts"]
+    )

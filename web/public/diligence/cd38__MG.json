@@ -1,0 +1,261 @@
+{
+ "run_id": "b4f6aae7b57843adaf8d998e1aad3a93",
+ "target": "cd38",
+ "disease": "MG",
+ "fingerprint": "b8c45197d88f9aa87f5730f8c1cd498f980f51d35039fadd50f006cce3d05849",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:49:08Z",
+ "finished_at": "2026-11-12T13:50:13Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD38 · MG",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "1 trial on this target (0 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT04159805"
+   ],
+   "ms": 202,
+   "tokens_in": 2079,
+   "tokens_out": 132
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 80,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "0 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [],
+   "ms": 226,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "8 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PPR1319215",
+    "PMID:42413158",
+    "PMID:42633437",
+    "PMID:42958277",
+    "PMID:42333263",
+    "PMID:42628528",
+    "PMID:41906599",
+    "PMID:42611613"
+   ],
+   "ms": 5575,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 31057,
+   "tokens_in": 4917,
+   "tokens_out": 27
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:4bb241af-4299-4373-8762-2d6709515db0"
+   ],
+   "ms": 1400,
+   "tokens_in": 4978,
+   "tokens_out": 24
+  },
+  {
+   "n": 8,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 5799,
+   "tokens_out": 142
+  },
+  {
+   "n": 9,
+   "kind": "write",
+   "text": "Memo written: 7 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 6463,
+   "tokens_out": 717
+  },
+  {
+   "n": 10,
+   "kind": "check",
+   "text": "checking 7 claims … 5 supported, 1 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 2588,
+   "tokens_out": 389
+  },
+  {
+   "n": 11,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "One trial tests CD38 as a target in myasthenia gravis, a Phase 2 study sponsored by Takeda that completed in 2022.",
+    "cites": [
+     "NCT04159805"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "The drug in the trial is tak-079, a CD38-targeting antibody intended to deplete plasma cells.",
+    "cites": [
+     "NCT04159805"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "track_record",
+    "text": "CD38-targeting antibodies are approved for multiple myeloma, with daratumumab indicated in several combination regimens for that disease.",
+    "cites": [
+     "FDA:4bb241af-4299-4373-8762-2d6709515db0"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Serious adverse reactions with CD38 antibodies include infections, neutropenia, thrombocytopenia, and hypersensitivity reactions.",
+    "cites": [
+     "FDA:4bb241af-4299-4373-8762-2d6709515db0"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "literature",
+    "text": "A 2026 preclinical study demonstrated that an anti-CD38 antibody fused to acetylcholine receptor antigen (ACE) selectively depleted autoreactive plasma cells, reduced autoantibody titers, and improved disease scores in a myasthenia gravis model.",
+    "cites": [
+     "PMID:41906599"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "competition",
+    "text": "Anti-CD19 CAR T-cell therapy has shown durable remission in refractory myasthenia gravis patients, representing a competing cellular approach to B-cell depletion.",
+    "cites": [
+     "PMID:42628528"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: CD38 targeting via antibodies depletes plasma cells and has shown preclinical efficacy in MG models.",
+   "Competitive position: Limited clinical activity in MG despite approval in myeloma; faces competition from anti-CD19 CAR T and other B-cell targeting agents.",
+   "Open questions: Will CD38 inhibition achieve durable remission in MG? How does it compare to broader B-cell depletion strategies?"
+  ],
+  "judgement": {
+   "stance": "mixed",
+   "confidence": "medium",
+   "reasons": [
+    "s1",
+    "s5",
+    "s7"
+   ]
+  },
+  "would_change": [
+   "New Phase 2 results from Takeda would clarify efficacy.",
+   "Head-to-head comparison with anti-CD19 therapies would affect competitive assessment.",
+   "Emergence of additional CD38 trials in MG would signal increased confidence."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source confirms Phase 2, Takeda-sponsored trial completed in 2022 for myasthenia gravis with CD38 target."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source confirms drug is TAK-079, a CD38-targeting antibody for plasma cell depletion in MG."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source shows daratumumab is CD38-directed antibody approved for multiple myeloma in various combination regimens."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Source mentions infections, neutropenia, thrombocytopenia, and hypersensitivity but not specifically 'serious adverse reactions with CD38 antibodies' generally."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Source confirms 2026 preclinical study with anti-CD38 antibody fused to ACE selectively depleted autoreactive plasma cells, reduced autoantibodies, improved disease scores in MG model."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "unsupported",
+   "reason": "Source only mentions one completed trial; sentence claims analysis of no active trials on ClinicalTrials.gov not supported by provided source."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source confirms anti-CD19 CAR T-cell therapy shows durable remission in refractory MG patients as B-cell depletion approach."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s6",
+   "text": "No active clinical trials for CD38-targeted therapies in myasthenia gravis were found in ClinicalTrials.gov, suggesting limited current investment.",
+   "reason": "Source only mentions one completed trial; sentence claims analysis of no active trials on ClinicalTrials.gov not supported by provided source."
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 26824,
+ "tokens_out": 1431,
+ "cost_usd": 0.0098797,
+ "data_date": "2026-11-11"
+}

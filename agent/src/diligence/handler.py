@@ -22,7 +22,7 @@ import httpx
 from diligence.config import AgentConfig, load_config
 from diligence.log import log_error, log_event
 from diligence.loop import RunRequest, run_agent
-from diligence.model import BedrockModel, ModelClient
+from diligence.model import ModelClient, bedrock_for
 from diligence.store import STALE_AFTER_S, START_DEADLINE_S, NewRun, Store, cache_key
 from diligence.tools.http import ToolError, client, get_json
 from diligence.tools.registry_of_tools import ToolContext
@@ -73,7 +73,7 @@ def default_deps() -> Deps:
         store=Store(cfg),
         invoke=make_lambda_invoker(),
         http=client(),
-        model_factory=lambda region: BedrockModel(region),
+        model_factory=lambda region: bedrock_for(cfg, region),
         configured=not cfg.has_placeholder_models(),
     )
 

@@ -48,6 +48,7 @@
 .dg-stance { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: -.005em; max-width: 34ch; }
 .dg-stance.withheld { font-size: 14px; }
 .dg-conf { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.dg-adj { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
 .dg-because { margin: 10px 0 2px; font-size: 12px; color: var(--muted); }
 .dg-reasons { margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.45; }
 .dg-reasons li { padding: 3px 0; }

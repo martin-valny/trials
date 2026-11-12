@@ -1,0 +1,427 @@
+{
+ "run_id": "a0e402b925874fcb843ece025f1764bf",
+ "target": "baff-april",
+ "disease": "MS",
+ "fingerprint": "cf81a91aafb48aec1b88ce5950ca24173a4aea42ec223f526d1ac1c38422bedd",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:43:44Z",
+ "finished_at": "2026-11-12T13:45:06Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: BAFF / APRIL · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "5 trials on this target (4 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT04625153",
+    "NCT04767698",
+    "NCT00642902",
+    "NCT00853762",
+    "NCT00882999"
+   ],
+   "ms": 464,
+   "tokens_in": 2081,
+   "tokens_out": 30
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk estimates unavailable",
+   "tool": "site_risk",
+   "ids": [],
+   "ms": 78,
+   "tokens_in": 2851,
+   "tokens_out": 31
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "18 registry trials (7 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT01369628",
+    "NCT07020923",
+    "NCT00430495",
+    "NCT01440231",
+    "NCT00624468",
+    "NCT04716231",
+    "NCT06983028",
+    "NCT00664521",
+    "NCT01972568",
+    "NCT00595413",
+    "NCT06674577",
+    "NCT00573157",
+    "NCT00853762",
+    "NCT00624338",
+    "NCT02808429",
+    "NCT00642902",
+    "NCT05609812",
+    "NCT02070978"
+   ],
+   "ms": 216,
+   "tokens_in": 2912,
+   "tokens_out": 24
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "110 registry trials (5 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04515719",
+    "NCT01670565",
+    "NCT06576271",
+    "NCT04611971",
+    "NCT06381453",
+    "NCT07069972",
+    "NCT03154385",
+    "NCT04908865",
+    "NCT00410384",
+    "NCT01440361",
+    "NCT05878717",
+    "NCT01729455",
+    "NCT01894360",
+    "NCT04179032",
+    "NCT07138898",
+    "NCT00657007",
+    "NCT03244059",
+    "NCT02270970",
+    "NCT01480596",
+    "NCT01025193"
+   ],
+   "ms": 424,
+   "tokens_in": 4564,
+   "tokens_out": 23
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "27 registry trials (5 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04082416",
+    "NCT07098897",
+    "NCT03330418",
+    "NCT05687526",
+    "NCT05247203",
+    "NCT04235933",
+    "NCT05737160",
+    "NCT06456580",
+    "NCT02882087",
+    "NCT02885610",
+    "NCT05929248",
+    "NCT05666336",
+    "NCT04905212",
+    "NCT05680480",
+    "NCT05998759",
+    "NCT04291781",
+    "NCT05306574",
+    "NCT07111338",
+    "NCT05899907",
+    "NCT05339217"
+   ],
+   "ms": 170,
+   "tokens_in": 6315,
+   "tokens_out": 23
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "6 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42755123",
+    "PMID:42960596",
+    "PMID:42908053",
+    "PMID:42553115",
+    "PMID:42927505",
+    "PMID:42940094"
+   ],
+   "ms": 2126,
+   "tokens_in": 8077,
+   "tokens_out": 36
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 24891,
+   "tokens_in": 9776,
+   "tokens_out": 25
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9835,
+   "tokens_out": 24
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9893,
+   "tokens_out": 24
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:2fa3c528-1777-4628-8a55-a69dae2381a3"
+   ],
+   "ms": 1208,
+   "tokens_in": 9951,
+   "tokens_out": 23
+  },
+  {
+   "n": 12,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:24aa29f6-ccff-45d3-89af-4d26e525cef8"
+   ],
+   "ms": 286,
+   "tokens_in": 10637,
+   "tokens_out": 24
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 11316,
+   "tokens_out": 139
+  },
+  {
+   "n": 14,
+   "kind": "write",
+   "text": "Memo written: 11 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 11977,
+   "tokens_out": 812
+  },
+  {
+   "n": 15,
+   "kind": "note",
+   "text": "Removed s11: no citation",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 16,
+   "kind": "check",
+   "text": "checking 11 claims … 8 supported, 0 partly, 3 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 4139,
+   "tokens_out": 463
+  },
+  {
+   "n": 17,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Sponsors include Merck KGaA, RemeGen, Johns Hopkins University, and Lilly.",
+    "cites": [
+     "NCT04625153"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Atacicept was terminated in two Phase 2 MS trials due to increased MS disease activity in the treatment arms compared to placebo.",
+    "cites": [
+     "NCT00642902"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "RC18 was terminated in a Phase 2 MS trial due to sponsor strategic priority adjustment.",
+    "cites": [
+     "NCT04625153"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "Belimumab was terminated in a Phase 2 MS trial due to withdrawal of funding.",
+    "cites": [
+     "NCT04767698"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "track_record",
+    "text": "Atacicept is approved for IgA nephropathy under accelerated approval based on reduction of proteinuria.",
+    "cites": [
+     "FDA:24aa29f6-ccff-45d3-89af-4d26e525cef8"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "track_record",
+    "text": "Belimumab is approved for systemic lupus erythematosus and lupus nephritis.",
+    "cites": [
+     "FDA:2fa3c528-1777-4628-8a55-a69dae2381a3"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "literature",
+    "text": "BAFF and APRIL support B cell and plasma cell survival through receptors BAFFR, TACI, and BCMA, making them therapeutic targets in antibody-driven diseases.",
+    "cites": [
+     "PMID:42755123"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "literature",
+    "text": "Elevated BAFF and APRIL signaling contributes to autoreactive B cell activation and disease persistence in autoimmune conditions.",
+    "cites": [
+     "PMID:42553115"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: BAFF/APRIL inhibition targets B and plasma cell survival with biological rationale in autoimmunity.",
+   "Competitive position: Mechanism has failed in multiple MS trials due to lack of efficacy and strategic reasons.",
+   "Open questions: Why does BAFF/APRIL inhibition worsen MS activity despite rationale in other diseases?"
+  ],
+  "judgement": {
+   "stance": "against",
+   "confidence": "high",
+   "reasons": [
+    "s4",
+    "s5",
+    "s6",
+    "s7"
+   ]
+  },
+  "would_change": [
+   "New evidence showing efficacy in a late-phase MS trial would change this judgement.",
+   "Mechanistic studies explaining the paradoxical increase in MS disease activity with BAFF/APRIL inhibition could alter the risk assessment."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "unsupported",
+   "reason": "Source only mentions 1 trial (RC18), not 5 trials testing BAFF/APRIL inhibitors in MS"
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "unsupported",
+   "reason": "Source mentions 1 terminated trial (RC18), not 4 terminated and 1 completed out of 5"
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source lists Merck KGaA, RemeGen, Johns Hopkins University, and Lilly as companies involved"
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "supported",
+   "reason": "Source confirms atacicept trial terminated due to increased MS disease activity in treatment arms"
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Source states RC18 trial terminated due to Sponsor Strategic Priority Adjustment"
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source states belimumab trial terminated due to funding source stopping funding"
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source confirms TRUTAKNA (atacicept) approved under accelerated approval for IgAN based on proteinuria reduction"
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "Source confirms BENLYSTA (belimumab) approved for SLE and lupus nephritis"
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Source confirms BAFF and APRIL bind to BAFFR, TACI, BCMA and are therapeutic targets"
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "supported",
+   "reason": "Source confirms elevated BAFF/APRIL signaling contributes to autoreactive B cell activation"
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s11",
+   "text": "Stop-risk estimates for BAFF/APRIL inhibitors in MS are unavailable.",
+   "reason": "no citation"
+  },
+  {
+   "sentence_id": "s1",
+   "text": "Five trials test BAFF/APRIL inhibitors in multiple sclerosis, all in Phase 2.",
+   "reason": "Source only mentions 1 trial (RC18), not 5 trials testing BAFF/APRIL inhibitors in MS"
+  },
+  {
+   "sentence_id": "s2",
+   "text": "Four of the five trials have terminated, and one completed.",
+   "reason": "Source mentions 1 terminated trial (RC18), not 4 terminated and 1 completed out of 5"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 104324,
+ "tokens_out": 1701,
+ "cost_usd": 0.030374969999999998,
+ "data_date": "2026-11-11"
+}

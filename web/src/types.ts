@@ -515,6 +515,8 @@ export interface RunRecord {
   verdicts: DiligenceVerdict[];
   removed: DiligenceRemoved[];
   judgement_shown: boolean;
+  /** Set when the checker failed some reasons: they were dropped and the confidence lowered one level each. */
+  judgement_adjusted?: { reasons_removed: number; confidence_was: "high" | "medium" | "low" } | null;
   models: Record<string, unknown>;
   tokens_in: number;
   tokens_out: number;

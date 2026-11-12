@@ -1,0 +1,383 @@
+{
+ "run_id": "7a42b1af136f48b7b38c6d24cae95006",
+ "target": "cd20",
+ "disease": "MS",
+ "fingerprint": "caf19bfeddc8d8ad9d964070df068e447c6aa498c4f8cbca21e41ceef74928dd",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:31:29Z",
+ "finished_at": "2026-11-12T13:33:18Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: CD20 · MS",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "99 trials on this target (7 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT06677710",
+    "NCT05208840",
+    "NCT03085810",
+    "NCT04877457",
+    "NCT04878211",
+    "NCT04767698",
+    "NCT01212094",
+    "NCT04130997",
+    "NCT05285891",
+    "NCT05758831",
+    "NCT07220252",
+    "NCT07517185",
+    "NCT06675955",
+    "NCT07225361",
+    "NCT07503340",
+    "NCT07609719",
+    "NCT03650114",
+    "NCT05999604",
+    "NCT07282574",
+    "NCT07389590"
+   ],
+   "ms": 485,
+   "tokens_in": 2079,
+   "tokens_out": 125
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 25% across 18 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:cd20:MS"
+   ],
+   "ms": 106,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "47 registry trials (1 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT04688788",
+    "NCT06677710",
+    "NCT06854094",
+    "NCT07341828",
+    "NCT07321093",
+    "NCT07779460",
+    "NCT04510220",
+    "NCT07149662",
+    "NCT07676266",
+    "NCT02980042",
+    "NCT04640818",
+    "NCT07472413",
+    "NCT05596526",
+    "NCT06267781",
+    "NCT07189325",
+    "NCT02738775",
+    "NCT06529406",
+    "NCT06586177",
+    "NCT07304154",
+    "NCT07854483"
+   ],
+   "ms": 255,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "7 abstracts since 2021",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42947820",
+    "PMID:42991313",
+    "PMID:42961681",
+    "PMID:42735930",
+    "PPR1359846",
+    "PMID:42911175",
+    "PMID:42950771"
+   ],
+   "ms": 7426,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 31715,
+   "tokens_in": 8624,
+   "tokens_out": 77
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:9da42362-3bb5-4b83-b4bb-b59fd4e55f0d"
+   ],
+   "ms": 1152,
+   "tokens_in": 8787,
+   "tokens_out": 49
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:6a8a3f53-2062-48ff-9dbe-b939df133ca3"
+   ],
+   "ms": 398,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 11,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9983,
+   "tokens_out": 215
+  },
+  {
+   "n": 12,
+   "kind": "write",
+   "text": "Memo written: 10 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 10721,
+   "tokens_out": 934
+  },
+  {
+   "n": 13,
+   "kind": "note",
+   "text": "Removed s5: no citation",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 14,
+   "kind": "check",
+   "text": "checking 10 claims … 7 supported, 2 partly, 1 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 5937,
+   "tokens_out": 974
+  },
+  {
+   "n": 15,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Ninety-nine trials test CD20-targeting drugs in multiple sclerosis (MS), with 47 in Phase 3 and 23 in Phase 4.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Roche leads with 35 trials, followed by Novartis with 16 and TG Therapeutics with 9.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "Three CD20-targeting drugs—ocrelizumab, ofatumumab, and ublituximab—are approved for relapsing forms of MS.",
+    "cites": [
+     "NCT06677710"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Multiple trials have stopped: one due to business reasons, one due to slow enrollment, one due to funding loss, and another due to geopolitical conflict.",
+    "cites": [
+     "NCT06677710",
+     "NCT05208840",
+     "NCT04877457",
+     "NCT04878211"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "literature",
+    "text": "A 2026 pharmacovigilance study found signals of non-PML neuroinvasive infections with anti-CD20 therapies in MS.",
+    "cites": [
+     "PMID:42947820"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "A 2026 perspective highlights uncertainty around anti-CD20 discontinuation, noting disease reactivation after cessation and lack of predictive biomarkers.",
+    "cites": [
+     "PMID:42991313"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "A 2026 cohort study in JAMA Neurology reported an increased risk of inflammatory bowel disease following anti-CD20 treatment in MS.",
+    "cites": [
+     "PMID:42911175"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "The median stop-risk for CD20 trials in MS is 0.249, based on the site's risk model.",
+    "cites": [
+     "RISK:cd20:MS"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "competition",
+    "text": "FDA labels for ocrelizumab and ofatumumab include warnings for infections, infusion/injection reactions, immunoglobulin reduction, and malignancy risk.",
+    "cites": [
+     "FDA:9da42362-3bb5-4b83-b4bb-b59fd4e55f0d",
+     "FDA:6a8a3f53-2062-48ff-9dbe-b939df133ca3"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: CD20 inhibition is well-established in MS with multiple approved agents and extensive trial activity, but carries risks of infection, IBD, and neuroinvasive events.",
+   "Competitive position: Dominated by major players and three approved drugs, but discontinuation uncertainty and safety signals may limit long-term use.",
+   "Open questions: Can lower stop-risk strategies be developed? Are biomarkers for safe discontinuation feasible?"
+  ],
+  "judgement": {
+   "stance": "mixed",
+   "confidence": "high",
+   "reasons": [
+    "s1",
+    "s3",
+    "s7",
+    "s8"
+   ]
+  },
+  "would_change": [
+   "Evidence of safe and predictable treatment discontinuation would favor investment.",
+   "Demonstration of reduced infection or IBD risk compared to current anti-CD20 agents would shift the stance to favorable.",
+   "A significant drop in trial stop-risk below 0.2 would improve competitive outlook."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows exactly 99 total trials, 47 Phase 3, 23 Phase 4."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source shows Roche:35, Novartis:16, TG Therapeutics:9 trials."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source lists ocrelizumab, ofatumumab, ublituximab as approved for MS."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Three reasons match (business, slow enrollment, geopolitical), but 'funding loss' doesn't match source's 'business reasons'."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "2026 study abstract mentions non-PML neuroinvasive infections with MS therapies."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "2026 perspective discusses anti-CD20 discontinuation uncertainty and disease reactivation."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "supported",
+   "reason": "2026 JAMA Neurology cohort study on IBD risk after anti-CD20 in MS."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Source shows median stop-risk 0.249 from risk model."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "partly",
+   "reason": "Labels mention infections, reactions, Ig reduction; but malignancy warning not clearly in ofatumumab text, and 'infusion/injection reactions' not fully matching both."
+  }
+ ],
+ "removed": [
+  {
+   "sentence_id": "s5",
+   "text": "ChEMBL drug data for ocrelizumab, ofatumumab, and ublituximab were unavailable due to timeout errors.",
+   "reason": "no citation"
+  }
+ ],
+ "judgement_shown": true,
+ "judgement_adjusted": null,
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 46131,
+ "tokens_out": 2374,
+ "cost_usd": 0.018004159999999998,
+ "data_date": "2026-11-11"
+}

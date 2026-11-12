@@ -1,0 +1,383 @@
+{
+ "run_id": "cdc8a692c3964d1d893bbc937fae85ce",
+ "target": "c5",
+ "disease": "NMOSD",
+ "fingerprint": "3e60a81ffaa0d0601eea76b70d4e159bfe5dad67a8db4afc347b67128b1f21bf",
+ "agent_version": "0.1.0",
+ "status": "done",
+ "started_at": "2026-11-12T13:37:46Z",
+ "finished_at": "2026-11-12T13:39:40Z",
+ "steps": [
+  {
+   "n": 1,
+   "kind": "plan",
+   "text": "Planning: C5 · NMOSD",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 2,
+   "kind": "tool",
+   "text": "10 trials on this target (2 stopped)",
+   "tool": "site_target",
+   "ids": [
+    "NCT04155424",
+    "NCT01892345",
+    "NCT07010302",
+    "NCT07557420",
+    "NCT05346354",
+    "NCT06724809",
+    "NCT07420296",
+    "NCT00904826",
+    "NCT04201262",
+    "NCT02003144"
+   ],
+   "ms": 775,
+   "tokens_in": 2079,
+   "tokens_out": 243
+  },
+  {
+   "n": 3,
+   "kind": "tool",
+   "text": "Stop-risk summary: median 22% across 4 running trials",
+   "tool": "site_risk",
+   "ids": [
+    "RISK:c5:NMOSD"
+   ],
+   "ms": 72,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 4,
+   "kind": "tool",
+   "text": "12 registry trials (2 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT06885957",
+    "NCT01892345",
+    "NCT06724809",
+    "NCT07010302",
+    "NCT06673394",
+    "NCT06888622",
+    "NCT07184840",
+    "NCT07410039",
+    "NCT05966467",
+    "NCT07420296",
+    "NCT07182409",
+    "NCT04155424"
+   ],
+   "ms": 246,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 5,
+   "kind": "tool",
+   "text": "6 registry trials (0 terminated)",
+   "tool": "registry_search",
+   "ids": [
+    "NCT07557420",
+    "NCT06903130",
+    "NCT07010302",
+    "NCT04201262",
+    "NCT06312644",
+    "NCT05346354"
+   ],
+   "ms": 140,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 6,
+   "kind": "tool",
+   "text": "Error: ChEMBL unavailable: request failed: ReadTimeout",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 31682,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 7,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 8,
+   "kind": "tool",
+   "text": "7 abstracts since 2020",
+   "tool": "literature_search",
+   "ids": [
+    "PMID:42812414",
+    "PMID:42848984",
+    "PMID:42992581",
+    "PMID:42603218",
+    "PMID:42903195",
+    "PMID:42143294",
+    "PMID:42421066"
+   ],
+   "ms": 9145,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 9,
+   "kind": "tool",
+   "text": "FDA label found",
+   "tool": "fda_label",
+   "ids": [
+    "FDA:002f9748-b0e8-4b6e-a38b-56930a839491"
+   ],
+   "ms": 1195,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 10,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9076,
+   "tokens_out": 26
+  },
+  {
+   "n": 11,
+   "kind": "tool",
+   "text": "Error: unavailable earlier in this run; not called again",
+   "tool": "chembl_drug",
+   "ids": [],
+   "ms": 1,
+   "tokens_in": 9136,
+   "tokens_out": 27
+  },
+  {
+   "n": 12,
+   "kind": "note",
+   "text": "Gathering done; writing the memo",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9197,
+   "tokens_out": 210
+  },
+  {
+   "n": 13,
+   "kind": "write",
+   "text": "Memo written: 10 sentences",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 9929,
+   "tokens_out": 803
+  },
+  {
+   "n": 14,
+   "kind": "check",
+   "text": "checking 10 claims … 8 supported, 2 partly, 0 removed",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 3473,
+   "tokens_out": 1348
+  },
+  {
+   "n": 15,
+   "kind": "note",
+   "text": "Judgement kept with 2 unsupported reasons dropped; confidence high → low",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  },
+  {
+   "n": 16,
+   "kind": "done",
+   "text": "Done",
+   "tool": null,
+   "ids": [],
+   "ms": 0,
+   "tokens_in": 0,
+   "tokens_out": 0
+  }
+ ],
+ "memo": {
+  "sections": [
+   {
+    "id": "s1",
+    "section": "landscape",
+    "text": "Ten trials test C5 inhibition in NMOSD, including eight in Phase 3 and one in Phase 4.",
+    "cites": [
+     "NCT04155424"
+    ]
+   },
+   {
+    "id": "s2",
+    "section": "landscape",
+    "text": "Five trials are currently running, two have stopped, and two have completed.",
+    "cites": [
+     "NCT04155424"
+    ]
+   },
+   {
+    "id": "s3",
+    "section": "landscape",
+    "text": "AstraZeneca sponsors seven of the ten trials, and Mayo Clinic, Massachusetts General Hospital, and Tianjin Medical University General Hospital each sponsor one.",
+    "cites": [
+     "NCT04155424"
+    ]
+   },
+   {
+    "id": "s4",
+    "section": "track_record",
+    "text": "Eculizumab and ravulizumab are approved for AQP4+ NMOSD.",
+    "cites": [
+     "NCT04155424"
+    ]
+   },
+   {
+    "id": "s5",
+    "section": "track_record",
+    "text": "One Phase 2/3 trial of eculizumab in pediatric NMOSD stopped because the study was not feasible.",
+    "cites": [
+     "NCT04155424"
+    ]
+   },
+   {
+    "id": "s6",
+    "section": "track_record",
+    "text": "Another trial of eculizumab in acute NMOSD attack was withdrawn due to concerns about detecting expected differences in efficacy.",
+    "cites": [
+     "NCT06673394"
+    ]
+   },
+   {
+    "id": "s7",
+    "section": "literature",
+    "text": "A 2026 retrospective study of 38 acute NMOSD patients in China found eculizumab improved neurological function in 92.1% of patients within 8 weeks, with median EDSS decreasing from 4 to 3.",
+    "cites": [
+     "PMID:42812414"
+    ]
+   },
+   {
+    "id": "s8",
+    "section": "literature",
+    "text": "Serum GFAP and NfL levels decrease during treatment with eculizumab or ravulizumab, and high baseline levels are associated with higher relapse risk in NMOSD.",
+    "cites": [
+     "PMID:42848984"
+    ]
+   },
+   {
+    "id": "s9",
+    "section": "competition",
+    "text": "The site's risk model estimates a median 22.1% probability of termination for ongoing C5 inhibitor trials in NMOSD.",
+    "cites": [
+     "RISK:c5:NMOSD"
+    ]
+   },
+   {
+    "id": "s10",
+    "section": "competition",
+    "text": "C5 inhibitors compete with other terminal complement inhibitors and FcRn inhibitors like inebilizumab and satralizumab in NMOSD.",
+    "cites": [
+     "NCT07010302"
+    ]
+   }
+  ],
+  "read": [
+   "Mechanism evidence: C5 inhibition shows clinical benefit in NMOSD with reduced relapse and improved neurological outcomes.",
+   "Competitive position: C5 inhibitors are approved and actively studied, but face competition and have a non-trivial risk of trial termination.",
+   "Open questions: Long-term safety, optimal dosing in acute attacks, and comparative effectiveness versus newer agents remain uncertain."
+  ],
+  "judgement": {
+   "stance": "favours",
+   "confidence": "low",
+   "reasons": [
+    "s7",
+    "s9"
+   ]
+  },
+  "would_change": [
+   "New evidence of superior efficacy over existing treatments would strengthen the case.",
+   "Significant safety signals in ongoing trials could shift the stance to mixed or against."
+  ]
+ },
+ "verdicts": [
+  {
+   "sentence_id": "s1",
+   "verdict": "supported",
+   "reason": "Source shows 10 total trials with 8 in Phase 3 and 1 in Phase 4."
+  },
+  {
+   "sentence_id": "s2",
+   "verdict": "supported",
+   "reason": "Source shows 5 running, 2 stopped, and 2 finished trials."
+  },
+  {
+   "sentence_id": "s3",
+   "verdict": "supported",
+   "reason": "Source confirms AstraZeneca sponsors 7 trials and other three each sponsor 1."
+  },
+  {
+   "sentence_id": "s4",
+   "verdict": "partly",
+   "reason": "Sources show approval for NMOSD but don't specify AQP4+."
+  },
+  {
+   "sentence_id": "s5",
+   "verdict": "supported",
+   "reason": "Source shows Phase 2/3 pediatric trial terminated due to feasibility issues."
+  },
+  {
+   "sentence_id": "s6",
+   "verdict": "supported",
+   "reason": "Source shows trial withdrawn due to concerns about detecting expected efficacy differences."
+  },
+  {
+   "sentence_id": "s7",
+   "verdict": "supported",
+   "reason": "Source shows 2026 study with 38 patients, 92.1% improved, and EDSS decreased from 4 to 3."
+  },
+  {
+   "sentence_id": "s8",
+   "verdict": "partly",
+   "reason": "Source discusses evaluating GFAP/NfL levels but doesn't state they decrease or baseline-risk association."
+  },
+  {
+   "sentence_id": "s9",
+   "verdict": "supported",
+   "reason": "Source shows median risk probability of 0.221 (22.1%)."
+  },
+  {
+   "sentence_id": "s10",
+   "verdict": "supported",
+   "reason": "Source mentions competition between these drug classes in NMOSD trials."
+  }
+ ],
+ "removed": [],
+ "judgement_shown": true,
+ "judgement_adjusted": {
+  "reasons_removed": 2,
+  "confidence_was": "high"
+ },
+ "models": {
+  "writer": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "planner": "qwen.qwen3-235b-a22b-2507-v1:0",
+  "checker": "deepseek.v3.2"
+ },
+ "tokens_in": 42890,
+ "tokens_out": 2657,
+ "cost_usd": 0.01672583,
+ "data_date": "2026-11-11"
+}

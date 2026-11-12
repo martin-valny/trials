@@ -61,3 +61,27 @@ def test_tool_specs_shape() -> None:
     ]
     memo = WRITER_TOOLS[-1]["toolSpec"]["inputSchema"]["json"]
     assert set(memo["required"]) == {"sections", "read", "judgement", "would_change"}
+
+
+def test_outage_trips_the_breaker_for_the_rest_of_the_run(make_http, ctx: ToolContext) -> None:  # type: ignore[no-untyped-def]
+    calls: list[str] = []
+
+    def down(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        return httpx.Response(500)
+
+    run_ctx = ToolContext(make_http(down), ctx.base_url)
+    first = dispatch("chembl_drug", {"name": "ocrelizumab"}, run_ctx)
+    assert first.error and "HTTP 500" in first.error
+    n = len(calls)
+    second = dispatch("chembl_drug", {"name": "ofatumumab"}, run_ctx)
+    assert second.error == "unavailable earlier in this run; not called again"
+    assert len(calls) == n  # no request made
+    # Other tools, and a fresh run, are unaffected.
+    assert "chembl_drug" not in ToolContext(make_http(down), ctx.base_url).down
+
+
+def test_not_found_does_not_trip_the_breaker(make_http, ctx: ToolContext) -> None:  # type: ignore[no-untyped-def]
+    run_ctx = ToolContext(make_http(lambda r: json_response({"molecules": []})), ctx.base_url)
+    assert dispatch("chembl_drug", {"name": "nothing"}, run_ctx).error is None
+    assert run_ctx.down == set()

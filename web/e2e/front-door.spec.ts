@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { noRecordedDiligence } from "./isolate";
 
 const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - 375);
+
+
+test.beforeEach(({ page }) => noRecordedDiligence(page));
 
 test("the front door shows the pipeline headline and key numbers", async ({ page }) => {
   await page.goto("/");
