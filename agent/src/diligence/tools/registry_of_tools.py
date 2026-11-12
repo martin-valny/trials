@@ -1,7 +1,7 @@
 """Tool schemas (Converse toolSpec) and dispatch. Tools never raise to the loop."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
@@ -15,11 +15,17 @@ from diligence.tools.registry import registry_search
 from diligence.tools.site import site_risk, site_target
 from diligence.types import ToolResult
 
+# Slow external services: after one transport or server failure in a run, further calls to the
+# same tool fail at once instead of spending the run's time budget on more timeouts.
+BREAKER_TOOLS = frozenset({"chembl_drug", "literature_search"})
+
 
 @dataclass
 class ToolContext:
     http: httpx.Client
     base_url: str
+    # Tools that failed with an outage this run (see BREAKER_TOOLS); one context per run.
+    down: set[str] = field(default_factory=set)
 
 
 def _spec(
@@ -144,8 +150,20 @@ def dispatch(name: str, args: dict[str, Any], ctx: ToolContext) -> ToolResult:
     missing = [k for k in _REQUIRED[name] if k not in clean or clean[k] == ""]
     if missing:
         return ToolResult(name=name, args=args, error=f"missing required argument(s): {missing}")
+    if name in ctx.down:
+        return ToolResult(
+            name=name, args=clean, error="unavailable earlier in this run; not called again"
+        )
     try:
-        return _IMPLS[name](clean, ctx)
+        result = _IMPLS[name](clean, ctx)
     except Exception as exc:  # noqa: BLE001 - tools must never raise into the loop
         log_error(f"tool {name}", exc)
         return ToolResult(name=name, args=clean, error=f"tool failed: {type(exc).__name__}")
+    if name in BREAKER_TOOLS and _is_outage(result.error):
+        ctx.down.add(name)
+    return result
+
+
+def _is_outage(error: str | None) -> bool:
+    """A transport failure or a 5xx, as the tools word them (not "not found" or a bad argument)."""
+    return error is not None and ("request failed:" in error or "upstream returned HTTP 5" in error)

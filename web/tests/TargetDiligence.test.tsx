@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DiligenceRunProvider } from "../src/components/target/DiligenceRunContext";
-import { TargetDiligence } from "../src/components/target/TargetDiligence";
+import { TargetDiligence, citeHref } from "../src/components/target/TargetDiligence";
 import { FIXED_LABEL } from "../src/lib/diligencePanels";
 import * as lib from "../src/lib/diligence";
 import { isOpen, panelLetters, type DiligenceRelease } from "../src/lib/diligenceRelease";
@@ -238,6 +238,30 @@ test("done: citation chips link to their sources", async () => {
   for (const h of ["Landscape", "Track record elsewhere", "Literature", "Competitive position", "Read", "What would change this view"])
     expect(screen.getByRole("heading", { name: h })).toBeInTheDocument();
   expect(screen.getByText(/Written by an AI model/)).toBeInTheDocument();
+});
+
+test("an adjusted judgement says the confidence was lowered and why", async () => {
+  const rec = fixture();
+  rec.judgement_adjusted = { reasons_removed: 1, confidence_was: "medium" };
+  m.loadRecorded.mockResolvedValue(rec);
+  renderPanel();
+  await screen.findByText("Recorded run, 9 Nov 2026");
+  const j = screen.getByRole("region", { name: "Judgement" });
+  expect(j).toHaveTextContent("Confidence: low");
+  expect(j).toHaveTextContent("Lowered from medium: the checker did not back one of the reasons given, so it was dropped.");
+});
+
+test("an unadjusted judgement has no lowered-confidence note", async () => {
+  m.loadRecorded.mockResolvedValue(fixture());
+  renderPanel();
+  await screen.findByText("Recorded run, 9 Nov 2026");
+  expect(screen.getByRole("region", { name: "Judgement" })).not.toHaveTextContent("Lowered from");
+});
+
+test("citeHref links the site's stop-risk summary to the target page", () => {
+  expect(citeHref("RISK:cd20:MS")).toEqual({ href: "#/target/cd20?disease=MS", site: "Trial Radar stop-risk estimates" });
+  expect(citeHref("RISK:cd20:all")?.href).toBe("#/target/cd20");
+  expect(citeHref("RISK:CD20:MS")).toBeNull();
 });
 
 test("done: partly mark in text, removed list as plain text, judgement with reasons and metadata", async () => {

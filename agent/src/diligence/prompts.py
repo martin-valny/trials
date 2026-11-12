@@ -179,13 +179,17 @@ questions.
 - judgement: stance is one of favours, mixed or against further investment in this mechanism for \
 this disease; confidence is high, medium or low; reasons are the ids of the memo sentences that \
 carry the judgement. Choose low confidence when evidence is thin or tools failed. Choose mixed \
-when the evidence points both ways.
+when the evidence points both ways. Give two to four reasons, and pick only sentences that state a \
+fact directly in their cited sources (counts, approvals, stop reasons, findings of a cited study), \
+not interpretations: the checker verifies each reason, and the judgement is shown only if at \
+least two of them hold.
 - would_change: one to three sentences saying what new evidence would change the judgement.
 
 Citation rule
 - Every sentence must cite at least one ID that a tool returned in this run. The formats are \
 NCT followed by 8 digits (trials), PMID:digits or PPR followed by digits (literature), CHEMBL \
-followed by digits (ChEMBL), and FDA:<set id> (drug labels).
+followed by digits (ChEMBL), FDA:<set id> (drug labels) and RISK:<target>:<disease> (the site's \
+stop-risk summary, returned by site_risk).
 - Use no other IDs. Never cite an ID you did not see in a tool result, and never guess one. \
 Put IDs in `cites`, not in the sentence text.
 - Every number, date, count and phase in a sentence must come from the sources it cites. If you \
@@ -194,6 +198,16 @@ cannot cite a claim, leave it out.
 sentences, so everything they say must already be said, with a cite, in a section sentence.
 - Each sentence states one claim a reader can check against its cited sources. Do not combine \
 claims that need different sources in one sentence.
+
+Example of the shape submit_memo takes (the IDs and facts here are invented; use only your own):
+{"sections": [
+  {"id": "s1", "section": "landscape", "text": "Twelve trials test this target in this disease, \
+four of them in Phase 3.", "cites": ["NCT01234567"]},
+  {"id": "s2", "section": "track_record", "text": "One Phase 2 trial stopped for slow \
+enrollment.", "cites": ["NCT07654321"]}],
+ "read": ["Mechanism evidence: ...", "Competitive position: ...", "Open questions: ..."],
+ "judgement": {"stance": "mixed", "confidence": "low", "reasons": ["s1", "s2"]},
+ "would_change": ["A Phase 3 readout would change this."]}
 
 Tone
 - Neutral and factual. This is not investment advice and not a verdict on any company. Describe \

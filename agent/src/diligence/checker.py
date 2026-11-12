@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from diligence.log import log_error
 from diligence.model import ModelClient, ModelResponse, ReplayMismatch
 from diligence.prompts import CHECKER_PROMPT, VERDICTS_TOOL
-from diligence.types import CITE_PATTERN, Memo, Sentence, Verdict
+from diligence.types import CITE_PATTERN, Confidence, Memo, Sentence, Verdict
 
 BATCH_SIZE = 10
 CHECKER_MAX_TOKENS = 2000
@@ -225,11 +225,33 @@ def apply_verdicts(memo: Memo, verdicts: list[Verdict]) -> tuple[Memo, list[dict
     return _without(memo, set(bad)), removed
 
 
-def gate_judgement(memo: Memo, verdicts: list[Verdict]) -> bool:
-    """True only if the judgement has reasons and every one is a kept sentence judged supported."""
+_LOWER: dict[Confidence, Confidence] = {"high": "medium", "medium": "low", "low": "low"}
+MIN_KEPT_REASONS = 2
+
+
+def settle_judgement(
+    memo: Memo, verdicts: list[Verdict]
+) -> tuple[Memo, bool, dict[str, Any] | None]:
+    """Decide whether the judgement is shown, and in what form.
+
+    Every reason kept and supported: shown as written. Otherwise, if at least MIN_KEPT_REASONS
+    reasons are kept and supported, the failed ones are dropped and the confidence is lowered one
+    level per dropped reason (never below low); the returned adjustment says so. Fewer: withheld.
+    """
     reasons = memo.judgement.reasons
     if not reasons:
-        return False
+        return memo, False, None
     present = {s.id for s in memo.sections}
     ok = {v.sentence_id for v in verdicts if v.verdict == "supported"}
-    return all(r in present and r in ok for r in reasons)
+    kept = [r for r in reasons if r in present and r in ok]
+    dropped = len(reasons) - len(kept)
+    if dropped == 0:
+        return memo, True, None
+    if len(kept) < MIN_KEPT_REASONS:
+        return memo, False, None
+    confidence = memo.judgement.confidence
+    for _ in range(dropped):
+        confidence = _LOWER[confidence]
+    judgement = memo.judgement.model_copy(update={"reasons": kept, "confidence": confidence})
+    adjusted = {"reasons_removed": dropped, "confidence_was": memo.judgement.confidence}
+    return memo.model_copy(update={"judgement": judgement}), True, adjusted

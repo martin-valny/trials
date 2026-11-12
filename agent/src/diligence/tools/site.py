@@ -168,6 +168,11 @@ def site_target(target: str, disease: str, *, base_url: str, http: httpx.Client)
         return ToolResult(name="site_target", args=args, error=f"site data unavailable: {exc}")
 
 
+def risk_id(target: str, disease: str) -> str:
+    """The citable ID of the site's stop-risk summary for a target and disease."""
+    return f"RISK:{target}:{disease}"
+
+
 def site_risk(target: str, disease: str, *, base_url: str, http: httpx.Client) -> ToolResult:
     args = {"target": target, "disease": disease}
     note = {"note": "Stop-risk estimates unavailable"}
@@ -210,9 +215,12 @@ def site_risk(target: str, disease: str, *, base_url: str, http: httpx.Client) -
                     "per_trial": False,
                     "generated_for": risk.get("generated_for"),
                 }
-                return ToolResult(name="site_risk", args=args, data=data)
+                return ToolResult(
+                    name="site_risk", args=args, data=data, ids=[risk_id(target, disease)]
+                )
             return ToolResult(name="site_risk", args=args, data=note)
         data = {"trials": trials, "summary": summary, "generated_for": risk.get("generated_for")}
-        return ToolResult(name="site_risk", args=args, data=data, ids=[t["nct"] for t in trials])
+        ids = [t["nct"] for t in trials] + ([risk_id(target, disease)] if summary else [])
+        return ToolResult(name="site_risk", args=args, data=data, ids=ids)
     except (ToolError, ValueError, KeyError, TypeError) as exc:
         return ToolResult(name="site_risk", args=args, error=f"site data unavailable: {exc}")

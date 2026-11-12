@@ -21,9 +21,9 @@ from pydantic import ValidationError
 from diligence.checker import (
     apply_verdicts,
     deterministic_check,
-    gate_judgement,
     model_check,
     scrub_summary_lines,
+    settle_judgement,
 )
 from diligence.config import AgentConfig
 from diligence.log import current_run, log_error
@@ -188,6 +188,7 @@ class _Run:
         self.verdicts: list[Verdict] = []
         self.removed: list[dict[str, Any]] = []
         self.judgement_shown = False
+        self.judgement_adjusted: dict[str, Any] | None = None
         self.model_failed = False
         self._pend_in = 0
         self._pend_out = 0
@@ -441,7 +442,15 @@ class _Run:
             f"checking {n} claims … {supported} supported, {partly} partly, {len(removed)} removed",
         )
         self.verdicts, self.removed = verdicts, removed
-        self.judgement_shown = gate_judgement(memo, verdicts)
+        memo, self.judgement_shown, self.judgement_adjusted = settle_judgement(memo, verdicts)
+        if self.judgement_adjusted:
+            n_dropped = self.judgement_adjusted["reasons_removed"]
+            self.emit(
+                "note",
+                f"Judgement kept with {_plural(n_dropped, 'unsupported reason')} dropped; "
+                f"confidence {self.judgement_adjusted['confidence_was']} → "
+                f"{memo.judgement.confidence}",
+            )
         return memo
 
     def execute(self) -> Memo | None:
@@ -512,6 +521,7 @@ def run_agent(
         verdicts=run.verdicts,
         removed=run.removed,
         judgement_shown=run.judgement_shown,
+        judgement_adjusted=run.judgement_adjusted,
         models=cfg.models.model_dump(),
         tokens_in=run.tokens_in,
         tokens_out=run.tokens_out,

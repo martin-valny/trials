@@ -42,7 +42,7 @@ def test_site_target_disease_scoped_and_unknown(make_http: Callable[..., httpx.C
 def test_site_risk_happy(make_http: Callable[..., httpx.Client]) -> None:
     res = site_risk("cd20", "MS", base_url=BASE, http=make_http(_site_handler))
     assert res.error is None
-    assert res.ids == ["NCT90000002", "NCT90000004"]
+    assert res.ids == ["NCT90000002", "NCT90000004", "RISK:cd20:MS"]
     assert res.data["trials"][1]["p"] == 0.661
     assert res.data["summary"]["n"] == 14
 
@@ -59,7 +59,7 @@ def test_site_risk_summary_only_when_per_trial_is_off(
         return _site_handler(request)
 
     res = site_risk("cd20", "MS", base_url=BASE, http=make_http(handler))
-    assert res.error is None and res.ids == []
+    assert res.error is None and res.ids == ["RISK:cd20:MS"]
     assert res.data["per_trial"] is False
     assert res.data["summary"]["n"] == 14
     assert "trials" not in res.data
