@@ -360,3 +360,37 @@ def test_replay_checks_every_request_field(tmp_path: Path, field: str, override:
     args = {"model": "m1", "system": "sys", "messages": MSG_A, "tools": [], "max_tokens": 100}
     with pytest.raises(ReplayMismatch, match=f"{field} differs.*re-record the evaluation"):
         ReplayModel(path).converse(**{**args, **override})
+
+
+def test_bedrock_sends_no_cache_points_to_uncached_models() -> None:
+    client = boto3.client(
+        "bedrock-runtime",
+        region_name="eu-north-1",
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+    )
+    tools = [TOOL_SPECS[0]]
+    cached_msgs = [
+        {**MSG_A[0], "content": [*MSG_A[0]["content"], {"cachePoint": {"type": "default"}}]}
+    ]
+    expected = {
+        "modelId": "kimi",
+        "system": [{"text": "sys"}],
+        "messages": MSG_A,
+        "toolConfig": {"tools": tools},
+        "inferenceConfig": {"maxTokens": 100},
+    }
+    reply = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "stopReason": "end_turn",
+        "usage": {"inputTokens": 7, "outputTokens": 3, "totalTokens": 10},
+        "metrics": {"latencyMs": 1},
+    }
+    with Stubber(client) as stub:
+        stub.add_response("converse", reply, expected)
+        BedrockModel("eu-north-1", client=client, uncached=frozenset({"kimi"})).converse(
+            model="kimi", system="sys", messages=cached_msgs, tools=tools, max_tokens=100
+        )
+        stub.assert_no_pending_responses()
+    # The caller's messages are not changed in place.
+    assert cached_msgs[0]["content"][-1] == {"cachePoint": {"type": "default"}}

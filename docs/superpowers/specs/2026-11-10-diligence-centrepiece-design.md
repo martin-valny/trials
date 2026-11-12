@@ -54,7 +54,7 @@ Three states, decided at run time from what the build ships:
 | Recorded only | `diligence/index.json` loads with ≥1 run; no backend URL | band, nav item, page and panel a; links open recorded memos; no Run button anywhere |
 | Live | backend URL set at build time | as above, plus Run on target pages and any target in the picker |
 
-Martin's decision: after Task 11 the public site runs in the **recorded-only** state (the `DILIGENCE_URL` variable
+**Changed 2026-11-12:** Martin wants the agent **live** on the public site so a hiring panel can run it; the 17 recorded memos still ship so the panel opens instantly. Earlier decision, kept for the record: after Task 11 the public site runs in the **recorded-only** state (the `DILIGENCE_URL` variable
 stays unset at first). Recorded-only carries the main design, test and screenshot effort; the live state is built and
 unit-tested so that setting the variable later needs no new work, and its any-target picker gets a basic type-to-filter
 list rather than a phone-polished design.

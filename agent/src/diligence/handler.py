@@ -73,7 +73,7 @@ def default_deps() -> Deps:
         store=Store(cfg),
         invoke=make_lambda_invoker(),
         http=client(),
-        model_factory=lambda region: BedrockModel(region),
+        model_factory=lambda region: BedrockModel(region, uncached=cfg.uncached_models()),
         configured=not cfg.has_placeholder_models(),
     )
 

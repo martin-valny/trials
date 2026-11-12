@@ -1,7 +1,12 @@
 """Record the paid evaluation: one run per pair against Bedrock and the live site data.
 
     uv run python scripts/record_eval.py --pairs eval/pairs.yaml --out eval/recordings \
-        [--only cd20/MS] [--profile NAME]
+        [--only cd20/MS] [--profile NAME] [--web-dir DIR]
+
+A model trial uses another config file and a scratch --web-dir so nothing reaches the site:
+    DILIGENCE_CONFIG=eval/setups/haiku.yaml uv run python scripts/record_eval.py \
+        --pairs eval/pairs.yaml --out ../.trials/haiku/recordings --web-dir ../.trials/haiku/web \
+        --only cd20/MS
 
 Writes <out>/<target>__<disease>.jsonl, the RunRecord JSON to web/public/diligence/, then the
 evaluation report (also copied to web/public/diligence/eval-report.json). Needs AWS credentials.
@@ -74,6 +79,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--only", help="target/disease")
     ap.add_argument("--profile", help="AWS profile name")
+    ap.add_argument(
+        "--web-dir",
+        type=Path,
+        default=WEB_DIR,
+        help="where memos, eval-report.json and index.json go (a scratch dir for model trials)",
+    )
     args = ap.parse_args(argv)
 
     cfg = load_config()
@@ -106,8 +117,10 @@ def main(argv: list[str] | None = None) -> int:
 
     session = boto3.Session(profile_name=args.profile) if args.profile else boto3.Session()
     bedrock = session.client("bedrock-runtime", cfg.region, config=bedrock_client_config())
-    model = BedrockModel(cfg.region, client=bedrock)
-    return record_all(pairs, cfg=cfg, model=model, http=client(), out_dir=args.out)
+    model = BedrockModel(cfg.region, client=bedrock, uncached=cfg.uncached_models())
+    return record_all(
+        pairs, cfg=cfg, model=model, http=client(), out_dir=args.out, web_dir=args.web_dir
+    )
 
 
 def record_all(

@@ -92,10 +92,14 @@ def bedrock_client_config() -> Config:
 
 
 class BedrockModel:
-    def __init__(self, region: str, client: Any | None = None) -> None:
+    def __init__(
+        self, region: str, client: Any | None = None, uncached: frozenset[str] = frozenset()
+    ) -> None:
         self._client: Any = client or boto3.client(
             "bedrock-runtime", region_name=region, config=bedrock_client_config()
         )
+        # Models that reject cache points: their requests are sent with every one removed.
+        self._uncached = uncached
 
     def converse(
         self,
@@ -117,6 +121,8 @@ class BedrockModel:
             request["toolConfig"] = {"tools": [*tools, CACHE_POINT]}
             if tool_choice:
                 request["toolConfig"]["toolChoice"] = {"tool": {"name": tool_choice}}
+        if model in self._uncached:
+            request = _strip_cache_points(request)
         out = self._client.converse(**request)
         usage = out.get("usage", {})
         cache_read = usage.get("cacheReadInputTokens", 0)
@@ -130,6 +136,16 @@ class BedrockModel:
             cache_read=cache_read,
             cache_write=cache_write,
         )
+
+
+def _strip_cache_points(request: dict[str, Any]) -> dict[str, Any]:
+    """The request with every cachePoint block removed (system, tools and message contents)."""
+    out = {**request, "system": [b for b in request["system"] if "cachePoint" not in b]}
+    out["messages"] = [_without_cache_points(m) for m in request["messages"]]
+    if "toolConfig" in request:
+        tools = [t for t in request["toolConfig"]["tools"] if "cachePoint" not in t]
+        out["toolConfig"] = {**request["toolConfig"], "tools": tools}
+    return out
 
 
 def _request_record(

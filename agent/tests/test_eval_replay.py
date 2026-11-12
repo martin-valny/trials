@@ -303,7 +303,7 @@ def test_record_pair_offline(tmp_path: Path) -> None:
         out_dir=out,
         web_dir=web,
     )
-    assert cost == 0.0  # placeholder prices are zero
+    assert cost > 0  # the committed config carries real prices
     rec = out / "cd20__MS.jsonl"
     assert meta_of(rec)["label"] == "CD20" and meta_of(rec)["data_date"] == "2026-11-04"
     assert comparable(replay_run(rec, load_config())) == comparable(stored_record(rec))

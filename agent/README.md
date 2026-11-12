@@ -54,7 +54,7 @@ show the exception class.
 Prerequisites:
 
 - AWS CLI and SAM CLI installed, credentials for the target account (outside the repo).
-- Bedrock model access enabled in `eu-central-1` for the models named in `config.yaml`
+- Bedrock model access enabled in `eu-north-1` (Stockholm) for the models named in `config.yaml`
   (`models.writer`, `models.planner`, `models.checker`). Put the real model or EU inference-profile
   IDs, and their prices (including the cache read and write prices), into `config.yaml` first; the
   IDs live only there. Every model ID needs a `prices` entry or the config does not load.
@@ -70,7 +70,7 @@ Deploy:
 cd agent
 sam validate --lint
 sam build            # runs the Makefile: installs dependencies, copies src/diligence and config.yaml
-sam deploy --guided --region eu-central-1
+sam deploy --guided --region eu-north-1
 ```
 
 `sam deploy --guided` asks for the parameters:

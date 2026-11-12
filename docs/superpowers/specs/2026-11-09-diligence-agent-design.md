@@ -34,7 +34,7 @@ Martin's framing (2026-11-09): it must be a **visible agent demonstration**, not
 
 ## 3. Constraints
 
-- The site stays static on GitHub Pages; the agent backend is the only server, on Martin's **personal** AWS account, region `eu-central-1` (Frankfurt), Claude models through Bedrock (EU cross-region inference profile if required for the chosen models).
+- The site stays static on GitHub Pages; the agent backend is the only server, on Martin's **personal** AWS account, region `eu-north-1` (Stockholm; changed 2026-11-12 from `eu-central-1` because the account's free plan is tied to Stockholm), Claude models through Bedrock (EU cross-region inference profile if required for the chosen models).
 - Budget: $100 starter credits (check expiry in the console). Always-free services preferred: Lambda (incl. function URLs), DynamoDB, CloudWatch basic, Budgets.
 - Tools use only free public APIs plus the site's own published JSON: ClinicalTrials.gov API v2, ChEMBL REST, Europe PMC REST, openFDA (all checked reachable with `Access-Control-Allow-Origin: *`; no keys).
 - Deploys are run by Martin from his machine (an outward-facing action). Infrastructure is code in the repo; no console-only configuration.

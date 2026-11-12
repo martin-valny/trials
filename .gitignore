@@ -24,3 +24,6 @@ agent/samconfig.toml
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Model trials of the diligence agent (scratch recordings, never published)
+/.trials/

@@ -1,9 +1,9 @@
-region: eu-central-1
-# Placeholders: set to the Bedrock model / EU inference-profile IDs enabled in the account.
+region: eu-north-1
+# Bedrock model or inference-profile IDs enabled in the account (eu-north-1, Stockholm).
 models:
-  writer: REPLACE_WITH_WRITER_MODEL_ID
-  planner: REPLACE_WITH_PLANNER_MODEL_ID
-  checker: REPLACE_WITH_CHECKER_MODEL_ID
+  writer: eu.anthropic.claude-sonnet-5-5
+  planner: eu.anthropic.claude-haiku-5-5
+  checker: eu.anthropic.claude-haiku-5-5
 limits:
   max_tool_calls: 12
   max_input_tokens: 150000
@@ -19,13 +19,11 @@ tables:
   limits: diligence-limits
   flags: diligence-flags
 agent_version: "0.1.0"
-# Per model ID, USD per million tokens. Placeholders: Martin enters the Bedrock pricing-page
-# values at the checkpoint (keys must match the model IDs above). cache_read_per_mtok and
-# cache_write_per_mtok are the prompt-cache prices; leave them out to price cached tokens as input.
+# Per model ID, USD per million tokens. Anthropic list prices (Haiku 5.5 below 100k-token
+# prompts; Sonnet 5.5 cache read before the Oct 2026 cut), so recorded costs err high. Check the
+# Bedrock console for the EU-profile prices. prompt_cache: false for models that reject cache points.
 prices:
-  REPLACE_WITH_WRITER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
-  REPLACE_WITH_PLANNER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
-  REPLACE_WITH_CHECKER_MODEL_ID:
-    {input_per_mtok: 0.0, output_per_mtok: 0.0, cache_read_per_mtok: 0.0, cache_write_per_mtok: 0.0}
+  eu.anthropic.claude-sonnet-5-5:
+    {input_per_mtok: 2.00, output_per_mtok: 10.00, cache_read_per_mtok: 0.20, cache_write_per_mtok: 2.50}
+  eu.anthropic.claude-haiku-5-5:
+    {input_per_mtok: 0.10, output_per_mtok: 0.50, cache_read_per_mtok: 0.01, cache_write_per_mtok: 0.125}

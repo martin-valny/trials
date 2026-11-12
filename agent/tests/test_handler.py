@@ -613,8 +613,16 @@ def test_stale_run_is_not_executed(env: Env) -> None:
 
 def test_placeholder_models_refuse_to_start_runs(env: Env, monkeypatch: pytest.MonkeyPatch) -> None:
     """Minor 5: a deploy with REPLACE_WITH_ model IDs must not spend quota on failing runs."""
-    assert env.cfg.has_placeholder_models()
-    monkeypatch.setattr(handler, "load_config", lambda: env.cfg)
+    ids = {k: f"REPLACE_WITH_{k.upper()}_MODEL_ID" for k in env.cfg.models.model_dump()}
+    price = next(iter(env.cfg.prices.values()))
+    placeholder = env.cfg.model_copy(
+        update={
+            "models": env.cfg.models.model_copy(update=ids),
+            "prices": {i: price for i in ids.values()},
+        }
+    )
+    assert placeholder.has_placeholder_models()
+    monkeypatch.setattr(handler, "load_config", lambda: placeholder)
     deps = handler.default_deps()
     assert deps.configured is False
     env.deps.configured = False

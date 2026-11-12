@@ -11,7 +11,7 @@ def test_load_config_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     for var in ("DILIGENCE_CONFIG", "SITE_BASE_URL", "ALLOWED_ORIGIN"):
         monkeypatch.delenv(var, raising=False)
     cfg = load_config()
-    assert cfg.region == "eu-central-1"
+    assert cfg.region == "eu-north-1"
     assert cfg.limits.max_tool_calls == 12
     assert cfg.limits.max_input_tokens == 150000
     assert cfg.limits.max_output_tokens == 8000
@@ -61,6 +61,17 @@ def test_every_model_id_needs_a_price(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(raw))
     with pytest.raises(ValidationError, match="prices has no entry"):
         load_config(path)
+
+
+def test_uncached_models_are_those_priced_without_prompt_cache(tmp_path: Path) -> None:
+    raw = yaml.safe_load(DEFAULT_PATH.read_text())
+    writer = raw["models"]["writer"]
+    raw["prices"][writer] = {**raw["prices"][writer], "prompt_cache": False}
+    path = tmp_path / "c.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    cfg = load_config(path)
+    assert cfg.uncached_models() == frozenset({writer})
+    assert load_config(DEFAULT_PATH).uncached_models() == frozenset()
 
 
 def test_allowed_origins_is_a_comma_list(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -156,7 +156,7 @@ export function DiligenceMethods() {
         ) : (
           <>Models: set at deployment.</>
         )}{" "}
-        Runs use AWS Bedrock in eu-central-1
+        Runs use AWS Bedrock, called from Stockholm (eu-north-1)
         {report && report.cost_usd_mean !== null
           ? ` and cost $${report.cost_usd_mean.toFixed(3)} on average in the evaluation.`
           : "; cost per run is published with the first recorded evaluation."}
