@@ -24,6 +24,7 @@ from .conftest import (
     relevant_ids,
     tree_bytes,
     without_coords,
+    without_intro_coords,
 )
 from .test_pipeline import D1, D2, D3, TS1, TS2, TS3, drop_study
 
@@ -53,9 +54,10 @@ def assert_same_history(a: Store, b: Store) -> None:
 def assert_same_site(a: Path, b: Path) -> None:
     # A rebuild lays the map out afresh (no previous coordinates, spec 6.4a), so
     # only the explorer coordinates may differ from the incremental site.
-    skip = ("meta.json", "explorer.json")
+    skip = ("meta.json", "explorer.json", "intro.json")
     assert tree_bytes(a, exclude=skip) == tree_bytes(b, exclude=skip)
     assert without_coords(a) == without_coords(b)
+    assert without_intro_coords(a) == without_intro_coords(b)
 
 
 def test_rebuild_equals_incremental_after_a_failed_day(

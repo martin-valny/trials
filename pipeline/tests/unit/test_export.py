@@ -530,7 +530,20 @@ def test_export_without_extras_has_null_summary(tmp_path: Path, cfg: AreaConfig)
 def test_explorer_json_written_only_when_given(tmp_path: Path, cfg: AreaConfig) -> None:
     run(tmp_path, [], cfg=cfg)
     assert not (tmp_path / "explorer.json").exists()
-    doc = {"generated_for": DAY.isoformat(), "trials": [{"nct_id": "NCT00000001", "x": 0.5}]}
+    doc = {
+        "generated_for": DAY.isoformat(),
+        "approaches": [],
+        "trials": [
+            {
+                "nct_id": "NCT00000001",
+                "x": 0.5,
+                "y": 0.25,
+                "outcome": "running",
+                "approaches": [],
+                "start_year": None,
+            }
+        ],
+    }
     export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
     text = (tmp_path / "explorer.json").read_text(encoding="utf-8")
     assert json.loads(text) == doc
@@ -540,7 +553,7 @@ def test_explorer_json_written_only_when_given(tmp_path: Path, cfg: AreaConfig) 
 def test_export_without_explorer_removes_a_stale_map(tmp_path: Path, cfg: AreaConfig) -> None:
     """explorer.json is present exactly when this export has a map, so a failed map
     build never leaves yesterday's map over today's trials."""
-    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    doc = {"generated_for": DAY.isoformat(), "approaches": [], "trials": []}
     export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path, explorer=doc)
     assert (tmp_path / "explorer.json").exists()
     export(small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
@@ -549,7 +562,7 @@ def test_export_without_explorer_removes_a_stale_map(tmp_path: Path, cfg: AreaCo
 
 def test_mechanisms_json_written_and_removed(tmp_path: Path, cfg: AreaConfig) -> None:
     """mechanisms.json is present exactly when this export has a graph (and a map)."""
-    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    doc = {"generated_for": DAY.isoformat(), "approaches": [], "trials": []}
     graph = {"generated_for": DAY.isoformat(), "nodes": [], "edges": []}
     args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
     export(*args, explorer=doc, mechanisms=graph)
@@ -563,7 +576,7 @@ def test_mechanisms_json_written_and_removed(tmp_path: Path, cfg: AreaConfig) ->
 
 def test_export_writes_and_removes_pipeline_json(tmp_path: Path, cfg: AreaConfig) -> None:
     """pipeline.json is present exactly when this export has a figure (and a map)."""
-    doc = {"generated_for": DAY.isoformat(), "trials": []}
+    doc = {"generated_for": DAY.isoformat(), "approaches": [], "trials": []}
     fig = {"generated_for": DAY.isoformat(), "rows": []}
     args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
     export(*args, explorer=doc, pipeline=fig)
@@ -583,3 +596,26 @@ def test_export_writes_and_removes_risk_json(tmp_path: Path, cfg: AreaConfig) ->
     assert json.loads((tmp_path / "risk.json").read_text(encoding="utf-8")) == doc
     export(*args)
     assert not (tmp_path / "risk.json").exists()
+
+
+def test_export_writes_intro_only_with_a_map(tmp_path: Path, cfg: AreaConfig) -> None:
+    doc = {
+        "generated_for": DAY.isoformat(),
+        "approaches": [],
+        "trials": [
+            {
+                "nct_id": "NCT00000001",
+                "x": 0.12345,
+                "y": 0.5,
+                "outcome": "running",
+                "approaches": [],
+                "start_year": 2020,
+            }
+        ],
+    }
+    args = (small_tables(), changes_df([]), runlog([{}]), cfg, DAY, tmp_path)
+    export(*args, explorer=doc)
+    intro = json.loads((tmp_path / "intro.json").read_text(encoding="utf-8"))
+    assert intro["trials"]["id"] == ["NCT00000001"] and intro["trials"]["x"] == [0.123]
+    export(*args)
+    assert not (tmp_path / "intro.json").exists()

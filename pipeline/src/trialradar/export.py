@@ -16,6 +16,7 @@ import polars as pl
 
 from trialradar.config import AreaConfig
 from trialradar.explorer.extras import StudyExtras
+from trialradar.intro import build_intro_doc
 from trialradar.tables import Tables
 
 WINDOWS: tuple[int, ...] = (1, 7, 30)
@@ -237,17 +238,22 @@ def export(
     ``mechanisms`` (the mechanism graph) is written as ``mechanisms.json`` the same way, and
     only together with a map; so is ``pipeline`` (the front-door figure, ``pipeline.json``).
     ``risk`` (the stop-risk estimates) is written as ``risk.json``, and a stale one is
-    removed when there is none; it does not depend on the map."""
+    removed when there is none; it does not depend on the map. ``intro.json`` (the intro
+    page's compact view over the map, figure, risk and the last week's changes) is written
+    whenever there is a map."""
     current = {r["nct_id"]: r for r in tables.trial.iter_rows(named=True)}
     for nct in current:
         if not isinstance(nct, str) or not _NCT_ID.fullmatch(nct):
             raise ValueError(f"invalid nct_id {nct!r}: expected NCT followed by digits")
     items = _change_items(changes, current)
 
+    week: list[dict[str, Any]] = []
     for n in WINDOWS:
         lo = (day - timedelta(days=n)).isoformat()
         hi = day.isoformat()
         window = [i for i in items if lo < i["detected_date"] <= hi]
+        if n == 7:
+            week = window
         _write_json(
             out_dir / "changes" / f"{n}d.json",
             {"window_days": n, "generated_for": hi, "changes": window},
@@ -268,6 +274,10 @@ def export(
     else:
         # No map this time: never leave an old map over the new trials.
         (out_dir / "explorer.json").unlink(missing_ok=True)
+    if explorer is not None:
+        _write_json(out_dir / "intro.json", build_intro_doc(explorer, pipeline, risk, week, day))
+    else:
+        (out_dir / "intro.json").unlink(missing_ok=True)
     if explorer is not None and mechanisms is not None:
         _write_json(out_dir / "mechanisms.json", mechanisms)
     else:
