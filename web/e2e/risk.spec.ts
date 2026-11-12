@@ -1,8 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
+import { noRecordedDiligence } from "./isolate";
 
 const NOTE = /^Statistical estimate from public registry data\. Not a statement about any sponsor or trial\./;
 const overflows = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+
+
+test.beforeEach(({ page }) => noRecordedDiligence(page));
 
 test("the Watchlist loads: the first row has an estimate, and the note is shown", async ({ page }) => {
   await page.goto("/#/watchlist");
