@@ -668,3 +668,29 @@ def test_failure_label_is_honest(ctx: ToolContext, monkeypatch: pytest.MonkeyPat
     assert rec.status == "failed"
     assert steps[-1].text == "run failed: KeyError"
     assert "secret" not in steps[-1].text
+
+
+def test_memo_returned_as_json_text_is_accepted(ctx: ToolContext) -> None:
+    """Models that cannot be forced to call submit_memo sometimes write the memo as JSON text."""
+    text = "```json\n" + json.dumps(valid_memo()) + "\n```"
+    model = ScriptedModel(
+        [
+            resp([use("ready_to_write", {"notes": "n"}, "a")]),
+            resp([{"text": text}], stop="end_turn"),
+        ]
+    )
+    rec, _ = run(model, ctx)
+    assert rec.status == "done" and rec.memo is not None
+
+
+def test_text_without_a_memo_still_retries_then_fails(ctx: ToolContext) -> None:
+    model = ScriptedModel(
+        [
+            resp([use("ready_to_write", {"notes": "n"}, "a")]),
+            resp([{"text": "I will now write the memo."}], stop="end_turn"),
+            resp([{"text": "{not json"}], stop="end_turn"),
+        ]
+    )
+    rec, steps = run(model, ctx)
+    assert rec.status == "failed"
+    assert any(s.text == "Memo invalid, retrying" for s in steps)

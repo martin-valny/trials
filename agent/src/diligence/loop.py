@@ -158,6 +158,22 @@ def _parse_memo(raw: Any) -> tuple[Memo | None, str]:
         return None, _validation_text(exc)
 
 
+def _memo_from_text(content: list[dict[str, Any]]) -> Any | None:
+    """A memo the writer returned as JSON text instead of a submit_memo call (models that cannot
+    be forced to call a tool do this); None when the text holds no JSON object."""
+    text = "".join(b.get("text", "") for b in content).strip()
+    if text.startswith("```"):
+        text = text.strip("`").removeprefix("json").strip()
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        value = json.loads(text[start : end + 1])
+    except ValueError:
+        return None
+    return value if isinstance(value, dict) else None
+
+
 class _Run:
     def __init__(
         self,
@@ -388,7 +404,8 @@ class _Run:
                 ),
                 None,
             )
-            memo, err = _parse_memo(use.get("input")) if use else (None, "no submit_memo call")
+            raw = use.get("input") if use else _memo_from_text(resp.content)
+            memo, err = _parse_memo(raw) if raw is not None else (None, "no submit_memo call")
             if memo is not None:
                 self.emit("write", f"Memo written: {_plural(len(memo.sections), 'sentence')}")
                 return memo
