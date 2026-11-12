@@ -344,6 +344,7 @@ def test_meta_latest_success(tmp_path: Path, cfg: AreaConfig) -> None:
     meta = load(tmp_path / "meta.json")
     assert meta == {
         "area": cfg.name,
+        "area_label": cfg.label or cfg.name,
         "conditions": [c.label for c in cfg.conditions],
         "generated_for": "2026-03-31",
         "trial_count": 2,

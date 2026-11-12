@@ -204,6 +204,7 @@ def _meta(tables: Tables, run_log: pl.DataFrame, cfg: AreaConfig, day: date) -> 
             raise ValueError("run_log column 'warnings' must be a JSON list of strings")
     return {
         "area": cfg.name,
+        "area_label": cfg.label or cfg.name,
         "conditions": [c.label for c in cfg.conditions],
         "generated_for": day.isoformat(),
         "trial_count": tables.trial.height,

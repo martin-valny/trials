@@ -277,3 +277,20 @@ def test_codes_for_is_figure_ordered_and_deduplicated(cfg: AreaConfig) -> None:
     codes = list(cfg.disease_codes().values())
     labels = list(cfg.disease_codes())
     assert cfg.codes_for([labels[1], "Unknown", labels[0], labels[1]]) == codes[:2]
+
+
+def test_label_defaults_to_none(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data.pop("label", None)
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    assert load_config(path).label is None
+
+
+def test_label_must_not_be_blank(tmp_path: Path) -> None:
+    data = yaml.safe_load(REPO_YAML.read_text())
+    data["label"] = "  "
+    path = tmp_path / "area.yaml"
+    path.write_text(yaml.safe_dump(data))
+    with pytest.raises(ConfigError, match="label must not be blank"):
+        load_config(path)

@@ -61,6 +61,7 @@ export interface TrialFile {
 
 export interface Meta {
   area: string;
+  area_label: string;
   conditions: string[];
   generated_for: string;
   trial_count: number;
