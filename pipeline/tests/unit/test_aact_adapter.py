@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +46,15 @@ def _study_row(nct: str = "NCT00000001", **kw: str | None) -> dict[str, Any]:
     }
 
 
+def _month_end(d: str | None) -> str | None:
+    """AACT's *_date for a month-precision date is the last day of that month."""
+    if d is None or len(d) != 7:
+        return d
+    y, m = int(d[:4]), int(d[5:])
+    nxt = date(y + m // 12, m % 12 + 1, 1)
+    return (nxt - timedelta(days=1)).isoformat()
+
+
 def _str(v: object) -> str | None:
     return None if v is None else str(v)
 
@@ -75,11 +84,14 @@ def _aact_rows(study: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
                 "study_type": de.get("studyType"),
                 "overall_status": st.get("overallStatus"),
                 "phase": "/".join(de.get("phases") or []) or None,
-                "start_date": start,
+                "start_month_year": start,
+                "start_date": _month_end(start),
                 "start_date_type": start_t,
-                "primary_completion_date": pcd,
+                "primary_completion_month_year": pcd,
+                "primary_completion_date": _month_end(pcd),
                 "primary_completion_date_type": pcd_t,
-                "completion_date": cd,
+                "completion_month_year": cd,
+                "completion_date": _month_end(cd),
                 "enrollment": _str((de.get("enrollmentInfo") or {}).get("count")),
                 "enrollment_type": (de.get("enrollmentInfo") or {}).get("type"),
                 "last_update_posted_date": st["lastUpdatePostDateStruct"]["date"],
@@ -470,3 +482,46 @@ def test_feature_build_runs_unchanged_on_snapshot(tmp_path: Path) -> None:
     )
     assert got.columns == ["nct_id", *FEATURES]
     assert got.to_dicts() == want.to_dicts()
+
+
+@pytest.mark.parametrize(
+    ("month_year", "date_col", "want", "precision"),
+    [
+        ("2014-01", "2014-01-31", date(2014, 1, 1), "month"),
+        ("2021-02-24", "2021-02-24", date(2021, 2, 24), "day"),
+        ("January 2014", "2014-01-31", date(2014, 1, 1), "month"),
+        ("January 15, 2014", "2014-01-15", date(2014, 1, 15), "day"),
+        ("September 2019", None, date(2019, 9, 1), "month"),
+        (None, "2014-01-31", date(2014, 1, 31), "day"),
+        (None, "2019-05", date(2019, 5, 1), "month"),
+        (None, None, None, None),
+    ],
+)
+def test_month_year_column_wins_over_date(
+    tmp_path: Path,
+    month_year: str | None,
+    date_col: str | None,
+    want: date | None,
+    precision: str | None,
+) -> None:
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [
+                _study_row(
+                    start_month_year=month_year, start_date=date_col,
+                    primary_completion_month_year=month_year, primary_completion_date=date_col,
+                    completion_month_year=month_year, completion_date=date_col,
+                )
+            ]
+        },
+    )  # fmt: skip
+    t = load_snapshot(tmp_path, SNAP).tables.trial.row(0, named=True)
+    for col in ("start_date", "primary_completion_date", "completion_date"):
+        assert (t[col], t[f"{col}_precision"]) == (want, precision), col
+
+
+def test_unparseable_month_year_raises(tmp_path: Path) -> None:
+    _write_panel(tmp_path, {"studies": [_study_row(start_month_year="Smarch 2014")]})
+    with pytest.raises(ValueError, match="Smarch 2014"):
+        load_snapshot(tmp_path, SNAP)

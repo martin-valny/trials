@@ -2,8 +2,9 @@
 
 Usage: uv run python scripts/build_aact_panel.py --cache .cache/aact [--credentials PATH] [--only 2021-12-01]
 
-Resumable: dates whose nine table parquets exist are skipped. The latest-2026-01 (outcome)
-archive is processed first, then the quarterly ones; the in-scope id set accumulates across
+Resumable: dates whose nine table parquets exist are skipped, and a complete extracted
+raw/<date>/<table>.txt (never a .tmp) is reused instead of downloaded again. The
+latest-2026-01 (outcome) archive is processed first, then the quarterly ones; the in-scope id set accumulates across
 archives (persisted in <cache>/panel/ids.parquet) so a trial in scope at the end keeps its
 rows in earlier snapshots.
 """
@@ -13,13 +14,14 @@ from __future__ import annotations
 import argparse
 import logging
 import time
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
 import httpx
 import polars as pl
 
-from trialradar.aact.archive import extract_table, list_archives, read_api_key
+from trialradar.aact.archive import Archive, extract_table, list_archives, read_api_key
 from trialradar.aact.panel import (
     TABLES,
     fold_archive,
@@ -36,6 +38,27 @@ DEFAULT_CACHE = Path(".cache/aact")
 
 def _done(panel: Path, snap: date) -> bool:
     return all((panel / t / f"{snap.isoformat()}.parquet").exists() for t in TABLES)
+
+
+def ensure_table(
+    arch: Archive,
+    table: str,
+    raw: Path,
+    api_key: str,
+    *,
+    client: httpx.Client,
+    extract: Callable[..., Path] = extract_table,
+) -> Path:
+    """Reuse a complete ``raw/<table>.txt``, else extract it.
+
+    ``extract_table`` CRC-checks into ``<table>.txt.tmp`` before renaming, so a final ``.txt``
+    is always complete; a leftover ``.tmp`` is never reused (extract overwrites it).
+    """
+    final = raw / f"{table}.txt"
+    if final.is_file():
+        print(f"{arch.snap_date} {table}: reusing {final}")
+        return final
+    return extract(arch, table, raw, api_key, client=client)
 
 
 def _load_ids(panel: Path) -> set[str]:
@@ -94,7 +117,7 @@ def main() -> None:
         t0 = time.monotonic()
         raw = args.cache / "raw" / arch.snap_date.isoformat()
         for table in TABLES:
-            extract_table(arch, table, raw, api_key, client=client)
+            ensure_table(arch, table, raw, api_key, client=client)
         ids |= fold_archive(raw, arch.snap_date, panel, ids)
         _save_ids(panel, ids)
         rows = {

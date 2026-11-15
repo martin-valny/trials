@@ -9,8 +9,9 @@ to API v2 data (2023): older archives say "Phase 1/Phase 2", "Anticipated", "Dou
 
 Always null from AACT (the panel does not keep them; no risk feature reads them):
 ``trial.title``, ``trial.why_stopped``, ``trial.completion_date_type``, ``outcome.measure``, ``outcome.time_frame``,
-``outcome.description``. AACT stores month-precision dates as full dates, so date precision is
-"day" for most AACT rows where the API would say "month".
+``outcome.description``. AACT's ``*_date`` turns a month-precision date into the month's last
+day, so start/primary-completion/completion dates come from the verbatim ``*_month_year``
+column ("2014-01" -> 2014-01-01, "month", exactly as normalize), ``*_date`` only as fallback.
 """
 
 from __future__ import annotations
@@ -213,13 +214,39 @@ def _text(df: pl.DataFrame, col: str, alias: str | None = None) -> pl.Expr:
     return _via(df, col, norm_text, pl.Utf8(), alias or col)
 
 
-def _date_exprs(df: pl.DataFrame, col: str) -> list[pl.Expr]:
-    lut = {v: parse_ct_date(v) for v in df[col].drop_nulls().unique().to_list()}
+_MONTHS = {m: i for i, m in enumerate(
+    ("january", "february", "march", "april", "may", "june", "july", "august", "september",
+     "october", "november", "december"), start=1)}  # fmt: skip
+_LONG = re.compile(r"([A-Za-z]+)\s+(?:(\d{1,2}),\s*)?(\d{4})")
+
+
+def parse_aact_date(s: str) -> tuple[date | None, str | None]:
+    """``parse_ct_date`` for "YYYY-MM" / "YYYY-MM-DD", plus older AACT "January 2014" and
+    "January 15, 2014" (mapped to the same date and precision the API form would give)."""
+    s = s.strip()
+    if (m := _LONG.fullmatch(s)) and (month := _MONTHS.get(m[1].lower())):
+        try:
+            if m[2] is None:
+                return date(int(m[3]), month, 1), "month"
+            return date(int(m[3]), month, int(m[2])), "day"
+        except ValueError as exc:
+            raise ValueError(f"invalid AACT date: {s!r}") from exc
+    return parse_ct_date(s)
+
+
+def _date_exprs(df: pl.DataFrame, col: str, month_year: str | None = None) -> list[pl.Expr]:
+    """Date and precision of ``col``; ``month_year`` (AACT's verbatim registry string, which
+    keeps month precision) wins when non-null, the full ``col`` date is the fallback."""
+    src = pl.col(col)
+    lut = {v: parse_aact_date(v) for v in df[col].drop_nulls().unique().to_list()}
+    if month_year is not None:
+        src = pl.coalesce(pl.col(month_year), pl.col(col))
+        lut |= {v: parse_aact_date(v) for v in df[month_year].drop_nulls().unique().to_list()}
     return [
-        pl.col(col).replace_strict({k: d for k, (d, _) in lut.items()}, default=None,
-                                   return_dtype=pl.Date()).alias(col),
-        pl.col(col).replace_strict({k: p for k, (_, p) in lut.items()}, default=None,
-                                   return_dtype=pl.Utf8()).alias(f"{col}_precision"),
+        src.replace_strict({k: d for k, (d, _) in lut.items()}, default=None,
+                           return_dtype=pl.Date()).alias(col),
+        src.replace_strict({k: p for k, (_, p) in lut.items()}, default=None,
+                           return_dtype=pl.Utf8()).alias(f"{col}_precision"),
     ]  # fmt: skip
 
 
@@ -253,11 +280,11 @@ def load_snapshot(panel_dir: Path, snap_date: date, *, aliases: Aliases | None =
         "nct_id",
         _enum(st, "studies", "phase"),
         _enum(st, "studies", "overall_status"),
-        *_date_exprs(st, "start_date"),
+        *_date_exprs(st, "start_date", "start_month_year"),
         _enum(st, "studies", "start_date_type"),
-        *_date_exprs(st, "primary_completion_date"),
+        *_date_exprs(st, "primary_completion_date", "primary_completion_month_year"),
         _enum(st, "studies", "primary_completion_date_type"),
-        *_date_exprs(st, "completion_date"),
+        *_date_exprs(st, "completion_date", "completion_month_year"),
         pl.col("enrollment").cast(pl.Float64).cast(pl.Int64),
         _enum(st, "studies", "enrollment_type"),
         _date_exprs(st, "last_update_posted_date")[0].alias("last_update_post_date"),
@@ -389,4 +416,11 @@ def load_snapshot(panel_dir: Path, snap_date: date, *, aliases: Aliases | None =
     return Snapshot(date=snap_date, tables=tables, fields=fields, has_results=has_results)
 
 
-__all__ = ["ENUM_MAPS", "Snapshot", "UnmappedValue", "load_snapshot", "map_value"]
+__all__ = [
+    "ENUM_MAPS",
+    "Snapshot",
+    "UnmappedValue",
+    "load_snapshot",
+    "map_value",
+    "parse_aact_date",
+]
