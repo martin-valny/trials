@@ -1,6 +1,6 @@
 # Stop-risk model v2 (AACT point-in-time) — design
 
-Status: draft for Martin's approval, 2026-11-15. Successor to `2026-11-09-stop-risk-model-design.md` (v1), which named this as approach 2 (§4) and as open work (§10).
+Status: approved by Martin, 2026-11-15. Successor to `2026-11-09-stop-risk-model-design.md` (v1), which named this as approach 2 (§4) and as open work (§10).
 
 ## 1. Intent and why
 
@@ -146,7 +146,8 @@ Copy follows v1's wording rules. Visual changes stay within the existing Figure 
 
 - **AACT** (https://aact.ctti-clinicaltrials.org/): no terms, licence or citation page found; the sign-up form shows no terms. Footer: "© 2026 Clinical Trials Transformation Initiative · A project of CTTI. Data derived from ClinicalTrials.gov."
 - **CTTI citation policy** (https://ctti-clinicaltrials.org/?p=7671): acknowledge the "Clinical Trials Transformation Initiative" as the source and link to it.
-- **ClinicalTrials.gov terms** (https://classic.clinicaltrials.gov/ct2/about-site/terms-conditions; 2013 archive https://webarchive.library.unt.edu/web/20130223220909/http://clinicaltrials.gov/ct2/about-site/terms-conditions): attribute the data to ClinicalTrials.gov, state the processing date, do not claim proprietary rights or misrepresent it; some content may carry third-party rights. The current page (https://clinicaltrials.gov/about-site/terms-conditions) did not render for automated fetch; **Martin to confirm in a browser before the first commit of v2 artefacts.**
+- **ClinicalTrials.gov terms** (https://clinicaltrials.gov/about-site/terms-conditions, last updated 2023-01-31; text confirmed by Martin in a browser, 2026-11-15). Data are available to all at no charge. In any publication or distribution of the data you should: attribute the source as ClinicalTrials.gov; keep the data current; clearly display the date the data were processed by ClinicalTrials.gov; state any modifications made, with a complete description. You shall not assert proprietary rights or represent it as other than a U.S. Government database; no use of extracted email addresses for marketing. Some data may carry third-party copyright. The terms apply while any of the data is retained.
+- How v2 meets them: Methods, the card and the README credit ClinicalTrials.gov (and AACT/CTTI); they show the snapshot range (2018-12 to 2026-01) and the training date; the README and Methods describe how the committed artefacts were derived (the model, a numeric held-out table without ids, per-sponsor counts are modifications, described in full there); the live site stays current through the daily run; no email addresses are read or used; no proprietary claim is made on the data (the repo licence covers code, not registry data, and the README says so).
 - Conclusion: nothing found forbids committing a model, a numeric held-out table without ids, or per-sponsor counts derived from AACT. The plan credits AACT/CTTI and ClinicalTrials.gov (README, card, Methods) and states the snapshot dates. Raw AACT data is never committed or redistributed. This section is copied into `config/risk/README.md`.
 
 ## 11. Left to the builder
