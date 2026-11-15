@@ -23,7 +23,7 @@ import httpx
 
 AACT_API = "https://aact.ctti-clinicaltrials.org/api/v1"
 USER_AGENT = "trialradar-research"
-DEFAULT_SEED = Path("/Users/martin.valny/Desktop/event-signal-backtest/data/raw/aact/monthly_flat.json")
+DEFAULT_SEED = Path.home() / "Desktop/event-signal-backtest/data/raw/aact/monthly_flat.json"
 LISTING_NAME = "monthly_flat.json"
 MAX_TRIES = 6
 RETRY_PAD = 5.0
@@ -77,11 +77,13 @@ def list_archives(
                 r.raise_for_status()
                 path.write_text(r.text)
     rows: list[dict[str, Any]] = json.loads(path.read_text())["data"]
-    out = [Archive(int(r["id"]), date.fromisoformat(str(r["created_at"])[:10]), int(r["size"])) for r in rows]
+    out = [Archive(int(r["id"]), date.fromisoformat(str(r["created_at"])[:10]), int(r["size_bytes"])) for r in rows]
     return sorted(out, key=lambda a: a.snap_date)
 
 
-class _ClientCtx:
+class _client_ctx:
+    """Context manager: use the given client, or open (and close) a private one."""
+
     def __init__(self, client: httpx.Client | None) -> None:
         self.owned = client is None
         self.client = client or httpx.Client(timeout=120)
@@ -94,8 +96,17 @@ class _ClientCtx:
             self.client.close()
 
 
-def _client_ctx(client: httpx.Client | None) -> _ClientCtx:
-    return _ClientCtx(client)
+def _require_partial(r: httpx.Response) -> None:
+    r.raise_for_status()
+    if r.status_code != 206:
+        raise OSError(f"server ignored Range request (HTTP {r.status_code}, expected 206)")
+
+
+def _retry_after(r: httpx.Response) -> int:
+    try:
+        return max(0, int(r.headers.get("Retry-After", "")))
+    except ValueError:
+        return 300
 
 
 def _signed_url(
@@ -110,7 +121,7 @@ def _signed_url(
         if r.status_code == 302:
             return r.headers["Location"]
         if r.status_code == 429:
-            sleep(int(r.headers.get("Retry-After", 300)) + RETRY_PAD)
+            sleep(_retry_after(r) + RETRY_PAD)
             continue
         r.raise_for_status()
     raise RuntimeError(f"no download link for AACT snapshot {archive_id}")
@@ -122,7 +133,7 @@ class _RangeFile(io.RawIOBase):
     def __init__(self, client: httpx.Client, url: str) -> None:
         self.client, self.url, self.pos = client, url, 0
         r = client.get(url, headers={"Range": "bytes=0-0"})
-        r.raise_for_status()
+        _require_partial(r)
         self.size = int(r.headers["Content-Range"].split("/")[1])
 
     def seekable(self) -> bool:
@@ -144,7 +155,7 @@ class _RangeFile(io.RawIOBase):
             return 0
         end = min(self.size, self.pos + len(b)) - 1
         r = self.client.get(self.url, headers={"Range": f"bytes={self.pos}-{end}"})
-        r.raise_for_status()
+        _require_partial(r)
         b[: len(r.content)] = r.content
         self.pos += len(r.content)
         return len(r.content)
@@ -167,7 +178,7 @@ def extract_table(
         url = _signed_url(c, archive.id, api_key, sleep)
         zf = zipfile.ZipFile(_RangeFile(c, url))
         suffix = f"{table}.txt"
-        info = next((i for i in zf.infolist() if i.filename.endswith(suffix)), None)
+        info = next((i for i in zf.infolist() if i.filename.rsplit("/", 1)[-1] == suffix), None)
         if info is None:
             raise KeyError(f"table {table!r} not found in AACT archive {archive.id}")
         if info.compress_type not in (zipfile.ZIP_DEFLATED, zipfile.ZIP_STORED):
@@ -175,23 +186,32 @@ def extract_table(
         hdr = c.get(
             url, headers={"Range": f"bytes={info.header_offset}-{info.header_offset + LOCAL_HEADER_LEN - 1}"}
         )
-        hdr.raise_for_status()
+        _require_partial(hdr)
         n = int.from_bytes(hdr.content[26:28], "little")
         e = int.from_bytes(hdr.content[28:30], "little")
         start = info.header_offset + LOCAL_HEADER_LEN + n + e
         dec = zlib.decompressobj(-15) if info.compress_type == zipfile.ZIP_DEFLATED else None
         remaining = info.compress_size
+        crc = written = 0
         with tmp.open("wb") as f:
             if remaining:
                 with c.stream("GET", url, headers={"Range": f"bytes={start}-{start + remaining - 1}"}) as r:
-                    r.raise_for_status()
+                    _require_partial(r)
                     for chunk in r.iter_bytes(1 << 20):
                         chunk = chunk[:remaining]
                         remaining -= len(chunk)
-                        f.write(dec.decompress(chunk) if dec else chunk)
+                        data = dec.decompress(chunk) if dec else chunk
+                        crc = zlib.crc32(data, crc)
+                        written += len(data)
+                        f.write(data)
             if remaining:
                 raise OSError(f"short read of {info.filename}: {remaining} bytes missing")
             if dec:
-                f.write(dec.flush())
+                data = dec.flush()
+                crc = zlib.crc32(data, crc)
+                written += len(data)
+                f.write(data)
+            if crc != info.CRC or written != info.file_size:
+                raise OSError(f"integrity check failed for {info.filename} in AACT archive {archive.id}")
     tmp.replace(final)
     return final

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import zipfile
+import zlib
 from collections.abc import Iterator
 from datetime import date
 from io import BytesIO
@@ -21,6 +22,7 @@ from trialradar.aact.archive import (
 API = "https://aact.ctti-clinicaltrials.org/api/v1"
 SIGNED = "https://files.example.com/signed/archive.zip?sig=abc"
 INTERVENTIONS = b"id|nct_id|name\n" + b"1|NCT00000001|drug A\n" * 400
+BROWSE = b"id|mesh_term\n" + b"1|Other\n" * 400
 STUDIES = b"nct_id|overall_status\n" + b"NCT00000002|COMPLETED\n" * 400
 
 
@@ -28,6 +30,7 @@ def _zip_bytes() -> tuple[bytes, dict[str, tuple[int, int]]]:
     buf = BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("studies.txt", STUDIES)
+        zf.writestr("browse_interventions.txt", BROWSE)
         zf.writestr("interventions.txt", INTERVENTIONS)
     data = buf.getvalue()
     spans: dict[str, tuple[int, int]] = {}
@@ -41,8 +44,16 @@ def _zip_bytes() -> tuple[bytes, dict[str, tuple[int, int]]]:
 
 
 class Server:
-    def __init__(self, *, throttle: int = 0, fail_midstream: bool = False) -> None:
+    def __init__(
+        self, *, throttle: int = 0, fail_midstream: bool = False, ignore_range: bool = False,
+        corrupt: bool = False, retry_after: str = "0",
+    ) -> None:
         self.data, self.spans = _zip_bytes()
+        if corrupt:
+            lo, _ = self.spans["interventions.txt"]
+            self.data = self.data[: lo + 20] + bytes([self.data[lo + 20] ^ 0xFF]) + self.data[lo + 21 :]
+        self.ignore_range = ignore_range
+        self.retry_after = retry_after
         self.ranges: list[tuple[int, int]] = []
         self.throttle = throttle
         self.fail_midstream = fail_midstream
@@ -57,15 +68,17 @@ class Server:
             assert req.headers["user-agent"] == "trialradar-research"
             if req.url.path.endswith("/snapshots/flat/monthly"):
                 self.listing_calls += 1
-                body = {"data": [{"id": 7, "created_at": "2024-03-01T05:00:00Z", "size": len(self.data)}]}
+                body = {"data": [{"id": 7, "created_at": "2024-03-01T05:00:00Z", "size_bytes": len(self.data)}]}
                 return httpx.Response(200, json=body)
             if req.url.path.endswith("/download"):
                 if self.throttle > 0:
                     self.throttle -= 1
-                    return httpx.Response(429, headers={"Retry-After": "0"})
+                    return httpx.Response(429, headers={"Retry-After": self.retry_after})
                 return httpx.Response(302, headers={"Location": SIGNED})
         if url == SIGNED:
             self.signed_auth.append(req.headers.get("authorization"))
+            if self.ignore_range:
+                return httpx.Response(200, content=self.data)
             m = re.fullmatch(r"bytes=(\d+)-(\d+)", req.headers["range"])
             assert m
             lo, hi = int(m[1]), min(int(m[2]), len(self.data) - 1)
@@ -149,8 +162,8 @@ def test_partial_download_leaves_no_final_file(tmp_path: Path) -> None:
 def test_list_archives_seeds_from_file(tmp_path: Path) -> None:
     seed = tmp_path / "seed.json"
     seed.write_text(json.dumps({"data": [
-        {"id": 9, "created_at": "2024-04-01T00:10:00Z", "size": 5},
-        {"id": 8, "created_at": "2024-03-01T00:10:00Z", "size": 4},
+        {"id": 9, "type": "flat", "created_at": "2024-04-01T00:10:00Z", "size_bytes": 5},
+        {"id": 8, "type": "flat", "created_at": "2024-03-01T00:10:00Z", "size_bytes": 4},
     ]}))
     server = Server()
     got = list_archives(tmp_path / "cache", "k", client=_client(server), seed=seed)
@@ -165,3 +178,40 @@ def test_list_archives_fetches_when_no_seed(tmp_path: Path) -> None:
     got = list_archives(tmp_path / "cache", "k", client=_client(server), seed=tmp_path / "missing.json")
     assert got == [Archive(id=7, snap_date=date(2024, 3, 1), size=len(server.data))]
     assert server.listing_calls == 1
+
+
+def test_exact_member_name_not_suffix(tmp_path: Path) -> None:
+    out = extract_table(ARCHIVE, "interventions", tmp_path, "k", client=_client(Server()), sleep=lambda s: None)
+    assert out.read_bytes() == INTERVENTIONS
+
+
+def test_ignored_range_is_an_error(tmp_path: Path) -> None:
+    with pytest.raises(OSError, match="Range"):
+        extract_table(ARCHIVE, "interventions", tmp_path, "k", client=_client(Server(ignore_range=True)),
+                      sleep=lambda s: None)
+    assert not (tmp_path / "interventions.txt").exists()
+
+
+def test_corrupted_member_fails_crc_and_leaves_no_final_file(tmp_path: Path) -> None:
+    with pytest.raises((OSError, zlib.error)):
+        extract_table(ARCHIVE, "interventions", tmp_path, "k", client=_client(Server(corrupt=True)),
+                      sleep=lambda s: None)
+    assert not (tmp_path / "interventions.txt").exists()
+
+
+def test_non_integer_retry_after_uses_default(tmp_path: Path) -> None:
+    sleeps: list[float] = []
+    extract_table(ARCHIVE, "interventions", tmp_path, "k",
+                  client=_client(Server(throttle=1, retry_after="Wed, 21 Oct")), sleep=sleeps.append)
+    assert sleeps == [305.0]
+
+
+def test_parses_real_listing_shape(tmp_path: Path) -> None:
+    seed = tmp_path / "seed.json"
+    seed.write_text(json.dumps({"data": [
+        {"id": 3881, "type": "flat", "created_at": "2026-01-01T05:59:55Z", "size_bytes": 2332023402},
+        {"id": 3819, "type": "flat", "created_at": "2025-12-01T06:06:17Z", "size_bytes": 2316226740},
+    ]}))
+    got = list_archives(tmp_path / "c", "k", client=_client(Server()), seed=seed)
+    assert got[0] == Archive(3819, date(2025, 12, 1), 2316226740)
+    assert got[1].id == 3881
