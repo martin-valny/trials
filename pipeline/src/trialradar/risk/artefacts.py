@@ -228,9 +228,9 @@ def read_factor_labels(path: Path) -> dict[str, FactorLabel]:
             "count": ("text",),
             "phase": ("text",),
             "binary": ("yes", "no"),
-            "log_count": ("text",),
+            "enrollment": ("yes", "text"),
             "months": ("text",),
-            "months_nonzero": ("text",),
+            "months_ago": ("text", "no"),
         }
         if lab.kind not in KINDS:
             raise RiskArtefactError(f"{path.name}: {lab.feature} has unknown kind {lab.kind!r}")

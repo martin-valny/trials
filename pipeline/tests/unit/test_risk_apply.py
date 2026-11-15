@@ -398,7 +398,7 @@ def _golden_inputs() -> tuple[Tables, dict[str, Any]]:
 
 
 def _assert_same_doc(got: Any, want: Any, path: str = "") -> None:
-    """Equal, with estimates compared to 0.002 (float noise across platforms)."""
+    """Equal; 3-decimal estimates within 0.0011 (one rounding step of cross-platform noise)."""
     if isinstance(want, dict):
         assert isinstance(got, dict) and list(got) == list(want), path
         for k in want:
@@ -408,7 +408,7 @@ def _assert_same_doc(got: Any, want: Any, path: str = "") -> None:
         for i, (g, w) in enumerate(zip(got, want, strict=True)):
             _assert_same_doc(g, w, f"{path}[{i}]")
     elif isinstance(want, float) and not isinstance(want, bool):
-        assert got == pytest.approx(want, abs=0.002), path
+        assert got == pytest.approx(want, abs=0.0011), path
     else:
         assert got == want, path
 
@@ -507,3 +507,12 @@ def test_v2_card_uses_build_v2(
     assert got == {n: want[n] for n in got}
     assert len(set(got.values())) >= 3  # the trials differ, so a misalignment would show
     assert list(doc["trials"]) == sorted(doc["trials"])
+
+
+def test_unknown_feature_set_raises(loaded: artefacts.Loaded, cfg: AreaConfig) -> None:
+    """A card naming a feature set this code does not know never falls back to v1."""
+    from dataclasses import replace
+
+    odd = replace(loaded, card=loaded.card.model_copy(update={"feature_set": "v3"}))
+    with pytest.raises(ValueError, match="feature set"):
+        _doc(odd, cfg, [_trial("NCT00000001", "RECRUITING", ["PHASE2"])])

@@ -20,7 +20,7 @@ HIDDEN_FEATURES = frozenset({"start_year"})
 
 
 KINDS = frozenset(
-    {"count", "binary", "phase", "category", "sponsor", "log_count", "months", "months_nonzero"}
+    {"count", "binary", "phase", "category", "sponsor", "enrollment", "months", "months_ago"}
 )
 PHASE_FEATURES = ("phase_1", "phase_2", "phase_3")
 
@@ -35,10 +35,12 @@ class FactorLabel:
           phase     `text` with `{value}` replaced by the trial's phases ("Phase {value} trial")
           category  `yes` when the trial is filed under the category; never shown when absent
           sponsor   fixed copy built in code (the three sponsor features give one factor)
-          log_count `text` with `{value}` replaced by exp(value) - 1, rounded ("Planned
-                    enrollment: {value}" from log_enrollment)
-          months    `text` with `{value}` replaced by the value rounded to whole months
-          months_nonzero  as months, but never shown when the whole months are 0
+          enrollment  log_enrollment as round(exp(value) - 1): `yes` ("Planned enrollment:
+                    {value}") when the row's enrollment_anticipated is 1, else `text`
+                    ("Enrollment: {value}"); never shown at 0 or below
+          months    `text` with `{value}` replaced by whole months ("1 month", "N months");
+                    never shown when that rounds to 0 or below
+          months_ago  as months, but under one month gives `no` ("... less than a month ago")
     """
 
     feature: str
@@ -106,13 +108,19 @@ def _label(
         return None  # a missing value has no words; never describe it
     if lab.kind == "count":
         return lab.text.replace("{value}", _fmt(value)) or None
-    if lab.kind == "log_count":
-        return lab.text.replace("{value}", str(_whole(math.expm1(value)))) or None
-    if lab.kind in ("months", "months_nonzero"):
-        months = _whole(value)
-        if months == 0 and lab.kind == "months_nonzero":
+    if lab.kind == "enrollment":
+        n = _whole(math.expm1(value))
+        if n <= 0:
             return None
-        return lab.text.replace("{value}", str(months)) or None
+        flag = "enrollment_anticipated"
+        planned = flag in col and float(x_row[col[flag]]) == 1.0
+        return (lab.yes if planned else lab.text).replace("{value}", str(n)) or None
+    if lab.kind in ("months", "months_ago"):
+        months = _whole(value)
+        if months <= 0:
+            return (lab.no or None) if lab.kind == "months_ago" else None
+        unit = "month" if months == 1 else "months"
+        return lab.text.replace("{value}", f"{months} {unit}") or None
     if lab.kind == "category":
         return (lab.yes or None) if value > 0 else None  # absence of a category is not a reason
     if lab.kind == "binary":

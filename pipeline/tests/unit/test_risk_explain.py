@@ -194,41 +194,65 @@ def test_no_shown_label_contradicts_its_value() -> None:
                     assert not low.startswith(("many ", "few ", "not a ", "higher ", "lower "))
 
 
+def _one(name: str, value: float, row: dict[str, float] | None = None) -> list[str]:
+    """Labels for `name` alone at the top, with any other row values given in `row`."""
+    other = row or {}
+    cols = (name, *other)
+    x = np.array([value, *other.values()])
+    c = np.array([0.5, *([0.0] * len(other))])
+    return [f["label"] for f in top_factors(c, x, cols, _real_labels())]
+
+
 def test_new_factor_labels_render() -> None:
-    """v2's features in their exact words: months rounded to whole months, enrollment shown as
-    the planned figure, status only when it holds, and a primary completion date that has not
-    passed (0 months) never a factor."""
+    """v2's features in their own words: whole months (1 month, N months), nothing shown for a
+    month count that rounds to 0 or below, enrollment worded by the trial's own enrollment
+    type, a status or planned-figure flag only when it holds."""
     import math
 
-    labels = _real_labels()
-
-    def one(name: str, value: float) -> list[str]:
-        out = top_factors(np.array([0.5]), np.array([value]), (name,), labels)
-        return [x["label"] for x in out]
-
-    assert one("log_enrollment", math.log1p(120)) == ["Planned enrollment: 120"]
-    assert one("log_enrollment", math.log1p(119.6)) == ["Planned enrollment: 120"]
-    assert one("enrollment_anticipated", 1.0) == ["Enrollment is a planned figure"]
-    assert one("enrollment_anticipated", 0.0) == ["Enrollment is the actual figure"]
+    # Enrollment: "Planned" only when the same row says the figure is anticipated.
+    planned, actual = {"enrollment_anticipated": 1.0}, {"enrollment_anticipated": 0.0}
+    assert _one("log_enrollment", math.log1p(120), planned) == ["Planned enrollment: 120"]
+    assert _one("log_enrollment", math.log1p(119.6), planned) == ["Planned enrollment: 120"]
+    assert _one("log_enrollment", math.log1p(120), actual) == ["Enrollment: 120"]
+    assert _one("log_enrollment", math.log1p(1)) == ["Enrollment: 1"]  # type column absent
+    nan_type = {"enrollment_anticipated": float("nan")}
+    assert _one("log_enrollment", math.log1p(5), nan_type) == ["Enrollment: 5"]
+    assert _one("log_enrollment", 0.0, planned) == []  # 0 enrolled
+    assert _one("log_enrollment", math.log1p(0.4), planned) == []  # rounds to 0
+    assert _one("log_enrollment", float("nan"), planned) == []
+    assert _one("enrollment_anticipated", 1.0) == ["Enrollment is a planned figure"]
+    assert _one("enrollment_anticipated", 0.0) == []  # 0 also means a missing type
     for name, text in (
         ("status_recruiting", "Recruiting"),
         ("status_not_yet_recruiting", "Not yet recruiting"),
         ("status_enrolling_by_invitation", "Enrolling by invitation"),
         ("status_active_not_recruiting", "Active, not recruiting"),
     ):
-        assert one(name, 1.0) == [text]
-        assert one(name, 0.0) == []
-    assert one("age_months", 26.6) == ["Running for 27 months"]
-    assert one("planned_duration_months", 35.2) == [
+        assert _one(name, 1.0) == [text]
+        assert _one(name, 0.0) == []
+
+    for v, want in ((26.6, ["Running for 27 months"]), (1.2, ["Running for 1 month"])):
+        assert _one("age_months", v) == want
+    for v in (0.0, 0.4, -3.0, float("nan")):
+        assert _one("age_months", v) == []
+    assert _one("planned_duration_months", 35.2) == [
         "Planned to run 35 months to primary completion"
     ]
-    assert one("pcd_overdue_months", 4.4) == ["Primary completion date passed 4 months ago"]
-    assert one("pcd_overdue_months", 0.0) == []
-    assert one("pcd_overdue_months", 0.4) == []  # rounds to 0: not shown either
-    assert one("months_since_update", 2.5) == ["Last registry update: 3 months ago"]  # half up
-    assert one("months_since_update", float("nan")) == []
+    assert _one("planned_duration_months", 0.6) == ["Planned to run 1 month to primary completion"]
+    for v in (0.0, 0.3, -2.0):
+        assert _one("planned_duration_months", v) == []
+    assert _one("pcd_overdue_months", 4.4) == ["Primary completion date passed 4 months ago"]
+    assert _one("pcd_overdue_months", 1.0) == ["Primary completion date passed 1 month ago"]
+    for v in (0.0, 0.4, -1.0):
+        assert _one("pcd_overdue_months", v) == []
+    assert _one("months_since_update", 2.5) == ["Last registry update: 3 months ago"]  # half up
+    assert _one("months_since_update", 1.0) == ["Last registry update: 1 month ago"]
+    for v in (0.0, 0.4, -0.5):
+        assert _one("months_since_update", v) == ["Last registry update: less than a month ago"]
+    assert _one("months_since_update", float("nan")) == []
+
     # Neutral words only.
-    for name in labels:
-        for v in (0.0, 1.0, 3.0, 40.0):
-            for x in one(name, v):
-                assert not any(w in x.lower() for w in ("delayed", "stale", "overdue"))
+    for name in _real_labels():
+        for v in (-1.0, 0.0, 1.0, 3.0, 40.0):
+            for x in _one(name, v):
+                assert not any(w in x.lower() for w in ("delayed", "stale", "overdue", "actual"))

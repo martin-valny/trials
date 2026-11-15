@@ -202,11 +202,13 @@ def build_risk_doc(
                 .sort("nct_id")
             )
             x = feature_matrix_v2(frame)
-        else:
+        elif loaded.card.feature_set == "v1":
             frame = features.build(
                 tables, fields, counts, max_start_year=loaded.card.max_start_year
             ).filter(pl.col("nct_id").is_in(list(rows)))
             x = artefacts.feature_matrix(frame)
+        else:
+            raise ValueError(f"unknown feature set {loaded.card.feature_set!r} on the card")
         p, lo, hi = ens.predict(x)
         distinct = len({_r(v) for v in p})
         if len(p) >= DEGENERATE_MIN_TRIALS and distinct < DEGENERATE_MIN_DISTINCT:

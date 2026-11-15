@@ -46,13 +46,13 @@ n_experimental_interventions,count,,,Drug interventions: {value}
 sponsor_prior_n,sponsor,,,
 sponsor_prior_rate,sponsor,,,
 sponsor_few_prior,sponsor,,,
-log_enrollment,log_count,,,Planned enrollment: {value}
-enrollment_anticipated,binary,Enrollment is a planned figure,Enrollment is the actual figure,
+log_enrollment,enrollment,Planned enrollment: {value},,Enrollment: {value}
+enrollment_anticipated,category,Enrollment is a planned figure,,
 status_not_yet_recruiting,category,Not yet recruiting,,
 status_recruiting,category,Recruiting,,
 status_enrolling_by_invitation,category,Enrolling by invitation,,
 status_active_not_recruiting,category,"Active, not recruiting",,
-age_months,months,,,Running for {value} months
-planned_duration_months,months,,,Planned to run {value} months to primary completion
-pcd_overdue_months,months_nonzero,,,Primary completion date passed {value} months ago
-months_since_update,months,,,Last registry update: {value} months ago
+age_months,months,,,Running for {value}
+planned_duration_months,months,,,Planned to run {value} to primary completion
+pcd_overdue_months,months,,,Primary completion date passed {value} ago
+months_since_update,months_ago,,Last registry update: less than a month ago,Last registry update: {value} ago
