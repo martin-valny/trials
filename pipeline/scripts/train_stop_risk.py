@@ -142,40 +142,9 @@ def _metrics(y: np.ndarray, p: np.ndarray) -> Metrics:
 
 
 def _typical(frame: pl.DataFrame) -> list[Typical]:
-    """Observed stop rates by phase label and sponsor class over `frame`: the shipped refit's
-    trials (starts up to REFIT_END), since later finished starts are mostly early stops."""
-    labelled = frame.with_columns(
-        pl.col("phases")
-        .list.eval(pl.element().str.slice(-1))
-        .list.sort()
-        .list.join("/")
-        .map_elements(lambda d: f"phase {d}", return_dtype=pl.Utf8)
-        .alias("phase"),
-        pl.when(pl.col("sponsor_class") == "INDUSTRY")
-        .then(pl.lit("industry"))
-        .otherwise(pl.lit("other"))
-        .alias("sponsor"),
-    )
-    rows: list[Typical] = []
-    groups = [("all", labelled)] + [
-        (str(g["phase"][0]), g) for g in labelled.partition_by("phase", as_dict=False)
-    ]
-    for phase, sub in groups:
-        for sponsor, part in [
-            ("all", sub),
-            ("industry", sub.filter(pl.col("sponsor") == "industry")),
-            ("other", sub.filter(pl.col("sponsor") == "other")),
-        ]:
-            if part.height:
-                rows.append(
-                    Typical(
-                        phase=phase,
-                        sponsor=sponsor,  # type: ignore[arg-type]
-                        rate=float(part["label"].mean()),  # type: ignore[arg-type]
-                        n=part.height,
-                    )
-                )
-    return rows
+    """Observed stop rates over `frame`: the shipped refit's trials (starts up to REFIT_END),
+    since later finished starts are mostly early stops."""
+    return artefacts.typical_rates(frame)
 
 
 def _fmt(m: Metrics | None) -> str:

@@ -8,6 +8,7 @@ with the model file, or a scikit-learn minor version other than the installed on
 from __future__ import annotations
 
 import csv
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -26,6 +27,7 @@ from trialradar.risk.model import Ensemble, Recipe
 __all__ = [
     "EXCLUDED",
     "Card",
+    "Comparison",
     "Loaded",
     "Metrics",
     "RiskArtefactError",
@@ -35,6 +37,7 @@ __all__ = [
     "read_factor_labels",
     "save",
     "typical_rate",
+    "typical_rates",
 ]
 
 EXCLUDED: tuple[str, ...] = (
@@ -86,6 +89,27 @@ class Typical(_Strict):
     n: int
 
 
+class Comparison(_Strict):
+    """v2's before/after block: every model on the same held-out trials running at the cutoff."""
+
+    cutoff: str
+    outcome_snapshot: str
+    v1_recipe: Metrics
+    v1_committed: Metrics | None
+    v2_baseline: Metrics
+    v2: Metrics
+    v2_history: Metrics
+    v2_no_sites: Metrics
+    test_exclusions: dict[str, int]
+    train_trials: int
+    train_rows: int
+    train_age_mix: dict[str, int]
+    calibration_by_age: dict[str, list[dict[str, float | int]]]
+    parity: dict[str, float] | None
+    v2_ships: bool
+    reason: str
+
+
 class Card(_Strict):
     version: str
     trained_on: date
@@ -100,10 +124,13 @@ class Card(_Strict):
     metrics: MetricSet
     site_leak_flag: bool
     typical: list[Typical]
-    max_start_year: int
+    max_start_year: int | None  # None for v2 (no start_year feature, nothing to clamp)
     sponsor_floor: int
     n_train: int
     n_test: int
+    feature_set: Literal["v1", "v2"] = "v1"
+    comparison: Comparison | None = None
+    data_source: str | None = None
 
 
 @dataclass(frozen=True)
@@ -115,9 +142,48 @@ class Loaded:
     factor_labels: dict[str, FactorLabel]
 
 
-def feature_matrix(frame: pl.DataFrame) -> np.ndarray:
-    """FEATURES columns as a float matrix; nulls become NaN."""
-    return frame.select(FEATURES).cast(pl.Float64).to_numpy()
+def feature_matrix(frame: pl.DataFrame, columns: Sequence[str] = FEATURES) -> np.ndarray:
+    """`columns` (default v1's FEATURES) as a float matrix; nulls become NaN."""
+    return (
+        frame.select(pl.col(c).cast(pl.Float64) for c in columns).fill_null(float("nan")).to_numpy()
+    )
+
+
+def typical_rates(frame: pl.DataFrame) -> list[Typical]:
+    """Observed stop rates by phase label and sponsor class over `frame` (one row per trial:
+    phases, sponsor_class, label). Callers pass the shipped refit's trials."""
+    labelled = frame.with_columns(
+        pl.col("phases")
+        .list.eval(pl.element().str.slice(-1))
+        .list.sort()
+        .list.join("/")
+        .map_elements(lambda d: f"phase {d}", return_dtype=pl.Utf8)
+        .alias("phase"),
+        pl.when(pl.col("sponsor_class") == "INDUSTRY")
+        .then(pl.lit("industry"))
+        .otherwise(pl.lit("other"))
+        .alias("sponsor"),
+    )
+    rows: list[Typical] = []
+    groups = [("all", labelled)] + [
+        (str(g["phase"][0]), g) for g in labelled.partition_by("phase", as_dict=False)
+    ]
+    for phase, sub in groups:
+        for sponsor, part in [
+            ("all", sub),
+            ("industry", sub.filter(pl.col("sponsor") == "industry")),
+            ("other", sub.filter(pl.col("sponsor") == "other")),
+        ]:
+            if part.height:
+                rows.append(
+                    Typical(
+                        phase=phase,
+                        sponsor=sponsor,  # type: ignore[arg-type]
+                        rate=float(part["label"].mean()),  # type: ignore[arg-type]
+                        n=part.height,
+                    )
+                )
+    return rows
 
 
 def save(
