@@ -396,10 +396,10 @@ test("stop-risk: retraining names the shipped refit window; start year is not a 
 });
 
 // ---------------------------------------------------------------- stop-risk v2 before/after (v2 spec 9, 10)
-// risk-v2.json is a synthetic v2 card (round fixture numbers, not real results).
+// tests/fixtures/risk-variants/ holds hand-made cards outside the generated fixtures/data; risk-v2.json is a synthetic v2 card (round fixture numbers, not real results).
 
 const riskV2 = (model: Partial<RiskModelInfo> = {}): RiskFile => {
-  const f = readFixture<RiskFile>("risk-v2.json");
+  const f = readFixture<RiskFile>("../risk-variants/risk-v2.json");
   return { ...f, model: { ...f.model, ...model } };
 };
 const flat = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, " ") ?? "";
@@ -466,7 +466,7 @@ test("stop-risk v2: the credit line names the sources, the snapshot range and th
 });
 
 test("stop-risk v2: a v1 card with a comparison (v2 did not ship) keeps the v1 prose and adds the table", async () => {
-  const withCmp = readFixture<RiskFile>("risk-v1-comparison.json");
+  const withCmp = readFixture<RiskFile>("../risk-variants/risk-v1-comparison.json");
   const base = riskFile();
   const v1 = { ...base, model: { ...base.model, comparison: withCmp.model.comparison, data_source: withCmp.model.data_source } };
   stubFetch({ "risk.json": v1 });
@@ -499,7 +499,7 @@ test("stop-risk v2: a v1 card with a comparison (v2 did not ship) keeps the v1 p
 });
 
 test("stop-risk v2: v1's published AUC is quoted, called higher only when it is, and left out when unknown", async () => {
-  const f = readFixture<RiskFile>("risk-v2.json");
+  const f = readFixture<RiskFile>("../risk-variants/risk-v2.json");
   const cmp = f.model.comparison!;
   stubFetch({ "risk.json": riskV2({ comparison: { ...cmp, v1_published_auc: 0.59 } }) });
   const { unmount } = renderAt(<Methods />, "/methods#stop-risk");

@@ -39,7 +39,7 @@ test("a target page shows the stop-risk panel", async ({ page }) => {
 
 // v2 card (synthetic fixture numbers): Methods shows the before/after table and the credit line.
 test("Methods shows the v2 before/after table and credit line without horizontal scroll", async ({ page }) => {
-  await page.route("**/data/risk.json", (r) => r.fulfill({ path: "tests/fixtures/data/risk-v2.json" }));
+  await page.route("**/data/risk.json", (r) => r.fulfill({ path: "tests/fixtures/risk-variants/risk-v2.json" }));
   await page.goto("/#/methods?s=stop-risk");
   const section = page.locator("section#stop-risk");
   const table = section.getByRole("table", { name: /Before and after/ });
@@ -51,7 +51,7 @@ test("Methods shows the v2 before/after table and credit line without horizontal
 });
 
 test("Methods keeps the v1 text and adds the before/after table when v2 did not ship", async ({ page }) => {
-  await page.route("**/data/risk.json", (r) => r.fulfill({ path: "tests/fixtures/data/risk-v1-comparison.json" }));
+  await page.route("**/data/risk.json", (r) => r.fulfill({ path: "tests/fixtures/risk-variants/risk-v1-comparison.json" }));
   await page.goto("/#/methods?s=stop-risk");
   const section = page.locator("section#stop-risk");
   await expect(section.getByRole("table", { name: /Accuracy on later trials/ })).toBeVisible();
