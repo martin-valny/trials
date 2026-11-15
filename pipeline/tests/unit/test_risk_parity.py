@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import math
@@ -81,14 +82,28 @@ def test_parity_compare_without_shared_trials_is_an_error() -> None:
         script.compare(a, b, ("n_sites",))
 
 
-class _FakeClient:
-    """Answers filter.ids queries from the recorded studies; never touches the network."""
+AS_OF = date(2026, 1, 1)
 
-    def __init__(self) -> None:
+
+def _running(study: dict[str, Any]) -> dict[str, Any]:
+    """A copy of a recorded study that the daily run would score: recruiting, no results."""
+    s = copy.deepcopy(study)
+    s["hasResults"] = False
+    s["protocolSection"]["statusModule"]["overallStatus"] = "RECRUITING"
+    return s
+
+
+class _FakeClient:
+    """Answers filter.ids queries from the recorded studies (made running unless `status`
+    overrides one); never touches the network."""
+
+    def __init__(self, status: dict[str, str] | None = None) -> None:
         self.studies = {
-            s["protocolSection"]["identificationModule"]["nctId"]: s
+            s["protocolSection"]["identificationModule"]["nctId"]: _running(s)
             for s in map(json.loads, STUDIES.read_text().splitlines())
         }
+        for nct, st in (status or {}).items():
+            self.studies[nct]["protocolSection"]["statusModule"]["overallStatus"] = st
         self.queries: list[dict[str, str]] = []
 
     def iter_query(self, params: dict[str, str]) -> Any:
@@ -98,15 +113,19 @@ class _FakeClient:
                 yield self.studies[nct]
 
 
-def test_matched_sample_keeps_unchanged_records_only() -> None:
-    client = _FakeClient()
-    ids = sorted(client.studies)
-    live_dates = {
+def _live_dates(client: _FakeClient) -> dict[str, date]:
+    return {
         n: date.fromisoformat(
             s["protocolSection"]["statusModule"]["lastUpdatePostDateStruct"]["date"]
         )
         for n, s in client.studies.items()
     }
+
+
+def test_matched_sample_keeps_unchanged_records_only() -> None:
+    client = _FakeClient()
+    ids = sorted(client.studies)
+    live_dates = _live_dates(client)
     # AACT agrees on every other trial; the rest were updated after the snapshot.
     aact_dates: dict[str, date | None] = {
         n: (live_dates[n] if i % 2 == 0 else date(2000, 1, 1)) for i, n in enumerate(ids)
@@ -116,18 +135,50 @@ def test_matched_sample_keeps_unchanged_records_only() -> None:
     want = {n for i, n in enumerate(ids) if i % 2 == 0 and i != 0}
 
     studies, tables, report = script.matched_sample(
-        client, aact_dates, n=100, aliases_dir=ALIASES, seed=0, batch=4
+        client, aact_dates, n=100, aliases_dir=ALIASES, as_of=AS_OF, seed=0, batch=4
     )
     assert set(tables.trial["nct_id"].to_list()) == want
     assert {s["protocolSection"]["identificationModule"]["nctId"] for s in studies} == want
-    assert report == {"candidates": len(ids) + 1, "fetched": len(ids), "matched": len(want)}
+    assert report == {
+        "candidates": len(ids) + 1,
+        "fetched": len(ids),
+        "unchanged": len(want),
+        "live_not_running": 0,
+        "live_finished": 0,
+        "matched": len(want),
+    }
     assert all(len(q["filter.ids"].split(",")) <= 4 for q in client.queries)
 
     _, few, rep = script.matched_sample(
-        client, aact_dates, n=3, aliases_dir=ALIASES, seed=0, batch=4
+        client, aact_dates, n=3, aliases_dir=ALIASES, as_of=AS_OF, seed=0, batch=4
     )
     assert few.trial.height == 3 and rep["matched"] == 3
     assert set(few.trial["nct_id"].to_list()) <= want
+
+
+def test_matched_sample_drops_records_no_longer_running_live() -> None:
+    """The registry flips a record whose verification lapsed to UNKNOWN without a new update
+    date; the daily run would not score it, so it is left out and counted, not compared.
+    Likewise a live record finished in all but status (active, not recruiting with an actual
+    primary completion date before as_of)."""
+    base = _FakeClient()
+    ids = sorted(base.studies)
+    unknown, finished = ids[1], ids[2]
+    client = _FakeClient(status={unknown: "UNKNOWN", finished: "ACTIVE_NOT_RECRUITING"})
+    status = client.studies[finished]["protocolSection"]["statusModule"]
+    status["primaryCompletionDateStruct"] = {"date": "2025-06-01", "type": "ACTUAL"}
+    aact_dates: dict[str, date | None] = dict(_live_dates(client))  # all unchanged
+
+    studies, tables, report = script.matched_sample(
+        client, aact_dates, n=100, aliases_dir=ALIASES, as_of=AS_OF, seed=0
+    )
+    kept = set(tables.trial["nct_id"].to_list())
+    assert kept == set(ids) - {unknown, finished}
+    assert len(studies) == len(kept)
+    assert report["unchanged"] == len(ids)
+    assert report["live_not_running"] == 1
+    assert report["live_finished"] == 1
+    assert report["matched"] == len(ids) - 2
 
 
 def test_parity_file_is_what_the_trainer_reads(tmp_path: Path) -> None:

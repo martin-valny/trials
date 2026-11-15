@@ -8,7 +8,10 @@ Spec 2026-11-15 section 6.4. From the outcome (2026-01) AACT snapshot, takes the
 model's scope (``split_v2.in_scope``) in a seeded random order, fetches their live records from
 ClinicalTrials.gov in batches (``CtGovClient`` + ``normalize``, as the daily run reads them) and
 keeps those whose live ``last_update_post_date`` equals the AACT one (the record has not changed
-since the snapshot), until ``--sample`` are kept. Both sides go through ``build_v2`` with the
+since the snapshot) and that the daily run would still score live on the snapshot date (status
+still running and not finished in all but status; the registry flips lapsed records to UNKNOWN
+without a new update date, and those are counted in the meta file, not compared), until
+``--sample`` are kept. Both sides go through ``build_v2`` with the
 same ``as_of`` (the snapshot date) and the same sponsor table (the snapshot's own finished
 trials), and every FEATURES_V2 feature is compared trial by trial, matched by nct_id: ints and
 flags exactly, floats within 1e-9, null equal to null.
@@ -40,6 +43,7 @@ from trialradar.explorer.extras import extract_extras
 from trialradar.normalize import normalize
 from trialradar.risk.explain import SPONSOR_FEATURES  # exempt from the bar (spec 6.4)
 from trialradar.risk.features_v2 import FEATURES_V2, build_v2
+from trialradar.risk.scope import RUNNING, finished_reason
 from trialradar.risk.split_v2 import in_scope
 from trialradar.risk.sponsors import aggregate, history_rows, live_counts
 from trialradar.tables import Tables
@@ -89,39 +93,64 @@ def _batches(ids: Sequence[str], size: int) -> Iterable[list[str]]:
         yield list(ids[i : i + size])
 
 
+def live_exclusion(trial: Mapping[str, Any], has_results: bool, as_of: date) -> str | None:
+    """Why the daily run would not score this live record on `as_of`, or None.
+
+    "live_not_running": its status left RUNNING (the registry flips a record whose verification
+    lapsed to UNKNOWN without changing last_update_post_date); "live_finished": finished in all
+    but status (``scope.finished_reason``). Neither is a train/serve mismatch, so such trials
+    are counted and left out of the comparison."""
+    if trial["overall_status"] not in RUNNING:
+        return "live_not_running"
+    if finished_reason(trial, has_results, as_of) is not None:
+        return "live_finished"
+    return None
+
+
 def matched_sample(
     client: _Client,
     aact_updates: Mapping[str, date | None],
     *,
     n: int,
     aliases_dir: Path,
+    as_of: date,
     seed: int = 0,
     batch: int = BATCH,
 ) -> tuple[list[dict[str, Any]], Tables, dict[str, int]]:
-    """Live records and tables for up to `n` trials whose live last_update_post_date equals the
-    AACT one.
+    """Live records and tables for up to `n` trials that are unchanged since the snapshot (live
+    last_update_post_date equals the AACT one) and still scored live on `as_of`.
 
     Candidates (`aact_updates` keys) are shuffled with `seed` and fetched `batch` at a time
-    until `n` match; a trial without an AACT update date never matches. Returns the matched raw
-    records, their normalized tables and counts (candidates, fetched, matched)."""
+    until `n` are kept; a trial without an AACT update date never matches, and an unchanged
+    record the daily run would not score (``live_exclusion``) is counted, not kept. Returns the
+    kept raw records, their normalized tables and counts (candidates, fetched, unchanged,
+    live_not_running, live_finished, matched)."""
     order = sorted(aact_updates)
     random.Random(seed).shuffle(order)
     kept: list[dict[str, Any]] = []
-    fetched = 0
+    counts = {"fetched": 0, "unchanged": 0, "live_not_running": 0, "live_finished": 0}
     for ids in _batches(order, batch):
         params = {"filter.ids": ",".join(ids), "pageSize": str(batch), "format": "json"}
         studies = list(client.iter_query(params))
-        fetched += len(studies)
-        live = normalize(studies, aliases_dir).trial
-        updates = dict(zip(live["nct_id"], live["last_update_post_date"], strict=True))
+        counts["fetched"] += len(studies)
+        live = {r["nct_id"]: r for r in normalize(studies, aliases_dir).trial.iter_rows(named=True)}
         for s in studies:
+            if len(kept) >= n:
+                break
             nct = s["protocolSection"]["identificationModule"]["nctId"]
-            if aact_updates.get(nct) is not None and updates.get(nct) == aact_updates[nct]:
-                kept.append(s)
+            row = live.get(nct)
+            if row is None or aact_updates.get(nct) is None:
+                continue
+            if row["last_update_post_date"] != aact_updates[nct]:
+                continue
+            counts["unchanged"] += 1
+            if reason := live_exclusion(row, bool(s.get("hasResults", False)), as_of):
+                counts[reason] += 1
+                continue
+            kept.append(s)
         if len(kept) >= n:
             break
-    kept = kept[:n]
-    report = {"candidates": len(order), "fetched": fetched, "matched": len(kept)}
+    report = {"candidates": len(order), **counts, "matched": len(kept)}
     return kept, normalize(kept, aliases_dir), report
 
 
@@ -179,9 +208,14 @@ def main() -> int:
         updates,
         n=args.sample,
         aliases_dir=cfg.aliases_dir,
+        as_of=as_of,
         seed=args.seed,
     )
-    print(f"fetched {report['fetched']}, unchanged since the snapshot {report['matched']}")
+    print(
+        f"fetched {report['fetched']}, unchanged since the snapshot {report['unchanged']}, "
+        f"left out as no longer running live {report['live_not_running']}, as finished in all "
+        f"but status live {report['live_finished']}; compared {report['matched']}"
+    )
     if report["matched"] == 0:
         raise SystemExit("no live record matches its AACT update date: nothing to compare")
 
