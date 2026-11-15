@@ -56,6 +56,7 @@ from trialradar.risk.model import BASELINE_FEATURES, Ensemble, Fitted, Recipe, f
 from trialradar.risk.scope import LABELS
 from trialradar.risk.split_v2 import (
     CUTOFF,
+    MAX_CUTOFF_GAP_DAYS,
     Rows,
     SnapshotSummary,
     cutoff_snapshot,
@@ -198,6 +199,12 @@ def collect(panel: Path, aliases: Aliases) -> Collected:
         raise ValueError(f"need at least two snapshots in {panel}, found {len(dates)}")
     final_date = dates[-1]
     cut_date = min(dates[:-1], key=lambda d: abs((d - CUTOFF).days))
+    # Fail fast, before any snapshot is loaded (cutoff_snapshot checks again below).
+    if abs((cut_date - CUTOFF).days) > MAX_CUTOFF_GAP_DAYS:
+        raise ValueError(
+            f"no snapshot within {MAX_CUTOFF_GAP_DAYS} days of {CUTOFF.isoformat()} "
+            f"(nearest {cut_date.isoformat()})"
+        )
     # Older archives lack mesh_type: every snapshot takes the final snapshot's categories.
     categories = mesh_categories(panel, final_date)
     summaries: list[SnapshotSummary] = []
@@ -375,6 +382,18 @@ def read_parity(path: Path) -> dict[str, float]:
             raise ValueError(f"{path}: mismatch share for {k!r} must be a number >= 0, got {v!r}")
         out[str(k)] = float(v)
     return out
+
+
+def read_parity_meta(path: Path) -> dict[str, Any] | None:
+    """The parity run's provenance (as_of, n_trials, seed, counts) from the sibling
+    ``<stem>.meta.json`` that check_risk_parity.py writes; None when it is absent."""
+    meta = path.with_name(f"{path.stem}.meta.json")
+    if not meta.is_file():
+        return None
+    raw = json.loads(meta.read_text())
+    if not isinstance(raw, dict):
+        raise TypeError(f"{meta}: expected a JSON object")
+    return raw
 
 
 def in_area_ids(panel: Path, snap_date: date, ids: Iterable[str], cfg: AreaConfig) -> set[str]:
@@ -615,6 +634,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     m_v1c = _v1_committed(v1_loaded, v1_test, yte)
 
     parity = read_parity(args.parity) if args.parity else None
+    parity_meta = read_parity_meta(args.parity) if args.parity else None
     d = decide(m_base, m_boost, m_v1, parity)
     eval_ens: Ensemble = ens_boost if d.recipe == "boosted" else ens_base
     p_eval = p_boost if d.recipe == "boosted" else p_base
@@ -699,6 +719,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{V1_COMMITTED_START.isoformat()} or later, C records, its own start-year clamp"
             ),
             "parity_exempt": sorted(SPONSOR_FEATURES),
+            "parity_meta": parity_meta,
+            # v1's typical rates (the numbers beside estimates before v2), spec 8: old and new.
+            "typical_v1": (
+                None if v1_loaded is None else [t.model_dump() for t in v1_loaded.card.typical]
+            ),
             "history_window_months": 12,
             "history_coverage": coverage,
         },

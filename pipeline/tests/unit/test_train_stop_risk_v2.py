@@ -54,6 +54,9 @@ def panel(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, list[SynthTri
     return p, write_panel(p)
 
 
+PARITY_META = {"as_of": "2026-11-15", "n_trials": 300, "seed": 7, "unchanged": 280}
+
+
 @pytest.fixture(scope="module")
 def trained(panel: tuple[Path, list[SynthTrial]], tmp_path_factory: pytest.TempPathFactory) -> Path:
     out = tmp_path_factory.mktemp("out")
@@ -62,6 +65,7 @@ def trained(panel: tuple[Path, list[SynthTrial]], tmp_path_factory: pytest.TempP
     shares["sponsor_prior_n"] = 0.3  # exempt: sponsor counts differ by design
     shares["exempt"] = ["log_enrollment"]  # ignored: the exempt set is fixed in code
     parity.write_text(json.dumps(shares))
+    (out.parent / "parity.meta.json").write_text(json.dumps(PARITY_META))
     argv = ["--panel", str(panel[0]), "--out", str(out), "--n-boot", "2"]
     argv += ["--v1-dir", str(V1_DIR), "--parity", str(parity)]
     with threadpool_limits(1):  # module scope: the autouse single_thread fixture is not active
@@ -249,6 +253,11 @@ def test_end_to_end_writes_artefacts(trained: Path) -> None:
     assert set(c.calibration_by_age) <= {"<12", "12-36", "36-72", ">=72"}
     assert c.parity is not None and c.parity["sponsor_prior_n"] == 0.3
     assert card.filter["parity_exempt"] == sorted(script.SPONSOR_FEATURES)
+    assert card.filter["parity_meta"] == PARITY_META  # provenance of the parity shares
+    # spec 8: the card records the old (v1) typical rates beside the new ones
+    v1_typical = artefacts.Card.model_validate_json((V1_DIR / "card.json").read_text()).typical
+    assert card.filter["typical_v1"] == [t.model_dump() for t in v1_typical]
+    assert {"phase", "sponsor", "rate", "n"} == set(card.filter["typical_v1"][0])
     # the card's decision is exactly the bar applied to the card's own numbers
     d = script.decide(c.v2_baseline, c.v2, c.v1_recipe, c.parity)
     assert (d.recipe, d.v2_ships, d.reason) == (card.shipped, c.v2_ships, c.reason)
@@ -293,3 +302,26 @@ def test_heldout_has_no_ids_or_text(trained: Path) -> None:
     assert held.height > 0
     assert held["in_area"].dtype == pl.Boolean and held["in_area"].any()
     assert all(dt.is_numeric() for dt in held.drop("in_area").dtypes)
+
+
+def test_parity_meta_is_optional(tmp_path: Path) -> None:
+    parity = tmp_path / "parity.json"
+    parity.write_text("{}")
+    assert script.read_parity_meta(parity) is None
+    (tmp_path / "parity.meta.json").write_text(json.dumps(PARITY_META))
+    assert script.read_parity_meta(parity) == PARITY_META
+
+
+def test_collect_fails_fast_on_cutoff_gap(
+    panel: tuple[Path, list[SynthTrial]], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cutoff snapshot more than 31 days from CUTOFF stops the run before any snapshot is
+    loaded."""
+    from datetime import timedelta
+
+    loads: list[date] = []
+    monkeypatch.setattr(script, "CUTOFF", CUTOFF_SNAP + timedelta(days=200))
+    monkeypatch.setattr(script, "load_snapshot", lambda *a, **k: loads.append(a[1]))
+    with pytest.raises(ValueError, match="no snapshot within 31 days"):
+        script.collect(panel[0], Aliases.empty())
+    assert loads == []

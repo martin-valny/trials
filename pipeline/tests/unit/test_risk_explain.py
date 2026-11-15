@@ -231,7 +231,7 @@ def test_new_factor_labels_render() -> None:
         assert _one(name, 1.0) == [text]
         assert _one(name, 0.0) == []
 
-    for v, want in ((26.6, ["Running for 27 months"]), (1.2, ["Running for 1 month"])):
+    for v, want in ((26.6, ["Started 27 months ago"]), (1.2, ["Started 1 month ago"])):
         assert _one("age_months", v) == want
     for v in (0.0, 0.4, -3.0, float("nan")):
         assert _one("age_months", v) == []
@@ -251,8 +251,30 @@ def test_new_factor_labels_render() -> None:
         assert _one("months_since_update", v) == ["Last registry update: less than a month ago"]
     assert _one("months_since_update", float("nan")) == []
 
+    assert _one("age_months", 1.0) == ["Started 1 month ago"]
+
     # Neutral words only.
     for name in _real_labels():
         for v in (-1.0, 0.0, 1.0, 3.0, 40.0):
             for x in _one(name, v):
                 assert not any(w in x.lower() for w in ("delayed", "stale", "overdue", "actual"))
+
+
+def test_planned_figure_not_repeated_beside_planned_enrollment() -> None:
+    """The "Enrollment is a planned figure" flag says nothing that "Planned enrollment: N" has not
+    already said for the same trial, whichever ranks first; the freed slot is refilled."""
+    import math
+
+    cols = ("enrollment_anticipated", "log_enrollment", "n_sites", "n_arms")
+    x = np.array([1.0, math.log1p(120), 40.0, 2.0])
+    labels = _real_labels()
+    for c in (np.array([0.9, 0.5, 0.3, 0.1]), np.array([0.5, 0.9, 0.3, 0.1])):
+        got = [f["label"] for f in top_factors(c, x, cols, labels)]
+        assert got == ["Planned enrollment: 120", "Sites planned: 40", "Arms: 2"]
+    # Without the planned enrollment among the shown factors, the flag still shows.
+    got = [f["label"] for f in top_factors(np.array([0.9, 0.0, 0.3, 0.1]), x, cols, labels)]
+    assert got == ["Enrollment is a planned figure", "Sites planned: 40", "Arms: 2"]
+    # An actual enrollment does not hide anything.
+    x_actual = np.array([0.0, math.log1p(120), 40.0, 2.0])
+    got = [f["label"] for f in top_factors(np.array([0.9, 0.5, 0.3, 0.1]), x_actual, cols, labels)]
+    assert got == ["Enrollment: 120", "Sites planned: 40", "Arms: 2"]

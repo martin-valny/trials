@@ -23,6 +23,7 @@ KINDS = frozenset(
     {"count", "binary", "phase", "category", "sponsor", "enrollment", "months", "months_ago"}
 )
 PHASE_FEATURES = ("phase_1", "phase_2", "phase_3")
+PLANNED_FLAG = "enrollment_anticipated"
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,11 @@ def _sponsor_label(x_row: np.ndarray, col: Mapping[str, int]) -> str | None:
     return None
 
 
+def _is_planned(x_row: np.ndarray, col: Mapping[str, int]) -> bool:
+    """The row's enrollment figure is anticipated (enrollment_anticipated is 1)."""
+    return PLANNED_FLAG in col and float(x_row[col[PLANNED_FLAG]]) == 1.0
+
+
 def _label(
     name: str, value: float, lab: FactorLabel, x_row: np.ndarray, col: Mapping[str, int]
 ) -> str | None:
@@ -112,9 +118,7 @@ def _label(
         n = _whole(math.expm1(value))
         if n <= 0:
             return None
-        flag = "enrollment_anticipated"
-        planned = flag in col and float(x_row[col[flag]]) == 1.0
-        return (lab.yes if planned else lab.text).replace("{value}", str(n)) or None
+        return (lab.yes if _is_planned(x_row, col) else lab.text).replace("{value}", str(n)) or None
     if lab.kind in ("months", "months_ago"):
         months = _whole(value)
         if months <= 0:
@@ -140,13 +144,15 @@ def top_factors(
     The label describes the trial's value (see FactorLabel); only `dir` follows the sign.
     Zero contributions, features without a label, missing values, absent `cat_*` condition
     categories and HIDDEN_FEATURES are skipped, and a label already given is not repeated
-    (two phase features on one trial read the same). The three sponsor features collapse
+    (two phase features on one trial read the same); "Enrollment is a planned figure" is
+    dropped when "Planned enrollment: N" is shown for the same trial. The three sponsor features collapse
     into one factor with fixed copy. The stopped count is derived as
     round(sponsor_prior_rate x sponsor_prior_n), since the feature frame carries a rate.
     """
     col = {c: i for i, c in enumerate(columns)}
     out: list[dict[str, str]] = []
     seen: set[str] = set()
+    planned_shown = False
     for i in np.argsort(-np.abs(contrib_row), kind="stable"):
         c = float(contrib_row[i])
         if c == 0.0 or len(out) >= k:
@@ -161,6 +167,13 @@ def top_factors(
             label = None if lab is None else _label(name, float(x_row[int(i)]), lab, x_row, col)
         if label is None or label in seen:
             continue
+        if name == PLANNED_FLAG and planned_shown:
+            continue  # "Planned enrollment: N" already says it
+        if name == "log_enrollment" and _is_planned(x_row, col):
+            planned_shown = True
+            flag = labels.get(PLANNED_FLAG)
+            if flag is not None and flag.yes in seen:
+                out = [f for f in out if f["label"] != flag.yes]  # the slot is refilled
         seen.add(label)
         out.append({"label": label, "dir": "up" if c > 0 else "down"})
     return out

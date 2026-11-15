@@ -164,21 +164,47 @@ def test_factor_labels_reject_unknown_kind_and_missing_text(tmp_path: Path) -> N
         artefacts.read_factor_labels(bad)
 
 
-def test_load_reads_optional_v2_card(tmp_path: Path) -> None:
-    """<dir>/v2/card.json (committed when v2 does not ship) is optional; when present it must
-    validate as a v2 card, like every other artefact."""
+def test_load_reads_optional_v2_card(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    """<dir>/v2/card.json (committed when v2 does not ship) is optional; when present but
+    invalid (or not a v2 card) it is logged and ignored, so the live v1 scores still load."""
     _save(tmp_path, _card())
     assert artefacts.load(tmp_path).v2_card is None
     (tmp_path / "v2").mkdir()
     v2 = _card(feature_set="v2", max_start_year=None, data_source="AACT")
     (tmp_path / "v2" / "card.json").write_text(v2.model_dump_json())
     assert artefacts.load(tmp_path).v2_card == v2
+    caplog.set_level("WARNING", logger="trialradar.risk.artefacts")
     (tmp_path / "v2" / "card.json").write_text("{}")
-    with pytest.raises(RiskArtefactError, match="v2/card.json"):
-        artefacts.load(tmp_path)
+    loaded = artefacts.load(tmp_path)
+    assert loaded.v2_card is None and loaded.card == _card()
+    assert "v2/card.json" in caplog.text and "invalid" in caplog.text
+    caplog.clear()
     (tmp_path / "v2" / "card.json").write_text(_card().model_dump_json())  # a v1 card
-    with pytest.raises(RiskArtefactError, match="v2/card.json"):
-        artefacts.load(tmp_path)
+    assert artefacts.load(tmp_path).v2_card is None
+    assert "feature_set 'v1'" in caplog.text
+
+
+def _comparison(ships: bool) -> artefacts.Comparison:
+    m = _metrics()
+    return artefacts.Comparison(
+        cutoff="2021-12-01", outcome_snapshot="2026-01-01", v1_recipe=m, v1_committed=None,
+        v2_baseline=m, v2=m, v2_history=m, v2_no_sites=m, test_exclusions={}, train_trials=1,
+        train_rows=1, train_age_mix={}, calibration_by_age={}, parity=None, v2_ships=ships,
+        reason="r",
+    )  # fmt: skip
+
+
+def test_load_refuses_unshipped_v2_card_as_live_card(tmp_path: Path) -> None:
+    """A v2 card is the live card only when its comparison passed the shipping bar; otherwise
+    (no comparison, or v2_ships false) load refuses it and points at config/risk/v2/."""
+    for comparison in (None, _comparison(False)):
+        live = _card(feature_set="v2", max_start_year=None, comparison=comparison)
+        _save(tmp_path, live)
+        with pytest.raises(RiskArtefactError, match=r"shipping bar.*config/risk/v2/card\.json"):
+            artefacts.load(tmp_path)
+    shipped = _card(feature_set="v2", max_start_year=None, comparison=_comparison(True))
+    _save(tmp_path, shipped)
+    assert artefacts.load(tmp_path).card == shipped
 
 
 def test_comparison_v1_published_auc_is_optional() -> None:

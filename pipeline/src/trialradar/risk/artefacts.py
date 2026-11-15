@@ -2,12 +2,14 @@
 
 Four files are written by `save` and read by `load`; `factor_labels.csv` is hand-kept next
 to them. `load` fails loudly (`RiskArtefactError`) on a missing file, a card that disagrees
-with the model file, or a scikit-learn minor version other than the installed one.
+with the model file, a scikit-learn minor version other than the installed one, or a v2 card
+that did not pass the shipping bar (`comparison.v2_ships`) committed as the live card.
 """
 
 from __future__ import annotations
 
 import csv
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -23,6 +25,8 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from trialradar.risk.explain import KINDS, FactorLabel
 from trialradar.risk.features import FEATURES
 from trialradar.risk.model import Ensemble, Recipe
+
+_log = logging.getLogger(__name__)
 
 __all__ = [
     "EXCLUDED",
@@ -264,6 +268,11 @@ def load(dir: Path) -> Loaded:
         card = Card.model_validate_json((dir / "card.json").read_text())
     except (ValidationError, ValueError) as exc:
         raise RiskArtefactError(f"card.json is invalid: {exc}") from exc
+    if card.feature_set == "v2" and (card.comparison is None or not card.comparison.v2_ships):
+        raise RiskArtefactError(
+            "card.json is a v2 card that did not pass the shipping bar (no comparison, or "
+            "comparison.v2_ships is false); commit it as config/risk/v2/card.json instead"
+        )
     if card.sklearn.split(".")[:2] != sklearn.__version__.split(".")[:2]:
         raise RiskArtefactError(
             f"model trained with sklearn {card.sklearn}, installed {sklearn.__version__}: "
@@ -288,15 +297,19 @@ def load(dir: Path) -> Loaded:
 
 
 def _v2_card(path: Path) -> Card | None:
-    """The optional unshipped v2 card; present but invalid (or not a v2 card) is an error."""
+    """The optional unshipped v2 card. Present but invalid (or not a v2 card) is logged and
+    ignored: it only adds the before/after to Methods, so it must not take down the live v1
+    scores."""
     if not path.is_file():
         return None
     try:
         card = Card.model_validate_json(path.read_text())
     except (ValidationError, ValueError) as exc:
-        raise RiskArtefactError(f"v2/card.json is invalid: {exc}") from exc
+        _log.warning("ignoring v2/card.json: invalid (%s)", exc)
+        return None
     if card.feature_set != "v2":
-        raise RiskArtefactError(f"v2/card.json has feature_set {card.feature_set!r}, not 'v2'")
+        _log.warning("ignoring v2/card.json: feature_set %r, not 'v2'", card.feature_set)
+        return None
     return card
 
 

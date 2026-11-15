@@ -105,12 +105,15 @@ a label can never contradict the value (no "Few sites (112)").
 | `category` | `cat_*` condition categories | `yes` when present; an absent category is never a factor |
 | `sponsor` | the three sponsor features | fixed copy built in code: "Sponsor's earlier trials: k of n stopped early (registry)" |
 | `enrollment` | `log_enrollment` (v2) | round(exp(value) - 1): `yes` ("Planned enrollment: 120") when the trial's `enrollment_anticipated` is 1, else `text` ("Enrollment: 120"); never shown at 0 |
-| `months` | v2 month counts | `text` with whole months (half up), "1 month" or "N months", e.g. "Running for 27 months"; never shown when it rounds to 0 or below |
+| `months` | v2 month counts | `text` with whole months (half up), "1 month" or "N months", e.g. "Started 27 months ago"; never shown when it rounds to 0 or below |
 | `months_ago` | `months_since_update` (v2) | as `months`, but under one month shows `no` ("Last registry update: less than a month ago") |
 
 v2's `status_*` flags and `enrollment_anticipated` use `category`: shown only when they hold
 (an `enrollment_anticipated` of 0 also covers a missing enrollment type, so "actual" is never
-claimed). Month and status wording stays neutral (no "delayed", "stale" or "overdue").
+claimed). Month and status wording stays neutral (no "delayed", "stale" or "overdue"); age reads
+"Started N months ago", true for every status (a not-yet-recruiting trial is not "running").
+"Enrollment is a planned figure" is dropped when the same trial already shows "Planned
+enrollment: N".
 
 A missing value is never described, and a label already given for a trial is not repeated. The
 category labels read "Registry files it under: ...", because they follow the registry's MeSH
