@@ -22,7 +22,7 @@ from trialradar.explorer.extras import StudyExtras
 from trialradar.risk import artefacts, features
 from trialradar.risk.artefacts import Loaded, typical_rate
 from trialradar.risk.explain import contributions, top_factors
-from trialradar.risk.scope import RUNNING, has_drug, in_phase_scope
+from trialradar.risk.scope import RUNNING, finished_reason, has_drug, in_phase_scope
 from trialradar.risk.sponsors import live_counts
 from trialradar.tables import Tables
 
@@ -34,8 +34,6 @@ _NOT_PHASE = "phase not 1–3"
 DEGENERATE_MIN_TRIALS = 20
 DEGENERATE_MIN_DISTINCT = 3
 _NO_DRUG = "no drug or biologic"
-_RESULTS = "results posted"
-_PRIMARY_DONE = "primary completion reached"
 _DRUG_TYPES = frozenset({"DRUG", "BIOLOGICAL"})
 MIN_SUMMARY_N = 3
 """Without per-trial output, a summary of fewer trials would give away single estimates."""
@@ -102,17 +100,7 @@ def _targets(
 
 def _finished_reason(r: Mapping[str, Any], extra: StudyExtras | None, day: date) -> str | None:
     """Why a running-status trial is effectively finished, or None when it is not."""
-    if extra is not None and extra.has_results:
-        return _RESULTS
-    done = r.get("primary_completion_date")
-    if (
-        r["overall_status"] == "ACTIVE_NOT_RECRUITING"
-        and r.get("primary_completion_date_type") == "ACTUAL"
-        and done is not None
-        and done < day
-    ):
-        return _PRIMARY_DONE
-    return None
+    return finished_reason(r, extra is not None and extra.has_results, day)
 
 
 def _registry_casing(drug: str, names: list[str]) -> str:
