@@ -343,7 +343,8 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
             The model is trained on trials that had ended by {monthYear(v2.cutoff)}, tested on the ones running
             then: {int(v2.v2.n)} trials, of which {int(v2.v2.positives)} stopped early by{" "}
             {monthYear(v2.outcome_snapshot)}. Each test trial is read as its record stood in{" "}
-            {monthYear(v2.cutoff)}, so nothing recorded later reaches its estimate. Left out of the test, because
+            {monthYear(v2.cutoff)}, so nothing recorded later reaches its estimate, except the disease categories
+            (noted below). Left out of the test, because
             they had no clear outcome by {monthYear(v2.outcome_snapshot)}: {exclusionList(v2.test_exclusions)}.
           </p>
           <p>
@@ -468,8 +469,10 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       </ul>
       {v2 ? (
         <p>
-          One simplification applies to every trial alike: disease categories are read from the latest
-          snapshot&apos;s MeSH terms for every snapshot, for training and test trials the same way.
+          One exception applies to every trial alike: disease categories come from the latest registry filing (
+          {monthYear(v2.outcome_snapshot)} MeSH terms), not from the record as it stood at the snapshot, so they can
+          reflect edits made later. The earlier and the new model both get them this way, for training and test
+          trials alike.
         </p>
       ) : (
       <p>
@@ -551,8 +554,10 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       <p>
         The sponsor&apos;s history is shown as &ldquo;Sponsor&apos;s earlier trials: k of n stopped early
         (registry)&rdquo;. In training it counts only trials that finished before each{" "}
-        {v2 ? "snapshot the trial is read at" : "trial started"}; for running
-        trials, the count is as of today, so it can include trials that finished after this one started. A sponsor
+        {v2 ? "snapshot the trial is read at" : "trial started"}; for running trials, the count comes from the
+        sponsor table saved when the model was trained (finished trials up to{" "}
+        {v2 ? `the ${monthYear(v2.outcome_snapshot)} snapshot` : longDate(model.trained_on)}), not from today&apos;s
+        registry, so it can include trials that finished after this one started. A sponsor
         with fewer than 5
         earlier finished trials has too short a record: the model is told so and does not use the rate.
       </p>

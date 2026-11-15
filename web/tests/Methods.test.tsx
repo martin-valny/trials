@@ -353,7 +353,11 @@ test("stop-risk: exclusions lead with enrollment; the comparison, text experimen
   expect(text).toMatch(/Sponsor's earlier trials: k of n stopped early \(registry\)/);
   expect(text).toMatch(/10th to 90th percentile/);
   expect(text).toMatch(/spread of 20 refits of the model on resampled training data .*placed around the estimate/);
-  expect(text).toMatch(/for running trials, the count is as of today/);
+  // v1: live counts come from the sponsor table saved at training, never "as of today".
+  expect(text).toMatch(
+    /for running trials, the count comes from the sponsor table saved when the model was trained \(finished trials up to \d{1,2} \w+ \d{4}\), not from today's registry/,
+  );
+  expect(text).not.toMatch(/as of today/);
   expect(text).toMatch(/Registry files it under/);
   expect(text).toMatch(/actual primary completion date .*or with results posted, is finished in all but name/);
   expect(text).toMatch(/retrained by hand/);
@@ -434,7 +438,13 @@ test("stop-risk v2: the split, the bias, the categories and why v1's published n
   expect(text).toMatch(/published AUC of 0\.640 was higher because it was measured on each trial's final record/);
   expect(text).toMatch(/On the earlier model, calibration/);
   expect(text).toMatch(/over-represents? quick endings/);
-  expect(text).toMatch(/latest snapshot's MeSH terms for every snapshot/);
+  // Nothing later reaches the estimate, except the categories, which are said plainly.
+  expect(text).toMatch(/so nothing recorded later reaches its estimate, except the disease categories \(noted below\)/);
+  expect(text).toMatch(
+    /disease categories come from the latest registry filing \(January 2026 MeSH terms\), not from the record as it stood at the snapshot, so they can reflect edits made later\. The earlier and the new model both get them this way/,
+  );
+  expect(text).toMatch(/count comes from the sponsor table saved when the model was trained \(finished trials up to the January 2026 snapshot\)/);
+  expect(text).not.toMatch(/as of today/);
   expect(text).toMatch(/planned enrollment/i);
   expect(text).toMatch(/edit history[^.]*not used/i);
   // v1-only copy is gone: start year, the 2008 floor and the current-record caveat.
@@ -481,7 +491,7 @@ test("stop-risk v2: a v1 card with a comparison (v2 did not ship) keeps the v1 p
   expect(text).toMatch(/refitted on all finished trials started up to/);
   expect(text).toMatch(/Calibration \(turning/);
   expect(text).not.toMatch(/On the earlier model, calibration/);
-  expect(text).not.toMatch(/over-represents? quick endings|as it stood at the snapshot|latest snapshot's MeSH/);
+  expect(text).not.toMatch(/over-represents? quick endings|as it stood at the snapshot|latest registry filing/);
   // The table, the plain outcome, and v1's in-area row under a v1 label.
   const table = await within(s).findByRole("table", { name: /before and after/i });
   expect(table.textContent).not.toMatch(/used on the site/);
