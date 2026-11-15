@@ -395,6 +395,94 @@ test("stop-risk: retraining names the shipped refit window; start year is not a 
   expect(s.textContent).toMatch(/start year is never listed as a factor/i);
 });
 
+// ---------------------------------------------------------------- stop-risk v2 before/after (v2 spec 9, 10)
+// risk-v2.json is a synthetic v2 card (round fixture numbers, not real results).
+
+const riskV2 = (model: Partial<RiskModelInfo> = {}): RiskFile => {
+  const f = readFixture<RiskFile>("risk-v2.json");
+  return { ...f, model: { ...f.model, ...model } };
+};
+const flat = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, " ") ?? "";
+
+test("stop-risk v2: the before/after table renders each model's AUC and Brier from the comparison", async () => {
+  stubFetch({ "risk.json": riskV2() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  const table = await within(s).findByRole("table", { name: /before and after/i });
+  const row = (key: string) => flat(table.querySelector(`tr[data-row='${key}']`));
+  expect(row("v1_recipe")).toMatch(/Earlier model \(v1\), same trials.*1,000.*0\.600.*0\.150/);
+  expect(row("v1_committed")).toMatch(/400.*0\.610.*0\.155/);
+  expect(row("v2_baseline")).toMatch(/0\.580.*0\.152/);
+  expect(row("v2")).toMatch(/New model \(v2\), used on the site.*0\.650.*0\.140/);
+  expect(row("v2_no_sites")).toMatch(/0\.640.*0\.141/);
+  expect(row("v2_history")).toMatch(/v2 plus edit history \(not used\).*0\.660.*0\.139/);
+  expect(row("in_area")).toMatch(/too few to judge on its own.*150.*0\.600/);
+  // One accuracy table only: the v1 table is replaced, not repeated.
+  expect(within(s).queryByRole("table", { name: /accuracy on later trials/i })).toBeNull();
+  expect(s.textContent).toMatch(/It passes against the earlier model, so the new model is the one on the site\./);
+});
+
+test("stop-risk v2: the split, the bias, the categories and why v1's published number was higher", async () => {
+  stubFetch({ "risk.json": riskV2() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  const text = flat(s);
+  expect(text).toMatch(/trained on trials that had ended by December 2021, tested on the ones running then/);
+  expect(text).toMatch(/1,000 trials, of which 200 stopped early by January 2026/);
+  expect(text).toMatch(/300 still running, 40 of unknown status, 20 withdrawn, 10 suspended/);
+  expect(text).toMatch(/5,000 trials/);
+  expect(text).toMatch(/published AUC was higher because it was measured on each trial's final record/);
+  expect(text).toMatch(/over-represents? quick endings/);
+  expect(text).toMatch(/latest snapshot's MeSH terms for every snapshot/);
+  expect(text).toMatch(/planned enrollment/i);
+  expect(text).toMatch(/edit history[^.]*not used/i);
+  // v1-only copy is gone: start year, the 2008 floor and the current-record caveat.
+  expect(text).not.toMatch(/start year is never listed as a factor/i);
+  expect(text).not.toMatch(/started in 2008 or later/);
+  expect(text).not.toMatch(/keeps only each trial's current record/);
+  expect(text).not.toMatch(/risk of failure|likely to fail|in trouble/i);
+  expect(text).toMatch(/refitted on all trials that had ended by January 2026/);
+});
+
+test("stop-risk v2: the credit line names the sources, the snapshot range and the processing date", async () => {
+  stubFetch({ "risk.json": riskV2() });
+  const { unmount } = renderAt(<Methods />, "/methods#stop-risk");
+  let s = await section();
+  const credit = s.querySelector("[data-credit]");
+  expect(flat(credit)).toBe(
+    "Data: ClinicalTrials.gov, via AACT (Clinical Trials Transformation Initiative), snapshots December 2018 to January 2026, processed 5 January 2026.",
+  );
+  expect(within(credit as HTMLElement).getByRole("link", { name: "ClinicalTrials.gov" })).toHaveAttribute("href", "https://clinicaltrials.gov/");
+  expect(within(credit as HTMLElement).getByRole("link", { name: /Clinical Trials Transformation Initiative/ })).toHaveAttribute("href", "https://ctti-clinicaltrials.org/");
+  unmount();
+  // Without data_source (risk.json's model block does not carry it yet) the line falls back to the comparison's dates.
+  stubFetch({ "risk.json": riskV2({ data_source: undefined }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  s = await section();
+  expect(flat(s.querySelector("[data-credit]"))).toBe(
+    "Data: ClinicalTrials.gov, via AACT (Clinical Trials Transformation Initiative), snapshots up to January 2026, processed 5 January 2026.",
+  );
+});
+
+test("stop-risk v2: when v2 does not pass the bar, no row is marked used and the reason is given", async () => {
+  const f = readFixture<RiskFile>("risk-v2.json");
+  stubFetch({ "risk.json": riskV2({ comparison: { ...f.model.comparison!, v2_ships: false, reason: "not 0.02 AUC better (fixture)" } }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  const table = await within(s).findByRole("table", { name: /before and after/i });
+  expect(table.textContent).not.toMatch(/used on the site/);
+  expect(flat(s)).toMatch(/does not pass against the earlier model \(not 0\.02 AUC better \(fixture\)\), so the earlier model stays on the site/);
+});
+
+test("stop-risk v2: a v1 card has no before/after table and no credit line", async () => {
+  stubFetch({ "risk.json": riskFile() });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  await within(s).findByRole("table", { name: /accuracy on later trials/i });
+  expect(within(s).queryByRole("table", { name: /before and after/i })).toBeNull();
+  expect(s.querySelector("[data-credit]")).toBeNull();
+});
+
 // ---------------------------------------------------------------- diligence agent (R8)
 
 const evalReport = {

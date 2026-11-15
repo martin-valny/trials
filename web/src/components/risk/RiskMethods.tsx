@@ -1,7 +1,7 @@
 // Methods, "How good is the stop-risk model?" (spec 6.4, 7). Every figure comes from risk.json's model block;
 // the only fixed numbers are the recipe's own rules and the dated notes on the text experiment and calibration.
 import { useId } from "react";
-import type { RiskMetrics, RiskModelInfo } from "../../types";
+import type { RiskComparison, RiskComparisonMetrics, RiskMetrics, RiskModelInfo } from "../../types";
 import "./risk.css";
 
 /** Below this many trials a row reads "too few to judge" and shows no numbers. */
@@ -18,6 +18,13 @@ export function longDate(iso: string): string {
   return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
 }
 
+/** "2021-12-01" -> "December 2021"; anything else unchanged. */
+export function monthYear(iso: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  return `${MONTHS[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
+}
+
 const year = (iso: string): string => iso.slice(0, 4);
 const int = (n: number): string => n.toLocaleString("en-US");
 const pct = (p: number): string => `${Math.round(p * 100)}%`;
@@ -31,7 +38,7 @@ function excludedFirst(list: readonly string[]): string[] {
 interface Row {
   key: string;
   label: string;
-  m: RiskMetrics | null;
+  m: RiskComparisonMetrics | null;
   /** Only the area subset is small enough to need the "too few" rules. */
   small?: boolean;
 }
@@ -59,7 +66,7 @@ function MetricRow({ row }: { row: Row }) {
       <td>
         {int(m.n)} <span className="rk-m-sub">({int(m.positives)} stopped)</span>
       </td>
-      <td>{m.auc.toFixed(3)}</td>
+      <td>{m.auc === null ? "—" : m.auc.toFixed(3)}</td>
       <td>{m.brier.toFixed(3)}</td>
     </tr>
   );
@@ -132,6 +139,103 @@ function CalibrationChart({ m, label }: { m: RiskMetrics; label: string }) {
   );
 }
 
+/** Test trials left out of the v2 comparison, by the pipeline's reason keys, in its order. */
+const EXCLUSION_LABEL: Record<string, string> = {
+  running: "still running",
+  unknown: "of unknown status",
+  withdrawn: "withdrawn",
+  suspended: "suspended",
+  missing: "missing from the last snapshot",
+  other: "left out for other reasons",
+};
+
+/** "300 still running, 40 of unknown status and 20 withdrawn"; empty reasons are skipped. */
+function exclusionList(ex: Record<string, number>): string {
+  const keys = [...Object.keys(EXCLUSION_LABEL), ...Object.keys(ex).filter((k) => !(k in EXCLUSION_LABEL))];
+  const parts = keys.filter((k) => (ex[k] ?? 0) > 0).map((k) => `${int(ex[k]!)} ${EXCLUSION_LABEL[k] ?? k}`);
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : (parts[0] ?? "none");
+}
+
+/** Snapshot range and processing date: from the card's data_source when risk.json carries it, else the
+ * comparison's outcome snapshot (the last one, and the date its data were processed). */
+function creditDates(model: RiskModelInfo, cmp: RiskComparison): { first: string | null; last: string; processed: string } {
+  const iso = model.data_source?.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
+  if (iso.length >= 3) return { first: iso[0]!, last: iso[1]!, processed: iso[2]! };
+  return { first: null, last: cmp.outcome_snapshot, processed: cmp.outcome_snapshot };
+}
+
+/** The credit line ClinicalTrials.gov's terms and CTTI's citation policy ask for (v2 spec 10). */
+function Credit({ model, cmp }: { model: RiskModelInfo; cmp: RiskComparison }) {
+  const d = creditDates(model, cmp);
+  return (
+    <p className="rk-m-note" data-credit>
+      Data: <a href="https://clinicaltrials.gov/">ClinicalTrials.gov</a>, via{" "}
+      <a href="https://aact.ctti-clinicaltrials.org/">AACT</a> (
+      <a href="https://ctti-clinicaltrials.org/">Clinical Trials Transformation Initiative</a>), snapshots{" "}
+      {d.first ? `${monthYear(d.first)} to ${monthYear(d.last)}` : `up to ${monthYear(d.last)}`}, processed{" "}
+      {longDate(d.processed)}.
+    </p>
+  );
+}
+
+/** The before/after table: every model on the same held-out trials, those running at the cutoff. */
+function BeforeAfter({ model, cmp, area }: { model: RiskModelInfo; cmp: RiskComparison; area: string | null }) {
+  const used = cmp.v2_ships ? model.shipped : null;
+  const rows: Row[] = [
+    { key: "v1_recipe", label: "Earlier model (v1), same trials", m: cmp.v1_recipe },
+    ...(cmp.v1_committed
+      ? [{ key: "v1_committed", label: "Earlier model as published, on test trials it never saw", m: cmp.v1_committed }]
+      : []),
+    { key: "v2_baseline", label: `New baseline: phase, sponsor type and trial age${used === "baseline" ? ", used on the site" : ""}`, m: cmp.v2_baseline },
+    { key: "v2", label: `New model (v2)${used === "boosted" ? ", used on the site" : ""}`, m: cmp.v2 },
+    { key: "v2_no_sites", label: "v2 without site and country features", m: cmp.v2_no_sites },
+    { key: "v2_history", label: "v2 plus edit history (not used)", m: cmp.v2_history },
+    { key: "in_area", label: `v2, trials in this area only${area ? ` (${area})` : ""}`, m: model.metrics.in_area, small: true },
+  ];
+  const cut = monthYear(cmp.cutoff);
+  return (
+    <>
+      <div className="rk-m-scroll">
+        <table className="rk-m-table">
+          <caption>Before and after, on the same test trials</caption>
+          <thead>
+            <tr>
+              <th scope="col">Model</th>
+              <th scope="col">Trials</th>
+              <th scope="col">AUC</th>
+              <th scope="col">Brier</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <MetricRow key={r.key} row={r} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="rk-m-note">
+        The earlier model&apos;s published AUC was higher because it was measured on each trial&apos;s final record,
+        which can carry edits made after the trial ended (sites, countries, arms) that hint at how it ended. Here it
+        reads each record as it stood in {cut}, as the new model does.
+        {cmp.v1_committed
+          ? " The second row is the earlier model exactly as published, scored only on the test trials that started after its own training years, so it covers fewer trials."
+          : null}
+      </p>
+      <p className="rk-m-note">
+        The area row is the fit trained on trials that had ended by {cut}, scored on this area&apos;s test trials
+        only. With a few hundred trials or fewer, changing the random seed alone moves its AUC by several hundredths,
+        so it cannot show whether the model does better or worse here than elsewhere.
+      </p>
+      <p className="rk-m-note">
+        Edit history (how often a trial&apos;s completion date slipped, its planned enrollment was cut or its status
+        stepped back over the previous year) is measured for comparison but not used: the daily update sees only each
+        trial&apos;s current record, and ClinicalTrials.gov offers no history the site could read, so it could not
+        be computed for the trials being scored.
+      </p>
+    </>
+  );
+}
+
 const MODEL_LABEL: Record<RiskModelInfo["shipped"], string> = {
   baseline: "baseline model",
   boosted: "boosted-tree model",
@@ -163,6 +267,8 @@ export function RiskMethods({ model, area }: { model: RiskModelInfo | null; area
 
 function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string | null }) {
   const { metrics } = model;
+  // A v2 card carries its before/after comparison; a v1 card renders exactly as before.
+  const cmp = model.comparison;
   const shipped = metrics[model.shipped];
   const testN = shipped.n;
   const rows: Row[] = [
@@ -186,6 +292,19 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         complete and its drug still go no further, and a trial can stop for reasons unrelated to the drug, such as
         slow enrollment or a business decision.
       </p>
+      {cmp ? (
+        <p>
+          The model learns from interventional trials in Phase 1 to 3 (combined phases such as Phase 1/2 included)
+          that test at least one drug or biologic, across every disease in the registry, not only this area. It reads
+          each trial as its record stood at quarterly snapshots of the registry, not only as it reads today:{" "}
+          {int(cmp.train_trials)} trials to train on, seen at {int(cmp.train_rows)} snapshots in all. Besides what is
+          known when a trial starts (phase, design, masking, arms, sponsor type, collaborators, sites and countries,
+          outcome counts, disease categories and the sponsor&apos;s earlier record), it uses what a running
+          trial&apos;s record says at the time: planned enrollment, recruitment status, how long it has been
+          running, its planned duration, how long ago its primary completion date passed, and how long since the
+          record was last updated.
+        </p>
+      ) : (
       <p>
         The model learns from finished interventional trials in Phase 1 to 3 (combined phases such as Phase 1/2
         included) that test at least one drug or biologic and started in 2008 or later, across every disease in the
@@ -193,8 +312,28 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         starts: phase, design, masking, arms, sponsor type, collaborators, planned sites and countries, outcome
         counts, disease categories and start year, plus the sponsor&apos;s earlier record (below).
       </p>
+      )}
 
       <h3>How it is tested</h3>
+      {cmp ? (
+        <>
+          <p>
+            The model is trained on trials that had ended by {monthYear(cmp.cutoff)}, tested on the ones running
+            then: {int(cmp.v2.n)} trials, of which {int(cmp.v2.positives)} stopped early by{" "}
+            {monthYear(cmp.outcome_snapshot)}. Each test trial is read as its record stood in{" "}
+            {monthYear(cmp.cutoff)}, so nothing recorded later reaches its estimate. Left out of the test, because
+            they had no clear outcome by {monthYear(cmp.outcome_snapshot)}: {exclusionList(cmp.test_exclusions)}.
+          </p>
+          <p>
+            One bias is known and accepted. Trials that had ended by {monthYear(cmp.cutoff)} over-represent quick
+            endings: the young ones that ended so soon mostly stopped early. The earlier and the new model train on
+            these same trials and are tested on trials that were all still running, so the comparison stays fair and
+            any harm shows in both test scores. The model on the site is refitted on trials that had ended by{" "}
+            {monthYear(model.refit_end)}, which has less of this bias, so the published accuracy is, if anything,
+            conservative.
+          </p>
+        </>
+      ) : (
       <p>
         The model is trained on trials started up to {year(model.split.train_end)} and tested on trials started from{" "}
         {year(model.split.test[0])} to {year(model.split.test[1])} that have finished: {int(testN)} trials, of which{" "}
@@ -203,12 +342,23 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         many have not finished yet, and those that have are mostly the short ones, which stop early more often, so
         they would make the test look unlike the trials being scored.
       </p>
+      )}
       <p>
         AUC is the chance that a randomly chosen trial that stopped early gets a higher estimate than one that
         completed: 0.5 is a coin toss, 1 is perfect. The Brier score is the average squared gap between estimate
         and outcome; lower is better.
       </p>
 
+      {cmp ? (
+        <>
+          <h3>Before and after</h3>
+          <p>
+            Every model below is scored on the same {int(cmp.v2.n)} test trials, so the rows compare like with like.
+          </p>
+          <BeforeAfter model={model} cmp={cmp} area={area} />
+        </>
+      ) : (
+      <>
       <div className="rk-m-scroll">
         <table className="rk-m-table">
           <caption>Accuracy on later trials (test set)</caption>
@@ -233,12 +383,27 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         trials or fewer, changing the random seed alone moves its AUC by several hundredths, so it cannot show
         whether the model does better or worse here than elsewhere.
       </p>
+      </>
+      )}
 
       <h3>Which model is used</h3>
+      {cmp ? (
+        <p>
+          The new model replaces the earlier one only if, on these test trials, its AUC beats the earlier
+          model&apos;s by at least 0.02, its Brier score is no worse, and its features come out the same when
+          computed from today&apos;s registry as from the snapshots (a parity check). Within the new model, boosted
+          trees are used over the baseline on the same 0.02 rule. This time the {MODEL_LABEL[model.shipped]} is
+          used: {model.shipped_reason}.{" "}
+          {cmp.v2_ships
+            ? "It passes against the earlier model, so the new model is the one on the site."
+            : `It does not pass against the earlier model (${cmp.reason}), so the earlier model stays on the site.`}
+        </p>
+      ) : (
       <p>
         The boosted model is used only if its AUC beats the baseline&apos;s by at least 0.02 and its Brier score is no
         worse; otherwise the baseline is used. This time the {MODEL_LABEL[model.shipped]} is used: {model.shipped_reason}.
       </p>
+      )}
 
       <CalibrationChart m={shipped} label={MODEL_LABEL[model.shipped]} />
       <p className="rk-m-note">
@@ -249,15 +414,28 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       </p>
 
       <h3>What is left out, and why</h3>
+      {cmp ? (
+        <p>
+          Anything that records how a trial ended would let the outcome leak into the estimate. Each trial is read as
+          it stood at the snapshot, so later edits cannot reach training, and these fields are left out:
+        </p>
+      ) : (
       <p>
         Anything recorded after a trial starts would let the outcome leak into the estimate. Enrollment comes first:
         a trial that stops early has enrolled fewer people, so actual enrollment mostly records the stop itself.
       </p>
+      )}
       <ul data-list="excluded">
         {excludedFirst(model.excluded).map((x) => (
           <li key={x}>{x.replace(/_/g, " ")}</li>
         ))}
       </ul>
+      {cmp ? (
+        <p>
+          One simplification applies to every trial alike: disease categories are read from the latest
+          snapshot&apos;s MeSH terms for every snapshot, for training and test trials the same way.
+        </p>
+      ) : (
       <p>
         One caveat remains. The registry keeps only each trial&apos;s current record, not the record as it stood on
         the start date, and sponsors edit records after a trial ends (sites, countries, arms). The reported accuracy
@@ -271,6 +449,7 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
           </>
         ) : null}
       </p>
+      )}
 
       <h3>Compared with published models</h3>
       <p>
@@ -283,13 +462,18 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         trial design using interpretable machine learning based prediction of early trial termination&rdquo;,{" "}
         <i>Scientific Reports</i>, 2023) report 0.80, counting withdrawn trials as stopped. Both use features drawn
         from eligibility criteria and report accuracy on a held-out share of their own data (a 20% hold-out and a
-        70:30 split); ours is measured on trials started in later years, which is usually harder, so the numbers
-        are not directly comparable.
+        70:30 split);{" "}
+        {cmp
+          ? "ours is measured on trials running on a fixed date and followed to their outcome, which is usually harder"
+          : "ours is measured on trials started in later years, which is usually harder"}
+        , so the numbers are not directly comparable.
       </p>
 
       <h3>What we tried: trial text (9 November 2026)</h3>
       <p>
-        We tested whether the wording of a trial adds anything, on the same split. Words from the title,
+        {cmp
+          ? "On the earlier model and its split, we tested whether the wording of a trial adds anything."
+          : "We tested whether the wording of a trial adds anything, on the same split."} Words from the title,
         eligibility criteria and outcomes (TF-IDF) raised the AUC by 0.017 (to 0.699); sentence embeddings from a
         biomedical language model (PubMedBERT) by 0.012 (0.694); both together by 0.019 (0.701). All fell short of
         the 0.03 gain fixed in advance, so the model uses structured fields only. The leak checks were clean: the
@@ -320,18 +504,39 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         filing (MeSH), which can differ from how a clinician would name the disease, so they read &ldquo;Registry
         files it under&rdquo;. A trial still listed as running but already past an actual primary completion date
         (active, not recruiting), or with results posted, is finished in all but name and gets no estimate.
-        Start year is never listed as a factor: it shifts the estimate, but a recent trial&apos;s year is read as the
-        last year the model was refitted on, so the year shown would not be the trial&apos;s own.
+        {cmp ? null : (
+          <>
+            {" "}
+            Start year is never listed as a factor: it shifts the estimate, but a recent trial&apos;s year is read as
+            the last year the model was refitted on, so the year shown would not be the trial&apos;s own.
+          </>
+        )}
       </p>
       <p>
         The sponsor&apos;s history is shown as &ldquo;Sponsor&apos;s earlier trials: k of n stopped early
-        (registry)&rdquo;. In training it counts only trials that finished before each trial started; for running
+        (registry)&rdquo;. In training it counts only trials that finished before each{" "}
+        {cmp ? "snapshot the trial is read at" : "trial started"}; for running
         trials, the count is as of today, so it can include trials that finished after this one started. A sponsor
         with fewer than 5
         earlier finished trials has too short a record: the model is told so and does not use the rate.
       </p>
 
       <h3>Retraining</h3>
+      {cmp ? (
+        <>
+          <p>
+            The model is retrained by hand, not by the daily update; it was last trained on{" "}
+            {longDate(model.trained_on)} (version {model.version}). There are two fits of the same recipe. Every
+            accuracy figure on this page comes from the fit trained on trials that had ended by{" "}
+            {monthYear(cmp.cutoff)}; the estimates on the site come from the same recipe refitted on all trials that
+            had ended by {monthYear(model.refit_end)}, so their accuracy is the recipe&apos;s accuracy at{" "}
+            {monthYear(cmp.cutoff)}, measured on the earlier fit. The model file, a numeric test table without trial
+            ids and per-sponsor counts are derived from the registry snapshots; the registry data themselves are not
+            republished here.
+          </p>
+          <Credit model={model} cmp={cmp} />
+        </>
+      ) : (
       <p>
         The model is retrained by hand, not by the daily update; it was last trained on {longDate(model.trained_on)}{" "}
         (version {model.version}). There are two fits of the same recipe. Every accuracy figure on this page comes
@@ -342,6 +547,7 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
         finished are mostly those that stopped early. For trials started after {year(model.refit_end)}, the start
         year is read as {year(model.refit_end)}.
       </p>
+      )}
     </>
   );
 }

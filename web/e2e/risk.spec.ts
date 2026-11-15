@@ -36,3 +36,16 @@ test("a target page shows the stop-risk panel", async ({ page }) => {
   await expect(panel.getByText(NOTE)).toBeVisible();
   expect(await overflows(page)).toBe(false);
 });
+
+// v2 card (synthetic fixture numbers): Methods shows the before/after table and the credit line.
+test("Methods shows the v2 before/after table and credit line without horizontal scroll", async ({ page }) => {
+  await page.route("**/data/risk.json", (r) => r.fulfill({ path: "tests/fixtures/data/risk-v2.json" }));
+  await page.goto("/#/methods?s=stop-risk");
+  const section = page.locator("section#stop-risk");
+  const table = section.getByRole("table", { name: /Before and after/ });
+  await expect(table).toBeVisible();
+  await expect(table.locator("tr[data-row='v2_history']")).toContainText("v2 plus edit history (not used)");
+  await expect(section.getByRole("table", { name: /Accuracy on later trials/ })).toHaveCount(0);
+  await expect(section.locator("[data-credit]")).toContainText(/^Data: ClinicalTrials\.gov, via AACT/);
+  expect(await overflows(page)).toBe(false);
+});
