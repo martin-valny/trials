@@ -17,7 +17,7 @@ column ("2014-01" -> 2014-01-01, "month", exactly as normalize), ``*_date`` only
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -263,16 +263,55 @@ def _frame(name: str, df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def load_snapshot(panel_dir: Path, snap_date: date, *, aliases: Aliases | None = None) -> Snapshot:
+class _NoMeshType(ValueError):
+    pass
+
+
+def _categories(bc: pl.DataFrame, snap_date: date) -> dict[str, tuple[str, ...]]:
+    bc = bc.filter(pl.col("mesh_term").is_not_null() & (pl.col("mesh_term") != ""))
+    if bc["mesh_type"].null_count():
+        raise _NoMeshType(
+            f"AACT snapshot {snap_date.isoformat()}: browse_conditions.mesh_type is null "
+            f"({bc['mesh_type'].null_count()} of {bc.height} rows), so mesh and ancestor "
+            "terms cannot be told apart"
+        )
+    terms: dict[str, dict[str, set[str]]] = {}
+    for nct, term, kind in bc.select(
+        "nct_id", "mesh_term", _enum(bc, "browse_conditions", "mesh_type")
+    ).iter_rows():
+        terms.setdefault(nct, {"mesh": set(), "ancestor": set()})[kind].add(term)
+    return {nct: categories_from(t["mesh"], t["ancestor"]) for nct, t in terms.items()}
+
+
+def mesh_categories(panel_dir: Path, snap_date: date) -> dict[str, tuple[str, ...]]:
+    """Condition categories per nct_id from one snapshot's browse_conditions.
+
+    Older AACT archives have no mesh_type (no ancestors), so training applies the final
+    snapshot's categories to every snapshot: one consistent source, matching the live API's
+    current MeSH tree. Raises ValueError naming the date when mesh_type is missing.
+    """
+    return _categories(_read(panel_dir, "browse_conditions", snap_date), snap_date)
+
+
+def load_snapshot(
+    panel_dir: Path,
+    snap_date: date,
+    *,
+    aliases: Aliases | None = None,
+    categories: Mapping[str, tuple[str, ...]] | None = None,
+) -> Snapshot:
     """Tables, RiskFields and has-results ids for one panel snapshot date.
 
     ``aliases`` are the sponsor/intervention alias maps the daily run applies (default: none,
     so ``name_normalized`` is the whitespace-normalised name, as with an empty alias dir).
+    ``categories`` (e.g. ``mesh_categories(panel_dir, final_date)``) supplies
+    RiskFields.categories (missing id -> ``()``) and browse_conditions is not read; when None,
+    this snapshot's browse_conditions is used and must carry mesh_type.
     """
     al = aliases or Aliases.empty()
     raw = {t: _read(panel_dir, t, snap_date) for t in (
         "studies", "interventions", "facilities", "design_groups", "design_outcomes",
-        "conditions", "browse_conditions", "sponsors", "designs",
+        "conditions", "sponsors", "designs",
     )}  # fmt: skip
 
     st = raw["studies"]
@@ -392,22 +431,21 @@ def load_snapshot(panel_dir: Path, snap_date: date, *, aliases: Aliases | None =
     arms: dict[str, list[str | None]] = {}
     for nct, gt in groups.iter_rows():
         arms.setdefault(nct, []).append(gt)
-    bc = raw["browse_conditions"]
-    terms: dict[str, dict[str, set[str]]] = {}
-    for nct, term, kind in bc.select(
-        "nct_id", "mesh_term", _enum(bc, "browse_conditions", "mesh_type")
-    ).iter_rows():
-        if term:
-            terms.setdefault(nct, {"mesh": set(), "ancestor": set()})[kind].add(term)
+    if categories is None:
+        try:
+            categories = _categories(_read(panel_dir, "browse_conditions", snap_date), snap_date)
+        except _NoMeshType as exc:
+            raise ValueError(
+                f"{exc}; pass categories=mesh_categories(panel_dir, <final snapshot date>)"
+            ) from None
     fields: dict[str, RiskFields] = {}
     for nct in studies["nct_id"].to_list():
         g = arms.get(nct, [])
-        t = terms.get(nct, {})
         fields[nct] = RiskFields(
             nct_id=nct,
             n_arms=len(g) or None,
             placebo_arm=any(x in PLACEBO_ARMS for x in g),
-            categories=categories_from(t.get("mesh", set()), t.get("ancestor", set())),
+            categories=tuple(categories.get(nct, ())),
         )
 
     has_results = set(
@@ -422,5 +460,6 @@ __all__ = [
     "UnmappedValue",
     "load_snapshot",
     "map_value",
+    "mesh_categories",
     "parse_aact_date",
 ]

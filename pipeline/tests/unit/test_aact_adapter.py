@@ -525,3 +525,95 @@ def test_unparseable_month_year_raises(tmp_path: Path) -> None:
     _write_panel(tmp_path, {"studies": [_study_row(start_month_year="Smarch 2014")]})
     with pytest.raises(ValueError, match="Smarch 2014"):
         load_snapshot(tmp_path, SNAP)
+
+
+def _bc(nct: str, term: str, kind: str | None) -> dict[str, Any]:
+    return {"nct_id": nct, "mesh_term": term, "mesh_type": kind}
+
+
+def test_mesh_categories_from_final_snapshot(tmp_path: Path) -> None:
+    from trialradar.aact.adapter import mesh_categories
+
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [_study_row("NCT00000001"), _study_row("NCT00000002")],
+            "browse_conditions": [
+                _bc("NCT00000001", "Multiple Sclerosis", "mesh-list"),
+                _bc("NCT00000001", "Nervous System Diseases", "mesh-ancestor"),
+                _bc("NCT00000001", "Immune System Diseases", "mesh-ancestor"),
+                _bc("NCT00000002", "Myasthenia Gravis", "mesh-list"),
+                _bc("NCT00000002", "Paraneoplastic Syndromes", "mesh-ancestor"),
+                _bc("NCT00000002", "Neoplasms", "mesh-ancestor"),
+                _bc("NCT00000002", "Nervous System Diseases", "mesh-ancestor"),
+            ],
+        },
+    )
+    assert mesh_categories(tmp_path, SNAP) == {
+        "NCT00000001": ("Immune System Diseases", "Nervous System Diseases"),
+        "NCT00000002": ("Nervous System Diseases",),  # paraneoplastic rule applied
+    }
+
+
+def test_mesh_categories_rejects_snapshot_without_mesh_type(tmp_path: Path) -> None:
+    from trialradar.aact.adapter import mesh_categories
+
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [_study_row()],
+            "browse_conditions": [_bc("NCT00000001", "Multiple Sclerosis", None)],
+        },
+        snap=date(2018, 12, 1),
+    )
+    with pytest.raises(ValueError, match="2018-12-01.*mesh_type"):
+        mesh_categories(tmp_path, date(2018, 12, 1))
+
+
+def test_old_snapshot_without_mesh_type_needs_categories(tmp_path: Path) -> None:
+    old = date(2018, 12, 1)
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [_study_row("NCT00000001"), _study_row("NCT00000002")],
+            "browse_conditions": [_bc("NCT00000001", "Multiple Sclerosis", None)],
+        },
+        snap=old,
+    )
+    with pytest.raises(ValueError, match=r"categories=mesh_categories"):
+        load_snapshot(tmp_path, old)
+    cats = {"NCT00000001": ("Nervous System Diseases",), "NCT99999999": ("Neoplasms",)}
+    snap = load_snapshot(tmp_path, old, categories=cats)
+    assert snap.fields["NCT00000001"].categories == ("Nervous System Diseases",)
+    assert snap.fields["NCT00000002"].categories == ()
+
+
+def test_categories_override_ignores_snapshot_browse(tmp_path: Path) -> None:
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [_study_row()],
+            "browse_conditions": [_bc("NCT00000001", "Neoplasms", "mesh-ancestor")],
+        },
+    )
+    assert load_snapshot(tmp_path, SNAP).fields["NCT00000001"].categories == ("Neoplasms",)
+    snap = load_snapshot(tmp_path, SNAP, categories={})
+    assert snap.fields["NCT00000001"].categories == ()
+
+
+def test_long_month_year_with_old_spellings(tmp_path: Path) -> None:
+    _write_panel(
+        tmp_path,
+        {
+            "studies": [
+                _study_row(
+                    start_month_year="March 1, 2019",
+                    overall_status="No longer available",
+                    phase="Phase 1/Phase 2",
+                )
+            ]
+        },
+    )
+    t = load_snapshot(tmp_path, SNAP).tables.trial.row(0, named=True)
+    assert (t["start_date"], t["start_date_precision"]) == (date(2019, 3, 1), "day")
+    assert t["overall_status"] == "NO_LONGER_AVAILABLE"
