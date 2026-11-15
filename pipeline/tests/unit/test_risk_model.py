@@ -119,3 +119,126 @@ def test_p_strictly_inside_range_when_members_disagree() -> None:
     assert ((lo[both] < p[both]) & (p[both] < hi[both])).all()
     assert ((lo <= p) & (p <= hi)).all()
     assert lo.min() >= 0 and hi.max() <= 1
+
+
+def test_default_matches_v1() -> None:
+    """No weights, default baseline: the same fit as the unweighted v1 code path."""
+    from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    x, y = make_data(600)
+    ref_lr = Pipeline(
+        [
+            ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
+            ("scale", StandardScaler()),
+            ("lr", LogisticRegression(max_iter=1000)),
+        ]
+    ).fit(x[:, :6], y)
+    np.testing.assert_allclose(
+        fit("baseline", x, y, COLUMNS).predict_proba(x),
+        ref_lr.predict_proba(x[:, :6])[:, 1],
+        rtol=1e-12,
+    )
+    ref_gb = CalibratedClassifierCV(
+        HistGradientBoostingClassifier(random_state=42),
+        method="isotonic",
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
+        ensemble=False,
+    ).fit(x, y)
+    np.testing.assert_allclose(
+        fit("boosted", x, y, COLUMNS).predict_proba(x), ref_gb.predict_proba(x)[:, 1], rtol=1e-12
+    )
+
+
+@pytest.mark.parametrize("recipe", ["baseline", "boosted"])
+def test_weights_change_fit(recipe: str) -> None:
+    x, y = make_data(600)
+    w = np.where(y == 1, 5.0, 1.0)
+    a = fit(recipe, x, y, COLUMNS)  # type: ignore[arg-type]
+    b = fit(recipe, x, y, COLUMNS, sample_weight=w)  # type: ignore[arg-type]
+    ones = fit(recipe, x, y, COLUMNS, sample_weight=np.ones(len(y)))  # type: ignore[arg-type]
+    assert not np.allclose(a.predict_proba(x), b.predict_proba(x))
+    assert b.predict_proba(x).mean() > a.predict_proba(x).mean()
+    np.testing.assert_allclose(a.predict_proba(x), ones.predict_proba(x), atol=1e-6)
+
+
+def test_weights_reach_the_explanation_booster() -> None:
+    x, y = make_data(600)
+    w = np.where(y == 1, 5.0, 1.0)
+    a = fit("boosted", x, y, COLUMNS).booster
+    b = fit("boosted", x, y, COLUMNS, sample_weight=w).booster
+    assert b.predict_proba(x)[:, 1].mean() > a.predict_proba(x)[:, 1].mean()
+
+
+def test_group_bootstrap_keeps_trials_whole() -> None:
+    from trialradar.risk import model
+
+    x, y = make_data(300)
+    groups = np.repeat(np.arange(100), 3)
+    x[:, 7] = groups  # a per-trial marker, so a resample's rows can be traced to trials
+    seen: list[np.ndarray] = []
+    real = model.fit
+
+    def spy(recipe, X, yy, columns, **kw):  # type: ignore[no-untyped-def]
+        if not kw.get("explain", True):
+            seen.append(X[:, 7].copy())
+        return real(recipe, X, yy, columns, **kw)
+
+    model.fit, orig = spy, model.fit
+    try:
+        ens = fit_ensemble(
+            "baseline", x, y, COLUMNS, n_boot=5, groups=groups, sample_weight=np.full(300, 1 / 3)
+        )
+    finally:
+        model.fit = orig
+    assert len(ens.members) == 5 and len(seen) == 5
+    for s in seen:
+        # every original trial contributes 0 or k times 3 rows: signal values come in triples
+        _, counts = np.unique(s, return_counts=True)
+        assert (counts % 3 == 0).all()
+        assert len(s) % 3 == 0
+
+
+def test_grouped_calibration_folds_keep_trials_together() -> None:
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    from trialradar.risk import model
+
+    x, y = make_data(300)
+    groups = np.repeat(np.arange(100), 3)
+    captured: list[object] = []
+    real_cal = model.CalibratedClassifierCV
+
+    class Spy(real_cal):  # type: ignore[valid-type, misc]
+        def fit(self, X, yy, **kw):  # type: ignore[no-untyped-def]
+            captured.append(self.cv)
+            return super().fit(X, yy, **kw)
+
+    model.CalibratedClassifierCV = Spy
+    try:
+        fit("boosted", x, y, COLUMNS, groups=groups, explain=False)
+    finally:
+        model.CalibratedClassifierCV = real_cal
+    assert isinstance(captured[0], list)
+    for _, test in captured[0]:  # type: ignore[attr-defined]
+        assert len(set(groups[test])) * 3 == len(test)
+    seen = np.concatenate([t for _, t in captured[0]])  # type: ignore[attr-defined]
+    assert sorted(seen) == list(range(300))
+    assert StratifiedGroupKFold  # imported for parity with the implementation
+
+
+def test_custom_baseline_features() -> None:
+    x, y = make_data(600)
+    feats = ("n_sites", "signal_b")
+    m = fit("baseline", x, y, COLUMNS, baseline_features=feats)
+    assert m.idx == (6, 7)
+    x2 = x.copy()
+    x2[:, :6] = np.random.default_rng(1).permutation(x2[:, :6])
+    np.testing.assert_allclose(m.predict_proba(x), m.predict_proba(x2))
+    with pytest.raises(ValueError, match="nope"):
+        fit("baseline", x, y, COLUMNS, baseline_features=("nope",))
