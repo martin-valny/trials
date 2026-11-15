@@ -6,11 +6,13 @@ so a C snapshot dated a few days after 2021-12-01 is still C itself.
 
 - Train: trials COMPLETED or TERMINATED in the C snapshot whose final (2026-01) label agrees
   with that status; one row per quarterly snapshot <= C where the trial is in scope, weight 1/k.
-  A trial whose final label differs from its status at C is left out: its label would carry
-  a post-C change a trainer at C could not know.
-- Test: trials in scope in the C snapshot, one row each (weight 1), labelled from the final
-  snapshot; the rest are counted by reason.
-- Disjoint by construction (ended at C vs running at C) and asserted.
+  Left out and counted (among trials in scope at some snapshot <= C): "unlabelled" (final
+  status not a label, or missing from the final) and "relabelled" (final label differs from
+  the status at C: it would carry a post-C change a trainer at C could not know).
+- Holdout (test): trials in scope in the C snapshot, one row each (weight 1), labelled from
+  the final snapshot; the rest are counted by reason (``EXCLUSIONS``; an unexpected final
+  status such as WITHHELD goes to "other", never an error).
+- Holdout rows are disjoint from ``ended_by`` (running at C vs ended at C); asserted.
 
 Snapshots are taken as ``SnapshotSummary`` (ids, scope and status only), so the caller can load
 one AACT snapshot at a time, summarize it and drop it.
@@ -36,7 +38,8 @@ CUTOFF = date(2021, 12, 1)
 MAX_CUTOFF_GAP_DAYS = 31
 """The panel picks the archive nearest each quarter date within 31 days."""
 
-EXCLUSIONS = ("running", "unknown", "withdrawn", "suspended", "missing")
+EXCLUSIONS = ("running", "unknown", "withdrawn", "suspended", "missing", "other")
+TRAIN_DROPS = ("unlabelled", "relabelled")
 _EXCLUDED_STATUS = {"UNKNOWN": "unknown", "WITHDRAWN": "withdrawn", "SUSPENDED": "suspended"}
 
 ROW_SCHEMA = pl.Schema(
@@ -93,17 +96,15 @@ def summarize(snap: Snapshot) -> SnapshotSummary:
 def _reason(status: str) -> str:
     if status in RUNNING:
         return "running"
-    if status in _EXCLUDED_STATUS:
-        return _EXCLUDED_STATUS[status]
-    raise ValueError(f"unexpected final status {status!r}: neither a label nor an exclusion")
+    return _EXCLUDED_STATUS.get(status, "other")
 
 
 def labels(final: SnapshotSummary) -> tuple[dict[str, int], dict[str, int]]:
     """(label per nct_id, exclusion counts by reason) over every trial in the final snapshot.
 
-    TERMINATED -> 1, COMPLETED -> 0; running, UNKNOWN, WITHDRAWN, SUSPENDED are counted.
-    "missing" is always 0 here (only ``test_rows`` knows who is missing). Any other status
-    raises."""
+    TERMINATED -> 1, COMPLETED -> 0; running, UNKNOWN, WITHDRAWN, SUSPENDED are counted, any
+    other status under "other". "missing" is always 0 here (only ``holdout_rows`` knows who
+    is missing)."""
     lab: dict[str, int] = {}
     excl = dict.fromkeys(EXCLUSIONS, 0)
     for nct, status in final.status.items():
@@ -151,24 +152,37 @@ def _frame(rows: list[tuple[str, date, float, int]]) -> pl.DataFrame:
 
 def train_rows(
     snapshots: Sequence[SnapshotSummary], cutoff: date, label: Mapping[str, int]
-) -> Rows:
+) -> tuple[Rows, dict[str, int]]:
     """One row per (trial, snapshot <= C where in scope) for trials ended at C whose final
-    label agrees with their status at C; weight 1/k for a trial with k rows."""
+    label agrees with their status at C; weight 1/k for a trial with k rows.
+
+    Also returns counts (``TRAIN_DROPS``) of ended-at-C trials that were in scope at some
+    snapshot <= C but left out: "unlabelled" (no final label: missing from the final or a
+    non-label status) and "relabelled" (final label differs from the status at C)."""
     c = cutoff_snapshot(snapshots, cutoff)
-    ids = {n for n in ended_by(snapshots, cutoff) if label.get(n) == LABELS[c.status[n]]}
+    ended = ended_by(snapshots, cutoff)
     dates: dict[str, list[date]] = {}
     for s in _upto(snapshots, cutoff):
-        for n in s.in_scope & ids:
+        for n in s.in_scope & ended:
             dates.setdefault(n, []).append(s.date)
-    rows = [(n, d, 1.0 / len(ds), label[n]) for n, ds in dates.items() for d in ds]
-    return Rows(keys=_frame(rows))
+    dropped = dict.fromkeys(TRAIN_DROPS, 0)
+    rows: list[tuple[str, date, float, int]] = []
+    for n, ds in dates.items():
+        if n not in label:
+            dropped["unlabelled"] += 1
+        elif label[n] != LABELS[c.status[n]]:
+            dropped["relabelled"] += 1
+        else:
+            rows.extend((n, d, 1.0 / len(ds), label[n]) for d in ds)
+    return Rows(keys=_frame(rows)), dropped
 
 
-def test_rows(
+def holdout_rows(
     snapshots: Sequence[SnapshotSummary], cutoff: date, final: SnapshotSummary
 ) -> tuple[Rows, dict[str, int]]:
-    """Trials in scope at C, labelled from `final` (weight 1), plus exclusion counts by
-    reason (running, unknown, withdrawn, suspended, missing = absent from `final`)."""
+    """The test set: trials in scope at C, labelled from `final` (weight 1), plus exclusion
+    counts by reason (``EXCLUSIONS``; missing = absent from `final`, other = an unexpected
+    final status). Disjoint from ``ended_by`` (asserted)."""
     c = cutoff_snapshot(snapshots, cutoff)
     if final.date <= c.date:
         raise ValueError(f"final snapshot {final.date} must be after the cutoff snapshot {c.date}")
@@ -182,11 +196,10 @@ def test_rows(
             excl["missing"] += 1
         else:
             excl[_reason(final.status[n])] += 1
-    test = Rows(keys=_frame(rows))
-    train_ids = ended_by(snapshots, cutoff)
-    if overlap := train_ids & set(test.keys["nct_id"].to_list()):
-        raise AssertionError(f"train/test overlap: {sorted(overlap)[:5]}")
-    return test, excl
+    holdout = Rows(keys=_frame(rows))
+    if overlap := ended_by(snapshots, cutoff) & set(holdout.keys["nct_id"].to_list()):
+        raise AssertionError(f"holdout rows overlap ended_by: {sorted(overlap)[:5]}")
+    return holdout, excl
 
 
 def final_record_before(
@@ -206,14 +219,15 @@ __all__ = [
     "EXCLUSIONS",
     "MAX_CUTOFF_GAP_DAYS",
     "ROW_SCHEMA",
+    "TRAIN_DROPS",
     "Rows",
     "SnapshotSummary",
     "cutoff_snapshot",
     "ended_by",
     "final_record_before",
+    "holdout_rows",
     "in_scope",
     "labels",
     "summarize",
-    "test_rows",
     "train_rows",
 ]

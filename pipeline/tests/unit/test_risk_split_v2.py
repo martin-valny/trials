@@ -15,15 +15,13 @@ from trialradar.risk.split_v2 import (
     cutoff_snapshot,
     ended_by,
     final_record_before,
+    holdout_rows,
     in_scope,
     labels,
     summarize,
-    test_rows,
     train_rows,
 )
 from trialradar.tables import SCHEMAS, Tables
-
-test_rows.__test__ = False  # type: ignore[attr-defined]  # not a pytest test
 
 FINAL = date(2026, 1, 31)
 
@@ -178,12 +176,19 @@ def test_labels_and_counts() -> None:
     )  # fmt: skip
     lab, excl = labels(final)
     assert lab == {"a": 1, "b": 0}
-    assert excl == {"running": 2, "unknown": 1, "withdrawn": 1, "suspended": 1, "missing": 0}
+    assert excl == {"running": 2, "unknown": 1, "withdrawn": 1, "suspended": 1, "missing": 0,
+                    "other": 0}  # fmt: skip
 
 
-def test_labels_reject_unexpected_status() -> None:
-    with pytest.raises(ValueError, match="WITHHELD"):
-        labels(_sum(FINAL, {"a": "WITHHELD"}))
+def test_unexpected_final_status_counted_as_other() -> None:
+    lab, excl = labels(_sum(FINAL, {"a": "WITHHELD", "b": "COMPLETED"}))
+    assert lab == {"b": 0}
+    assert excl["other"] == 1
+    s, final = _panel()
+    odd = _sum(FINAL, {**final.status, "R": "WITHHELD"})
+    _, excl = holdout_rows(s, CUTOFF, odd)
+    assert excl == {"running": 0, "unknown": 0, "withdrawn": 1, "suspended": 0, "missing": 1,
+                    "other": 1}  # fmt: skip
 
 
 # --- cutoff snapshot -------------------------------------------------------------------------
@@ -208,8 +213,8 @@ def test_ended_by_reads_the_cutoff_snapshot() -> None:
 def test_train_and_test_disjoint() -> None:
     s, final = _panel()
     lab, _ = labels(final)
-    train = train_rows(s, CUTOFF, lab)
-    test, _ = test_rows(s, CUTOFF, final)
+    train = train_rows(s, CUTOFF, lab)[0]
+    test, _ = holdout_rows(s, CUTOFF, final)
     tr = set(train.keys["nct_id"].to_list())
     te = set(test.keys["nct_id"].to_list())
     assert tr == {"A", "B"}
@@ -222,7 +227,7 @@ def test_train_and_test_disjoint() -> None:
 def test_weights_sum_to_one_per_trial() -> None:
     s, final = _panel()
     lab, _ = labels(final)
-    keys = train_rows(s, CUTOFF, lab).keys
+    keys = train_rows(s, CUTOFF, lab)[0].keys
     assert keys.schema == pl.Schema(
         {"nct_id": pl.Utf8, "snapshot_date": pl.Date, "weight": pl.Float64, "label": pl.Int64}
     )
@@ -245,7 +250,7 @@ def test_reappearing_trial_rows_only_where_present() -> None:
         _sum(Q[2], {"X": "RECRUITING"}),
         _sum(Q[3], {"X": "COMPLETED"}),
     ]
-    keys = train_rows(s, CUTOFF, {"X": 0}).keys
+    keys = train_rows(s, CUTOFF, {"X": 0})[0].keys
     assert keys["snapshot_date"].to_list() == [Q[0], Q[2]]
     assert keys["weight"].to_list() == pytest.approx([0.5, 0.5])
     assert final_record_before(s, CUTOFF, {"X"}) == {"X": Q[3]}
@@ -255,29 +260,47 @@ def test_reappearing_trial_rows_only_where_present() -> None:
 
 def test_train_excludes_unlabelled_and_relabelled() -> None:
     s = [
-        _sum(Q[0], {"U": "RECRUITING", "F": "RECRUITING", "K": "RECRUITING"}),
-        _sum(Q[3], {"U": "COMPLETED", "F": "COMPLETED", "K": "TERMINATED"}),
+        _sum(Q[0], {"U": "RECRUITING", "G": "RECRUITING", "F": "RECRUITING", "K": "RECRUITING"}),
+        _sum(
+            Q[3],
+            {
+                "U": "COMPLETED",
+                "G": "TERMINATED",
+                "F": "COMPLETED",
+                "K": "TERMINATED",
+                "OLD": "COMPLETED",
+            },
+        ),
     ]
-    # U: no final label. F: completed at C but terminated in the final record (a post-C
-    # change a trainer at C could not know) -> out. K: settled -> in.
-    keys = train_rows(s, CUTOFF, {"F": 1, "K": 1}).keys
-    assert keys["nct_id"].to_list() == ["K"]
+    # U: final status not a label. G: missing from the final (no label either). F: completed
+    # at C but terminated in the final record (a post-C change a trainer at C could not know).
+    # K: settled -> in. OLD: ended at C but never in scope by C -> not counted at all.
+    rows, dropped = train_rows(s, CUTOFF, {"F": 1, "K": 1, "OLD": 0})
+    assert rows.keys["nct_id"].to_list() == ["K"]
+    assert dropped == {"unlabelled": 2, "relabelled": 1}
+
+
+def test_train_counts_zero_when_nothing_dropped() -> None:
+    s, final = _panel()
+    lab, _ = labels(final)
+    assert train_rows(s, CUTOFF, lab)[1] == {"unlabelled": 0, "relabelled": 0}
 
 
 def test_missing_in_final_excluded_and_counted() -> None:
     s, final = _panel()
-    test, excl = test_rows(s, CUTOFF, final)
-    assert excl == {"running": 1, "unknown": 0, "withdrawn": 1, "suspended": 0, "missing": 1}
+    test, excl = holdout_rows(s, CUTOFF, final)
+    assert excl == {"running": 1, "unknown": 0, "withdrawn": 1, "suspended": 0, "missing": 1,
+                    "other": 0}  # fmt: skip
     assert test.keys.rows() == [("T", date(2021, 12, 3), 1.0, 0)]
     assert test.keys.schema == pl.Schema(
         {"nct_id": pl.Utf8, "snapshot_date": pl.Date, "weight": pl.Float64, "label": pl.Int64}
     )
 
 
-def test_test_rows_need_a_later_final() -> None:
+def test_holdout_rows_need_a_later_final() -> None:
     s, _ = _panel()
     with pytest.raises(ValueError, match="after the cutoff"):
-        test_rows(s, CUTOFF, s[3])
+        holdout_rows(s, CUTOFF, s[3])
 
 
 def test_final_record_before_never_after_cutoff() -> None:
