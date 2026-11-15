@@ -16,6 +16,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+import httpx
 import polars as pl
 
 from trialradar.aact.archive import extract_table, list_archives, read_api_key
@@ -48,6 +49,17 @@ def _save_ids(panel: Path, ids: set[str]) -> None:
     tmp.replace(panel / "ids.parquet")
 
 
+def _os_trust_client() -> httpx.Client:
+    """HTTP client verifying TLS with the OS trust store (corporate TLS interception)."""
+    import ssl
+
+    try:
+        import truststore
+    except ImportError as exc:
+        raise SystemExit("truststore is required: run `uv sync` (dev dependency group)") from exc
+    return httpx.Client(verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT), timeout=120)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
@@ -62,7 +74,8 @@ def main() -> None:
     api_key = read_api_key(args.credentials)
     panel = args.cache / "panel"
     panel.mkdir(parents=True, exist_ok=True)
-    picked = pick_quarterly(list_archives(args.cache, api_key))
+    client = _os_trust_client()
+    picked = pick_quarterly(list_archives(args.cache, api_key, client=client))
     if not picked:
         raise SystemExit("no AACT archives picked: listing empty or no archive near any quarter")
     if (picked[-1].snap_date.year, picked[-1].snap_date.month) != (2026, 1):
@@ -81,7 +94,7 @@ def main() -> None:
         t0 = time.monotonic()
         raw = args.cache / "raw" / arch.snap_date.isoformat()
         for table in TABLES:
-            extract_table(arch, table, raw, api_key)
+            extract_table(arch, table, raw, api_key, client=client)
         ids |= fold_archive(raw, arch.snap_date, panel, ids)
         _save_ids(panel, ids)
         rows = {
