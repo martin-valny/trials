@@ -421,10 +421,9 @@ export interface RiskModelInfo {
   per_trial: boolean;
   /** Present only on a v2 card ("v1" cards leave it out). */
   feature_set?: "v2";
-  /** v2's before/after block (pipeline `Comparison`); absent on a v1 card. */
+  /** v2's before/after block (pipeline `Comparison`): on a v2 card, or on a v1 card when v2 did not ship. */
   comparison?: RiskComparison;
-  /** The card's credit line, "ClinicalTrials.gov via AACT (…), snapshots {iso}–{iso}, processed {iso}".
-   * On the card (`Card.data_source`); `apply.py` `_model_block` does not copy it into risk.json yet. */
+  /** The card's credit line, "ClinicalTrials.gov via AACT (…), snapshots {iso}–{iso}, processed {iso}". */
   data_source?: string;
 }
 
@@ -451,6 +450,8 @@ export interface RiskComparison {
   parity: Record<string, number> | null;
   v2_ships: boolean;
   reason: string;
+  /** v1's previously published held-out AUC (measured on final records); null or absent when unknown. */
+  v1_published_auc?: number | null;
 }
 
 export interface RiskFactor {

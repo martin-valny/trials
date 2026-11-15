@@ -101,6 +101,8 @@
 .rk-m-table td.rk-m-few { text-align: right; padding-right: 0; }
 .rk-m-sub, .rk-m-few { color: var(--muted); font-size: 12px; }
 .rk-m-muted td { color: var(--muted); }
+/* Inside the scroll box the last column keeps 2px so its glyphs are never clipped at the edge. */
+.rk-m-scroll .rk-m-table td:last-child, .rk-m-scroll .rk-m-table th:last-child { padding-right: 2px; }
 /* Methods body copy keeps one measure (~68ch), the notes included. */
 .rk-m p, .rk-m ul { max-width: 68ch; }
 .rk-m-note { font-size: 14px; color: var(--muted); max-width: 68ch; }
