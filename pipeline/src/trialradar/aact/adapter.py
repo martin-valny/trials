@@ -93,6 +93,7 @@ ENUM_MAPS: dict[str, dict[str, str]] = {
         "Phase 1/Phase 2": "PHASE1/PHASE2",
         "Phase 2/Phase 3": "PHASE2/PHASE3",
         "N/A": "NA",
+        "Not Applicable": "NA",
     },
     "overall_status": _STATUS_MAP,
     "status": _STATUS_MAP,

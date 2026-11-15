@@ -275,6 +275,7 @@ _SPELLINGS: list[tuple[str, str, str]] = [
     ("phase", "Phase 1/Phase 2", "PHASE1/PHASE2"),
     ("phase", "Phase 2/Phase 3", "PHASE2/PHASE3"),
     ("phase", "N/A", "NA"),
+    ("phase", "Not Applicable", "NA"),
     ("phase", "PHASE1", "PHASE1"),
     ("phase", "PHASE2/PHASE3", "PHASE2/PHASE3"),
     ("phase", "EARLY_PHASE1", "EARLY_PHASE1"),
