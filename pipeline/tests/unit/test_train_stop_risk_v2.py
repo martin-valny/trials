@@ -16,6 +16,7 @@ from _aact_synth import CUTOFF_SNAP, DEVICE, FINAL, RELABELLED, VANISHED, SynthT
 from _risk_synth import single_thread  # noqa: F401
 from threadpoolctl import threadpool_limits
 
+from trialradar.config import load_config
 from trialradar.risk import artefacts
 from trialradar.risk.artefacts import Metrics
 from trialradar.risk.evaluate import metrics
@@ -32,10 +33,19 @@ sys.modules[_SPEC.name] = script  # dataclasses resolve their module through sys
 _SPEC.loader.exec_module(script)
 
 V1_DIR = Path(__file__).resolve().parents[3] / "config" / "risk"
+CONFIG = Path(__file__).resolve().parents[3] / "config" / "area.yaml"
 
 
 def _m(auc: float, brier: float) -> Metrics:
     return Metrics(auc=auc, brier=brier, n=100, positives=20, calibration=[])
+
+
+SHIPPABLE = [f for f in FEATURES_V2 if f not in script.SPONSOR_FEATURES]
+
+
+def _par(**over: float) -> dict[str, float]:
+    """A parity result with every shippable feature at 0 mismatch, then `over`."""
+    return {**dict.fromkeys(SHIPPABLE, 0.0), **over}
 
 
 @pytest.fixture(scope="module")
@@ -50,7 +60,7 @@ def trained(panel: tuple[Path, list[SynthTrial]], tmp_path_factory: pytest.TempP
     parity = out.parent / "parity.json"
     shares: dict[str, Any] = dict.fromkeys(FEATURES_V2, 0.0)
     shares["sponsor_prior_n"] = 0.3  # exempt: sponsor counts differ by design
-    shares["exempt"] = ["sponsor_prior_n", "sponsor_prior_rate", "sponsor_few_prior"]
+    shares["exempt"] = ["log_enrollment"]  # ignored: the exempt set is fixed in code
     parity.write_text(json.dumps(shares))
     argv = ["--panel", str(panel[0]), "--out", str(out), "--n-boot", "2"]
     argv += ["--v1-dir", str(V1_DIR), "--parity", str(parity)]
@@ -65,18 +75,18 @@ def trained(panel: tuple[Path, list[SynthTrial]], tmp_path_factory: pytest.TempP
 @pytest.mark.parametrize(
     ("v2", "v1", "parity", "ships"),
     [
-        (_m(0.719, 0.15), _m(0.70, 0.15), {"x": 0.0}, False),  # AUC +0.019
-        (_m(0.72, 0.1501), _m(0.70, 0.15), {"x": 0.0}, False),  # +0.02, Brier worse
-        (_m(0.72, 0.15), _m(0.70, 0.15), {"x": 0.0}, True),  # +0.02, Brier equal
-        (_m(0.73, 0.14), _m(0.71, 0.15), {"x": 0.0}, True),  # +0.02 in float arithmetic
-        (_m(0.80, 0.10), _m(0.70, 0.15), {"x": 0.011}, False),  # parity fails
-        (_m(0.80, 0.10), _m(0.70, 0.15), {"x": 0.01, "sponsor_prior_n": 0.5}, True),
+        (_m(0.719, 0.15), _m(0.70, 0.15), _par(), False),  # AUC +0.019
+        (_m(0.72, 0.1501), _m(0.70, 0.15), _par(), False),  # +0.02, Brier worse
+        (_m(0.72, 0.15), _m(0.70, 0.15), _par(), True),  # +0.02, Brier equal
+        (_m(0.73, 0.14), _m(0.71, 0.15), _par(), True),  # +0.02 in float arithmetic
+        (_m(0.80, 0.10), _m(0.70, 0.15), _par(log_enrollment=0.011), False),  # parity fails
+        (_m(0.80, 0.10), _m(0.70, 0.15), _par(age_months=0.01, sponsor_prior_n=0.5), True),
         (_m(0.80, 0.10), _m(0.70, 0.15), None, False),  # parity not run
     ],
 )
 def test_bar_rule(v2: Metrics, v1: Metrics, parity: dict[str, float] | None, ships: bool) -> None:
     base = _m(0.60, 0.20)  # boosted clearly beats the v2 baseline
-    d = script.decide(base, v2, v1, parity, exempt=frozenset({"sponsor_prior_n"}))
+    d = script.decide(base, v2, v1, parity)
     assert d.recipe == "boosted"
     assert d.v2_ships is ships
     assert ("v2 replaces v1" if ships else "v1 stays live") in d.reason
@@ -86,10 +96,38 @@ def test_bar_rule(v2: Metrics, v1: Metrics, parity: dict[str, float] | None, shi
 
 def test_bar_within_v2_falls_back_to_baseline_and_compares_it() -> None:
     base, boost = _m(0.70, 0.15), _m(0.719, 0.14)  # boosted +0.019 only
-    d = script.decide(base, boost, _m(0.60, 0.20), {"x": 0.0}, exempt=frozenset())
+    d = script.decide(base, boost, _m(0.60, 0.20), _par())
     assert d.recipe == "baseline"
     assert d.v2_ships is True  # the v2 baseline itself beats v1-recipe
     assert "0.700" in d.reason and "0.600" in d.reason
+
+
+def test_parity_missing_feature_fails() -> None:
+    parity = _par()
+    del parity["months_since_update"], parity["n_sites"]
+    d = script.decide(_m(0.6, 0.2), _m(0.9, 0.05), _m(0.6, 0.2), parity)
+    assert d.v2_ships is False
+    assert "parity missing n_sites, months_since_update" in d.reason
+
+
+def test_read_parity_ignores_file_exempt_and_rejects_bad_shares(tmp_path: Path) -> None:
+    path = tmp_path / "parity.json"
+    path.write_text(json.dumps({**_par(log_enrollment=0.5), "exempt": ["log_enrollment"]}))
+    parity = script.read_parity(path)
+    assert "exempt" not in parity
+    ok, text = script.parity_result(parity)
+    assert not ok and "log_enrollment" in text
+    for bad in (-0.1, "0.0", True, None, float("inf")):
+        path.write_text(json.dumps({"n_sites": bad}).replace("Infinity", "1e999"))
+        with pytest.raises(ValueError, match="n_sites"):
+            script.read_parity(path)
+
+
+def test_v1_recipe_rule_picks_like_v1() -> None:
+    assert script.pick_recipe(_m(0.60, 0.15), _m(0.619, 0.14), "v1-recipe")[0] == "baseline"
+    assert script.pick_recipe(_m(0.60, 0.15), _m(0.62, 0.1501), "v1-recipe")[0] == "baseline"
+    recipe, reason = script.pick_recipe(_m(0.60, 0.15), _m(0.62, 0.15), "v1-recipe")
+    assert recipe == "boosted" and "0.620" in reason and "0.600" in reason
 
 
 # --- pieces ----------------------------------------------------------------------------
@@ -127,6 +165,33 @@ def test_v1_recipe_uses_records_before_cutoff(panel: tuple[Path, list[SynthTrial
         assert n == sites[nct]
     # trained on the same trials as v2's C-recipe
     assert set(v1_train["nct_id"].to_list()) == set(col.train.keys["nct_id"].to_list())
+
+
+def test_all_null_guard() -> None:
+    frame = pl.DataFrame({"a": [None, None], "b": [1.0, None], "c": [float("nan")] * 2})
+    assert script.all_null(frame, ["a", "b", "c"]) == ["a", "c"]
+
+
+def test_in_area_uses_conditions_and_direct_mesh_only(
+    panel: tuple[Path, list[SynthTrial]],
+) -> None:
+    path, ts = panel
+    ids = [t.nct for t in ts]
+    want = {t.nct for t in ts if t.nct[-1] in "035"}
+    # C: mesh_type null (old archive, direct terms only)
+    assert script.in_area_ids(path, CUTOFF_SNAP, ids, load_config(CONFIG)) == want
+    # final: digit 7 has "Multiple Sclerosis" only as an ancestor, which does not count
+    final = script.in_area_ids(path, FINAL, ids, load_config(CONFIG))
+    assert {n for n in final if n[-1] == "7"} == set()
+
+
+def test_categories_come_from_the_final_snapshot(panel: tuple[Path, list[SynthTrial]]) -> None:
+    col = script.collect(panel[0], Aliases.empty())
+    early = col.v2.filter(pl.col("snapshot_date") < CUTOFF_SNAP)
+    assert early.height > 0
+    # earlier snapshots have no mesh_type, yet categories (incl. an ancestor's) are filled
+    assert early["cat_neoplasms"].min() == 1
+    assert early["cat_nervous_system_diseases"].min() == 1
 
 
 def test_rows_align_by_key(panel: tuple[Path, list[SynthTrial]]) -> None:
@@ -179,13 +244,25 @@ def test_end_to_end_writes_artefacts(trained: Path) -> None:
     assert sum(v for k, v in c.train_age_mix.items() if k.startswith("start ")) == c.train_trials
     assert set(c.calibration_by_age) <= {"<12", "12-36", "36-72", ">=72"}
     assert c.parity is not None and c.parity["sponsor_prior_n"] == 0.3
+    assert card.filter["parity_exempt"] == sorted(script.SPONSOR_FEATURES)
     # the card's decision is exactly the bar applied to the card's own numbers
-    d = script.decide(
-        c.v2_baseline, c.v2, c.v1_recipe, c.parity, exempt=frozenset(card.filter["parity_exempt"])
-    )
+    d = script.decide(c.v2_baseline, c.v2, c.v1_recipe, c.parity)
     assert (d.recipe, d.v2_ships, d.reason) == (card.shipped, c.v2_ships, c.reason)
     assert card.metrics.boosted == c.v2 and card.metrics.baseline == c.v2_baseline
     assert {t.phase for t in card.typical} >= {"all", "phase 1", "phase 2", "phase 3"}
+    # v1-recipe: v1's own rule picked between its two fits; the chosen one is the "before"
+    f = card.filter
+    assert f["v1_recipe_chosen"] in {"baseline", "boosted"}
+    assert c.v1_recipe.model_dump() == f[f"v1_recipe_{f['v1_recipe_chosen']}"]
+    assert script.pick_recipe(
+        Metrics(**f["v1_recipe_baseline"]), Metrics(**f["v1_recipe_boosted"]), "v1-recipe"
+    ) == (f["v1_recipe_chosen"], f["v1_recipe_reason"])
+    assert f["phases"] == ["PHASE1", "PHASE1/PHASE2", "PHASE2", "PHASE2/PHASE3", "PHASE3"]
+    assert "final snapshot's MeSH" in f["condition_categories"]
+    assert "no keywords" in f["in_area"]
+    assert f["history_coverage"] == ["2020-12-01", "2021-12-01"]
+    assert f["v1_recipe_in_area"] is not None
+    assert card.metrics.in_area is not None and 0 < card.metrics.in_area.n < card.n_test
 
 
 def test_card_metrics_reproduce_from_saved_model(trained: Path) -> None:
@@ -196,12 +273,19 @@ def test_card_metrics_reproduce_from_saved_model(trained: Path) -> None:
     want = getattr(loaded.card.metrics, loaded.card.shipped)
     assert got["auc"] == pytest.approx(want.auc, abs=1e-9)
     assert got["brier"] == pytest.approx(want.brier, abs=1e-9)
+    mask = held["in_area"].to_numpy()
+    assert loaded.card.metrics.in_area is not None
+    sub = metrics(held["label"].to_numpy()[mask], p[mask])
+    assert sub["auc"] == pytest.approx(loaded.card.metrics.in_area.auc, abs=1e-9)
+    assert sub["brier"] == pytest.approx(loaded.card.metrics.in_area.brier, abs=1e-9)
+    assert sub["n"] == loaded.card.metrics.in_area.n
     p_ship = loaded.shipped.main.predict_proba(artefacts.feature_matrix(held, FEATURES_V2))
     assert len(np.unique(p_ship)) > 5
 
 
 def test_heldout_has_no_ids_or_text(trained: Path) -> None:
     held = pl.read_parquet(trained / "heldout.parquet")
-    assert held.columns == [*FEATURES_V2, "label"]
+    assert held.columns == [*FEATURES_V2, "label", "in_area"]
     assert held.height > 0
-    assert all(dt.is_numeric() for dt in held.dtypes)
+    assert held["in_area"].dtype == pl.Boolean and held["in_area"].any()
+    assert all(dt.is_numeric() for dt in held.drop("in_area").dtypes)

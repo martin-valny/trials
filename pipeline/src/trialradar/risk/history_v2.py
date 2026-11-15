@@ -25,14 +25,30 @@ _DAYS_PER_MONTH = 30.4375
 _RUNNING = ("recruiting", "active_not_recruiting", "enrolling_by_invitation")
 
 
+MONTHLY_COLUMNS = (
+    "nct_id",
+    "primary_completion_date",
+    "overall_status",
+    "enrollment",
+    "enrollment_type",
+)
+"""The only monthly columns the history features read (an absent one is filled in later)."""
+
+
+def _read_monthly(f: Path) -> pl.DataFrame:
+    lazy = pl.scan_parquet(f)
+    present = set(lazy.collect_schema().names())
+    return (
+        lazy.select([c for c in MONTHLY_COLUMNS if c in present])
+        .with_columns(pl.lit(f.stem).str.to_date("%Y-%m-%d", strict=False).alias("snapshot_date"))
+        .collect()
+    )
+
+
 def load_monthly(panel_dir: Path) -> pl.DataFrame:
-    """All `studies_monthly/*.parquet` stacked, with `snapshot_date` taken from the file name."""
-    frames = [
-        pl.read_parquet(f).with_columns(
-            pl.lit(f.stem).str.to_date("%Y-%m-%d", strict=False).alias("snapshot_date")
-        )
-        for f in sorted((panel_dir / "studies_monthly").glob("*.parquet"))
-    ]
+    """The needed columns (``MONTHLY_COLUMNS``) of all `studies_monthly/*.parquet` stacked,
+    with `snapshot_date` taken from the file name."""
+    frames = [_read_monthly(f) for f in sorted((panel_dir / "studies_monthly").glob("*.parquet"))]
     if not frames:
         return pl.DataFrame(schema={"nct_id": pl.Utf8, "snapshot_date": pl.Date})
     return pl.concat(frames, how="diagonal_relaxed")

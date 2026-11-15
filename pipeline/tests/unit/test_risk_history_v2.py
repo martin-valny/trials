@@ -136,4 +136,6 @@ def test_load_monthly_reads_snapshot_from_filename(tmp_path: Path) -> None:
     ).write_parquet(d / "2024-01-31.parquet")
     out = load_monthly(tmp_path)
     assert out["snapshot_date"].to_list() == [date(2024, 1, 31)]
+    # only the columns the history features read are kept
+    assert "last_update_posted_date" not in out.columns
     assert load_monthly(tmp_path / "nope").height == 0

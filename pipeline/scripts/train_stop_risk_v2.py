@@ -42,8 +42,9 @@ import numpy as np
 import polars as pl
 import sklearn
 
-from trialradar.aact.adapter import Snapshot, load_snapshot
-from trialradar.config import load_config
+from trialradar.aact.adapter import Snapshot, load_snapshot, mesh_categories
+from trialradar.config import AreaConfig, load_config
+from trialradar.relevance import is_relevant
 from trialradar.risk import artefacts
 from trialradar.risk.artefacts import Card, Comparison, Metrics, RiskArtefactError
 from trialradar.risk.evaluate import metrics
@@ -51,7 +52,7 @@ from trialradar.risk.features import FEATURES, SITE_FEATURES
 from trialradar.risk.features import build as build_v1
 from trialradar.risk.features_v2 import BASELINE_V2, FEATURES_V2, build_v2
 from trialradar.risk.history_v2 import HISTORY_FEATURES, history_features, load_monthly
-from trialradar.risk.model import Ensemble, Recipe, fit, fit_ensemble
+from trialradar.risk.model import BASELINE_FEATURES, Ensemble, Fitted, Recipe, fit, fit_ensemble
 from trialradar.risk.scope import LABELS
 from trialradar.risk.split_v2 import (
     CUTOFF,
@@ -76,9 +77,13 @@ from trialradar.textnorm import Aliases, load_alias_set
 
 _REPO = Path(__file__).resolve().parents[2]
 MARGIN = 0.02
-LEAK_DROP = 0.03
+LEAK_DROP = 0.03  # v1's site-leak flag threshold (scripts/train_stop_risk.py, config/risk/README)
 PARITY_MAX = 0.01
-_EPS = 1e-9  # "+0.02" must hold for 0.73 vs 0.71 despite binary floating point
+# AUC moves in steps of about 1/(2PN) (P stopped, N completed held-out trials: ~1e-8 at the
+# expected test size), far above float rounding (~1e-16), so a 1e-9 tolerance only lets an
+# exact "+0.02" (e.g. 0.73 vs 0.71, which floats compute as 0.0199999...) pass and never
+# admits a real shortfall. Brier gets no tolerance on purpose: "no worse" is compared exactly.
+_EPS = 1e-9
 V1_COMMITTED_START = date(2020, 1, 1)
 SPONSOR_FEATURES = frozenset({"sponsor_prior_n", "sponsor_prior_rate", "sponsor_few_prior"})
 NO_SITES: tuple[str, ...] = tuple(f for f in FEATURES_V2 if f not in SITE_FEATURES)
@@ -96,6 +101,13 @@ EXCLUDED_V2: tuple[str, ...] = (
     "site recruitment status",
     "start year (trial age replaces it)",
     "edit history (research comparison only, not shipped)",
+)
+SCOPE_PHASES = ["PHASE1", "PHASE1/PHASE2", "PHASE2", "PHASE2/PHASE3", "PHASE3"]
+IN_AREA_RULE = (
+    "held-out trials whose conditions or direct MeSH condition terms in the C snapshot match "
+    "an area synonym as a whole phrase (relevance.is_relevant); AACT keeps no keywords, so "
+    "keyword-only matches the live filter would make are missed. A null mesh_type (older "
+    "archives, direct terms only) counts as a direct term."
 )
 SPONSOR_RULE = (
     "sponsor counts for a row at snapshot S: trials in S's own table that are COMPLETED or "
@@ -186,13 +198,15 @@ def collect(panel: Path, aliases: Aliases) -> Collected:
         raise ValueError(f"need at least two snapshots in {panel}, found {len(dates)}")
     final_date = dates[-1]
     cut_date = min(dates[:-1], key=lambda d: abs((d - CUTOFF).days))
+    # Older archives lack mesh_type: every snapshot takes the final snapshot's categories.
+    categories = mesh_categories(panel, final_date)
     summaries: list[SnapshotSummary] = []
     labelled: frozenset[str] = frozenset()
     v2_parts: list[pl.DataFrame] = []
     v1_cut: pl.DataFrame | None = None
     sponsor_table: pl.DataFrame | None = None
     for d in [final_date, *dates[:-1]]:  # outcome first: its labels decide what to keep
-        snap = load_snapshot(panel, d, aliases=aliases)
+        snap = load_snapshot(panel, d, aliases=aliases, categories=categories)
         s = summarize(snap)
         summaries.append(s)
         if d == final_date:
@@ -292,36 +306,48 @@ def _beats(a: Metrics, b: Metrics) -> bool:
     return a.auc - b.auc >= MARGIN - _EPS and a.brier <= b.brier
 
 
+def pick_recipe(baseline: Metrics, boosted: Metrics, name: str) -> tuple[Recipe, str]:
+    """v1's rule: boosted only if its AUC is at least 0.02 above the baseline's and its Brier
+    is no worse; otherwise the baseline. Returns (recipe, reason quoting the numbers)."""
+    assert baseline.auc is not None and boosted.auc is not None
+    if _beats(boosted, baseline):
+        return "boosted", (
+            f"{name} boosted AUC {boosted.auc:.3f} beats {name} baseline {baseline.auc:.3f} by "
+            f"at least {MARGIN} and Brier {boosted.brier:.4f} is no worse than "
+            f"{baseline.brier:.4f}"
+        )
+    return "baseline", (
+        f"{name} boosted (AUC {boosted.auc:.3f}, Brier {boosted.brier:.4f}) does not beat "
+        f"{name} baseline (AUC {baseline.auc:.3f}, Brier {baseline.brier:.4f}) by {MARGIN} AUC "
+        f"with no worse Brier, so the {name} baseline is the {name} model"
+    )
+
+
+def parity_result(parity: dict[str, float] | None) -> tuple[bool, str]:
+    """(passes, text). Every non-exempt FEATURES_V2 feature needs a share of at most 0.01; the
+    exempt set is SPONSOR_FEATURES (spec 6.4), never the file's own list."""
+    if parity is None:
+        return False, "parity not run"
+    required = [f for f in FEATURES_V2 if f not in SPONSOR_FEATURES]
+    if missing := [f for f in required if f not in parity]:
+        return False, f"parity missing {', '.join(missing)}"
+    if failing := [f for f in required if parity[f] > PARITY_MAX]:
+        return False, f"parity fails on {', '.join(failing)} (above {PARITY_MAX:.0%} mismatch)"
+    return True, f"parity passes (no shippable feature above {PARITY_MAX:.0%} mismatch)"
+
+
 def decide(
-    v2_baseline: Metrics,
-    v2: Metrics,
-    v1_recipe: Metrics,
-    parity: dict[str, float] | None,
-    *,
-    exempt: frozenset[str] = SPONSOR_FEATURES,
+    v2_baseline: Metrics, v2: Metrics, v1_recipe: Metrics, parity: dict[str, float] | None
 ) -> Decision:
     """The frozen shipping bar (spec 7.3), on each ensemble's main fit.
 
     Within v2, boosted is the v2 model only if its AUC is at least 0.02 above v2-baseline and
     its Brier no worse. v2 replaces v1 only if that model's AUC is at least 0.02 above
-    v1-recipe, its Brier no worse, and parity passes (every non-exempt mismatch share at most
-    0.01; no parity result means it has not passed)."""
-    assert v2.auc is not None and v2_baseline.auc is not None and v1_recipe.auc is not None
-    if _beats(v2, v2_baseline):
-        recipe: Recipe = "boosted"
-        recipe_reason = (
-            f"boosted AUC {v2.auc:.3f} beats v2-baseline {v2_baseline.auc:.3f} by at least "
-            f"{MARGIN} and Brier {v2.brier:.4f} is no worse than {v2_baseline.brier:.4f}"
-        )
-    else:
-        recipe = "baseline"
-        recipe_reason = (
-            f"boosted (AUC {v2.auc:.3f}, Brier {v2.brier:.4f}) does not beat v2-baseline "
-            f"(AUC {v2_baseline.auc:.3f}, Brier {v2_baseline.brier:.4f}) by {MARGIN} AUC with "
-            "no worse Brier, so the v2 baseline is the v2 model"
-        )
+    `v1_recipe` (the v1-recipe model v1's own rule picked), its Brier no worse, and parity
+    passes (``parity_result``)."""
+    recipe, recipe_reason = pick_recipe(v2_baseline, v2, "v2")
     chosen = v2 if recipe == "boosted" else v2_baseline
-    assert chosen.auc is not None
+    assert chosen.auc is not None and v1_recipe.auc is not None
     accuracy = _beats(chosen, v1_recipe)
     head = (
         f"v2 {recipe} AUC {chosen.auc:.3f}, Brier {chosen.brier:.4f} vs v1-recipe AUC "
@@ -329,26 +355,68 @@ def decide(
         + ("at least" if accuracy else "not")
         + f" {MARGIN} AUC better with no worse Brier"
     )
-    if parity is None:
-        parity_ok, parity_text = False, "parity not run"
-    else:
-        failing = sorted(f for f, v in parity.items() if f not in exempt and v > PARITY_MAX)
-        parity_ok = not failing
-        parity_text = (
-            f"parity passes (no shippable feature above {PARITY_MAX:.0%} mismatch)"
-            if parity_ok
-            else f"parity fails on {', '.join(failing)} (above {PARITY_MAX:.0%} mismatch)"
-        )
+    parity_ok, parity_text = parity_result(parity)
     ships = accuracy and parity_ok
     reason = f"{head}; {parity_text}; " + ("v2 replaces v1" if ships else "v1 stays live")
     return Decision(recipe, recipe_reason, ships, reason)
 
 
-def read_parity(path: Path) -> tuple[dict[str, float], frozenset[str]]:
-    """{feature: mismatch share} and the exempt feature list from the parity JSON."""
+def read_parity(path: Path) -> dict[str, float]:
+    """{feature: mismatch share} from the parity JSON. Its "exempt" list is ignored (the
+    exempt set is fixed in code); a share that is not a finite number >= 0 is an error."""
     raw = json.loads(path.read_text())
-    exempt = frozenset(str(f) for f in raw.pop("exempt", []))
-    return {str(k): float(v) for k, v in raw.items()}, exempt
+    if not isinstance(raw, dict):
+        raise TypeError(f"{path}: expected a JSON object of feature -> mismatch share")
+    out: dict[str, float] = {}
+    for k, v in raw.items():
+        if k == "exempt":
+            continue
+        if isinstance(v, bool) or not isinstance(v, int | float) or not math.isfinite(v) or v < 0:
+            raise ValueError(f"{path}: mismatch share for {k!r} must be a number >= 0, got {v!r}")
+        out[str(k)] = float(v)
+    return out
+
+
+def in_area_ids(panel: Path, snap_date: date, ids: Iterable[str], cfg: AreaConfig) -> set[str]:
+    """Held-out trials in the configured area at `snap_date` (see IN_AREA_RULE), with
+    ``relevance.is_relevant`` applied to the conditions and direct MeSH terms the panel keeps."""
+    keep = list(ids)
+    name = f"{snap_date.isoformat()}.parquet"
+    cond = pl.read_parquet(panel / "conditions" / name, columns=["nct_id", "name"])
+    mesh = pl.read_parquet(
+        panel / "browse_conditions" / name, columns=["nct_id", "mesh_term", "mesh_type"]
+    ).filter(
+        pl.col("mesh_type").is_null() | (pl.col("mesh_type").str.to_lowercase() != "mesh-ancestor")
+    )
+    texts: dict[str, tuple[list[str], list[str]]] = {n: ([], []) for n in keep}
+    for n, t in cond.filter(pl.col("nct_id").is_in(keep)).iter_rows():
+        if t:
+            texts[n][0].append(t)
+    for n, t, _ in mesh.filter(pl.col("nct_id").is_in(keep)).iter_rows():
+        if t:
+            texts[n][1].append(t)
+    return {
+        n
+        for n, (conds, terms) in texts.items()
+        if is_relevant(
+            {
+                "protocolSection": {"conditionsModule": {"conditions": conds}},
+                "derivedSection": {
+                    "conditionBrowseModule": {"meshes": [{"term": t} for t in terms]}
+                },
+            },
+            cfg,
+        )
+    }
+
+
+def all_null(frame: pl.DataFrame, cols: Sequence[str]) -> list[str]:
+    """Feature columns with no value at all in `frame` (HistGradientBoosting cannot bin them)."""
+    return [
+        c
+        for c in cols
+        if frame[c].null_count() == frame.height or frame[c].cast(pl.Float64).is_nan().all()
+    ]
 
 
 # --- reporting -----------------------------------------------------------------------------
@@ -380,12 +448,18 @@ def calibration_by_age(
 
 
 def age_mix(train: pl.DataFrame) -> dict[str, int]:
-    """Training rows by age band ("age <12" ...) and training trials by start year ("start 2019")."""
+    """Training rows by age band ("age <12" ... ">=72", "age unknown") plus training trials by
+    start year ("start 2019", "start unknown"), the start date read from each trial's latest
+    row."""
     mix: dict[str, int] = {}
     for a in train["age_months"].to_list():
         key = f"age {_band(a) or 'unknown'}"
         mix[key] = mix.get(key, 0) + 1
-    starts = train.group_by("nct_id").agg(pl.col("start_date").max())
+    starts = (
+        train.sort("snapshot_date")
+        .group_by("nct_id", maintain_order=True)
+        .agg(pl.col("start_date").last())
+    )
     for d in starts["start_date"].to_list():
         key = f"start {d.year if d is not None else 'unknown'}"
         mix[key] = mix.get(key, 0) + 1
@@ -424,6 +498,13 @@ def _v1_committed(v1_dir: Path, v1_test: pl.DataFrame, y: np.ndarray) -> Metrics
     return _metrics(y[mask], p)
 
 
+def _subset_metrics(y: np.ndarray, p: np.ndarray, mask: np.ndarray) -> Metrics | None:
+    """Metrics on the masked rows, None unless both outcomes occur there (as v1)."""
+    if not mask.any() or len(np.unique(y[mask])) < 2:
+        return None
+    return _metrics(y[mask], p[mask])
+
+
 def _single_class(*ys: np.ndarray) -> bool:
     return any(len(y) == 0 or len(np.unique(y)) < 2 for y in ys)
 
@@ -449,18 +530,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     wtr, gtr = train["weight"].to_numpy(), train["nct_id"].to_numpy()
     cols = list(FEATURES_V2)
-    xtr, xte = _matrix(train, cols), _matrix(test, cols)
     kw: dict[str, Any] = {"sample_weight": wtr, "groups": gtr, "baseline_features": BASELINE_V2}
 
-    ens_base = fit_ensemble("baseline", xtr, ytr, cols, n_boot=args.n_boot, **kw)
-    ens_boost = fit_ensemble("boosted", xtr, ytr, cols, n_boot=args.n_boot, **kw)
-    p_base, _, _ = ens_base.predict(xte)
-    p_boost, _, _ = ens_boost.predict(xte)
-    # Research arms: only the main fit is compared (it is fit_ensemble's main, same seed).
-    nosite = fit("boosted", _matrix(train, NO_SITES), ytr, NO_SITES, explain=False, **kw)
-    p_nosite = nosite.predict_proba(_matrix(test, NO_SITES))
-
     monthly = load_monthly(args.panel)
+    coverage = (
+        [monthly["snapshot_date"].min().isoformat(), monthly["snapshot_date"].max().isoformat()]  # type: ignore[union-attr]
+        if monthly.height
+        else None
+    )
 
     def hist(frame: pl.DataFrame, monthly: pl.DataFrame) -> pl.DataFrame:
         keys = frame.select("nct_id", pl.col("snapshot_date").alias("as_of"))
@@ -474,33 +551,64 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     train_h, test_h = hist(train, monthly), hist(test, monthly)
     del monthly
+    v1_train, v1_test = v1_frames(col)
+
+    # No imputation: a feature with no value at all in an arm's training rows stops the run.
+    for arm, frame, arm_cols in (
+        ("v2", train, cols),
+        ("v2 + history", train_h, WITH_HISTORY),
+        ("v1-recipe", v1_train, FEATURES),
+        ("shipped refit", refit, cols),
+    ):
+        if empty := all_null(frame, arm_cols):
+            print(
+                f"{arm}: feature(s) with no value in training: {', '.join(empty)}", file=sys.stderr
+            )
+            return 2
+
+    xtr, xte = _matrix(train, cols), _matrix(test, cols)
+    ens_base = fit_ensemble("baseline", xtr, ytr, cols, n_boot=args.n_boot, **kw)
+    ens_boost = fit_ensemble("boosted", xtr, ytr, cols, n_boot=args.n_boot, **kw)
+    p_base, _, _ = ens_base.predict(xte)
+    p_boost, _, _ = ens_boost.predict(xte)
+    # Research arms: only the main fit is compared (it is fit_ensemble's main, same seed).
+    nosite = fit("boosted", _matrix(train, NO_SITES), ytr, NO_SITES, explain=False, **kw)
+    p_nosite = nosite.predict_proba(_matrix(test, NO_SITES))
     hist_fit = fit(
         "boosted", _matrix(train_h, WITH_HISTORY), ytr, WITH_HISTORY, explain=False, **kw
     )
     p_hist = hist_fit.predict_proba(_matrix(test_h, WITH_HISTORY))
 
-    v1_train, v1_test = v1_frames(col)
+    # v1-recipe: v1's own two fits on the same trials (one row each, unweighted, same seed),
+    # chosen by v1's own rule; the chosen one is the "before".
     max_start = v1_train["start_year"].max()
-    v1_fit = fit(
-        "boosted",
-        _matrix(v1_train, FEATURES),
-        v1_train["label"].to_numpy(),
+    xv1, yv1 = _matrix(v1_train, FEATURES), v1_train["label"].to_numpy()
+    xv1_test = _matrix(
+        v1_test.with_columns(pl.col("start_year").clip(upper_bound=max_start)),  # type: ignore[arg-type]
         FEATURES,
-        explain=False,
     )
-    v1_test_clamped = v1_test.with_columns(
-        pl.col("start_year").clip(upper_bound=max_start)  # type: ignore[arg-type]
-    )
-    p_v1 = v1_fit.predict_proba(_matrix(v1_test_clamped, FEATURES))
+    v1_fits: dict[Recipe, Fitted] = {
+        r: fit(r, xv1, yv1, FEATURES, explain=False, baseline_features=BASELINE_FEATURES)
+        for r in ("baseline", "boosted")
+    }
+    p_v1s = {r: f.predict_proba(xv1_test) for r, f in v1_fits.items()}
+    m_v1s = {r: _metrics(yte, p) for r, p in p_v1s.items()}
+    v1_recipe, v1_reason = pick_recipe(m_v1s["baseline"], m_v1s["boosted"], "v1-recipe")
+    m_v1, p_v1 = m_v1s[v1_recipe], p_v1s[v1_recipe]
 
     m_base, m_boost = _metrics(yte, p_base), _metrics(yte, p_boost)
-    m_nosite, m_hist, m_v1 = _metrics(yte, p_nosite), _metrics(yte, p_hist), _metrics(yte, p_v1)
+    m_nosite, m_hist = _metrics(yte, p_nosite), _metrics(yte, p_hist)
     m_v1c = _v1_committed(args.v1_dir, v1_test, yte)
 
-    parity, exempt = read_parity(args.parity) if args.parity else (None, SPONSOR_FEATURES)
-    d = decide(m_base, m_boost, m_v1, parity, exempt=exempt)
+    parity = read_parity(args.parity) if args.parity else None
+    d = decide(m_base, m_boost, m_v1, parity)
     eval_ens: Ensemble = ens_boost if d.recipe == "boosted" else ens_base
     p_eval = p_boost if d.recipe == "boosted" else p_base
+
+    area = in_area_ids(args.panel, col.cut.date, test["nct_id"].to_list(), cfg)
+    mask = test["nct_id"].is_in(list(area)).to_numpy()
+    in_area_m = _subset_metrics(yte, p_eval, mask)
+    v1_in_area = _subset_metrics(yte, p_v1, mask)
 
     shipped_ens = fit_ensemble(
         d.recipe,
@@ -549,10 +657,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         shipped_reason=d.recipe_reason,
         filter={
             "study_type": "INTERVENTIONAL",
-            "phases": ["PHASE1", "PHASE2", "PHASE3"],
+            "phases": SCOPE_PHASES,
             "intervention_types": ["DRUG", "BIOLOGICAL"],
             "statuses": {"COMPLETED": 0, "TERMINATED": 1},
             "scope": "running at the snapshot and not finished in all but status",
+            "condition_categories": "condition categories from the final snapshot's MeSH "
+            f"({col.final.date.isoformat()}), applied to every snapshot",
+            "in_area": IN_AREA_RULE,
+            "v1_recipe_in_area": None if v1_in_area is None else v1_in_area.model_dump(),
             "snapshots": [x.isoformat() for x in dates],
             "cutoff_snapshot": col.cut.date.isoformat(),
             "outcome_snapshot": col.final.date.isoformat(),
@@ -563,12 +675,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             "sponsor_counts": SPONSOR_RULE,
             "v1_recipe": V1_RECIPE_RULE,
             "v1_recipe_max_start_year": max_start,
+            "v1_recipe_chosen": v1_recipe,
+            "v1_recipe_reason": v1_reason,
+            "v1_recipe_baseline": m_v1s["baseline"].model_dump(),
+            "v1_recipe_boosted": m_v1s["boosted"].model_dump(),
             "v1_committed": (
                 f"shipped v1 model from {args.v1_dir.name}/ on held-out trials started "
                 f"{V1_COMMITTED_START.isoformat()} or later, C records, its own start-year clamp"
             ),
-            "parity_exempt": sorted(exempt),
+            "parity_exempt": sorted(SPONSOR_FEATURES),
             "history_window_months": 12,
+            "history_coverage": coverage,
         },
         features=cols,
         excluded=list(EXCLUDED_V2),
@@ -578,7 +695,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         refit_end=col.final.date.isoformat(),
         metrics=artefacts.MetricSet(
-            baseline=m_base, boosted=m_boost, boosted_no_sites=m_nosite, in_area=None
+            baseline=m_base, boosted=m_boost, boosted_no_sites=m_nosite, in_area=in_area_m
         ),
         site_leak_flag=bool(m_boost.auc - m_nosite.auc > LEAK_DROP),
         typical=artefacts.typical_rates(refit_trials),
@@ -593,7 +710,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"snapshots {first.isoformat()}–{last.isoformat()}, processed {last.isoformat()}"
         ),
     )
-    heldout = test.select(*FEATURES_V2, "label")
+    heldout = test.select(*FEATURES_V2, "label").with_columns(pl.Series("in_area", mask))
     artefacts.save(args.out, eval_ens, shipped_ens, card, heldout, col.sponsor_table)
     labels_src = _REPO / "config" / "risk" / "factor_labels.csv"
     if not (args.out / "factor_labels.csv").exists() and labels_src.exists():
@@ -605,12 +722,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     print(f"  train {n_train_trials} trials, {train.height} rows; dropped {col.train_drops}")
     print(f"  test {test.height} trials; excluded {col.exclusions}")
-    print(f"  v1-recipe         {_fmt(m_v1)}")
+    print(f"  v1-recipe         {_fmt(m_v1)}  ({v1_reason})")
+    other: Recipe = "boosted" if v1_recipe == "baseline" else "baseline"
+    print(f"  v1-recipe {other:<8}{_fmt(m_v1s[other])}")
+    print(f"  v1-recipe in area {_fmt(v1_in_area)}")
     print(f"  v1-committed      {_fmt(m_v1c)}")
     print(f"  v2-baseline       {_fmt(m_base)}")
     print(f"  v2 (boosted)      {_fmt(m_boost)}")
     print(f"  v2 no sites       {_fmt(m_nosite)}  leak flag: {card.site_leak_flag}")
     print(f"  v2 + history      {_fmt(m_hist)}")
+    print(f"  v2 in area        {_fmt(in_area_m)}")
     print(f"  v2 model: {d.recipe} ({d.recipe_reason})")
     print(f"  v2 ships: {d.v2_ships} ({d.reason})")
     return 0

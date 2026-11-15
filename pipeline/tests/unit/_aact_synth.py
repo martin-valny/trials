@@ -13,6 +13,11 @@ Special trials:
 - ``VANISHED``: ended before the cutoff, missing from the outcome snapshot.
 - ``DEVICE``: a device-only trial (never in scope).
 Every trial lists one more site in the outcome snapshot than before it ("post-cutoff edit").
+
+In area (multiple sclerosis): condition "Multiple Sclerosis" (last digit 0 or 5) or a direct
+MeSH term (last digit 3); last digit 7 has it only as a MeSH ancestor (outcome snapshot only),
+which does not count. browse_conditions.mesh_type is null except in the outcome snapshot, as
+in pre-2023 archives, and only the outcome snapshot lists ancestors.
 """
 
 from __future__ import annotations
@@ -186,10 +191,22 @@ def snapshot_rows(ts: list[SynthTrial], d: date) -> dict[str, list[dict[str, Any
         rows["design_outcomes"].extend(
             {"nct_id": n, "outcome_type": "primary"} for _ in range(t.n_primary)
         )
-        rows["conditions"].append({"nct_id": n, "name": "Asthma" if int(n[-1]) % 2 else "Cancer"})
-        rows["browse_conditions"].append(
-            {"nct_id": n, "mesh_term": "Neoplasms", "mesh_type": "mesh-list"}
+        digit = int(n[-1])
+        condition = (
+            "Multiple Sclerosis" if digit in (0, 5) else ("Asthma" if digit % 2 else "Cancer")
         )
+        rows["conditions"].append({"nct_id": n, "name": condition})
+        # Only the outcome snapshot (a post-2023 archive) says mesh vs ancestor; older ones null.
+        kind = (lambda k: k) if d == FINAL else (lambda k: None)
+        direct = ["Neoplasms"] + (["Multiple Sclerosis"] if digit == 3 else [])
+        rows["browse_conditions"].extend(
+            {"nct_id": n, "mesh_term": t, "mesh_type": kind("mesh-list")} for t in direct
+        )
+        if d == FINAL:  # ancestors exist only where mesh_type does
+            ancestors = ["Nervous System Diseases"] + (["Multiple Sclerosis"] if digit == 7 else [])
+            rows["browse_conditions"].extend(
+                {"nct_id": n, "mesh_term": t, "mesh_type": "mesh-ancestor"} for t in ancestors
+            )
         rows["sponsors"].append(
             {"nct_id": n, "name": t.sponsor, "lead_or_collaborator": "lead",
              "agency_class": "INDUSTRY" if t.industry else "OTHER"}
