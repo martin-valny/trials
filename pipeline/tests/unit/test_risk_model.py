@@ -205,8 +205,6 @@ def test_group_bootstrap_keeps_trials_whole() -> None:
 
 
 def test_grouped_calibration_folds_keep_trials_together() -> None:
-    from sklearn.model_selection import StratifiedGroupKFold
-
     from trialradar.risk import model
 
     x, y = make_data(300)
@@ -229,7 +227,6 @@ def test_grouped_calibration_folds_keep_trials_together() -> None:
         assert len(set(groups[test])) * 3 == len(test)
     seen = np.concatenate([t for _, t in captured[0]])  # type: ignore[attr-defined]
     assert sorted(seen) == list(range(300))
-    assert StratifiedGroupKFold  # imported for parity with the implementation
 
 
 def test_custom_baseline_features() -> None:
@@ -242,3 +239,28 @@ def test_custom_baseline_features() -> None:
     np.testing.assert_allclose(m.predict_proba(x), m.predict_proba(x2))
     with pytest.raises(ValueError, match="nope"):
         fit("baseline", x, y, COLUMNS, baseline_features=("nope",))
+
+
+def test_bootstrap_copies_of_a_trial_share_a_calibration_fold() -> None:
+    from trialradar.risk import model
+
+    x, y = make_data(600)
+    groups = np.repeat(np.arange(200), 3)
+    captured: list[tuple[np.ndarray, list[tuple[np.ndarray, np.ndarray]]]] = []
+    real_cal = model.CalibratedClassifierCV
+
+    class Spy(real_cal):  # type: ignore[valid-type, misc]
+        def fit(self, X, yy, **kw):  # type: ignore[no-untyped-def]
+            captured.append((X[:, 7].copy(), self.cv))
+            return super().fit(X, yy, **kw)
+
+    x[:, 7] = groups
+    model.CalibratedClassifierCV = Spy
+    try:
+        fit_ensemble("boosted", x, y, COLUMNS, n_boot=3, groups=groups)
+    finally:
+        model.CalibratedClassifierCV = real_cal
+    assert len(captured) == 4
+    for marker, folds in captured[1:]:
+        for train, test in folds:
+            assert not set(marker[train]) & set(marker[test])

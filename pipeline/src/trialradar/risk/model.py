@@ -94,6 +94,8 @@ def fit(
         folds = list(
             StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed).split(X, y, groups)
         )
+        if any(len(np.unique(y[test])) < 2 for _, test in folds):
+            raise ValueError("a grouped calibration fold lacks one of the classes; too few trials")
     est = CalibratedClassifierCV(
         HistGradientBoostingClassifier(random_state=seed),
         method="isotonic",
@@ -167,8 +169,8 @@ def fit_ensemble(
         else:
             drawn = rng.integers(0, len(uniq), len(uniq))
             rows = np.concatenate([by_group[g] for g in drawn])
-            # a drawn-twice trial is two distinct groups, so calibration folds keep each copy whole
-            g_rows = np.repeat(np.arange(len(drawn)), [len(by_group[g]) for g in drawn])
+            # original trial ids: every copy of a drawn-twice trial stays in one calibration fold
+            g_rows = groups[rows]
         w = None if sample_weight is None else sample_weight[rows]
         members.append(
             fit(
