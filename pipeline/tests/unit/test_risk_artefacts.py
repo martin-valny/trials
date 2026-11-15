@@ -162,3 +162,33 @@ def test_factor_labels_reject_unknown_kind_and_missing_text(tmp_path: Path) -> N
     bad.write_text("feature,up,down\nn_sites,Many,Few\n")
     with pytest.raises(artefacts.RiskArtefactError, match="expected columns"):
         artefacts.read_factor_labels(bad)
+
+
+def test_load_reads_optional_v2_card(tmp_path: Path) -> None:
+    """<dir>/v2/card.json (committed when v2 does not ship) is optional; when present it must
+    validate as a v2 card, like every other artefact."""
+    _save(tmp_path, _card())
+    assert artefacts.load(tmp_path).v2_card is None
+    (tmp_path / "v2").mkdir()
+    v2 = _card(feature_set="v2", max_start_year=None, data_source="AACT")
+    (tmp_path / "v2" / "card.json").write_text(v2.model_dump_json())
+    assert artefacts.load(tmp_path).v2_card == v2
+    (tmp_path / "v2" / "card.json").write_text("{}")
+    with pytest.raises(RiskArtefactError, match="v2/card.json"):
+        artefacts.load(tmp_path)
+    (tmp_path / "v2" / "card.json").write_text(_card().model_dump_json())  # a v1 card
+    with pytest.raises(RiskArtefactError, match="v2/card.json"):
+        artefacts.load(tmp_path)
+
+
+def test_comparison_v1_published_auc_is_optional() -> None:
+    m = _metrics()
+    base = {
+        "cutoff": "2021-12-01", "outcome_snapshot": "2026-01-01", "v1_recipe": m,
+        "v1_committed": None, "v2_baseline": m, "v2": m, "v2_history": m, "v2_no_sites": m,
+        "test_exclusions": {}, "train_trials": 1, "train_rows": 1, "train_age_mix": {},
+        "calibration_by_age": {}, "parity": None, "v2_ships": False, "reason": "r",
+    }  # fmt: skip
+    assert artefacts.Comparison.model_validate(base).v1_published_auc is None
+    c = artefacts.Comparison.model_validate({**base, "v1_published_auc": 0.682})
+    assert c.v1_published_auc == 0.682

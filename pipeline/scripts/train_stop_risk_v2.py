@@ -480,11 +480,24 @@ def _matrix(frame: pl.DataFrame, cols: Sequence[str]) -> np.ndarray:
 # --- main ----------------------------------------------------------------------------------
 
 
-def _v1_committed(v1_dir: Path, v1_test: pl.DataFrame, y: np.ndarray) -> Metrics | None:
+def _load_v1(v1_dir: Path) -> artefacts.Loaded | None:
     try:
-        loaded = artefacts.load(v1_dir)
+        return artefacts.load(v1_dir)
     except RiskArtefactError as exc:
         print(f"v1-committed not scored: {exc}", file=sys.stderr)
+        return None
+
+
+def v1_published_auc(card: Card) -> float | None:
+    """The committed v1 card's published test AUC: that of the kind it shipped."""
+    shipped: Metrics = getattr(card.metrics, card.shipped)
+    return shipped.auc
+
+
+def _v1_committed(
+    loaded: artefacts.Loaded | None, v1_test: pl.DataFrame, y: np.ndarray
+) -> Metrics | None:
+    if loaded is None:
         return None
     mask = (v1_test["start_date"] >= V1_COMMITTED_START).fill_null(False).to_numpy()
     if not mask.any():
@@ -598,7 +611,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     m_base, m_boost = _metrics(yte, p_base), _metrics(yte, p_boost)
     m_nosite, m_hist = _metrics(yte, p_nosite), _metrics(yte, p_hist)
-    m_v1c = _v1_committed(args.v1_dir, v1_test, yte)
+    v1_loaded = _load_v1(args.v1_dir)
+    m_v1c = _v1_committed(v1_loaded, v1_test, yte)
 
     parity = read_parity(args.parity) if args.parity else None
     d = decide(m_base, m_boost, m_v1, parity)
@@ -648,6 +662,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parity=parity,
         v2_ships=d.v2_ships,
         reason=d.reason,
+        v1_published_auc=None if v1_loaded is None else v1_published_auc(v1_loaded.card),
     )
     card = Card(
         version=f"stop-risk-v2-{today:%Y%m%d}",

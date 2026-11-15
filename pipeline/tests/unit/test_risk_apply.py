@@ -516,3 +516,54 @@ def test_unknown_feature_set_raises(loaded: artefacts.Loaded, cfg: AreaConfig) -
     odd = replace(loaded, card=loaded.card.model_copy(update={"feature_set": "v3"}))
     with pytest.raises(ValueError, match="feature set"):
         _doc(odd, cfg, [_trial("NCT00000001", "RECRUITING", ["PHASE2"])])
+
+
+def _comparison_card(loaded: artefacts.Loaded) -> artefacts.Card:
+    """A v2 card (as the trainer writes it when v2 does not ship) with a comparison."""
+    c = _v2_loaded(None, loaded).card
+    assert c.comparison is not None
+    comparison = c.comparison.model_copy(update={"v2_ships": False, "v1_published_auc": 0.682})
+    return c.model_copy(
+        update={"comparison": comparison, "data_source": "AACT snapshots; ClinicalTrials.gov"}
+    )
+
+
+def test_v2_card_block_carries_data_source(loaded: artefacts.Loaded, cfg: AreaConfig) -> None:
+    v2 = _v2_loaded(None, loaded)
+    v2 = replace_card(v2, v2.card.model_copy(update={"data_source": "AACT 2026-01-01"}))
+    doc = build_risk_doc(*_golden_inputs()[:1], {}, cfg, v2, None, DAY)
+    assert doc["model"]["data_source"] == "AACT 2026-01-01"
+    assert doc["model"]["feature_set"] == "v2"
+
+
+def test_v1_live_with_unshipped_v2_card_shows_its_comparison(
+    loaded: artefacts.Loaded, cfg: AreaConfig, tmp_path: Any
+) -> None:
+    """v2 did not ship: v1 scores as before, and the committed v2/card.json lends Methods its
+    comparison and data source (feature_set stays absent: the live model is v1)."""
+    import json
+    import shutil
+
+    shutil.copytree(FIXTURE, tmp_path / "risk")
+    v2_card = _comparison_card(loaded)
+    (tmp_path / "risk" / "v2").mkdir()
+    (tmp_path / "risk" / "v2" / "card.json").write_text(v2_card.model_dump_json(indent=2))
+    with_v2 = artefacts.load(tmp_path / "risk")
+    assert with_v2.v2_card == v2_card
+
+    tables, fig = _golden_inputs()
+    doc = json.loads(json.dumps(build_risk_doc(tables, {}, cfg, with_v2, fig, DAY)))
+    model = doc.pop("model")
+    golden = json.loads(V1_GOLDEN.read_text())
+    golden_model = golden.pop("model")
+    _assert_same_doc(doc, golden)  # scores and words unchanged
+    assert "feature_set" not in model
+    assert model.pop("comparison") == v2_card.comparison.model_dump(mode="json")  # type: ignore[union-attr]
+    assert model.pop("data_source") == "AACT snapshots; ClinicalTrials.gov"
+    _assert_same_doc(model, golden_model)
+
+
+def replace_card(loaded: artefacts.Loaded, card: artefacts.Card) -> artefacts.Loaded:
+    from dataclasses import replace
+
+    return replace(loaded, card=card)

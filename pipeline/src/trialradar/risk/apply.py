@@ -49,6 +49,10 @@ def _r(v: float) -> float:
 
 def _model_block(loaded: Loaded, cfg: AreaConfig) -> dict[str, Any]:
     c = loaded.card
+    comparison, data_source = c.comparison, c.data_source
+    if c.feature_set == "v1" and loaded.v2_card is not None:
+        comparison = comparison or loaded.v2_card.comparison
+        data_source = data_source or loaded.v2_card.data_source
     return {
         "version": c.version,
         "trained_on": c.trained_on.isoformat(),
@@ -64,10 +68,12 @@ def _model_block(loaded: Loaded, cfg: AreaConfig) -> dict[str, Any]:
         "n_train": c.n_train,
         "n_test": c.n_test,
         "per_trial": cfg.risk.per_trial,
-        # Additive: a v1 card's block is unchanged; a v2 card names its feature set and
-        # carries its before/after comparison.
+        # Additive: a v1 card's block is unchanged; a v2 card names its feature set. The
+        # before/after comparison and data source come from the live card, or, with v1 live,
+        # from a committed v2/card.json (v2 trained but not shipped; spec 7.3).
         **({"feature_set": c.feature_set} if c.feature_set != "v1" else {}),
-        **({"comparison": c.comparison.model_dump(mode="json")} if c.comparison else {}),
+        **({"comparison": comparison.model_dump(mode="json")} if comparison else {}),
+        **({"data_source": data_source} if data_source else {}),
     }
 
 

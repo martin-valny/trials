@@ -233,6 +233,10 @@ def test_end_to_end_writes_artefacts(trained: Path) -> None:
     assert c is not None
     assert c.cutoff == CUTOFF_SNAP.isoformat() and c.outcome_snapshot == FINAL.isoformat()
     assert c.v1_committed is not None  # synthetic trials started 2020+ are running at C
+    # the published v1 AUC Methods quotes: the committed v1 card's shipped kind
+    v1_card = artefacts.Card.model_validate_json((V1_DIR / "card.json").read_text())
+    assert c.v1_published_auc == getattr(v1_card.metrics, v1_card.shipped).auc
+    assert c.v1_published_auc is not None
     # the planted planned-enrollment signal is visible to v2 only (v1 has no enrollment)
     assert c.v2.auc is not None and c.v1_recipe.auc is not None
     assert c.v2.auc > c.v1_recipe.auc + 0.1

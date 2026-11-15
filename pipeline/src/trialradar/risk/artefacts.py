@@ -108,6 +108,7 @@ class Comparison(_Strict):
     parity: dict[str, float] | None
     v2_ships: bool
     reason: str
+    v1_published_auc: float | None = None  # the v1 card's shipped-kind test AUC (Methods)
 
 
 class Card(_Strict):
@@ -140,6 +141,9 @@ class Loaded:
     card: Card
     sponsor_table: pl.DataFrame
     factor_labels: dict[str, FactorLabel]
+    v2_card: Card | None = None
+    """``<dir>/v2/card.json`` when committed (v2 trained but not shipped): its comparison and
+    data source are shown beside the live v1 model."""
 
 
 def feature_matrix(frame: pl.DataFrame, columns: Sequence[str] = FEATURES) -> np.ndarray:
@@ -274,12 +278,26 @@ def load(dir: Path) -> Loaded:
         raise RiskArtefactError(f"card version {card.version} != model version {got}")
     table = pl.read_csv(dir / "sponsor_history.csv", schema_overrides={"as_of": pl.Date})
     return Loaded(
+        v2_card=_v2_card(dir / "v2" / "card.json"),
         eval=blob["eval"],
         shipped=blob["shipped"],
         card=card,
         sponsor_table=table,
         factor_labels=read_factor_labels(dir / "factor_labels.csv"),
     )
+
+
+def _v2_card(path: Path) -> Card | None:
+    """The optional unshipped v2 card; present but invalid (or not a v2 card) is an error."""
+    if not path.is_file():
+        return None
+    try:
+        card = Card.model_validate_json(path.read_text())
+    except (ValidationError, ValueError) as exc:
+        raise RiskArtefactError(f"v2/card.json is invalid: {exc}") from exc
+    if card.feature_set != "v2":
+        raise RiskArtefactError(f"v2/card.json has feature_set {card.feature_set!r}, not 'v2'")
+    return card
 
 
 def _phase_label(phases: list[str]) -> str:
