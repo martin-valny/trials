@@ -19,7 +19,13 @@ from pathlib import Path
 import polars as pl
 
 from trialradar.aact.archive import extract_table, list_archives, read_api_key
-from trialradar.aact.panel import TABLES, fold_archive, monthly_studies, pick_quarterly
+from trialradar.aact.panel import (
+    TABLES,
+    fold_archive,
+    monthly_studies,
+    panel_scope_ids,
+    pick_quarterly,
+)
 
 HOME = Path.home()
 DEFAULT_CREDENTIALS = HOME / "Desktop/event-signal-backtest/data/raw/aact/.credentials"
@@ -57,12 +63,19 @@ def main() -> None:
     panel = args.cache / "panel"
     panel.mkdir(parents=True, exist_ok=True)
     picked = pick_quarterly(list_archives(args.cache, api_key))
+    if not picked:
+        raise SystemExit("no AACT archives picked: listing empty or no archive near any quarter")
+    if (picked[-1].snap_date.year, picked[-1].snap_date.month) != (2026, 1):
+        raise SystemExit(
+            f"outcome archive missing: latest pick is {picked[-1].snap_date}, expected 2026-01"
+        )
     order = [picked[-1], *picked[:-1]]  # outcome archive first
     ids = _load_ids(panel)
     for arch in order:
         if args.only and arch.snap_date != args.only:
             continue
         if _done(panel, arch.snap_date):
+            ids |= panel_scope_ids(panel, arch.snap_date)  # self-heal ids after a crash
             print(f"{arch.snap_date} skip (done)")
             continue
         t0 = time.monotonic()
@@ -79,6 +92,7 @@ def main() -> None:
             for t in TABLES
         }
         print(f"{arch.snap_date} {time.monotonic() - t0:.0f}s rows={rows} ids={len(ids)}")
+    _save_ids(panel, ids)
     print(f"in-scope ids (union): {len(ids)}")
     if args.monthly_src.exists():
         monthly_studies(args.monthly_src, panel, ids)

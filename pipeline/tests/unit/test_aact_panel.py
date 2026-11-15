@@ -12,6 +12,7 @@ from trialradar.aact.panel import (
     fold_archive,
     in_scope_ids,
     monthly_studies,
+    panel_scope_ids,
     pick_quarterly,
 )
 
@@ -25,14 +26,16 @@ def test_pick_quarterly_nearest_and_skips_gaps(caplog: pytest.LogCaptureFixture)
         _arch(1, "2018-12-02"),
         _arch(2, "2019-02-20"),  # 9 days before Mar 1
         _arch(3, "2019-03-15"),  # 14 days after: farther, loses to 2
-        _arch(4, "2019-07-05"),  # 34 days from Jun 1 / 58 from Sep 1: gap, skipped
-        _arch(5, "2022-09-12"),
+        _arch(4, "2019-07-15"),  # 44 days from Jun 1 / 48 from Sep 1: gap, skipped
+        _arch(8, "2022-08-31"),  # 1 day from Sep 1: wins over 2022-09-29 (28 days)
+        _arch(9, "2023-03-30"),  # 29 days from Mar 1: within 31, picked
+        _arch(5, "2022-09-29"),
         _arch(6, "2026-01-05"),
         _arch(7, "2026-01-28"),
     ]
     with caplog.at_level("WARNING"):
         picked = pick_quarterly(archs)
-    assert [a.id for a in picked] == [1, 2, 5, 7]
+    assert [a.id for a in picked] == [1, 2, 8, 9, 7]
     assert "2019-06-01" in caplog.text  # skipped quarter reported
 
 
@@ -136,3 +139,27 @@ def test_monthly_studies_filters_ids(tmp_path: Path) -> None:
     monthly_studies(src, panel, {"NCT00000001"})
     out = pl.read_parquet(panel / "studies_monthly" / "2019-01-01.parquet")
     assert out["nct_id"].to_list() == ["NCT00000001"]
+
+
+def test_picks_sep_2022_gap_within_31_days() -> None:
+    assert [a.id for a in pick_quarterly([_arch(5, "2022-09-29")])] == [5]
+
+
+def test_panel_scope_ids_recomputes_from_panel(tmp_path: Path) -> None:
+    raw, panel = tmp_path / "raw", tmp_path / "panel"
+    _write_raw(raw)
+    own = fold_archive(raw, date(2021, 12, 1), panel, None)
+    assert panel_scope_ids(panel, date(2021, 12, 1)) == own == {"NCT00000001"}
+
+
+def test_fold_archive_missing_table_file_is_empty_with_warning(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    raw, panel = tmp_path / "raw", tmp_path / "panel"
+    _write_raw(raw)
+    (raw / "facilities.txt").unlink()
+    with caplog.at_level("WARNING"):
+        fold_archive(raw, date(2021, 12, 1), panel, None)
+    assert "facilities" in caplog.text
+    fac = pl.read_parquet(panel / "facilities" / "2021-12-01.parquet")
+    assert fac.height == 0 and "snapshot_date" in fac.columns
