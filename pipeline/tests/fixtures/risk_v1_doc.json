@@ -1,0 +1,741 @@
+{
+ "generated_for": "2026-03-31",
+ "model": {
+  "version": "stop-risk-fixture",
+  "trained_on": "2026-01-01",
+  "shipped": "boosted",
+  "shipped_reason": "synthetic fixture model",
+  "metrics": {
+   "baseline": {
+    "auc": 0.7,
+    "brier": 0.15,
+    "n": 100,
+    "positives": 20,
+    "calibration": [
+     {
+      "p": 0.1,
+      "observed": 0.1,
+      "n": 20
+     },
+     {
+      "p": 0.2,
+      "observed": 0.2,
+      "n": 20
+     },
+     {
+      "p": 0.30000000000000004,
+      "observed": 0.30000000000000004,
+      "n": 20
+     },
+     {
+      "p": 0.4,
+      "observed": 0.4,
+      "n": 20
+     },
+     {
+      "p": 0.5,
+      "observed": 0.5,
+      "n": 20
+     }
+    ]
+   },
+   "boosted": {
+    "auc": 0.7,
+    "brier": 0.15,
+    "n": 100,
+    "positives": 20,
+    "calibration": [
+     {
+      "p": 0.1,
+      "observed": 0.1,
+      "n": 20
+     },
+     {
+      "p": 0.2,
+      "observed": 0.2,
+      "n": 20
+     },
+     {
+      "p": 0.30000000000000004,
+      "observed": 0.30000000000000004,
+      "n": 20
+     },
+     {
+      "p": 0.4,
+      "observed": 0.4,
+      "n": 20
+     },
+     {
+      "p": 0.5,
+      "observed": 0.5,
+      "n": 20
+     }
+    ]
+   },
+   "boosted_no_sites": {
+    "auc": 0.7,
+    "brier": 0.15,
+    "n": 100,
+    "positives": 20,
+    "calibration": [
+     {
+      "p": 0.1,
+      "observed": 0.1,
+      "n": 20
+     },
+     {
+      "p": 0.2,
+      "observed": 0.2,
+      "n": 20
+     },
+     {
+      "p": 0.30000000000000004,
+      "observed": 0.30000000000000004,
+      "n": 20
+     },
+     {
+      "p": 0.4,
+      "observed": 0.4,
+      "n": 20
+     },
+     {
+      "p": 0.5,
+      "observed": 0.5,
+      "n": 20
+     }
+    ]
+   },
+   "in_area": null
+  },
+  "site_leak_flag": false,
+  "split": {
+   "train_end": "2015-12-31",
+   "test": [
+    "2016-01-01",
+    "2019-12-31"
+   ]
+  },
+  "refit_end": "2019-12-31",
+  "features": [
+   "phase_1",
+   "phase_2",
+   "phase_3",
+   "randomized",
+   "masking_level",
+   "n_arms",
+   "placebo_arm",
+   "sponsor_industry",
+   "sponsor_academic",
+   "n_collaborators",
+   "n_sites",
+   "n_countries",
+   "multi_region",
+   "n_primary_outcomes",
+   "n_secondary_outcomes",
+   "n_conditions",
+   "cat_infections",
+   "cat_neoplasms",
+   "cat_musculoskeletal_diseases",
+   "cat_digestive_system_diseases",
+   "cat_stomatognathic_diseases",
+   "cat_respiratory_tract_diseases",
+   "cat_otorhinolaryngologic_diseases",
+   "cat_nervous_system_diseases",
+   "cat_eye_diseases",
+   "cat_urogenital_diseases",
+   "cat_female_urogenital_diseases_and_pregnancy_complications",
+   "cat_pregnancy_complications",
+   "cat_cardiovascular_diseases",
+   "cat_hemic_and_lymphatic_diseases",
+   "cat_congenital_hereditary_and_neonatal_diseases_and_abnormalities",
+   "cat_skin_and_connective_tissue_diseases",
+   "cat_nutritional_and_metabolic_diseases",
+   "cat_endocrine_system_diseases",
+   "cat_immune_system_diseases",
+   "cat_disorders_of_environmental_origin",
+   "cat_pathological_conditions_signs_and_symptoms",
+   "cat_occupational_diseases",
+   "cat_chemically_induced_disorders",
+   "cat_wounds_and_injuries",
+   "cat_mental_disorders",
+   "n_categories",
+   "has_biological",
+   "n_experimental_interventions",
+   "start_year",
+   "sponsor_prior_n",
+   "sponsor_prior_rate",
+   "sponsor_few_prior"
+  ],
+  "excluded": [
+   "enrollment (actual enrollment is small because a trial stopped)",
+   "why_stopped",
+   "results posted",
+   "actual completion dates and durations",
+   "last update date",
+   "site recruitment status",
+   "overall status"
+  ],
+  "typical": [
+   {
+    "phase": "all",
+    "sponsor": "all",
+    "rate": 0.16,
+    "n": 1000
+   },
+   {
+    "phase": "phase 1",
+    "sponsor": "all",
+    "rate": 0.14,
+    "n": 1000
+   },
+   {
+    "phase": "phase 2",
+    "sponsor": "all",
+    "rate": 0.2,
+    "n": 1000
+   },
+   {
+    "phase": "phase 3",
+    "sponsor": "all",
+    "rate": 0.18,
+    "n": 1000
+   }
+  ],
+  "n_train": 300,
+  "n_test": 100,
+  "per_trial": true
+ },
+ "not_scored": {
+  "NCT10000002": "phase not 1–3"
+ },
+ "trials": {
+  "NCT00000001": {
+   "drug": "x",
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000002": {
+   "drug": "x",
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 1",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000003": {
+   "drug": "x",
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 2",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000004": {
+   "drug": "x",
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.025,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 3",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000005": {
+   "drug": "x",
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.025,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 4",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000006": {
+   "drug": "x",
+   "p": 0.244,
+   "lo": 0.24,
+   "hi": 0.248,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000007": {
+   "drug": "x",
+   "p": 0.244,
+   "lo": 0.238,
+   "hi": 0.251,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000008": {
+   "drug": "x",
+   "p": 0.441,
+   "lo": 0.275,
+   "hi": 0.608,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 7",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000009": {
+   "p": 0.464,
+   "lo": 0.407,
+   "hi": 0.521,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 8",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Randomized allocation",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000010": {
+   "p": 0.545,
+   "lo": 0.526,
+   "hi": 0.565,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 9",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000011": {
+   "p": 0.661,
+   "lo": 0.642,
+   "hi": 0.68,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 10",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000012": {
+   "p": 0.661,
+   "lo": 0.642,
+   "hi": 0.68,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 11",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000013": {
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000014": {
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 1",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000015": {
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 2",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000016": {
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.025,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 3",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000017": {
+   "p": 0.0,
+   "lo": 0.0,
+   "hi": 0.025,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 4",
+     "dir": "down"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000018": {
+   "p": 0.244,
+   "lo": 0.24,
+   "hi": 0.248,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000019": {
+   "p": 0.244,
+   "lo": 0.238,
+   "hi": 0.251,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    },
+    {
+     "label": "Sponsor's earlier trials: 2 of 10 stopped early (registry)",
+     "dir": "down"
+    }
+   ]
+  },
+  "NCT00000020": {
+   "p": 0.441,
+   "lo": 0.275,
+   "hi": 0.608,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 7",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000021": {
+   "p": 0.464,
+   "lo": 0.407,
+   "hi": 0.521,
+   "typical": 0.2,
+   "basis": "phase 2 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 8",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Randomized allocation",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000022": {
+   "p": 0.545,
+   "lo": 0.526,
+   "hi": 0.565,
+   "typical": 0.18,
+   "basis": "phase 3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 9",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000023": {
+   "p": 0.661,
+   "lo": 0.642,
+   "hi": 0.68,
+   "typical": 0.16,
+   "basis": "phase 1-3 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 10",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  },
+  "NCT00000024": {
+   "p": 0.661,
+   "lo": 0.642,
+   "hi": 0.68,
+   "typical": 0.14,
+   "basis": "phase 1 drug trials",
+   "factors": [
+    {
+     "label": "Secondary outcomes: 11",
+     "dir": "up"
+    },
+    {
+     "label": "Primary outcomes: 0",
+     "dir": "down"
+    },
+    {
+     "label": "Drug interventions: 1",
+     "dir": "up"
+    }
+   ]
+  }
+ },
+ "targets": {
+  "fcrn": {
+   "all": {
+    "n": 8,
+    "median": 0.0,
+    "typical": 0.17
+   },
+   "by_disease": {
+    "MG": {
+     "n": 8,
+     "median": 0.0,
+     "typical": 0.17
+    }
+   }
+  }
+ }
+}

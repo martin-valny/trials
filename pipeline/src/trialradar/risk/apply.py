@@ -5,6 +5,9 @@ model's scope (phase 1-3, a drug or biologic) are scored; the rest of the runnin
 are listed with a reason. A running trial that is finished in all but status (active, not
 recruiting with an actual primary completion date before the day, or results posted) is
 listed, not scored. Probabilities are rounded to 3 decimals.
+
+A v1 card scores from start-time features (``features.build``); a v2 card from point-in-time
+features as of the run day (``build_v2(..., as_of=day)``).
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ from trialradar.explorer.extras import StudyExtras
 from trialradar.risk import artefacts, features
 from trialradar.risk.artefacts import Loaded, typical_rate
 from trialradar.risk.explain import contributions, top_factors
+from trialradar.risk.features_v2 import FEATURES_V2, build_v2, feature_matrix_v2
 from trialradar.risk.scope import RUNNING, finished_reason, has_drug, in_phase_scope
 from trialradar.risk.sponsors import live_counts
 from trialradar.tables import Tables
@@ -60,6 +64,10 @@ def _model_block(loaded: Loaded, cfg: AreaConfig) -> dict[str, Any]:
         "n_train": c.n_train,
         "n_test": c.n_test,
         "per_trial": cfg.risk.per_trial,
+        # Additive: a v1 card's block is unchanged; a v2 card names its feature set and
+        # carries its before/after comparison.
+        **({"feature_set": c.feature_set} if c.feature_set != "v1" else {}),
+        **({"comparison": c.comparison.model_dump(mode="json")} if c.comparison else {}),
     }
 
 
@@ -182,14 +190,23 @@ def build_risk_doc(
     scored: dict[str, dict[str, Any]] = {}
     if rows:
         fields = {n: x.risk for n, x in extras.items() if x.risk is not None}
-        frame = features.build(
-            tables,
-            fields,
-            live_counts(tables.trial, loaded.sponsor_table),
-            max_start_year=loaded.card.max_start_year,
-        ).filter(pl.col("nct_id").is_in(list(rows)))
+        counts = live_counts(tables.trial, loaded.sponsor_table)
         ens = loaded.shipped
-        x = artefacts.feature_matrix(frame)
+        if loaded.card.feature_set == "v2":
+            if tuple(ens.columns) != FEATURES_V2:
+                raise ValueError("v2 card's shipped model does not use the FEATURES_V2 columns")
+            # Rows are matched to trials by nct_id below; sorted so the order is fixed.
+            frame = (
+                build_v2(tables, fields, counts, as_of=day)
+                .filter(pl.col("nct_id").is_in(list(rows)))
+                .sort("nct_id")
+            )
+            x = feature_matrix_v2(frame)
+        else:
+            frame = features.build(
+                tables, fields, counts, max_start_year=loaded.card.max_start_year
+            ).filter(pl.col("nct_id").is_in(list(rows)))
+            x = artefacts.feature_matrix(frame)
         p, lo, hi = ens.predict(x)
         distinct = len({_r(v) for v in p})
         if len(p) >= DEGENERATE_MIN_TRIALS and distinct < DEGENERATE_MIN_DISTINCT:

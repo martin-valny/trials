@@ -361,3 +361,149 @@ def test_effectively_finished_running_trials_not_scored(
         "NCT00000004": "results posted",
     }
     assert set(doc["trials"]) == {"NCT00000002", "NCT00000003", "NCT00000005"}
+
+
+# --- v1 golden and v2 feature set ------------------------------------------------------------
+
+V1_GOLDEN = REPO_ROOT / "pipeline" / "tests" / "fixtures" / "risk_v1_doc.json"
+
+
+def _golden_inputs() -> tuple[Tables, dict[str, Any]]:
+    trials = [
+        *_many_running(),
+        _trial("NCT10000001", "COMPLETED", ["PHASE2"]),
+        _trial("NCT10000002", "RECRUITING", ["PHASE4"]),
+    ]
+    base = _tables(trials)
+    outcomes = pl.DataFrame(
+        [
+            {"nct_id": t["nct_id"], "kind": "secondary", "measure": f"m{k}"}
+            for i, t in enumerate(trials)
+            for k in range(i % 12)
+        ],
+        schema=SCHEMAS["outcome"],
+    )
+    tables = Tables(
+        base.trial, base.condition, base.intervention, base.sponsor, base.site, outcomes
+    )
+    fig = {
+        "rows": [
+            {
+                "id": "fcrn",
+                "marks": [{"n": f"NCT{i:08d}", "dz": ["MG"], "drug": "x"} for i in range(1, 9)],
+            }
+        ]
+    }
+    return tables, fig
+
+
+def _assert_same_doc(got: Any, want: Any, path: str = "") -> None:
+    """Equal, with estimates compared to 0.002 (float noise across platforms)."""
+    if isinstance(want, dict):
+        assert isinstance(got, dict) and list(got) == list(want), path
+        for k in want:
+            _assert_same_doc(got[k], want[k], f"{path}.{k}")
+    elif isinstance(want, list):
+        assert isinstance(got, list) and len(got) == len(want), path
+        for i, (g, w) in enumerate(zip(got, want, strict=True)):
+            _assert_same_doc(g, w, f"{path}[{i}]")
+    elif isinstance(want, float) and not isinstance(want, bool):
+        assert got == pytest.approx(want, abs=0.002), path
+    else:
+        assert got == want, path
+
+
+def test_v1_card_unchanged(loaded: artefacts.Loaded, cfg: AreaConfig) -> None:
+    """With a v1 card the document is exactly what the v1 run wrote before v2 existed (golden
+    recorded from the pre-v2 code): no feature_set or comparison keys, same scores and words."""
+    import json
+
+    tables, fig = _golden_inputs()
+    doc = json.loads(json.dumps(build_risk_doc(tables, {}, cfg, loaded, fig, DAY)))
+    assert loaded.card.feature_set == "v1"
+    assert "feature_set" not in doc["model"] and "comparison" not in doc["model"]
+    _assert_same_doc(doc, json.loads(V1_GOLDEN.read_text()))
+
+
+def _v2_loaded(tmp_path: Any, loaded: artefacts.Loaded) -> artefacts.Loaded:
+    """A tiny boosted v2 ensemble on FEATURES_V2 (random data; age and outcomes carry signal),
+    with a v2 card that carries a comparison block."""
+    import numpy as np
+    from threadpoolctl import threadpool_limits
+
+    from trialradar.risk.features_v2 import FEATURES_V2
+    from trialradar.risk.model import fit_ensemble
+
+    rng = np.random.default_rng(1)
+    n, cols = 400, list(FEATURES_V2)
+    x = rng.normal(size=(n, len(cols)))
+    x[:, cols.index("age_months")] = rng.uniform(0, 120, n)
+    x[:, cols.index("n_secondary_outcomes")] = rng.integers(0, 12, n)
+    score = 0.04 * x[:, cols.index("age_months")] + 0.3 * x[:, cols.index("n_secondary_outcomes")]
+    y = (rng.random(n) < 1 / (1 + np.exp(-(score - 4.0)))).astype(int)
+    with threadpool_limits(1):
+        ens = fit_ensemble("boosted", x, y, cols, n_boot=2)
+    m = loaded.card.metrics.boosted
+    comparison = artefacts.Comparison(
+        cutoff="2021-12-01",
+        outcome_snapshot="2026-01-01",
+        v1_recipe=m,
+        v1_committed=None,
+        v2_baseline=m,
+        v2=m,
+        v2_history=m,
+        v2_no_sites=m,
+        test_exclusions={"running": 1},
+        train_trials=10,
+        train_rows=20,
+        train_age_mix={"<12": 5},
+        calibration_by_age={"<12": []},
+        parity={"n_sites": 0.0},
+        v2_ships=True,
+        reason="test",
+    )
+    card = loaded.card.model_copy(
+        update={
+            "feature_set": "v2",
+            "features": cols,
+            "max_start_year": None,
+            "comparison": comparison,
+        }
+    )
+    return artefacts.Loaded(ens, ens, card, loaded.sponsor_table, loaded.factor_labels)
+
+
+def test_v2_card_uses_build_v2(
+    loaded: artefacts.Loaded, cfg: AreaConfig, tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A v2 card scores from build_v2(..., as_of=day), joined back to trials by nct_id even when
+    build_v2 returns its rows in another order; the model block gains feature_set/comparison."""
+    from trialradar.risk import apply, features_v2
+    from trialradar.risk.features_v2 import feature_matrix_v2
+    from trialradar.risk.sponsors import live_counts
+
+    v2 = _v2_loaded(tmp_path, loaded)
+    tables, fig = _golden_inputs()
+    seen: list[date] = []
+
+    def reversed_build_v2(*args: Any, **kw: Any) -> pl.DataFrame:
+        seen.append(kw["as_of"])
+        return features_v2.build_v2(*args, **kw).reverse()
+
+    monkeypatch.setattr(apply, "build_v2", reversed_build_v2)
+    doc = build_risk_doc(tables, {}, cfg, v2, fig, DAY)
+    assert seen == [DAY]
+    assert doc["model"]["feature_set"] == "v2"
+    assert doc["model"]["comparison"]["parity"] == {"n_sites": 0.0}
+    assert doc["model"]["features"] == list(features_v2.FEATURES_V2)
+
+    monkeypatch.undo()
+    frame = features_v2.build_v2(
+        tables, {}, live_counts(tables.trial, v2.sponsor_table), as_of=DAY
+    ).sort("nct_id")
+    p, _, _ = v2.shipped.predict(feature_matrix_v2(frame))
+    want = dict(zip(frame["nct_id"].to_list(), (round(float(v), 3) for v in p), strict=True))
+    got = {n: t["p"] for n, t in doc["trials"].items()}
+    assert got == {n: want[n] for n in got}
+    assert len(set(got.values())) >= 3  # the trials differ, so a misalignment would show
+    assert list(doc["trials"]) == sorted(doc["trials"])

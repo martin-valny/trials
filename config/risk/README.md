@@ -104,6 +104,12 @@ a label can never contradict the value (no "Few sites (112)").
 | `phase` | `phase_1..3` | `text` with the trial's own phases, e.g. "Phase 3 trial" (never "Not a phase 2 trial") |
 | `category` | `cat_*` condition categories | `yes` when present; an absent category is never a factor |
 | `sponsor` | the three sponsor features | fixed copy built in code: "Sponsor's earlier trials: k of n stopped early (registry)" |
+| `log_count` | `log_enrollment` (v2) | `text` with exp(value) - 1 rounded, e.g. "Planned enrollment: 120" |
+| `months` | v2 month counts | `text` with the value rounded (half up) to whole months, e.g. "Running for 27 months" |
+| `months_nonzero` | `pcd_overdue_months` (v2) | as `months`, but never shown when it rounds to 0 months |
+
+v2's `status_*` flags use `category`: a status is shown only when it holds. Month and status
+wording stays neutral (no "delayed", "stale" or "overdue").
 
 A missing value is never described, and a label already given for a trial is not repeated. The
 category labels read "Registry files it under: ...", because they follow the registry's MeSH

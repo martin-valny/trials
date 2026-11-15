@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
@@ -18,7 +19,9 @@ SPONSOR_FEATURES = ("sponsor_prior_n", "sponsor_prior_rate", "sponsor_few_prior"
 HIDDEN_FEATURES = frozenset({"start_year"})
 
 
-KINDS = frozenset({"count", "binary", "phase", "category", "sponsor"})
+KINDS = frozenset(
+    {"count", "binary", "phase", "category", "sponsor", "log_count", "months", "months_nonzero"}
+)
 PHASE_FEATURES = ("phase_1", "phase_2", "phase_3")
 
 
@@ -32,6 +35,10 @@ class FactorLabel:
           phase     `text` with `{value}` replaced by the trial's phases ("Phase {value} trial")
           category  `yes` when the trial is filed under the category; never shown when absent
           sponsor   fixed copy built in code (the three sponsor features give one factor)
+          log_count `text` with `{value}` replaced by exp(value) - 1, rounded ("Planned
+                    enrollment: {value}" from log_enrollment)
+          months    `text` with `{value}` replaced by the value rounded to whole months
+          months_nonzero  as months, but never shown when the whole months are 0
     """
 
     feature: str
@@ -64,6 +71,11 @@ def contributions(ens: Ensemble, X: np.ndarray) -> np.ndarray:
     return out
 
 
+def _whole(v: float) -> int:
+    """Rounded half up (2.5 -> 3), not to even."""
+    return math.floor(v + 0.5)
+
+
 def _fmt(v: float) -> str:
     return str(int(v)) if float(v).is_integer() else f"{v:.2f}"
 
@@ -94,6 +106,13 @@ def _label(
         return None  # a missing value has no words; never describe it
     if lab.kind == "count":
         return lab.text.replace("{value}", _fmt(value)) or None
+    if lab.kind == "log_count":
+        return lab.text.replace("{value}", str(_whole(math.expm1(value)))) or None
+    if lab.kind in ("months", "months_nonzero"):
+        months = _whole(value)
+        if months == 0 and lab.kind == "months_nonzero":
+            return None
+        return lab.text.replace("{value}", str(months)) or None
     if lab.kind == "category":
         return (lab.yes or None) if value > 0 else None  # absence of a category is not a reason
     if lab.kind == "binary":

@@ -16,6 +16,7 @@ from trialradar.risk import artefacts
 from trialradar.risk.artefacts import Card, Metrics, RiskArtefactError
 from trialradar.risk.explain import HIDDEN_FEATURES
 from trialradar.risk.features import FEATURES
+from trialradar.risk.features_v2 import FEATURES_V2, NEW_FEATURES
 from trialradar.risk.model import fit_ensemble
 
 REPO = Path(__file__).resolve().parents[3]
@@ -83,7 +84,7 @@ def test_save_load_roundtrip(tmp_path: Path) -> None:
     np.testing.assert_allclose(loaded.eval.predict(x)[0], loaded.shipped.predict(x)[0])
     assert loaded.sponsor_table["sponsor"].to_list() == ["A"]
     assert loaded.sponsor_table["as_of"].dtype == pl.Date
-    assert set(loaded.factor_labels) == set(FEATURES) - HIDDEN_FEATURES
+    assert set(loaded.factor_labels) == (set(FEATURES) | set(NEW_FEATURES)) - HIDDEN_FEATURES
 
 
 def test_load_rejects_minor_version_mismatch(tmp_path: Path) -> None:
@@ -140,8 +141,10 @@ def test_typical_rate_split_rule() -> None:
 
 def test_factor_labels_cover_features() -> None:
     labels = artefacts.read_factor_labels(REPO / "config" / "risk" / "factor_labels.csv")
-    shown = [f for f in FEATURES if f not in HIDDEN_FEATURES]
+    shown = [f for f in (*FEATURES, *FEATURES_V2) if f not in HIDDEN_FEATURES]
     assert set(shown) <= set(labels)
+    # A status that does not hold is never a reason (shown only when 1).
+    assert all(labels[f].kind == "category" for f in shown if f.startswith("status_"))
     assert not HIDDEN_FEATURES & set(labels)  # a label for a hidden feature would be dead copy
     assert all(labels[f].kind == "category" for f in shown if f.startswith("cat_"))
     assert all(labels[f].kind == "sponsor" for f in shown if f.startswith("sponsor_prior"))

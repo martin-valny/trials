@@ -224,7 +224,14 @@ def read_factor_labels(path: Path) -> dict[str, FactorLabel]:
             raise RiskArtefactError(
                 f"{path.name}: expected columns feature,kind,yes,no,text ({exc})"
             ) from exc
-        need = {"count": ("text",), "phase": ("text",), "binary": ("yes", "no")}
+        need = {
+            "count": ("text",),
+            "phase": ("text",),
+            "binary": ("yes", "no"),
+            "log_count": ("text",),
+            "months": ("text",),
+            "months_nonzero": ("text",),
+        }
         if lab.kind not in KINDS:
             raise RiskArtefactError(f"{path.name}: {lab.feature} has unknown kind {lab.kind!r}")
         if lab.kind == "category":
