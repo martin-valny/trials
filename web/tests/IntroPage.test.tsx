@@ -100,7 +100,7 @@ test("each view has its own key", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  expect(screen.getByText("moved on")).toBeInTheDocument();
+  expect(screen.getByText("advanced")).toBeInTheDocument();
   fireEvent.mouseEnter(within(list).getByRole("link", { name: /Treatments/ }));
   expect(screen.getByText("More than one approach")).toBeInTheDocument();
   expect(screen.getByText("Broad immunomodulators")).toBeInTheDocument();
@@ -159,8 +159,8 @@ test("the Pipeline caption says Orange in dark and Red in light", async () => {
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
   fireEvent.mouseEnter(within(list).getByRole("link", { name: /Pipeline/ }));
-  expect(screen.getByText(/Orange ones moved on to the next phase/)).toBeInTheDocument();
-  expect(screen.queryByText(/Red ones moved on/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Orange ones advanced to a later phase/)).toBeInTheDocument();
+  expect(screen.queryByText(/Red ones advanced/)).not.toBeInTheDocument();
 });
 
 test("the approaches note is a line of the key, not canvas text", async () => {

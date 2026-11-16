@@ -53,8 +53,8 @@ function useSettled<T>(value: T, ms: number): T {
 function summary(shown: ExplorerTrial[]): string {
   const n = (o: ExplorerTrial["outcome"]) => shown.filter((t) => t.outcome === o).length;
   return (
-    `${shown.length} trials; ${n("succeeded")} succeeded, ${n("stopped")} stopped early, ` +
-    `${n("running")} still running, ${n("completed_unknown")} finished without a known result.`
+    `${shown.length} trials; ${n("succeeded")} advanced, ${n("stopped")} stopped early, ` +
+    `${n("running")} still running, ${n("completed_unknown")} finished, not advanced.`
   );
 }
 

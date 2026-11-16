@@ -114,7 +114,7 @@ describe("explorer display text", () => {
   test("outcome labels", () => {
     expect(outcomeLabel("succeeded")).toBe("Advanced to next phase");
     expect(outcomeLabel("stopped")).toBe("Stopped early");
-    expect(outcomeLabel("completed_unknown")).toBe("Finished, no follow-on");
+    expect(outcomeLabel("completed_unknown")).toBe("Finished, not advanced");
     expect(outcomeLabel("running")).toBe("Still running");
     expect(outcomeLabel("unknown")).toBe("Status unknown");
   });

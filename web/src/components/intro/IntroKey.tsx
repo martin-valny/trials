@@ -1,7 +1,7 @@
 import type { IntroFile } from "../../types";
 import { AP_TOKEN, APPROACH_NOTE, undatedCount, undatedNote, type ViewKey } from "../../lib/intro";
 
-const OUTCOME: [string, string][] = [["adv", "moved on"], ["run", "running"], ["stop", "stopped"], ["fin", "finished"], ["unk", "status unknown"]];
+const OUTCOME: [string, string][] = [["adv", "advanced"], ["run", "running"], ["stop", "stopped"], ["fin", "finished, not advanced"], ["unk", "status unknown"]];
 
 function Item({ cls, style, children }: { cls: string; style?: React.CSSProperties; children: string }) {
   return <span><i className={`ik-${cls}`} style={style} aria-hidden="true" />{children}</span>;

@@ -223,7 +223,7 @@ test("the screen-reader summary waits for typing to pause", async () => {
   renderAt(<Explore />, "/explore");
   const box = await screen.findByLabelText("Find a trial");
   const n = explorer.trials.length;
-  const live = screen.getByText(new RegExp(`^${n} trials; \\d+ succeeded`));
+  const live = screen.getByText(new RegExp(`^${n} trials; \\d+ advanced`));
   expect(live).toHaveAttribute("aria-live", "polite");
   await userEvent.type(box, "zzz");
   // Right after typing the announcement has not changed yet ...

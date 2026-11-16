@@ -37,9 +37,9 @@ test("methods has map section with success definition", async () => {
   expect(screen.getByText(/10,000 shuffles/)).toBeInTheDocument();
   expect(screen.getByText(/below 0\.025/)).toBeInTheDocument();
   expect(screen.getByText(/at least one drug in an experimental arm/)).toBeInTheDocument();
-  expect(screen.getByText(/Phase 3-only and Phase 4 trials get no success label/)).toBeInTheDocument();
+  expect(screen.getByText(/Phase 3-only and Phase 4 trials get no advanced label/)).toBeInTheDocument();
   expect(
-    screen.getByText("Recently completed trials have had little time to move on, so recent years undercount success."),
+    screen.getByText("Recently completed trials have had little time to advance, so recent years undercount advances."),
   ).toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/successful/i);
   expect(scroll).toHaveBeenCalled();
@@ -211,7 +211,7 @@ test("Methods explains what approved means for a disease", async () => {
   expect(text).toMatch(/fetched on 9 November 2026/);
   expect(text).toMatch(/by its name in ChEMBL’s disease vocabulary/);
   expect(text).toMatch(/“Approved use” column is a trial phase/);
-  expect(text).toMatch(/no success rate/);
+  expect(text).toMatch(/no advance rate/);
   expect(text).toMatch(/combination kits/i);
 });
 

@@ -131,8 +131,8 @@ function cutRule(g: GraphFile): string | null {
   if (!c) return null;
   if (!c.all_succeeded) return "only drugs credited with a success, those in the most trials first";
   return c.min_trials === null
-    ? "every drug credited with a success"
-    : `every drug credited with a success and those in ${c.min_trials} or more trials`;
+    ? "every drug credited with an advance"
+    : `every drug credited with an advance and those in ${c.min_trials} or more trials`;
 }
 
 /** The canvas caption when the cap left drugs out; null when nothing was left out or the file predates the cap. */

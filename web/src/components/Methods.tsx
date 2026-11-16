@@ -190,14 +190,14 @@ export function Methods() {
             <p>
               A trial &ldquo;advanced to next phase&rdquo; when the drug it tested was later tested in a
               higher phase, in the same disease, in a trial that was not withdrawn. The exact rule is
-              under &ldquo;What counts as success&rdquo; below. Advancing is not approval, and it does not
+              under &ldquo;What counts as advanced&rdquo; below. Advancing is not approval, and it does not
               show the earlier trial met its endpoint.
             </p>
             <p>
               The measure leans against recent trials: a trial that finished recently can&apos;t have advanced yet,
               because the next phase takes years to register. The most recent years therefore show fewer
               advances than they will eventually have, and the figure marks a trial as still running
-              or finished, no follow-on rather than as a failure.
+              or finished, not advanced, rather than as a failure.
             </p>
           </section>
 
@@ -348,7 +348,7 @@ export function Methods() {
             </p>
             <p>
               On a target page, panel e lists the same drugs for each disease next to the furthest phase
-              its trials reached. It shows no success rate, on purpose: approval is not a later-phase
+              its trials reached. It shows no advance rate, on purpose: approval is not a later-phase
               trial, so classes with approved drugs would read as failures, because the Phase 3 trials
               behind an approval have no later trial to advance to.
             </p>
@@ -456,7 +456,7 @@ export function Methods() {
               cladribine) is a Targeted drug. A drug without one carries a kind (for example aHSCT or
               mesenchymal stem cells) written once in a hand-made table, each with its approach. A
               non-drug intervention is sorted by a reviewed list of whole-word phrases, then by its
-              registry intervention type. A trial with no experimental arm is sorted by all its interventions, placebo and usual care aside (its drugs still do not count in the success share). Nothing is guessed from how a name ends; a name nothing sorts
+              registry intervention type. A trial with no experimental arm is sorted by all its interventions, placebo and usual care aside (its drugs still do not count in the advance rate). Nothing is guessed from how a name ends; a name nothing sorts
               is listed as not yet categorised. On the 6 November 2026 snapshot (2,987 trials; a trial counts
               in each approach it is in):
             </p>
@@ -483,10 +483,10 @@ export function Methods() {
               it is never drawn as a molecular target or pathway.
             </p>
             <p>
-              Success keeps its definition (below), so non-drug trials are never in the pool. When a
+              Advanced keeps its definition (below), so non-drug trials are never measured. When a
               trial tested several treatments, it counts in every group it touches, but its advance is
-              counted for the drug that advanced: an aHSCT trial that succeeded because its
-              cyclophosphamide moved to a later phase counts as a success for alkylating agents and
+              counted for the drug that advanced: an aHSCT trial that advanced because its
+              cyclophosphamide went on to a later phase counts as an advance for alkylating agents and
               Targeted drugs, not for Cell &amp; transplant. Panel b&apos;s By mechanism, By modality and By
               approach views all follow this rule; By disease keeps the per-disease rule.
             </p>
@@ -562,13 +562,13 @@ export function Methods() {
               each name once, mechanism-named clusters first.
             </p>
 
-            <h3>What counts as success</h3>
+            <h3>What counts as advanced</h3>
             <p>
-              A trial succeeded when it is a completed trial in Early Phase 1 to Phase 2/3, its
+              A trial advanced when it is a completed trial in Early Phase 1 to Phase 2/3, its
               experimental-arm drug had no Phase 3 or 4 trial in the same disease before it started,
               and it was followed by a later, higher-phase trial of the same drug in the same disease
-              that was not withdrawn. A trial listed under several diseases succeeds only in those
-              where the drug moved on.
+              that was not withdrawn. A trial listed under several diseases advanced only in those
+              where the drug went on to a later phase.
             </p>
             <p>Limits:</p>
             <ul>
@@ -577,48 +577,48 @@ export function Methods() {
               </li>
               <li>
                 Progress in another disease within this area is deliberately not counted: a trial
-                succeeds only where its drug moved on in the same disease.
+                advanced only where its drug went on to a later phase in the same disease.
               </li>
               <li>
                 A later-phase trial does not prove the earlier one met its endpoint.
               </li>
               <li>
-                Phase 3-only and Phase 4 trials get no success label until approval data is added;
-                Phase 2/3 trials can succeed.
+                Phase 3-only and Phase 4 trials get no advanced label until approval data is added;
+                Phase 2/3 trials can advance.
               </li>
               <li>
-                A trial without a drug in an experimental arm cannot succeed by this definition.
+                A trial without a drug in an experimental arm cannot advance by this definition.
               </li>
               <li>
-                Recently completed trials have had little time to move on, so recent years undercount success.
+                Recently completed trials have had little time to advance, so recent years undercount advances.
               </li>
             </ul>
             <p>Start dates given only to the month are compared as if on the first day of that month.</p>
 
             <section id="map-statistic" aria-labelledby="map-statistic-h">
-            <h3 id="map-statistic-h">Do successes cluster?</h3>
+            <h3 id="map-statistic-h">Do advanced trials cluster?</h3>
             <p>
               <Link to="/explore">Similarity map (experimental): trials laid out by how alike they are →</Link>
             </p>
             <p>
-              The comparison uses only finished trials that could succeed: completed, stopped or
-              succeeded trials in Early Phase 1 to Phase 2/3 with at least one drug in an experimental
+              The comparison uses only measured finished trials: completed, stopped or
+              advanced trials in Early Phase 1 to Phase 2/3 with at least one drug in an experimental
               arm. Panel b&apos;s shares and average use the same trials.
             </p>
             <p>
-              The question is whether trials that study similar things succeed together, so the
+              The question is whether trials that study similar things advance together, so the
               neighbours are found on disease, treatment type, molecule and population only; the
               mechanism block shapes the map but is left out here (which mechanisms work is what panel
-              b&apos;s By mechanism view shows). For each trial that succeeded we take its 10 nearest
+              b&apos;s By mechanism view shows). For each trial that advanced we take its 10 nearest
               neighbours among them by what they study (cosine distance). Trials that share any of its drugs are excluded: drugs both place
-              trials and define success, so those neighbours would agree by construction. The share of
-              neighbours that also succeeded, relative to the average, is compared with the same value
-              for 10,000 shuffles of the success labels.
+              trials and define advancing, so those neighbours would agree by construction. The share of
+              neighbours that also advanced, relative to the average, is compared with the same value
+              for 10,000 shuffles of the advanced labels.
             </p>
             <p>
               The p-value is the share of shuffles that reach the observed value (counting the observed
-              one). The map says successes cluster only when it is below 0.025; otherwise it says they
-              cluster no more than chance. With fewer than 30 successes the result is withheld.
+              one). The map says advanced trials cluster only when it is below 0.025; otherwise it says they
+              cluster no more than chance. With fewer than 30 advanced trials the result is withheld.
             </p>
             <p>
               On the 6 November 2026 snapshot this gives a lift of 1.32 (shuffled labels 0.62&ndash;1.41,

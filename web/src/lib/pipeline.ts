@@ -25,7 +25,7 @@ export const MARK_LABEL: Record<MarkState, string> = {
   adv: "Advanced to next phase",
   run: "Still running",
   stop: "Stopped",
-  fin: "Finished, no follow-on",
+  fin: "Finished, not advanced",
   unk: "Status unknown",
 };
 

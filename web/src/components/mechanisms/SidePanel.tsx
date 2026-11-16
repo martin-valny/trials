@@ -127,7 +127,7 @@ export function SidePanel({
         {successDefined && kind.finished > 0 ? (
           <>
             {" "}
-            {fmt(kind.finished)} finished trials that count, {fmt(kind.succeeded)} advanced
+            {fmt(kind.finished)} measured finished trials, {fmt(kind.succeeded)} advanced
             {kind.rate === null ? " (too few to tell)" : ""}.
           </>
         ) : null}
@@ -290,7 +290,7 @@ export function NodePanel({
       ) : null}
       {node.top_level ? (
         <p className="side-muted">
-          A top-level pathway: drawn for orientation, never counted where successes converge.
+          A top-level pathway: drawn for orientation, never counted among pathways shared by drugs that advanced.
         </p>
       ) : null}
       <p className="side-sources">
@@ -320,12 +320,12 @@ export function NodePanel({
         )}{" "}
         {node.finished > 0 ? (
           <>
-            Finished trials that count{narrowed ? " (all trials)" : ""}: {fmt(node.finished)}, {fmt(node.succeeded)} counted
+            Measured finished trials{narrowed ? " (all trials)" : ""}: {fmt(node.finished)}, {fmt(node.succeeded)} counted
             as advanced
             {share === null ? " (too few to tell)" : ` (${Math.round(share * 100)}%)`}.
           </>
         ) : (
-          "No finished trials that count yet."
+          "No measured finished trials yet."
         )}
       </p>
       {trials.length ? (

@@ -357,8 +357,8 @@ describe("intro layouts", () => {
   });
 
   it("caption names the colour that is painted: Red in light, Orange in dark", () => {
-    expect(captionText("pipeline", "light")).toBe("Trials sorted onto their drug target's row and phase. Red ones moved on to the next phase.");
-    expect(captionText("pipeline", "dark")).toBe("Trials sorted onto their drug target's row and phase. Orange ones moved on to the next phase.");
+    expect(captionText("pipeline", "light")).toBe("Trials sorted onto their drug target's row and phase. Red ones advanced to a later phase.");
+    expect(captionText("pipeline", "dark")).toBe("Trials sorted onto their drug target's row and phase. Orange ones advanced to a later phase.");
     expect(captionText("trials", "dark")).toBe(VIEW_TEXT.trials.caption);
   });
 

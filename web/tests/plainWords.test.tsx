@@ -12,7 +12,7 @@ import { WatchlistPage } from "../src/components/watchlist/WatchlistPage";
 import type { ExplorerFile } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
-/** The old words (spec section 8, left column). "Approach", "Approaches" and "Mechanism graph" stay. */
+/** The old words (spec section 8, left column; copy-clarity spec 2026-11-16). "Approach" and "Mechanism graph" stay in body text; the nav says Treatments. */
 const OLD: [string, RegExp][] = [
   ["Succeeded (drug moved to a later phase)", /Succeeded \(drug moved/],
   ["Completed, outcome unknown", /Completed, outcome unknown/],
@@ -38,6 +38,15 @@ const OLD: [string, RegExp][] = [
   ["Stop chance", /Stop chance/],
   ["Not a statement about any sponsor or trial", /Not a statement about any sponsor or trial/i],
   ["No target row", /No target row/],
+  ["moved on", /moved on/i],
+  ["succeeded", /\bsucceeded\b/i],
+  ["success share", /success share/i],
+  ["successes", /successes/i],
+  ["no follow-on", /no follow-on/i],
+  ["without a known result", /without a known result/i],
+  ["that count", /trials that count/i],
+  ["pool trials", /pool trials/i],
+  ["could succeed", /could succeed/i],
 ];
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */
@@ -154,7 +163,7 @@ test("Approaches (targeted graph and a kind) use plain words", async () => {
   const side = await screen.findByRole("complementary", { name: /Mesenchymal stem cells/ });
   expect(within(side).getByText("Thought to work by:")).toBeInTheDocument();
   expect(within(side).getByText(/Advanced, through dimethyl fumarate/)).toBeInTheDocument();
-  expect(within(side).getByText(/finished trials that count/)).toBeInTheDocument();
+  expect(within(side).getByText(/measured finished trials/)).toBeInTheDocument();
   noOldWords();
 });
 

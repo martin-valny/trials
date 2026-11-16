@@ -63,7 +63,7 @@ const LEGEND_TEXT: Record<MarkState, string> = {
   adv: "Advanced to next phase",
   run: "Still running",
   stop: "Stopped",
-  fin: "Finished, no follow-on",
+  fin: "Finished, not advanced",
   unk: "Status unknown",
 };
 const dummy: PipelineMark = { n: "", c: 1, s: "run", y: null, y2: null, dz: [], drug: "", sp: 0 };

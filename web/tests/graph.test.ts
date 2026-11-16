@@ -212,10 +212,10 @@ const CUT: NonNullable<GraphFile["cut"]> = {
 
 test("cutCaption says how many drugs are drawn and by what rule", () => {
   expect(cutCaption({ ...G, cut: CUT })).toBe(
-    "Showing 66 of 515 drugs: every drug credited with a success and those in 4 or more trials.",
+    "Showing 66 of 515 drugs: every drug credited with an advance and those in 4 or more trials.",
   );
   expect(cutCaption({ ...G, cut: { ...CUT, min_trials: null } })).toBe(
-    "Showing 66 of 515 drugs: every drug credited with a success.",
+    "Showing 66 of 515 drugs: every drug credited with an advance.",
   );
   expect(cutCaption({ ...G, cut: { ...CUT, all_succeeded: false, min_trials: null } })).toBe(
     "Showing 66 of 515 drugs: only drugs credited with a success, those in the most trials first.",
@@ -231,7 +231,7 @@ test("a dropped drug is found by name and its note says why it is not drawn", ()
   expect(droppedDrug(g, "drug:ocrelizumab")).toBeNull();
   expect(droppedDrug(G, "drug:abatacept")).toBeNull();
   expect(droppedNote(g, CUT.dropped[0])).toBe(
-    "abatacept is not drawn: it is in 3 trials, and the graph shows every drug credited with a success and those in 4 or more trials.",
+    "abatacept is not drawn: it is in 3 trials, and the graph shows every drug credited with an advance and those in 4 or more trials.",
   );
   expect(droppedNote(g, CUT.dropped[1])).toMatch(/^ocrelizumab biosimilar is not drawn: it is in 1 trial,/);
 });

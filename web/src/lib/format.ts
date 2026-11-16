@@ -85,7 +85,7 @@ export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "day
 const OUTCOME_LABELS: Record<Outcome, string> = {
   succeeded: "Advanced to next phase",
   stopped: "Stopped early",
-  completed_unknown: "Finished, no follow-on",
+  completed_unknown: "Finished, not advanced",
   running: "Still running",
   unknown: "Status unknown",
 };

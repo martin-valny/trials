@@ -252,7 +252,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           <svg width="18" height="8" aria-hidden="true">
             <line x1="1" x2="16" y1="4" y2="4" stroke="var(--fin)" strokeWidth="3" strokeLinecap="round" />
           </svg>
-          Finished, no follow-on
+          Finished, not advanced
         </span>
         {undated > 0 && <span className="tl-undated">{undated} undated {undated === 1 ? "trial is" : "trials are"} not drawn</span>}
       </div>
