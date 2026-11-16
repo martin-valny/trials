@@ -353,7 +353,7 @@ test("panel e: a disease with no trials still lists its hand approval", async ()
   expect(nm.querySelector(".tc span")).toHaveTextContent("0");
   expect([...nm.querySelectorAll(".st i")].every((i) => i.className === "")).toBe(true);
   expect(within(nm).getByRole("link", { name: "rituximab" })).toBeInTheDocument();
-  expect(within(nm).getByText("PMDA 2022 · hand")).toBeInTheDocument();
+  expect(within(nm).getByText("PMDA 2022 · hand-curated")).toBeInTheDocument();
 });
 
 test("panel e withdrawn tag, no rule", async () => {
