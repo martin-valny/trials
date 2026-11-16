@@ -2,7 +2,7 @@
 
 Every file here is read by the daily run's `stop_risk` stage. Nothing here is retrained
 automatically. The current model is **v2** (`stop-risk-v2-20261116`), trained on point-in-time
-registry records; it replaced v1 on 16 November 2026 after passing the shipping gates below.
+registry records on 16 November 2026; it replaces v1 after passing the shipping gates below.
 
 ## What it predicts
 
@@ -67,7 +67,7 @@ All are measured on the same held-out test rows, each from its ensemble's main f
 - **Published v1:** the model that was live until v2, scored on the test trials it never saw
   (started 2020-01-01 or later), from their C records.
 
-Fixed before any test number was read (design spec §7.3 and its 2026-11-16 amendment):
+The rules:
 
 1. Within v2, boosted ships over the baseline only if its AUC is at least 0.02 higher and its
    Brier score no worse.
@@ -76,6 +76,11 @@ Fixed before any test number was read (design spec §7.3 and its 2026-11-16 amen
 3. **Gate 2:** on the published v1's own subset, the chosen v2 model beats the published v1 by
    at least 0.02 AUC with a Brier score no worse.
 4. **Parity** (below): no shippable feature mismatches on more than 1% of trials.
+
+The within-v2 rule, Gate 1 and parity were fixed in the design spec (§7.3) before any test
+number was read. Gate 2 was added on 2026-11-16, after the first run's results had been read
+(including the published v1's 0.688 on its subset), and fixed before v2 was scored on that subset
+(spec amendment of 2026-11-16). It can only make shipping harder.
 
 v2 passed all four.
 
@@ -95,10 +100,11 @@ v2 passed all four.
 | v2 boosted, in-area | in-area | 0.650 | 0.1997 |
 
 The published v1's own card reported 0.682; that number came from finished trials' final
-records, which can carry end-of-trial edits. The in-area sample (neuroimmunology, matched on
+records, which can carry end-of-trial edits, on a different test set (trials started 2016–2019). The in-area sample (neuroimmunology, matched on
 conditions and direct MeSH terms; AACT keeps no keywords, so keyword-only matches the live filter
 would make are missed) is too small to say anything about the area itself. Removing site and
-country features costs no AUC, so `site_leak_flag` is false. The card also holds calibration
+country features costs no AUC (0.693 either way) and 0.001 Brier (0.1692 vs 0.1682), so
+`site_leak_flag` is false. The card also holds calibration
 curves for every model, a calibration curve by trial-age band, and the training set's age and
 start-year mix.
 
@@ -128,8 +134,12 @@ between 2018-12 and 2026-01 while in scope.
   stops. It enters through age, planned duration and months past completion. It is not
   patched, because every patch either uses information a trainer at C lacks or discards most
   long trials. The test set is unaffected (all trials running at C), so any harm shows in the
-  test numbers of v2 and the v1 recipe alike, which train on the same trials. The shipped refit
-  has less of it.
+  test numbers of v2 and the v1 recipe alike, which train on the same trials. The shipped refit,
+  over a longer window, should have less of it; this is not measured.
+- **Model choice on the test set.** Boosted or baseline is chosen on the same test set that
+  reports accuracy, for v2 and for the v1 recipe alike, as v1 did. Both chose boosted by a wide
+  margin (v2 0.693 vs 0.550; v1 recipe 0.643 vs 0.545), so the choice does not change the
+  comparison.
 - **Sponsor counts, as-of differences.** In training, a row at snapshot S counts the lead
   sponsor's trials in S's own table that were COMPLETED or TERMINATED with an end date before S
   (fewer than 5 counts as unknown). Live scoring reads `sponsor_history.csv`, the same rule as
@@ -276,11 +286,12 @@ artefacts are frozen in `pipeline/tests/fixtures/risk_v1/`.
   ClinicalTrials.gov, and AACT and the Clinical Trials Transformation Initiative (README and
   Methods with links).
 - **Dates:** the snapshot range (2018-12-01 to 2026-01-01), the processing date (2026-01-01,
-  the outcome snapshot) and the training date are on the card and on Methods.
+  the date of the AACT snapshot the outcomes come from) and the training date are on the card and on Methods.
 - **Modifications:** the committed artefacts (a model, a numeric held-out table without ids,
   per-sponsor counts) are derived data; this README and Methods describe in full how each was
   made.
-- **Current:** the live site is rebuilt from the registry by the daily run.
+- **Current:** the live site is rebuilt from the registry by the daily run. The committed model,
+  held-out table and sponsor counts are fixed at the 2026-01-01 snapshot and dated as such.
 - **No email addresses** are read or used. Raw AACT data is never committed or redistributed.
-- **No proprietary claim:** the repository's licence covers its code, not the registry data or
-  anything derived from it.
+- **No proprietary claim:** registry data remains ClinicalTrials.gov's; no rights are claimed in it
+  or in the artefacts derived from it here.
