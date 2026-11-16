@@ -159,7 +159,7 @@ export function Methods() {
             <h2 id="tracked-h" tabIndex={-1}>What is tracked</h2>
             <p>
               Interventional studies registered on ClinicalTrials.gov for these conditions
-              {meta ? ` (${meta.area})` : ""}:
+              {meta ? ` (${meta.area_label})` : ""}:
             </p>
             {meta ? (
               <ul>
@@ -201,7 +201,7 @@ export function Methods() {
             </p>
           </section>
 
-          {risk === undefined ? null : <RiskMethods model={risk?.model ?? null} area={meta?.area ?? null} />}
+          {risk === undefined ? null : <RiskMethods model={risk?.model ?? null} area={meta?.area_label ?? null} />}
 
           <DiligenceMethods />
 

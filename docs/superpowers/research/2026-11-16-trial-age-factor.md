@@ -1,8 +1,8 @@
 # Trial age as a stop-risk factor
 
 Date: 2026-11-16. Model: shipped v2 (`config/risk/model.joblib`). Data: `config/risk/heldout.parquet`, the
-12,154 test trials running in December 2021 and followed to January 2026. Script: session scratchpad `age.py`
-(loads the artefacts with `trialradar.risk.artefacts.load`, SHAP contributions via `trialradar.risk.explain.contributions`).
+12,154 test trials running in December 2021 and followed to January 2026. Script: `2026-11-16-trial-age-factor.py` beside this note (run from `pipeline/`;
+loads the artefacts with `trialradar.risk.artefacts.load`, SHAP contributions via `trialradar.risk.explain.contributions`).
 No code changed; this note is for Martin's decision.
 
 ## Why look
@@ -25,13 +25,23 @@ probably stop" as backwards.
 | 60 months and over | 1,425 | 16.1% | 16.1% | −0.66 |
 
 **2. Age's share of each explanation is larger than its effect on the observed rate, and points the wrong way in Phase 1.**
+Across all phases the age contributions span 1.14 log-odds (+0.48 to −0.66), while the observed rates span about 0.66.
+
+| Phase | under 6 m | 6–12 m | 12–24 m | 24–36 m | 36–60 m | 60 m+ |
+|---|---|---|---|---|---|---|
+| Phase 1: stopped | 18.6% (751) | 18.0% (522) | 23.9% (645) | 23.5% (429) | 24.5% (478) | 18.1% (299) |
+| Phase 1: age contribution | +0.44 | +0.29 | +0.13 | −0.10 | −0.34 | −0.70 |
+| Phase 2: stopped | 34.3% (1,064) | 31.1% (810) | 27.8% (1,269) | 25.5% (932) | 23.8% (1,191) | 15.4% (805) |
+| Phase 3: stopped | 24.4% (479) | 20.8% (500) | 22.6% (659) | 17.8% (465) | 17.6% (535) | 16.2% (321) |
+
 In Phase 1, the youngest trials stopped *less* often (18.6% under 6 months against 24.5% at 36–60 months), yet the age
 contribution is still +0.44. Age is standing in for something else, probably planned duration and the way the
 outcomes are selected (point 3). So "Started 2 months ago ↑ raises" is not a fair plain-language reason.
 
 **3. The young trials at the top come from a biased sample.** Every test trial had a clear outcome by January 2026.
-Trials that were young in December 2021 *and* planned to run a long time made it into that set only if they ended
-early, and an early end is mostly a termination. The 7,106 trials still running were left out.
+Trials that were young in December 2021 *and* planned to run a long time were much more likely to make it into that set
+if they ended early, and an early end is mostly a termination. (A trial planned for 36–48 months that started in
+early 2021 could still finish on schedule by January 2026, so this is a tilt, not a rule.) The 7,106 trials still running were left out.
 
 | Young (under 12 months) trials, by planned duration | Trials | Stopped early | Mean estimate |
 |---|---|---|---|
@@ -40,7 +50,15 @@ early, and an early end is mostly a termination. The 7,106 trials still running 
 | 36–48 months | 260 | 54.6% | 55.6% |
 | 48 months and over | 124 | 54.8% | 59.3% |
 
-Trials that were already old show nothing like this: 19–22% at any planned duration. Training has the same structure
+Trials that were already old (36 months or more) show nothing like this:
+
+| Old (36 months or more) trials, by planned duration | Trials | Stopped early | Mean estimate |
+|---|---|---|---|
+| under 24 months | 25 | 8.0% | 14.2% |
+| 24–36 months | 151 | 19.9% | 19.1% |
+| 36–48 months | 697 | 22.4% | 21.0% |
+| 48 months and over | 2,756 | 19.4% | 19.1% |
+ Training has the same structure
 (it learns from trials that had ended; Methods already notes that young endings over-represent stops). The model is
 well calibrated *on that sample*, but for a trial that is young and long-planned today, the sample over-states the chance.
 These are exactly the trials at the top of the live page: in the test set's top 5% of estimates, 79% have age among
@@ -48,8 +66,8 @@ their three main factors, and their median age is 8 months against 20 overall.
 
 ## Conclusion
 
-The pattern is partly real (early terminations for slow enrolment happen) but mostly an artefact of how outcomes are
-selected. It is strongest for exactly the trials the page ranks highest. The calibration figures in Methods do not show
+The pattern is partly real (early terminations for slow enrolment happen), and, by inference from point 3 rather than
+shown directly, largely an artefact of how outcomes are selected. It is strongest for exactly the trials the page ranks highest. The calibration figures in Methods do not show
 it, because they are measured on the same selected sample.
 
 ## Options

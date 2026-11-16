@@ -222,6 +222,8 @@ test("Methods, with its not-yet-categorised lists, uses no old wording", async (
   // Methods keeps its own statistical wording (quoting what the map says), so only the retired
   // "sorted" names are checked on this page.
   expect(document.body.textContent).not.toMatch(/not yet sorted|unsorted names|Unclassified/i);
+  // The copy-clarity names apply here too.
+  expect(document.body.textContent).not.toMatch(/neuroimmunology|Watchlist|further investment/i);
 });
 
 test("the stop-risk panel and the trial-page estimate never say failure or trouble", async () => {

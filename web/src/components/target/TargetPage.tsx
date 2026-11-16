@@ -58,7 +58,6 @@ export function TargetPage() {
   return <Ready file={file} row={row} disease={parseFigureState(params, file).disease} release={release} />;
 }
 
-/** "{run} of {n} trials are running, from {k} companies and academic groups. {a} advanced to a later phase; {s} stopped." */
 /** The registry snapshot time from meta.json (what the header badge shows); null until read or when unknown. */
 function useRegistryDate(): string | null {
   const [at, setAt] = useState<string | null>(null);
@@ -74,6 +73,7 @@ function useRegistryDate(): string | null {
   return at;
 }
 
+/** "{run} of {n} trials are running, from {k} companies and academic groups. {a} advanced to a later phase; {s} stopped." */
 function ledeParts(run: number, total: number, groups: number, adv: number, stop: number) {
   const head = `${n(run)} of ${n(total)} ${total === 1 ? "trial" : "trials"} ${run === 1 ? "is" : "are"} running`;
   const from = groups === 0 ? "." : `, from ${n(groups)} ${groups === 1 ? "company or academic group" : "companies and academic groups"}.`;

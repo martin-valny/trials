@@ -21,13 +21,13 @@ function MechanismsRedirect() {
   return <Navigate to={`/approaches${rest ? `/${rest}` : ""}${search}`} replace />;
 }
 
-/** The intro at /; an old figure link (/?view=...) carries on to /pipeline with its query. */
 /** The old /watchlist address: same query under /stop-risk. */
 function WatchlistRedirect() {
   const { search } = useLocation();
   return <Navigate to={`/stop-risk${search}`} replace />;
 }
 
+/** The intro at /; an old figure link (/?view=...) carries on to /pipeline with its query. */
 function RootRoute() {
   const { search } = useLocation();
   return search ? <Navigate to={`/pipeline${search}`} replace /> : <IntroPage />;
