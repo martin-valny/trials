@@ -33,7 +33,7 @@ function useTrialsIndex(): TrialsIndex | null | undefined {
   return f;
 }
 
-const Head = ({ sentence }: { sentence?: string }) => <PageHead title="Watchlist" sentence={sentence} />;
+const Head = ({ sentence }: { sentence?: string }) => <PageHead title="Stop risk" sentence={sentence} />;
 
 /** The page head's one sentence: how many trials are ranked, and how many sit above their phase's typical rate. */
 function headSentence(total: number, above: number): string {

@@ -27,7 +27,7 @@ function useRouteScopedOpen(): [boolean, (f: (o: boolean) => boolean) => void] {
   return [open, set];
 }
 
-/** Pipeline, Watchlist, Approaches, Changes, Trials, Methods; Diligence second once memos are recorded or the agent is
+/** Pipeline, Stop risk, Treatments, Registry changes, Trials, Methods; Diligence second once memos are recorded or the agent is
  *  live (not while the index is still being read). A menu button on a phone. */
 export function SiteNav() {
   const phone = usePhone();
@@ -44,9 +44,9 @@ export function SiteNav() {
           <div className="nav-sheet">
             <NavLink to="/pipeline">Pipeline</NavLink>
             {diligence}
-            <NavLink to="/watchlist">Watchlist</NavLink>
-            <NavLink to="/approaches">Approaches</NavLink>
-            <NavLink to="/changes">Changes</NavLink>
+            <NavLink to="/stop-risk">Stop risk</NavLink>
+            <NavLink to="/approaches">Treatments</NavLink>
+            <NavLink to="/changes">Registry changes</NavLink>
             <NavLink to="/trials">Trials</NavLink>
             <NavLink to="/methods">Methods</NavLink>
             <div className="nav-sheet-fresh">
@@ -60,9 +60,9 @@ export function SiteNav() {
     <nav aria-label="Main">
       <NavLink to="/pipeline">Pipeline</NavLink>
       {diligence}
-      <NavLink to="/watchlist">Watchlist</NavLink>
-      <NavLink to="/approaches">Approaches</NavLink>
-      <NavLink to="/changes">Changes</NavLink>
+      <NavLink to="/stop-risk">Stop risk</NavLink>
+      <NavLink to="/approaches">Treatments</NavLink>
+      <NavLink to="/changes">Registry changes</NavLink>
       <NavLink to="/trials">Trials</NavLink>
       <NavLink to="/methods">Methods</NavLink>
     </nav>

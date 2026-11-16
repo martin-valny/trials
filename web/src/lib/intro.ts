@@ -13,14 +13,14 @@ export interface IntroView { dots: DotTarget[]; labels: ViewLabel[]; rules: View
 export const OUTCOME_PAINT: Record<Outcome, RowState> = { succeeded: "adv", running: "run", stopped: "stop", completed_unknown: "fin", unknown: "unk" };
 
 const VIEW_ORDER: ViewKey[] = ["all", "pipeline", "diligence", "watchlist", "approaches", "changes", "trials"];
-export const VIEW_TEXT: Record<ViewKey, { name: string; to: string; caption: string }> = {
-  all: { name: "All trials", to: "/explore", caption: "Every trial is a dot, placed by what it studies. Similar trials sit together." },
-  pipeline: { name: "Pipeline", to: "/pipeline", caption: "Trials sorted onto their drug target's row and phase. Red ones moved on to the next phase." },
-  diligence: { name: "Diligence", to: "/diligence", caption: "Targets an AI agent has written a checked memo on, each with its trials in that disease." },
-  watchlist: { name: "Watchlist", to: "/watchlist", caption: "Running trials by their estimated chance of stopping early, against the typical rate." },
-  approaches: { name: "Approaches", to: "/approaches", caption: "Every trial by how its treatment works, from targeted drugs to non-drug care." },
-  changes: { name: "Changes", to: "/changes", caption: "Trials whose registry record changed this week, sorted by what changed." },
-  trials: { name: "Trials", to: "/trials", caption: "Every trial by the year it started. Open any one for its full record and history." },
+export const VIEW_TEXT: Record<ViewKey, { name: string; to: string; caption: string; line: string }> = {
+  all: { name: "All trials", to: "/explore", caption: "Every trial is a dot, placed by what it studies. Similar trials sit together.", line: "Every trial on one map" },
+  pipeline: { name: "Pipeline", to: "/pipeline", caption: "Trials sorted onto their drug target's row and phase. Red ones moved on to the next phase.", line: "Which targets are in trials, and how far they got" },
+  diligence: { name: "Diligence", to: "/diligence", caption: "Targets an AI agent has written a checked memo on, each with its trials in that disease.", line: "AI memos on a target, every claim checked" },
+  watchlist: { name: "Stop risk", to: "/stop-risk", caption: "Running trials by their estimated chance of stopping early, against the typical rate.", line: "Running trials most likely to stop early" },
+  approaches: { name: "Treatments", to: "/approaches", caption: "Every trial by how its treatment works, from targeted drugs to non-drug care.", line: "Every trial by how its treatment works" },
+  changes: { name: "Registry changes", to: "/changes", caption: "Trials whose registry record changed this week, sorted by what changed.", line: "What sponsors changed in the registry this week" },
+  trials: { name: "Trials", to: "/trials", caption: "Every trial by the year it started. Open any one for its full record and history.", line: "Search and open any trial" },
 };
 
 /** Approach key -> colour token (read per frame by the canvas, and by the key's swatches). */

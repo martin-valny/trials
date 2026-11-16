@@ -10,7 +10,7 @@ function Where() {
   const loc = useLocation();
   return <p data-testid="where">{loc.pathname + loc.search}</p>;
 }
-const renderPage = (route = "/watchlist") =>
+const renderPage = (route = "/stop-risk") =>
   render(
     <MemoryRouter initialEntries={[route]}>
       <WatchlistPage />
@@ -45,7 +45,7 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   stubFetch();
   renderPage();
   await table();
-  expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Stop risk" })).toBeInTheDocument();
   expect(screen.getByText(SENTENCE)).toBeInTheDocument();
   expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
   expect(order()).toEqual(["NCT90000004", "NCT90000005", "NCT90000099", "NCT90000002", "NCT90000008", "NCT90000006", "NCT90000007"]);
@@ -92,7 +92,7 @@ test("the sort arrives from the URL", async () => {
     r.trials!.NCT90000005!.typical = 0.6;
   });
   stubFetch({ "risk.json": risk });
-  renderPage("/watchlist?sort=difference");
+  renderPage("/stop-risk?sort=difference");
   await table();
   expect(order()[0]).toBe("NCT90000099");
 });
@@ -118,7 +118,7 @@ test("a disease in the URL arrives preselected; target links carry it", async ()
     p.rows[0]!.marks.find((m) => m.n === "NCT90000099")!.dz = ["MG"];
   });
   stubFetch({ "pipeline.json": pipeline });
-  renderPage("/watchlist?disease=MS");
+  renderPage("/stop-risk?disease=MS");
   await table();
   expect(order()).not.toContain("NCT90000099");
   expect(order()).toHaveLength(6);
@@ -127,7 +127,7 @@ test("a disease in the URL arrives preselected; target links carry it", async ()
 
 test("company filter narrows and is in the URL", async () => {
   stubFetch();
-  renderPage("/watchlist?company=Acme%20Biotech");
+  renderPage("/stop-risk?company=Acme%20Biotech");
   expect(await screen.findByText("No running trials match these filters.")).toBeInTheDocument();
   expect(where()).toMatch(/company=Acme/);
 });
@@ -137,7 +137,7 @@ test("company filter keeps only that company's trials", async () => {
     p.rows[0]!.marks.find((m) => m.n === "NCT90000099")!.sp = 0; // Acme Biotech
   });
   stubFetch({ "pipeline.json": pipeline });
-  renderPage("/watchlist?company=Acme%20Biotech");
+  renderPage("/stop-risk?company=Acme%20Biotech");
   await table();
   expect(order()).toEqual(["NCT90000099"]);
   expect(screen.getByText("Showing 1 of 7 trials")).toBeInTheDocument();
@@ -197,7 +197,7 @@ test("missing risk.json says when estimates appear", async () => {
   stubFetch({ "risk.json": 404 });
   renderPage();
   await screen.findByText("Estimates appear after the next daily update.");
-  expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Stop risk" })).toBeInTheDocument();
   expect(screen.queryByRole("table")).not.toBeInTheDocument();
 });
 
@@ -214,7 +214,7 @@ test("the page head says what the page is in one computed sentence, with no sepa
   await table();
   const head = container.querySelector("header.page-head")!;
   expect(head).not.toBeNull();
-  expect(within(head as HTMLElement).getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
+  expect(within(head as HTMLElement).getByRole("heading", { level: 1, name: "Stop risk" })).toBeInTheDocument();
   const sentences = head.querySelectorAll("p");
   expect(sentences).toHaveLength(1);
   expect(sentences[0]).toHaveTextContent(

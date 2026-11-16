@@ -122,7 +122,7 @@ export function IntroPage() {
                   onBlur={() => { if (!phone) tour.release(); }}
                   onClick={(e) => onPill(e, k)}
                 >
-                  <em>{letter(k)}</em><span className="nm">{VIEW_TEXT[k].name}</span><span className="go" aria-hidden="true">Open →</span>
+                  <em>{letter(k)}</em><span className="tx"><span className="nm">{VIEW_TEXT[k].name}</span><span className="ln">{VIEW_TEXT[k].line}</span></span><span className="go" aria-hidden="true">Open →</span>
                 </Link>
               </li>
             ))}
