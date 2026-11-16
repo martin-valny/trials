@@ -38,7 +38,7 @@ const Head = ({ sentence }: { sentence?: string }) => <PageHead title="Stop risk
 /** The page head's one sentence: how many trials are ranked, and how many sit above their phase's typical rate. */
 function headSentence(total: number, above: number): string {
   const ranked = `${n(total)} running drug ${total === 1 ? "trial" : "trials"}, ranked by estimated chance of stopping early`;
-  return total > 0 ? `${ranked}; ${n(above)} ${above === 1 ? "sits" : "sit"} above their phase's typical rate.` : `${ranked}.`;
+  return total > 0 ? `${ranked}; ${n(above)} ${above === 1 ? "sits" : "sit"} above the typical rate for their phase.` : `${ranked}.`;
 }
 
 /** Route ``/watchlist``: every scored running trial ranked by its estimated chance of stopping early (spec §7). */
@@ -132,7 +132,7 @@ function TrialList({
     const target: MultiSelectOption[] = (pipeline?.rows ?? [])
       .filter((r) => byTg.has(r.id))
       .map((r) => ({ value: r.id, label: r.label, n: byTg.get(r.id)! }));
-    if (byTg.has(NONE)) target.push({ value: NONE, label: "No target row", n: byTg.get(NONE)! });
+    if (byTg.has(NONE)) target.push({ value: NONE, label: "No pipeline target", n: byTg.get(NONE)! });
     return { disease, company, target };
   }, [all, pipeline]);
 
@@ -192,7 +192,7 @@ function TrialList({
   return (
     <div className="explore watchlist rk">
       <Head sentence={headSentence(total, countAbove(all))} />
-      <div className="toolbar wl-toolbar" role="group" aria-label="Watchlist filters">
+      <div className="toolbar wl-toolbar" role="group" aria-label="Stop-risk filters">
         <div className="tb-filters">
           <MultiSelect
             label="Disease"
@@ -225,7 +225,7 @@ function TrialList({
               Estimate
             </button>
             <button type="button" aria-pressed={sort === "difference"} onClick={() => setSort("difference")}>
-              Above typical by most
+              Furthest above typical
             </button>
           </div>
         </div>
@@ -239,7 +239,7 @@ function TrialList({
         <RiskNote />
         {shown.length > 0 ? (
           <p className="wl-key">
-            Ring = estimate, band = range, tick = typical for {bases.length === 1 ? bases[0] : "each trial's phase"}.
+            Ring = estimate, band = likely range, tick = typical for {bases.length === 1 ? bases[0] : "each trial's phase"}.
           </p>
         ) : null}
       </div>
@@ -326,7 +326,7 @@ function Row({
       <td className="wl-tgt">
         <div className="wl-tg">
           {r.targets.length === 0 ? (
-            <span className="wl-none">No target row</span>
+            <span className="wl-none">No pipeline target</span>
           ) : (
             r.targets.map((t, i) => (
               <span key={t}>

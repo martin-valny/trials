@@ -200,7 +200,7 @@ describe("release", () => {
       .map((l) => `${l.querySelector(".cs-l")?.textContent} ${l.querySelector(".cs-n")?.textContent}`);
   const dgPanel = () => screen.getByRole("region", { name: "Diligence (AI agent)" });
   const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-  const NAMES = ["Timeline", "Companies", "Stops", "Mechanism", "Diseases", "Stop chance"];
+  const NAMES = ["Timeline", "Companies", "Stops", "Mechanism", "Diseases", "Stop risk"];
 
   test("closed keeps today's order", async () => {
     renderRelease("/target/cd20");

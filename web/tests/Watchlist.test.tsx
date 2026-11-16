@@ -19,9 +19,9 @@ const renderPage = (route = "/stop-risk") =>
   );
 
 const NOTE =
-  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. It uses only the trial's design and knows nothing about the drug's results. The model is often wrong; see Methods for accuracy.";
+  "A statistical pattern from similar past trials, read from the registry record alone. It knows nothing about the drug's results and is not a judgement of the sponsor. It ranks a trial that stopped above one that completed about 7 times in 10, so it is often wrong; how it is measured.";
 /** The page head's sentence for the unmodified fixture (7 scored trials; derived from risk.json's fixture). */
-const SENTENCE = "7 running drug trials, ranked by estimated chance of stopping early; 5 sit above their phase's typical rate.";
+const SENTENCE = "7 running drug trials, ranked by estimated chance of stopping early; 5 sit above the typical rate for their phase.";
 const table = () => screen.findByRole("table", { name: /Running trials ranked/ });
 const order = () =>
   within(screen.getByRole("table", { name: /Running trials ranked/ }))
@@ -47,7 +47,7 @@ test("renders ranked rows from the fixture in estimate order, with the note", as
   await table();
   expect(screen.getByRole("heading", { level: 1, name: "Stop risk" })).toBeInTheDocument();
   expect(screen.getByText(SENTENCE)).toBeInTheDocument();
-  expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
+  expect(screen.getByText(/^A statistical pattern from similar past trials,/)).toHaveTextContent(NOTE);
   expect(order()).toEqual(["NCT90000004", "NCT90000005", "NCT90000099", "NCT90000002", "NCT90000008", "NCT90000006", "NCT90000007"]);
   const first = screen.getAllByRole("row")[1]!;
   expect(first).toHaveTextContent("66% (64–68)");
@@ -76,10 +76,10 @@ test("sort switch reorders by difference from typical and is in the URL", async 
   renderPage();
   await table();
   expect(order()[0]).toBe("NCT90000004");
-  await userEvent.click(screen.getByRole("button", { name: "Above typical by most" }));
+  await userEvent.click(screen.getByRole("button", { name: "Furthest above typical" }));
   expect(order()[0]).toBe("NCT90000099");
   expect(where()).toMatch(/sort=difference/);
-  expect(screen.getByRole("button", { name: "Above typical by most" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Furthest above typical" })).toHaveAttribute("aria-pressed", "true");
   await userEvent.click(screen.getByRole("button", { name: "Estimate" }));
   expect(order()[0]).toBe("NCT90000004");
   expect(where()).not.toMatch(/sort=/);
@@ -144,7 +144,7 @@ test("company filter keeps only that company's trials", async () => {
   expect(where()).toMatch(/company=Acme/);
 });
 
-test('"No target row" filter shows untargeted trials', async () => {
+test('"No pipeline target" filter shows untargeted trials', async () => {
   const risk = riskVariant((r) => {
     r.trials!.NCT02343159 = { ...r.trials!.NCT90000002!, p: 0.3 };
   });
@@ -154,11 +154,11 @@ test('"No target row" filter shows untargeted trials', async () => {
   expect(order()).toHaveLength(8);
   await userEvent.click(screen.getByRole("button", { name: /^Target/ }));
   await userEvent.click(screen.getByRole("button", { name: "Select none" }));
-  await userEvent.click(screen.getByRole("checkbox", { name: /No target row/ }));
+  await userEvent.click(screen.getByRole("checkbox", { name: /No pipeline target/ }));
   expect(order()).toEqual(["NCT02343159"]);
   expect(where()).toMatch(/target=none/);
   const row = screen.getAllByRole("row")[1]!;
-  expect(row).toHaveTextContent("No target row");
+  expect(row).toHaveTextContent("No pipeline target");
   expect(row).toHaveTextContent("Biogen");
 });
 
@@ -177,7 +177,7 @@ test("hides per-trial scores when trials block absent (target list instead)", as
   expect(rows[0]).toHaveTextContent("24%");
   expect(rows[0]).toHaveTextContent("typical 20%");
   expect(rows[0]).toHaveTextContent("7");
-  expect(screen.getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
+  expect(screen.getByText(/^A statistical pattern from similar past trials,/)).toHaveTextContent(NOTE);
 });
 
 test("target list leaves out targets with fewer than three running trials", async () => {
@@ -218,7 +218,7 @@ test("the page head says what the page is in one computed sentence, with no sepa
   const sentences = head.querySelectorAll("p");
   expect(sentences).toHaveLength(1);
   expect(sentences[0]).toHaveTextContent(
-    /^7 running drug trials, ranked by estimated chance of stopping early; \d+ sits? above their phase's typical rate\.$/,
+    /^7 running drug trials, ranked by estimated chance of stopping early; \d+ sits? above the typical rate for their phase\.$/,
   );
   expect(sentences[0]!.textContent).toBe(SENTENCE);
   expect(container.querySelector(".wl-claim, .wl-lede")).toBeNull();
@@ -228,8 +228,8 @@ test("the standing note sits directly after the filters toolbar", async () => {
   stubFetch();
   const { container } = renderPage();
   await table();
-  const toolbar = screen.getByRole("group", { name: "Watchlist filters" });
-  const note = screen.getByText(/^Statistical estimate from public registry data\./);
+  const toolbar = screen.getByRole("group", { name: "Stop-risk filters" });
+  const note = screen.getByText(/^A statistical pattern from similar past trials,/);
   expect(toolbar.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(note.closest("header")).toBeNull();
   // Nothing of the page's own sits between the toolbar and the note.
@@ -249,7 +249,7 @@ test("the page head's sentence counts trials above their typical rate", async ()
   renderPage();
   await table();
   expect(
-    screen.getByText("7 running drug trials, ranked by estimated chance of stopping early; 2 sit above their phase's typical rate."),
+    screen.getByText("7 running drug trials, ranked by estimated chance of stopping early; 2 sit above the typical rate for their phase."),
   ).toBeInTheDocument();
 });
 
@@ -287,7 +287,7 @@ test("shows the first 50 rows, then reveals 50 more at a time; a new sort starts
   expect(order()).toHaveLength(120);
   expect(screen.queryByRole("button", { name: /^Show \d+ more/ })).not.toBeInTheDocument();
   expect(screen.getByText("Showing 120 of 120 trials")).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Above typical by most" }));
+  await userEvent.click(screen.getByRole("button", { name: "Furthest above typical" }));
   expect(order()).toHaveLength(50);
 });
 
@@ -331,4 +331,10 @@ test("an estimate whose range includes the typical rate is muted; one above it i
   expect(other.length).toBeGreaterThan(0);
   for (const c of near) expect(c.querySelector("b")).toHaveAttribute("data-near", "true");
   for (const c of other) expect(c.querySelector("b")).not.toHaveAttribute("data-near");
+});
+
+test("the key names the band a likely range", async () => {
+  stubFetch();
+  renderPage();
+  expect(await screen.findByText(/Ring = estimate, band = likely range, tick = typical for/)).toBeInTheDocument();
 });

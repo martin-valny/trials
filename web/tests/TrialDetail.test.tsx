@@ -173,7 +173,7 @@ test("trial page shows estimate and note", async () => {
   expect(factors).toHaveTextContent("Sites planned: 1");
   expect(factors).not.toHaveAttribute("aria-label");
   expect(factors).toHaveAttribute("aria-labelledby");
-  expect(within(sec).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
+  expect(within(sec).getByRole("link", { name: /how it is measured/ })).toHaveAttribute("href", "/methods#stop-risk");
 });
 
 test("trial page shows Not scored reason", async () => {

@@ -8,6 +8,7 @@ import { PipelinePage } from "../src/components/pipeline/PipelinePage";
 import { Methods } from "../src/components/Methods";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { TrialDetail } from "../src/components/TrialDetail";
+import { WatchlistPage } from "../src/components/watchlist/WatchlistPage";
 import type { ExplorerFile } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
 
@@ -33,6 +34,10 @@ const OLD: [string, RegExp][] = [
   ["panel d", /panel d\b/],
   ["Click a dot in a", /Click a dot in/],
   ["Data may be stale", /Data may be stale/],
+  ["Watchlist", /Watchlist/],
+  ["Stop chance", /Stop chance/],
+  ["Not a statement about any sponsor or trial", /Not a statement about any sponsor or trial/i],
+  ["No target row", /No target row/],
 ];
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */
@@ -107,6 +112,19 @@ test("a target page uses no old wording", async () => {
   await screen.findByRole("heading", { level: 1, name: /CD20/ });
   noOldWords();
   noMapWords();
+});
+
+test("the stop-risk page uses no old wording", async () => {
+  stubFetch();
+  render(
+    <MemoryRouter initialEntries={["/stop-risk"]}>
+      <WatchlistPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { level: 1 });
+  await screen.findByRole("table");
+  noOldWords();
+  noBannedWords();
 });
 
 test("Approaches (targeted graph and a kind) use plain words", async () => {

@@ -5,8 +5,8 @@ import "./risk.css";
 export function RiskNote() {
   return (
     <p className="rk-note">
-      Statistical estimate from public registry data. Not a statement about any sponsor or trial. It uses only the trial's design and knows nothing about the drug's results. The model is often wrong;{" "}
-      <Link to="/methods#stop-risk">see Methods for accuracy</Link>.
+      A statistical pattern from similar past trials, read from the registry record alone. It knows nothing about the drug's results and is not a judgement of the sponsor. It ranks a trial that stopped above one that completed about 7 times in 10, so it is often wrong;{" "}
+      <Link to="/methods#stop-risk">how it is measured</Link>.
     </p>
   );
 }

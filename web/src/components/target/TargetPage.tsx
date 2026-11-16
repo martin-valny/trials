@@ -125,7 +125,7 @@ function Ready({ file, row, disease, release }: { file: PipelineFile; row: Pipel
     if (lines > 0) add(L.diseases, "Diseases", n(lines));
     if (marks.length > 0 && risk) {
       const scored = riskRows(risk, marks, disease);
-      add(L.risk, "Stop chance", scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above` : undefined);
+      add(L.risk, "Stop risk", scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above typical` : undefined);
     }
     return out;
   }, [file, row, marks, stats.stop, risk, disease, L]);

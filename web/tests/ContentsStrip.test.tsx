@@ -7,7 +7,7 @@ import { ContentsStrip, type ContentsItem } from "../src/components/ContentsStri
 const ITEMS: ContentsItem[] = [
   { id: "pa", letter: "a", name: "Timeline" },
   { id: "pb", letter: "b", name: "Companies", count: "7" },
-  { id: "pf", letter: "f", name: "Stop chance", count: "15 above" },
+  { id: "pf", letter: "f", name: "Stop risk", count: "15 above typical" },
   { id: "pg", letter: "g", name: "Diligence", count: "not run" },
 ];
 
@@ -44,12 +44,12 @@ test("a nav named by its label with one link per item, in order", () => {
   renderStrip();
   const nav = screen.getByRole("navigation", { name: "Panels on this page" });
   const links = within(nav).getAllByRole("link");
-  expect(links.map((l) => l.textContent)).toEqual(["a Timeline", "b Companies 7", "f Stop chance 15 above", "g Diligence not run"]);
+  expect(links.map((l) => l.textContent)).toEqual(["a Timeline", "b Companies 7", "f Stop risk 15 above typical", "g Diligence not run"]);
 });
 
 test("clicking f scrolls to #pf, focuses it and sets ?panel=f", async () => {
   renderStrip("/target/cd20?disease=MS");
-  await userEvent.click(screen.getByRole("link", { name: /Stop chance/ }));
+  await userEvent.click(screen.getByRole("link", { name: /Stop risk/ }));
   expect(scroll).toHaveBeenCalledTimes(1);
   expect(scroll.mock.contexts[0]).toBe(document.getElementById("pf"));
   expect(document.activeElement).toBe(document.getElementById("pf"));
@@ -110,18 +110,18 @@ test("a clicked panel stays current while the smooth scroll is still on its way,
     await frame();
     const link = (name: RegExp) => screen.getByRole("link", { name });
     expect(link(/Diligence/)).toHaveAttribute("aria-current", "location");
-    await userEvent.click(link(/Stop chance/));
+    await userEvent.click(link(/Stop risk/));
     // Mid-scroll: f is still above the view.
     tops.pf = -400;
     fireEvent.scroll(window);
     await frame();
-    expect(link(/Stop chance/)).toHaveAttribute("aria-current", "location");
+    expect(link(/Stop risk/)).toHaveAttribute("aria-current", "location");
     // Settled: f has reached the top of the view (the foot keeps g in view too).
     tops.pf = 57;
     tops.pg = 420;
     fireEvent.scroll(window);
     await act(() => new Promise((r) => setTimeout(r, 400)));
-    expect(link(/Stop chance/)).toHaveAttribute("aria-current", "location");
+    expect(link(/Stop risk/)).toHaveAttribute("aria-current", "location");
     expect(link(/Diligence/)).not.toHaveAttribute("aria-current");
   } finally {
     Element.prototype.getBoundingClientRect = realRect;
