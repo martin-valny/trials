@@ -8,32 +8,14 @@ import { PipelinePage } from "../src/components/pipeline/PipelinePage";
 import { Methods } from "../src/components/Methods";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { TrialDetail } from "../src/components/TrialDetail";
+import { WatchlistPage } from "../src/components/watchlist/WatchlistPage";
+import { IntroPage } from "../src/components/intro/IntroPage";
+import { ChangesFeed } from "../src/components/ChangesFeed";
 import type { ExplorerFile } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 
-/** The old words (spec section 8, left column). "Approach", "Approaches" and "Mechanism graph" stay. */
-const OLD: [string, RegExp][] = [
-  ["Succeeded (drug moved to a later phase)", /Succeeded \(drug moved/],
-  ["Completed, outcome unknown", /Completed, outcome unknown/],
-  ["Succeeded via another drug", /Succeeded via/i],
-  ["credited to the drug that moved on", /credited to the drug that moved on/],
-  ["Share that succeeded", /Share that succeeded/],
-  ["success pool", /success pool/i],
-  ["Acts on", /Acts on/],
-  ["binding agent", /binding agent/],
-  ["Embedding of", /Embedding of/],
-  ["cluster no more than chance", /cluster no more than chance/],
-  ["shuffled labels", /shuffled labels/],
-  ["Unclassified", /Unclassified/],
-  ["Not yet sorted", /Not yet sorted/],
-  ["proposed", /\bproposed\b/],
-  ["Reactome pathway", /Reactome pathway/],
-  ["GO term", /GO term/],
-  ["Hollow", /Hollow:/],
-  ["panel d", /panel d\b/],
-  ["Click a dot in a", /Click a dot in/],
-  ["Data may be stale", /Data may be stale/],
-];
+import { OLD } from "./oldWords";
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */
 const noMapWords = () => {
@@ -109,6 +91,19 @@ test("a target page uses no old wording", async () => {
   noMapWords();
 });
 
+test("the stop-risk page uses no old wording", async () => {
+  stubFetch();
+  render(
+    <MemoryRouter initialEntries={["/stop-risk"]}>
+      <WatchlistPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { level: 1 });
+  await screen.findByRole("table");
+  noOldWords();
+  noBannedWords();
+});
+
 test("Approaches (targeted graph and a kind) use plain words", async () => {
   stubFetch({ "explorer.json": withWins() });
   const page = (route: string) =>
@@ -136,7 +131,7 @@ test("Approaches (targeted graph and a kind) use plain words", async () => {
   const side = await screen.findByRole("complementary", { name: /Mesenchymal stem cells/ });
   expect(within(side).getByText("Thought to work by:")).toBeInTheDocument();
   expect(within(side).getByText(/Advanced, through dimethyl fumarate/)).toBeInTheDocument();
-  expect(within(side).getByText(/finished trials that count/)).toBeInTheDocument();
+  expect(within(side).getByText(/measured finished trials/)).toBeInTheDocument();
   noOldWords();
 });
 
@@ -227,6 +222,8 @@ test("Methods, with its not-yet-categorised lists, uses no old wording", async (
   // Methods keeps its own statistical wording (quoting what the map says), so only the retired
   // "sorted" names are checked on this page.
   expect(document.body.textContent).not.toMatch(/not yet sorted|unsorted names|Unclassified/i);
+  // The copy-clarity names apply here too.
+  expect(document.body.textContent).not.toMatch(/neuroimmunology|Watchlist|further investment/i);
 });
 
 test("the stop-risk panel and the trial-page estimate never say failure or trouble", async () => {
@@ -252,4 +249,25 @@ test("the stop-risk panel and the trial-page estimate never say failure or troub
   );
   await screen.findByRole("region", { name: "Chance of stopping early" });
   noBannedWords();
+});
+
+test("the front door and the registry changes page use no old wording", async () => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => fakeContext()) as unknown as HTMLCanvasElement["getContext"]);
+  __resetDiligenceIndex();
+  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } });
+  const { unmount } = render(
+    <MemoryRouter initialEntries={["/"]}>
+      <IntroPage />
+    </MemoryRouter>,
+  );
+  await waitFor(() => expect(within(screen.getByRole("list", { name: "The views" })).getAllByRole("listitem")).toHaveLength(6));
+  noOldWords();
+  unmount();
+  render(
+    <MemoryRouter initialEntries={["/changes"]}>
+      <ChangesFeed />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { level: 1 });
+  noOldWords();
 });

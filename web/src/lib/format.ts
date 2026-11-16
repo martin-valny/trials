@@ -48,8 +48,9 @@ export const keepWhole = (text: string): boolean => text.length <= 28;
 export function formatDelta(days: number | null): string {
   if (days === null || days === 0) return "";
   const n = Math.abs(days);
-  const unit = n === 1 ? "day" : "days";
-  return days > 0 ? `slipped ${n} ${unit}` : `pulled in ${n} ${unit}`;
+  const years = Math.round((n / 365) * 10) / 10;
+  const amount = n < 365 ? `${n} ${n === 1 ? "day" : "days"}` : years === 1 ? "1 year" : `${years.toFixed(1)} years`;
+  return days > 0 ? `slipped ${amount}` : `pulled in ${amount}`;
 }
 
 const STALE_MS = 36 * 60 * 60 * 1000;
@@ -85,7 +86,7 @@ export const windowLabel = (n: number): string => `${n} ${n === 1 ? "day" : "day
 const OUTCOME_LABELS: Record<Outcome, string> = {
   succeeded: "Advanced to next phase",
   stopped: "Stopped early",
-  completed_unknown: "Finished, no follow-on",
+  completed_unknown: "Finished, not advanced",
   running: "Still running",
   unknown: "Status unknown",
 };

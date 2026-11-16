@@ -43,7 +43,7 @@ export function PanelPhase({ trials }: { trials: ExplorerTrial[] }) {
       {cols.length === 0 ? null : (
         <ul className="flow">
           {cols.map(([k, c]) => (
-            <li key={k} aria-label={`${phaseLabel(k)}: ${fmt(c.n)} trials, ${fmt(c.won)} succeeded`}>
+            <li key={k} aria-label={`${phaseLabel(k)}: ${fmt(c.n)} trials, ${fmt(c.won)} advanced`}>
               <span className="flow-n" aria-hidden="true">
                 {fmt(c.n)}
               </span>
@@ -58,7 +58,7 @@ export function PanelPhase({ trials }: { trials: ExplorerTrial[] }) {
           ))}
         </ul>
       )}
-      <p className="panel-note">{fmt(won)} shown trials succeeded.</p>
+      <p className="panel-note">{fmt(won)} shown trials advanced.</p>
       {unphased > 0 ? (
         <p className="panel-note">{`+${fmt(unphased)} trials without a phase, outside this measure.`}</p>
       ) : null}

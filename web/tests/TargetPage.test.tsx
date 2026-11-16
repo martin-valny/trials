@@ -353,7 +353,7 @@ test("panel e: a disease with no trials still lists its hand approval", async ()
   expect(nm.querySelector(".tc span")).toHaveTextContent("0");
   expect([...nm.querySelectorAll(".st i")].every((i) => i.className === "")).toBe(true);
   expect(within(nm).getByRole("link", { name: "rituximab" })).toBeInTheDocument();
-  expect(within(nm).getByText("PMDA 2022 · hand")).toBeInTheDocument();
+  expect(within(nm).getByText("PMDA 2022 · hand-curated")).toBeInTheDocument();
 });
 
 test("panel e withdrawn tag, no rule", async () => {
@@ -414,7 +414,7 @@ test("panel e on a phone is one block per disease", async () => {
 // ---------------------------------------------------------------- f. stop-risk estimates
 const RISK_H = "Running trials, estimated chance of stopping early";
 const NOTE =
-  "Statistical estimate from public registry data. Not a statement about any sponsor or trial. It uses only the trial's design and knows nothing about the drug's results. The model is often wrong; see Methods for accuracy.";
+  "A statistical pattern from similar past trials, read from the registry record alone. It knows nothing about the drug's results and is not a judgement of the sponsor. It ranks a trial that stopped above one that completed about 7 times in 10, so it is often wrong; how it is measured.";
 const riskPanel = () => screen.getByRole("region", { name: RISK_H });
 
 test("renders the risk panel with heading and rows", async () => {
@@ -454,8 +454,8 @@ test("renders the risk panel with heading and rows", async () => {
     "href",
     "https://clinicaltrials.gov/study/NCT90000002",
   );
-  expect(within(panel).getByText(/^Statistical estimate from public registry data\./)).toHaveTextContent(NOTE);
-  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toHaveAttribute("href", "/methods#stop-risk");
+  expect(within(panel).getByText(/^A statistical pattern from similar past trials,/)).toHaveTextContent(NOTE);
+  expect(within(panel).getByRole("link", { name: /how it is measured/ })).toHaveAttribute("href", "/methods#stop-risk");
 });
 
 test("empty panel under disease filter", async () => {
@@ -482,7 +482,7 @@ test("hides per-trial scores when trials block absent", async () => {
   expect(within(panel).queryByRole("list", { name: "Running trials by estimate" })).not.toBeInTheDocument();
   expect(within(panel).queryByRole("button", { name: /Main factors/ })).not.toBeInTheDocument();
   expect(within(panel).queryByText(/NCT9/)).not.toBeInTheDocument();
-  expect(within(panel).getByRole("link", { name: /see Methods for accuracy/ })).toBeInTheDocument();
+  expect(within(panel).getByRole("link", { name: /how it is measured/ })).toBeInTheDocument();
 });
 
 test("without per-trial scores, a summary of fewer than three trials is not shown", async () => {
@@ -504,7 +504,7 @@ test("panel absent without risk.json", async () => {
   await screen.findByRole("heading", { level: 2, name: /What stopped, and why/ });
   await new Promise((r) => setTimeout(r, 0));
   expect(screen.queryByRole("heading", { name: RISK_H })).not.toBeInTheDocument();
-  expect(screen.queryByText(/see Methods for accuracy/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/how it is measured/)).not.toBeInTheDocument();
 });
 
 test("panel f opens with a claim line counting trials above their typical rate", async () => {
@@ -546,7 +546,7 @@ test("CD20, all diseases: the strip lists a to g, b's number is the companies pa
   expect(link(/Companies/)).toHaveTextContent(`Companies ${container.querySelectorAll(".co").length}`);
   expect(link(/Stops/)).toHaveTextContent("Stops 1");
   expect(link(/Diseases/)).toHaveTextContent(`Diseases ${container.querySelectorAll(".dzt .dzl").length}`);
-  expect(link(/Stop chance/)).toHaveTextContent(/Stop chance \d+ above$/);
+  expect(link(/Stop risk/)).toHaveTextContent(/Stop risk \d+ above typical$/);
   expect(link(/Diligence/).textContent).toMatch(/^g Diligence( recorded \d{1,2} [A-Z][a-z]+| not run| running| offline)?$/);
   for (const l of within(contents()).getAllByRole("link")) {
     const id = l.getAttribute("href")!.match(/panel=([a-g])/)![1];
@@ -645,4 +645,11 @@ test("the lede is balanced on a 100ch measure at 1100px and up, and avoids a wid
   expect(lede(wide)).toMatch(/max-width:\s*100ch/);
   expect(lede(wide)).toMatch(/text-wrap:\s*balance/);
   expect(lede(phone)).toMatch(/text-wrap:\s*pretty/);
+});
+
+test("the mechanism panel is called Mechanism, and the timeline legend says planned", async () => {
+  stubFetch();
+  renderPage();
+  expect(await screen.findByRole("heading", { level: 3, name: "Mechanism" })).toBeInTheDocument();
+  expect(screen.getByText("Line = start to (expected) end · thicker = later phase · dashed = planned, not yet reached")).toBeInTheDocument();
 });

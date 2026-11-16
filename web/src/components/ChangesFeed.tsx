@@ -92,7 +92,7 @@ export function ChangesFeed() {
   return (
     <div className="page explore changes-page">
       <PageHead
-        title="Changes"
+        title="Registry changes"
         sentence={ready && items.length > 0 ? headSentence(items.length, notableCount, win) : undefined}
       />
       <section aria-label="Changes feed">

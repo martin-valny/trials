@@ -54,13 +54,13 @@ type State =
 /** mechanisms.json: undefined while loading, null when missing or unreadable (the graph waits for an update). */
 type GraphState = GraphFile | null | undefined;
 
-/** The figure's title in the shared page head: "Figure 2 |" in 800, the claim in 500 (mechanisms.css). */
+/** The figure's title in the shared page head (mechanisms.css). */
 function Title() {
   return (
     <PageHead
       title={
         <>
-          <b>Figure 2 |</b> Approaches: every trial by how its treatment works, from drugs with a molecular target to
+          Approaches: every trial by how its treatment works, from drugs with a molecular target to
           the approaches without one.
         </>
       }
@@ -194,7 +194,7 @@ function StripKey({ palette, successDefined }: { palette: Palette; successDefine
   const words: Record<Outcome, string> = {
     succeeded: "Advanced to next phase",
     stopped: "Stopped early",
-    completed_unknown: "Finished, no follow-on",
+    completed_unknown: "Finished, not advanced",
     running: "Still running",
     unknown: "Status unknown",
   };
@@ -352,7 +352,7 @@ function Plate({
               {" · "}
               {fmt(n)} {n === 1 ? "trial" : "trials"}
               {row && row.successDefined && row.finished > 0
-                ? ` · ${fmt(row.finished)} finished trials that count, ${fmt(row.succeeded)} advanced`
+                ? ` · ${fmt(row.finished)} measured finished trials, ${fmt(row.succeeded)} advanced`
                 : ""}
             </span>
           </h2>
@@ -369,7 +369,7 @@ function Plate({
           ) : null}
           {row && !row.successDefined ? (
             <p className="panel-note">
-              Success not defined: success here means a drug moved to a later phase, and these treatments are not drugs.
+              Advance not defined: advanced means a drug went on to a later phase, and these treatments are not drugs.
             </p>
           ) : null}
           {n === 0 ? (
@@ -398,7 +398,7 @@ function Plate({
               <StripKey palette={palette} successDefined={row?.successDefined ?? true} />
               {tree.some((g) => g.kinds.some((k) => k.elsewhere > 0)) ? (
                 <p className="panel-note">
-                  A trial that advanced because a drug outside the row moved on is drawn grey and read as
+                  A trial that advanced because a drug outside the row advanced is drawn grey and read as
                   &ldquo;advanced, through another drug&rdquo;: it is counted for that drug&rsquo;s group.
                 </p>
               ) : null}
@@ -464,16 +464,16 @@ function GraphKey({ palette, topShare }: { palette: Palette; topShare: number })
     <ul className="key-list graph-key" aria-label="Graph key">
       <li>{shape(circle, "none")}Drug</li>
       <li>{shape(square, "none")}Target</li>
-      <li>{shape(diamond, "none")}Biological pathway</li>
-      <li>{shape(diamond, "none", undefined, true)}Pathway (other source)</li>
-      <li>{shape(diamond, "none", "2 1.5")}Curated</li>
+      <li>{shape(diamond, "none")}Pathway (Reactome)</li>
+      <li>{shape(diamond, "none", undefined, true)}Pathway (Gene Ontology)</li>
+      <li>{shape(diamond, "none", "2 1.5")}Pathway (hand-curated)</li>
       <li>
         <span
           className="share-ramp"
           style={{ background: `linear-gradient(90deg, ${palette.noClass}, ${palette.succeeded})` }}
           aria-hidden="true"
         />
-        Success share, 0 to {Math.round(topShare * 100)}%
+        Advance rate, 0 to {Math.round(topShare * 100)}%
       </li>
       <li>Size = number of trials</li>
     </ul>
@@ -595,7 +595,7 @@ function GraphView({
       {converge.length ? (
         <section className="converge" aria-labelledby="converge-h">
           <h3 className="converge-h" id="converge-h">
-            Where successes converge
+            Pathways shared by drugs that advanced
           </h3>
           <ol className="converge-list">
             {converge.map(({ node: n, related }) => (
@@ -615,7 +615,7 @@ function GraphView({
               </li>
             ))}
           </ol>
-          <p className="side-muted">Pathways below the top level, ranked by success share among pool trials.</p>
+          <p className="side-muted">Pathways below the top level, ranked by the share of their finished trials whose drug advanced.</p>
         </section>
       ) : null}
     </div>

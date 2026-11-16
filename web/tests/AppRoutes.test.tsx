@@ -72,7 +72,7 @@ test("the nav marks Pipeline as the current page on /pipeline", async () => {
   go("/pipeline");
   const nav = screen.getByRole("navigation", { name: "Main" });
   expect(within(nav).getByRole("link", { name: "Pipeline" })).toHaveAttribute("aria-current", "page");
-  expect(within(nav).getByRole("link", { name: "Watchlist" })).not.toHaveAttribute("aria-current");
+  expect(within(nav).getByRole("link", { name: "Stop risk" })).not.toHaveAttribute("aria-current");
 });
 
 test("/pipeline renders the pipeline figure", async () => {
@@ -88,13 +88,13 @@ test("the nav Pipeline link goes to /pipeline", () => {
   expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Pipeline" })).toHaveAttribute("href", "/pipeline");
 });
 
-test("the nav is Pipeline, Watchlist, Approaches, Changes, Trials, Methods: no Explore, no Trial map", () => {
+test("the nav is Pipeline, Stop risk, Treatments, Registry changes, Trials, Methods: no Explore, no Trial map", () => {
   stubFetch();
   go("/changes");
   const nav = screen.getByRole("navigation", { name: "Main" });
   expect(within(nav).queryByRole("button", { name: /Explore/ })).not.toBeInTheDocument();
   expect(within(nav).queryByText("Trial map")).not.toBeInTheDocument();
-  expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual(["Pipeline", "Watchlist", "Approaches", "Changes", "Trials", "Methods"]);
+  expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual(["Pipeline", "Stop risk", "Treatments", "Registry changes", "Trials", "Methods"]);
 });
 
 test("/explore still renders the map for old bookmarks", async () => {
@@ -110,12 +110,18 @@ test("the brand links to the intro", () => {
   expect(screen.getByRole("link", { name: /Trial Radar/ })).toHaveAttribute("href", "/");
 });
 
-test("/watchlist renders the Watchlist", async () => {
+test("/stop-risk renders the Stop risk page", async () => {
   stubFetch();
-  go("/watchlist");
+  go("/stop-risk");
   await screen.findByRole("table", { name: /Running trials ranked/ });
-  expect(screen.getByRole("heading", { level: 1, name: "Watchlist" })).toBeInTheDocument();
-  expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+  expect(screen.getByRole("heading", { level: 1, name: "Stop risk" })).toBeInTheDocument();
+  expect(screen.getByTestId("where").textContent).toBe("/stop-risk");
+});
+
+test("/watchlist?disease=MS redirects to /stop-risk?disease=MS", async () => {
+  stubFetch();
+  go("/watchlist?disease=MS");
+  await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/stop-risk?disease=MS"));
 });
 
 const OPEN_INDEX = { "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } };
@@ -128,9 +134,9 @@ test("nav order when open", async () => {
     expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual([
       "Pipeline",
       "Diligence",
-      "Watchlist",
-      "Approaches",
-      "Changes",
+      "Stop risk",
+      "Treatments",
+      "Registry changes",
       "Trials",
       "Methods",
     ]),

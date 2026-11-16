@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { loadMeta } from "../../data";
 import { contentsWord } from "../../lib/diligence";
 import { isOpen, panelLetters, useDiligenceRelease, type DiligenceRelease } from "../../lib/diligenceRelease";
 import { DEFAULT_FIGURE_STATE, diseaseLines, figureSearch, markState, normKey, parseFigureState, targetCompanies, trialsLink } from "../../lib/pipeline";
@@ -57,6 +58,21 @@ export function TargetPage() {
   return <Ready file={file} row={row} disease={parseFigureState(params, file).disease} release={release} />;
 }
 
+/** The registry snapshot time from meta.json (what the header badge shows); null until read or when unknown. */
+function useRegistryDate(): string | null {
+  const [at, setAt] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadMeta()
+      .then((m) => live && setAt(m?.data_timestamp ?? null))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return at;
+}
+
 /** "{run} of {n} trials are running, from {k} companies and academic groups. {a} advanced to a later phase; {s} stopped." */
 function ledeParts(run: number, total: number, groups: number, adv: number, stop: number) {
   const head = `${n(run)} of ${n(total)} ${total === 1 ? "trial" : "trials"} ${run === 1 ? "is" : "are"} running`;
@@ -65,6 +81,7 @@ function ledeParts(run: number, total: number, groups: number, adv: number, stop
 }
 
 function Ready({ file, row, disease, release }: { file: PipelineFile; row: PipelineRow; disease: string | null; release: DiligenceRelease }) {
+  const registryDate = useRegistryDate();
   const phone = usePhone();
   const [params, setParams] = useSearchParams();
   const risk = useRisk();
@@ -125,7 +142,7 @@ function Ready({ file, row, disease, release }: { file: PipelineFile; row: Pipel
     if (lines > 0) add(L.diseases, "Diseases", n(lines));
     if (marks.length > 0 && risk) {
       const scored = riskRows(risk, marks, disease);
-      add(L.risk, "Stop chance", scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above` : undefined);
+      add(L.risk, "Stop risk", scored.length > 0 ? `${n(countAbove(scored.map((r) => r.t)))} above typical` : undefined);
     }
     return out;
   }, [file, row, marks, stats.stop, risk, disease, L]);
@@ -210,9 +227,9 @@ function Ready({ file, row, disease, release }: { file: PipelineFile; row: Pipel
               <div className="sec-h">
                 <span className="ltr" aria-hidden="true">{L.timeline}</span>
                 <h2 id={id(L.timeline)} tabIndex={-1}>Every {row.label} trial over time, by drug</h2>
-                <p>Line = start to (expected) end · thicker = later phase · dashed = expected, past the data date</p>
+                <p>Line = start to (expected) end · thicker = later phase · dashed = planned, not yet reached</p>
               </div>
-              <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} />
+              <TargetTimeline file={file} label={row.label} marks={marks} disease={disease} onOpen={onOpen} asOf={registryDate ?? undefined} />
             </section>
             <section className="sec two" aria-label="Companies and stops">
               <div role="group" aria-labelledby={id(L.companies)}>
@@ -232,7 +249,7 @@ function Ready({ file, row, disease, release }: { file: PipelineFile; row: Pipel
                 <TargetStops file={file} label={row.label} marks={marks} onOpen={onOpen} />
               </div>
             </section>
-            <section className="sec" aria-label="How it works">
+            <section className="sec" aria-label="Mechanism">
               <TargetChain file={file} row={row} marks={marks} disease={disease} phone={phone} letter={L.mechanism} />
             </section>
           </>

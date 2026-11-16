@@ -10,7 +10,7 @@ function SuccessLine({ row }: { row: RailRow }) {
     return (
       <span className="rail-success">
         <span className="rail-dash" aria-hidden="true" />
-        <span className="rail-share">success not defined</span>
+        <span className="rail-share">advance not defined</span>
       </span>
     );
   }
@@ -74,12 +74,12 @@ export function ApproachRail({
         ))}
       </ul>
       <p className="panel-note rail-note">
-        Bars: how often the drug advanced to the next phase, counted for the drug that advanced. Under {minGroup}{" "}
-        finished trials, too few to tell.
+        Bars: share of finished trials whose drug went on to a later phase; a trial counts for the approach of the drug that
+        advanced. Under {minGroup} finished trials, too few to tell.
       </p>
       {uncategorised && uncategorised.n > 0 ? (
         <p className="panel-note rail-note rail-uncategorised">
-          {fmt(uncategorised.n)} {uncategorised.n === 1 ? "trial" : "trials"} not yet categorised ({fmt(uncategorised.u)} unsorted names, {fmt(uncategorised.d)}{" "}
+          {fmt(uncategorised.n)} {uncategorised.n === 1 ? "trial" : "trials"} not yet categorised ({fmt(uncategorised.named)} with a drug name not yet sorted, {fmt(uncategorised.d)}{" "}
           diagnostic or not a treatment). <Link to="/methods#not-yet-categorised">How we sort →</Link>
         </p>
       ) : null}

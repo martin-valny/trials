@@ -171,11 +171,11 @@ export function PipelineFigure({ file, views, state, notes, phone, onCompany }: 
                   );
                 })}
                 <div className="stat">
-                  <b>{v.run}</b> of {v.total}
+                  <b>{v.run}</b> of {v.total} running
                   <div className="bar">
                     <i style={{ width: `${(v.run / maxRun) * 100}%` }} />
                   </div>
-                  {v.runningCompanies} {v.runningCompanies === 1 ? "company" : "companies"}
+                  {v.runningCompanies} {v.runningCompanies === 1 ? "company" : "companies"} running
                 </div>
                 <div className={note ? "note" : "note-empty"}>
                   {note && (

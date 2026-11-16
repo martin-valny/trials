@@ -276,7 +276,7 @@ test("done: partly mark in text, removed list as plain text, judgement with reas
   expect(removed).toHaveTextContent("Nothing in the source says this.");
   expect(within(removed).queryAllByRole("link")).toHaveLength(0);
   const j = screen.getByRole("region", { name: "Judgement" });
-  expect(j).toHaveTextContent("Mixed on further investment in this mechanism for this disease");
+  expect(j).toHaveTextContent("Mixed on further development of this mechanism for this disease");
   expect(j).toHaveTextContent("Confidence: low");
   expect(within(j).queryAllByRole("link")).toHaveLength(0); // no bare #fragments under HashRouter
   const reasons = within(j).getAllByRole("button");
@@ -479,7 +479,7 @@ test("banned phrases: no buy / sell / recommend investing; 'investment advice' o
     const { unmount } = renderPanel();
     await screen.findByText(/^Recorded run/);
     const text = panel().textContent ?? "";
-    expect(text).toMatch(stance === "favours" ? /Favours further investment/ : /Argues against further investment/);
+    expect(text).toMatch(stance === "favours" ? /Favours further development of this mechanism/ : /Argues against further development of this mechanism/);
     expect(text).not.toMatch(/\bbuy\b|\bsell\b|recommend investing/i);
     expect(text.split("investment advice").length - 1).toBe(1);
     unmount();

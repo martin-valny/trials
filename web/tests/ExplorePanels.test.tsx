@@ -41,7 +41,7 @@ test("success panel shows lift sentence and definition link", async () => {
   await ready();
   const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(within(b).getByText(liftSentence(explorer.stats))).toBeInTheDocument();
-  expect(within(b).getByText(/Advanced = the drug moved on to a later phase\./)).toBeInTheDocument();
+  expect(within(b).getByText(/Advanced = the drug was later tested in a higher phase\./)).toBeInTheDocument();
   expect(within(b).getByRole("link", { name: "How this is measured" })).toHaveAttribute(
     "href",
     "#/methods#map-statistic",
@@ -51,7 +51,7 @@ test("success panel shows lift sentence and definition link", async () => {
     expect(within(b).getByText(row.label)).toBeInTheDocument();
   }
   expect(
-    within(b).getByText(/^Tick: average across all finished trials that could succeed \(\d+%\)\.$/),
+    within(b).getByText(/^Tick: average across all measured finished trials \(\d+%\)\.$/),
   ).toBeInTheDocument();
   expect(
     within(b).getByText("Finished Early Phase 1–Phase 2/3 trials with an experimental drug."),
@@ -128,7 +128,7 @@ test("the colour key names each outcome in words and is not a control", async ()
   const labels = [
     "Advanced to next phase",
     "Stopped early",
-    "Finished, no follow-on",
+    "Finished, not advanced",
     "Still running",
     "Status unknown",
   ];
@@ -237,16 +237,16 @@ test("panel b says how many successes the statistic rests on, and how many were 
   await ready();
   const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
   expect(
-    within(b).getByText("Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours."),
+    within(b).getByText("Based on 40 trials that advanced; 3 had fewer than 10 usable neighbours."),
   ).toBeInTheDocument();
-  expect(within(b).getByText("Successful trials aren't concentrated in one part of the map (p-value in Methods).")).toBeInTheDocument();
+  expect(within(b).getByText("Trials that advanced aren't concentrated in one part of the map (p-value in Methods).")).toBeInTheDocument();
 });
 
 test("panel b omits the short-neighbour clause when none were short", async () => {
   stubFetch({ "explorer.json": withStats({ n_averaged: 66, n_short: 0 }) });
   await ready();
   const b = screen.getByRole("region", { name: /How often the drug advanced to the next phase/ });
-  expect(within(b).getByText("Based on 66 trials that succeeded.")).toBeInTheDocument();
+  expect(within(b).getByText("Based on 66 trials that advanced.")).toBeInTheDocument();
   // The statistic asks about similar trials; mechanisms are panel b's By mechanism view.
   expect(within(b).getByText(/Similar = same disease, treatment type, molecule and population\./)).toBeInTheDocument();
 });
@@ -257,11 +257,11 @@ test("panel b has no basis note when the statistic was not computed", async () =
   expect(within(b).queryByText(/^Based on/)).not.toBeInTheDocument();
 });
 
-test("panel c note is a plain count of shown trials that succeeded", async () => {
+test("panel c note is a plain count of shown trials that advanced", async () => {
   await ready();
   const c = screen.getByRole("region", { name: /Trials by phase/ });
   const won = explorer.trials.filter((t) => t.outcome === "succeeded").length;
-  expect(within(c).getByText(`${won} shown trials succeeded.`)).toBeInTheDocument();
+  expect(within(c).getByText(`${won} shown trials advanced.`)).toBeInTheDocument();
   expect(within(c).queryByText(/ of .* shown trials/)).not.toBeInTheDocument();
 });
 
@@ -345,7 +345,7 @@ test("success panel switches between disease, modality and mechanism", async () 
   expect(row.querySelector(".bar-n")!.textContent).toMatch(/^—/);
   expect(row.textContent).not.toMatch(/%/);
   expect(within(b).getByText(/Outlined: fewer than 10 finished trials\./)).toBeInTheDocument();
-  expect(within(b).getByText(/Advanced = the drug moved on to a later phase\./)).toBeInTheDocument();
+  expect(within(b).getByText(/Advanced = the drug was later tested in a higher phase\./)).toBeInTheDocument();
   await userEvent.click(within(group).getByRole("button", { name: "By modality" }));
   // The note follows the grouping; modality rows use the shown casing.
   expect(within(b).getByText("Trials with several modalities count in each.")).toBeInTheDocument();

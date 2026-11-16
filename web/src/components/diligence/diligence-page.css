@@ -1,6 +1,6 @@
 /* The Diligence page on the Figure Plate (spec section 6.3). Root ".page.dp": .page gives the site's gutters, the head
    is the shared PageHead. Below it a column held to 64rem on the head's left edge: plainly headed sections (h2 on an
-   ink rule, as Methods), three steps on rule lines, the Watchlist's hairline table, and the front door's key-number
+   ink rule, as Methods), three steps on rule lines, the Stop risk page's hairline table, and the front door's key-number
    figures. Flat, no cards, no shadows; plate tokens only, no colours of its own (no red: nothing here "advanced"). */
 .dp-label { margin: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
 /* The label stays under the sentence at every width, on the column's left edge, not out at the head's right. */
@@ -40,7 +40,7 @@
 }
 .dp-table td { vertical-align: top; padding: 11px 20px 12px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
 .dp-table th:last-child, .dp-table td:last-child { padding-right: 0; text-align: right; }
-/* The AI read takes the slack: a stance and its confidence ("favours further investment, high confidence") hold one
+/* The AI read takes the slack: a stance and its confidence ("favours further development, high confidence") hold one
    line at 1280; the short columns keep only what their head and values need. */
 .dp-c-t { width: 11%; }
 .dp-c-d { width: 15%; }

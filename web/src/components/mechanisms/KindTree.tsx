@@ -16,7 +16,7 @@ export const STRIP_ORDER: Outcome[] = ["succeeded", "stopped", "completed_unknow
 const STRIP_WORDS: Record<Outcome, string> = {
   succeeded: "advanced to next phase",
   stopped: "stopped",
-  completed_unknown: "finished, no follow-on",
+  completed_unknown: "finished, not advanced",
   running: "running",
   unknown: "status unknown",
 };
@@ -108,7 +108,7 @@ function Share({ kind, defined }: { kind: TreeKind; defined: boolean }) {
     <span className="kind-share">
       {kind.rate !== null ? pct(kind.rate) : <span className="kind-few">too few to tell</span>}
       <span className="visually-hidden">
-        {` (${fmt(kind.succeeded)} of ${fmt(kind.finished)} finished trials that count)`}
+        {` (${fmt(kind.succeeded)} of ${fmt(kind.finished)} measured finished trials)`}
       </span>
     </span>
   );

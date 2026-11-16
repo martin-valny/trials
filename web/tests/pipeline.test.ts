@@ -293,6 +293,25 @@ describe("marginNotes", () => {
     );
     expect(marginNotes(rowViews(big, DEFAULT, 2026), DEFAULT, 2026).size).toBe(4);
   });
+  it("a superlative note goes only to the true leader", () => {
+    // A leads on running (8) and on advanced (6); B is second on advanced (4). B must not be called "Most advanced".
+    const g = file([
+      row("A", [...many(8, { s: "run", sp: 0 }), ...many(6, { s: "adv", y: 2000 })]),
+      row("B", [...many(2, { s: "run" }), ...many(4, { s: "adv", y: 2000 })]),
+    ]);
+    const n = marginNotes(rowViews(g, DEFAULT, 2026), DEFAULT, 2026);
+    expect(n.get("A")?.kicker).toBe("Most crowded");
+    expect(n.has("B")).toBe(false);
+  });
+  it("the leader with no earlier note gets it", () => {
+    const g = file([
+      row("A", [...many(8, { s: "run", sp: 0 }), ...many(1, { s: "adv", y: 2000 })]),
+      row("B", [...many(2, { s: "run" }), ...many(4, { s: "adv", y: 2000 })]),
+    ]);
+    const n = marginNotes(rowViews(g, DEFAULT, 2026), DEFAULT, 2026);
+    expect(n.get("A")?.kicker).toBe("Most crowded");
+    expect(n.get("B")?.kicker).toBe("Most advanced");
+  });
   it("is hidden with the company lens", () => {
     const s = { ...DEFAULT, company: "Roche" };
     expect(marginNotes(rowViews(f, s, 2026), s, 2026).size).toBe(0);
@@ -576,9 +595,9 @@ describe("approvals", () => {
   it("sourceText", () => {
     const a = (p: Partial<PipelineApproval>): PipelineApproval => ({ d: "d", src: ["chembl"], url: "u", ...p });
     expect(sourceText(a({ src: ["fda_label", "chembl"] }))).toBe("ChEMBL · FDA label");
-    expect(sourceText(a({ src: ["hand"], reg: "PMDA", y: 2022 }))).toBe("PMDA 2022 · hand");
-    expect(sourceText(a({ src: ["hand"], reg: "PMDA" }))).toBe("PMDA · hand");
-    expect(sourceText(a({ src: ["hand"] }))).toBe("hand");
+    expect(sourceText(a({ src: ["hand"], reg: "PMDA", y: 2022 }))).toBe("PMDA 2022 · hand-curated");
+    expect(sourceText(a({ src: ["hand"], reg: "PMDA" }))).toBe("PMDA · hand-curated");
+    expect(sourceText(a({ src: ["hand"] }))).toBe("hand-curated");
   });
 
   it("hasApprovalData", () => {

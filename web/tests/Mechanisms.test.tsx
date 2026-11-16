@@ -54,18 +54,17 @@ test("MechanismsPage selects from the URL and switches on rail click", async () 
   await userEvent.click(within(rail()).getByRole("button", { name: /^Non-drug care/ }));
   expect(where()).toBe("/approaches/nondrug");
   expect(await screen.findByRole("region", { name: /^b\s*Non-drug care/ })).toBeInTheDocument();
-  expect(screen.getByText(/Success not defined/)).toBeInTheDocument();
+  expect(screen.getByText(/Advance not defined/)).toBeInTheDocument();
 });
 
-test("the Figure 2 title sits in the shared page head", async () => {
+test("the Approaches title sits in the shared page head", async () => {
   stubFetch({ "explorer.json": withCell() });
   const { container } = renderPage("/approaches/cell");
   await screen.findByRole("region", { name: /^b\s*Cell & transplant/ });
   const head = container.querySelector("header.page-head");
   expect(head).not.toBeNull();
   const h1 = within(head as HTMLElement).getByRole("heading", { level: 1 });
-  expect(h1.textContent).toMatch(/^Figure 2 \| Approaches: every trial by how its treatment works/);
-  expect(within(h1).getByText("Figure 2 |").tagName).toBe("B");
+  expect(h1.textContent).toMatch(/^Approaches: every trial by how its treatment works/);
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 });
 
@@ -97,7 +96,7 @@ test("rail rows are buttons with aria-pressed", async () => {
   ]);
   expect(buttons[0]).toHaveAttribute("aria-pressed", "true");
   buttons.slice(1).forEach((b) => expect(b).toHaveAttribute("aria-pressed", "false"));
-  expect(within(rail()).getByRole("button", { name: /^Non-drug care/ })).toHaveTextContent("success not defined");
+  expect(within(rail()).getByRole("button", { name: /^Non-drug care/ })).toHaveTextContent("advance not defined");
 });
 
 test("MechanismsPage shows the empty message when filters exclude all", async () => {
@@ -160,11 +159,10 @@ test("rail has no Unclassified chip and shows the footnote", async () => {
   await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
   expect(within(rail()).queryByRole("button", { name: /Unclassified|Not yet categorised/ })).not.toBeInTheDocument();
   const u = base.trials.filter((t) => t.approaches.includes("unclassified"));
-  const names = new Set(u.flatMap((t) => t.unsorted));
   const d = u.filter((t) => t.unsorted.length === 0).length;
   const note = within(rail()).getByText(/trials not yet categorised/);
   expect(note.textContent).toBe(
-    `${u.length} trials not yet categorised (${names.size} unsorted names, ${d} diagnostic or not a treatment). How we sort →`,
+    `${u.length} trials not yet categorised (${u.length - d} with a drug name not yet sorted, ${d} diagnostic or not a treatment). How we sort →`,
   );
   expect(within(note).getByRole("link", { name: "How we sort →" })).toHaveAttribute("href", "/methods#not-yet-categorised");
 });
@@ -320,7 +318,7 @@ test("a kind's strip and panel read a win credited to another drug as such, neve
     />,
   );
   const row = screen.getByRole("button", { name: /^aHSCT/ });
-  expect(row).toHaveTextContent("2 advanced, through another drug; 1 finished, no follow-on");
+  expect(row).toHaveTextContent("2 advanced, through another drug; 1 finished, not advanced");
   const red = outcomeColor("succeeded", LIGHT_PALETTE);
   for (const seg of row.querySelectorAll<HTMLElement>(".strip-seg")) expect(seg.style.background).not.toBe(red);
   unmount();
@@ -345,8 +343,8 @@ test("a kind's strip and panel read a win credited to another drug as such, neve
     </MemoryRouter>,
   );
   const panel = screen.getByRole("complementary");
-  expect(panel).toHaveTextContent("3 trials: 2 advanced, through another drug; 1 finished, no follow-on.");
-  expect(panel).toHaveTextContent("3 finished trials that count, 0 advanced");
+  expect(panel).toHaveTextContent("3 trials: 2 advanced, through another drug; 1 finished, not advanced.");
+  expect(panel).toHaveTextContent("3 measured finished trials, 0 advanced");
   expect(within(panel).getByText(/Advanced, through cyclophosphamide/)).toBeInTheDocument();
 });
 
@@ -357,7 +355,7 @@ test("Non-drug care's strip key has no Succeeded entry", async () => {
   renderPage("/approaches/nondrug");
   const key = await screen.findByRole("list", { name: "Outcome strip key" });
   expect(key).not.toHaveTextContent("Advanced to next phase");
-  expect(key).toHaveTextContent("Finished, no follow-on");
+  expect(key).toHaveTextContent("Finished, not advanced");
 });
 
 test("the rail footnote says '1 trial' for one", async () => {
@@ -367,5 +365,14 @@ test("the rail footnote says '1 trial' for one", async () => {
   stubFetch({ "explorer.json": f });
   renderPage("/approaches/targeted");
   await screen.findByRole("region", { name: /^b\s*Targeted drugs/ });
-  expect(within(rail()).getByText(/not yet categorised/).textContent).toMatch(/^1 trial not yet categorised \(1 unsorted names, 0 /);
+  expect(within(rail()).getByText(/not yet categorised/).textContent).toMatch(/^1 trial not yet categorised \(1 with a drug name not yet sorted, 0 /);
+});
+
+test("the graph key names each pathway source and the advance rate", async () => {
+  stubFetch();
+  renderPage("/approaches/targeted");
+  const key = await screen.findByRole("list", { name: "Graph key" });
+  const items = within(key).getAllByRole("listitem").map((li) => li.textContent);
+  expect(items).toEqual(expect.arrayContaining(["Pathway (Reactome)", "Pathway (Gene Ontology)", "Pathway (hand-curated)"]));
+  expect(items.some((t) => /^Advance rate, 0 to \d+%$/.test(t ?? ""))).toBe(true);
 });

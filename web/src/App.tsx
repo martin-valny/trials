@@ -21,6 +21,12 @@ function MechanismsRedirect() {
   return <Navigate to={`/approaches${rest ? `/${rest}` : ""}${search}`} replace />;
 }
 
+/** The old /watchlist address: same query under /stop-risk. */
+function WatchlistRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/stop-risk${search}`} replace />;
+}
+
 /** The intro at /; an old figure link (/?view=...) carries on to /pipeline with its query. */
 function RootRoute() {
   const { search } = useLocation();
@@ -43,7 +49,8 @@ export function AppRoutes() {
           <Route path="/pipeline" element={<PipelinePage />} />
           <Route path="/target/:slug" element={<TargetPage />} />
           <Route path="/diligence" element={<DiligencePage />} />
-          <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/stop-risk" element={<WatchlistPage />} />
+          <Route path="/watchlist" element={<WatchlistRedirect />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/mechanisms/*" element={<MechanismsRedirect />} />
           <Route path="/approaches" element={<Navigate to="/approaches/targeted" replace />} />

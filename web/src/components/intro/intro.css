@@ -22,7 +22,11 @@ main:has(> .intro) { max-width: none; padding: 0; }
 .intro-list a { all: unset; text-decoration: none; box-sizing: border-box; width: 100%; display: flex; align-items: baseline; gap: 12px; padding: 12px 0; cursor: pointer; color: var(--muted); }
 .intro-list a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .intro-list em { font-style: normal; font-weight: 800; font-size: 22px; line-height: 1; width: 16px; }
+.intro-list .tx { display: flex; flex-direction: column; gap: 2px; }
 .intro-list .nm { font-size: var(--fs-lede); font-weight: 500; }
+.intro-list .ln { font-size: var(--fs-meta); color: var(--muted); white-space: nowrap; }
+/* Short screens keep the page on one screen: the questions go, the names stay. */
+@media (max-height: 680px) { .intro-list .ln { display: none; } }
 .intro-list .go { margin-left: auto; font-size: var(--fs-ui); font-weight: 700; opacity: 0; transition: opacity .15s; }
 .intro-list a.on { color: var(--ink); }
 .intro-list a.on .nm { font-weight: 800; }
@@ -53,7 +57,7 @@ main:has(> .intro) { max-width: none; padding: 0; }
   .intro-list li { border: 0; }
   .intro-list a { border: 1px solid var(--rule); border-radius: 999px; padding: 5px 10px; gap: 6px; width: auto; }
   .intro-list a.on { border-color: var(--ink); }
-  .intro-list em { font-size: 14px; width: auto; } .intro-list .nm { font-size: var(--fs-ui); } .intro-list .go { display: none; }
+  .intro-list em { font-size: 14px; width: auto; } .intro-list .nm { font-size: var(--fs-ui); } .intro-list .ln { display: none; } .intro-list .go { display: none; }
   .intro-cap { font-size: var(--fs-ui); min-height: 3.6em; }
   .intro-note { display: none; }
 }

@@ -38,8 +38,8 @@ test("renders figure title from meta area", async () => {
   stubFetch();
   renderAt(<Explore />, "/explore");
   const title = await screen.findByRole("heading", { level: 1 });
-  expect(title).toHaveTextContent(/^Figure 1 \|/);
-  expect(title).toHaveTextContent(meta.area);
+  expect(title).not.toHaveTextContent(/Figure 1/);
+  expect(title).toHaveTextContent(new RegExp(`^The ${meta.area_label} trial landscape`));
   expect(
     screen.getByRole("img", {
       name: `3D map of ${explorer.trials.length} trials. Scroll or press + and − to zoom, 0 to reset.`,
@@ -56,7 +56,7 @@ test("panel a carries a caption on how to read the map", async () => {
   const a = await screen.findByRole("region", { name: /similar trials sit close together/ });
   expect(
     within(a).getByText(
-      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom; drag to turn, or to pan when zoomed (Shift-drag turns). Hover for details, click to open.",
+      "Dot size: enrollment. Position uses only what a trial studies; outcome is colour only. Scroll to zoom; drag to rotate, or to pan when zoomed (Shift-drag rotates). Hover for details, click to open.",
     ),
   ).toBeInTheDocument();
 });
@@ -76,7 +76,7 @@ test("on a coarse pointer the caption says tap to open and never mentions hover"
   renderAt(<Explore />, "/explore");
   const a = await screen.findByRole("region", { name: /similar trials sit close together/ });
   const caption = within(a).getByText(/^Dot size: enrollment\./);
-  expect(caption).toHaveTextContent("Pinch to zoom; drag to turn, or to pan when zoomed. Tap to open.");
+  expect(caption).toHaveTextContent("Pinch to zoom; drag to rotate, or to pan when zoomed. Tap to open.");
   expect(caption.textContent).not.toMatch(/hover/i);
 });
 
@@ -223,7 +223,7 @@ test("the screen-reader summary waits for typing to pause", async () => {
   renderAt(<Explore />, "/explore");
   const box = await screen.findByLabelText("Find a trial");
   const n = explorer.trials.length;
-  const live = screen.getByText(new RegExp(`^${n} trials; \\d+ succeeded`));
+  const live = screen.getByText(new RegExp(`^${n} trials; \\d+ advanced`));
   expect(live).toHaveAttribute("aria-live", "polite");
   await userEvent.type(box, "zzz");
   // Right after typing the announcement has not changed yet ...

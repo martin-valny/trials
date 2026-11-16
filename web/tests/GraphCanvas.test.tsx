@@ -293,7 +293,7 @@ test("the canvas caption says how many drugs the graph draws and by what rule", 
   renderPage("/mechanisms/targeted");
   await screen.findByRole("img", { name: /Mechanism graph/ });
   expect(
-    screen.getByText("Showing 2 of 3 drugs: every drug credited with a success and those in 4 or more trials."),
+    screen.getByText("Showing 2 of 3 drugs: every drug credited with an advance and those in 4 or more trials."),
   ).toBeInTheDocument();
 });
 
@@ -307,7 +307,7 @@ test("Find lists a dropped drug; choosing it says why it is not drawn and hands 
   await userEvent.click(option);
   const note = await screen.findByRole("status", { name: "rare drug" });
   expect(note).toHaveTextContent(
-    "rare drug is not drawn: it is in 2 trials, and the graph shows every drug credited with a success and those in 4 or more trials.",
+    "rare drug is not drawn: it is in 2 trials, and the graph shows every drug credited with an advance and those in 4 or more trials.",
   );
   expect(within(note).getByRole("link", { name: "List its 2 trials →" })).toHaveAttribute(
     "href",

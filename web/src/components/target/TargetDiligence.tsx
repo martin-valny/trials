@@ -18,9 +18,9 @@ const SECTION_TITLE: Record<DiligenceSection, string> = {
 };
 
 const STANCE: Record<DiligenceJudgement["stance"], string> = {
-  favours: "Favours further investment in this mechanism for this disease",
-  mixed: "Mixed on further investment in this mechanism for this disease",
-  against: "Argues against further investment in this mechanism for this disease",
+  favours: "Favours further development of this mechanism for this disease",
+  mixed: "Mixed on further development of this mechanism for this disease",
+  against: "Argues against further development of this mechanism for this disease",
 };
 
 const VERDICT_WORDS: Record<DiligenceVerdict["verdict"], string> = {

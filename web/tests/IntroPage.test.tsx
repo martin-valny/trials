@@ -44,7 +44,16 @@ test("six lettered items when a memo is recorded", async () => {
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
   const rows = within(list).getAllByRole("listitem").map((li) => [li.querySelector("em")?.textContent, li.querySelector(".nm")?.textContent]);
-  expect(rows).toEqual([["a", "Pipeline"], ["b", "Diligence"], ["c", "Watchlist"], ["d", "Approaches"], ["e", "Changes"], ["f", "Trials"]]);
+  expect(rows).toEqual([["a", "Pipeline"], ["b", "Diligence"], ["c", "Stop risk"], ["d", "Treatments"], ["e", "Registry changes"], ["f", "Trials"]]);
+  const lines = within(list).getAllByRole("listitem").map((li) => li.querySelector(".ln")?.textContent);
+  expect(lines).toEqual([
+    "Targets, and how far they got",
+    "AI memos, every claim checked",
+    "Running trials likely to stop early",
+    "Trials by how the treatment works",
+    "This week's registry edits",
+    "Search and open any trial",
+  ]);
 });
 
 test("five items a-e and no Diligence when closed; headline says Five", async () => {
@@ -58,14 +67,14 @@ test("five items a-e and no Diligence when closed; headline says Five", async ()
   await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Five ways to look at them."));
 });
 
-test("hovering Watchlist sets the caption; leaving the list releases", async () => {
+test("hovering Stop risk sets the caption; leaving the list releases", async () => {
   stubFetch(OPEN_INDEX);
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Watchlist/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Stop risk/ }));
   expect(screen.getByText(/Running trials by their estimated chance of stopping early/)).toBeInTheDocument();
-  expect(screen.getByText(/c Watchlist\./)).toBeInTheDocument();
+  expect(screen.getByText(/c Stop risk\./)).toBeInTheDocument();
   expect(screen.queryByText(/Touring the/)).not.toBeInTheDocument();
   fireEvent.mouseLeave(list);
   expect(screen.getByText("Touring the six views · hover one to hold it")).toBeInTheDocument();
@@ -77,12 +86,12 @@ test("the all-trials caption links to the map", async () => {
   expect(await screen.findByRole("link", { name: "Explore the map →" })).toHaveAttribute("href", "/explore");
 });
 
-test("clicking Approaches goes to /approaches", async () => {
+test("clicking Treatments goes to /approaches", async () => {
   stubFetch(OPEN_INDEX);
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.click(within(list).getByRole("link", { name: /Approaches/ }));
+  fireEvent.click(within(list).getByRole("link", { name: /Treatments/ }));
   expect(screen.getByTestId("where").textContent).toBe("/approaches");
 });
 
@@ -91,13 +100,13 @@ test("each view has its own key", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  expect(screen.getByText("moved on")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Approaches/ }));
+  expect(screen.getByText("advanced")).toBeInTheDocument();
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Treatments/ }));
   expect(screen.getByText("More than one approach")).toBeInTheDocument();
   expect(screen.getByText("Broad immunomodulators")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Changes/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Registry changes/ }));
   expect(screen.getByText("notable")).toBeInTheDocument();
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Watchlist/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Stop risk/ }));
   expect(screen.getByText("typical rate")).toBeInTheDocument();
 });
 
@@ -121,13 +130,13 @@ test("phone: first tap holds and offers an Open link, a tap on the active pill n
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  const pill = within(list).getByRole("link", { name: /Watchlist/ });
+  const pill = within(list).getByRole("link", { name: /Stop risk/ });
   fireEvent.click(pill);
   expect(screen.getByTestId("where").textContent).toBe("/");
-  expect(screen.getByRole("link", { name: "Open Watchlist →" })).toHaveAttribute("href", "/watchlist");
+  expect(screen.getByRole("link", { name: "Open Stop risk →" })).toHaveAttribute("href", "/stop-risk");
   expect(screen.queryByText(/Touring/)).not.toBeInTheDocument();
   fireEvent.click(pill);
-  expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+  expect(screen.getByTestId("where").textContent).toBe("/stop-risk");
 });
 
 test("the phone layout follows the 760px query, not the site-wide 640px", async () => {
@@ -150,8 +159,8 @@ test("the Pipeline caption says Orange in dark and Red in light", async () => {
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
   fireEvent.mouseEnter(within(list).getByRole("link", { name: /Pipeline/ }));
-  expect(screen.getByText(/Orange ones moved on to the next phase/)).toBeInTheDocument();
-  expect(screen.queryByText(/Red ones moved on/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Orange ones advanced to a later phase/)).toBeInTheDocument();
+  expect(screen.queryByText(/Red ones advanced/)).not.toBeInTheDocument();
 });
 
 test("the approaches note is a line of the key, not canvas text", async () => {
@@ -159,7 +168,7 @@ test("the approaches note is a line of the key, not canvas text", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Approaches/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Treatments/ }));
   expect(screen.getByText(/Trials in several approaches are under More than one/)).toBeInTheDocument();
 });
 
@@ -191,16 +200,16 @@ test("a view's item is a link: focus holds the view, Enter's target is its page,
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  const link = within(list).getByRole("link", { name: /Watchlist/ });
-  expect(link).toHaveAttribute("href", "/watchlist");
+  const link = within(list).getByRole("link", { name: /Stop risk/ });
+  expect(link).toHaveAttribute("href", "/stop-risk");
   expect(link.querySelector(".go")).toHaveAttribute("aria-hidden", "true");
   fireEvent.focus(link);
-  expect(screen.getByText(/c Watchlist\./)).toBeInTheDocument();
+  expect(screen.getByText(/c Stop risk\./)).toBeInTheDocument();
   expect(screen.queryByText(/Touring the/)).not.toBeInTheDocument();
   fireEvent.blur(link);
   expect(screen.getByText(/Touring the six views/)).toBeInTheDocument();
   fireEvent.click(link);
-  expect(screen.getByTestId("where").textContent).toBe("/watchlist");
+  expect(screen.getByTestId("where").textContent).toBe("/stop-risk");
 });
 
 test("the Trials key says how many trials have no start date", async () => {
@@ -210,7 +219,7 @@ test("the Trials key says how many trials have no start date", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Trials/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /^fTrials/ }));
   expect(screen.getByText("1 trial without a start date is not shown")).toBeInTheDocument();
 });
 

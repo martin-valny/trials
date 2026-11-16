@@ -780,8 +780,8 @@ export function inApproachOrder(rows: SuccessGroup[], approaches: readonly { key
 
 /** The map's one-line verdict. The p-value and the shuffled range live in Methods (map-statistic). */
 export function liftSentence(s: ExplorerStats): string {
-  if (s.verdict === "insufficient") return "Too few successes in this area to measure clustering yet.";
-  if (s.verdict === "chance") return "Successful trials aren't concentrated in one part of the map (p-value in Methods).";
+  if (s.verdict === "insufficient") return "Too few advanced trials in this area to measure clustering yet.";
+  if (s.verdict === "chance") return "Trials that advanced aren't concentrated in one part of the map (p-value in Methods).";
   return (
     `Trials that advanced have neighbours that advanced ${two(s.lift ?? NaN)}× as often as the average ` +
     `finished trial (p-value in Methods).`

@@ -27,7 +27,7 @@ test("a target page shows a recorded diligence run with its checked memo", async
   );
   await expect(panel.getByText(/^partly supported — /)).toBeVisible();
   await expect(panel.getByRole("region", { name: "Removed by the checker" })).toContainText("A competing programme");
-  await expect(panel.getByRole("region", { name: "Judgement" })).toContainText("Mixed on further investment");
+  await expect(panel.getByRole("region", { name: "Judgement" })).toContainText("Mixed on further development");
   await expect(panel.getByText(LABEL)).toBeVisible();
   // Offline build: no run button, no Flag.
   await expect(panel.getByRole("button", { name: /Run (diligence|again)/ })).toHaveCount(0);
@@ -54,7 +54,7 @@ test("no example link while the example has no recording (R47: no dead end)", as
 // ---- The centrepiece: front-door band, nav item and /diligence page (spec sections 4 to 6) ----
 // Closed = the index is absent (the preview server answers 404 for it). Recorded = the synthetic index below.
 const INDEX = readFileSync(join(fileURLToPath(new URL(".", import.meta.url)), "..", "tests", "fixtures", "diligence", "index.json"), "utf-8");
-const NAV_ORDER = ["Pipeline", "Diligence", "Watchlist", "Approaches", "Changes", "Trials", "Methods"];
+const NAV_ORDER = ["Pipeline", "Diligence", "Stop risk", "Treatments", "Registry changes", "Trials", "Methods"];
 
 async function record(page: Page) {
   await page.route("**/diligence/index.json", (r) => r.fulfill({ status: 200, contentType: "application/json", body: INDEX }));
@@ -113,7 +113,7 @@ test("recorded: the front-door band opens the memo at the diligence panel", asyn
   const strip = page.getByRole("navigation", { name: "Panels on this page" });
   await expect(strip.getByRole("link").first()).toContainText(/diligence/i);
   const panel = page.getByRole("region", { name: "Diligence (AI agent)" });
-  await expect(panel.getByRole("region", { name: "Judgement" })).toContainText("Mixed on further investment");
+  await expect(panel.getByRole("region", { name: "Judgement" })).toContainText("Mixed on further development");
   expect(await overflows(page)).toBe(false);
 });
 

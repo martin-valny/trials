@@ -70,7 +70,7 @@ test("front door: the full source text moves to the footer, above the advanced l
   const full = foot.firstElementChild!;
   expect(full.textContent).toMatch(/^8 of 14 trials test a targeted drug in one of these \d+ classes?; 1 more targeted-drug trials sit in smaller classes/);
   expect(full.textContent).toContain("ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials.");
-  expect(within(full as HTMLElement).getByRole("link", { name: "see all in Approaches" })).toHaveAttribute("href", "/approaches");
+  expect(within(full as HTMLElement).getByRole("link", { name: "see all in Treatments" })).toHaveAttribute("href", "/approaches");
   expect(full.nextElementSibling!.textContent).toMatch(/^.Advanced. means the drug has a later-phase trial/);
   // Nothing above the figure repeats the long caveat.
   expect(container.querySelectorAll(".pipeline > p.source")).toHaveLength(2);
@@ -591,4 +591,13 @@ test("kicker uses the area label from meta", async () => {
   const { container } = renderPage();
   await screen.findByRole("heading", { level: 1 });
   await waitFor(() => expect(container.querySelector(".kicker")!.textContent).toBe(`${meta.area_label} · drug pipeline`));
+});
+
+test("each row's stat names its units: running trials and companies running", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const stats = [...container.querySelectorAll(".stat")].map((e) => e.textContent ?? "");
+  expect(stats.length).toBeGreaterThan(0);
+  for (const t of stats) expect(t).toMatch(/^\d+ of \d+ running\d+ (company|companies) running$/);
 });

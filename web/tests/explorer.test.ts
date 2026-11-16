@@ -401,10 +401,10 @@ describe("liftSentence", () => {
     ...o,
   });
   it("insufficient", () =>
-    expect(liftSentence(s({}))).toBe("Too few successes in this area to measure clustering yet."));
+    expect(liftSentence(s({}))).toBe("Too few advanced trials in this area to measure clustering yet."));
   it("chance says successes are not concentrated and points to Methods for the p-value", () =>
     expect(liftSentence(s({ verdict: "chance", lift: 1.31, baseline_range: [0.64, 1.39], p_value: 0.058394 }))).toBe(
-      "Successful trials aren't concentrated in one part of the map (p-value in Methods).",
+      "Trials that advanced aren't concentrated in one part of the map (p-value in Methods).",
     ));
   it("clustered names the lift and points to Methods for the p-value", () =>
     expect(

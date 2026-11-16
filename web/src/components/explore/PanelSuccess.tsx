@@ -25,7 +25,7 @@ const NO_DRUGS: Record<string, DrugInfo> = {};
 
 /** "Based on 40 trials that succeeded; 3 had fewer than 10 usable neighbours." (second clause only when some did). */
 function basisNote(stats: ExplorerStats, k: number): string {
-  const head = `Based on ${fmt(stats.n_averaged)} trials that succeeded`;
+  const head = `Based on ${fmt(stats.n_averaged)} trials that advanced`;
   return stats.n_short > 0 ? `${head}; ${fmt(stats.n_short)} had fewer than ${k} usable neighbours.` : `${head}.`;
 }
 
@@ -120,11 +120,11 @@ export function PanelSuccess({
         <>
           <p className="panel-note">{SEVERAL[by]}</p>
           <p className="panel-note">
-            Where a trial tested several treatments, a success counts only for the groups of the drug that moved on.
+            Where a trial tested several treatments, an advance counts only for the groups of the drug that advanced.
           </p>
         </>
       ) : null}
-      {avg !== null ? <p className="panel-note">Tick: average across all finished trials that could succeed ({pct(avg)}).</p> : null}
+      {avg !== null ? <p className="panel-note">Tick: average across all measured finished trials ({pct(avg)}).</p> : null}
       {rows.some((r) => r.finished < minGroup) ? (
         <p className="panel-note">Outlined: fewer than {minGroup} finished trials.</p>
       ) : null}
@@ -136,7 +136,7 @@ export function PanelSuccess({
         By mechanism, above.
       </p>
       <p className="panel-note">
-        Advanced = the drug moved on to a later phase. <a href="#/methods#map-statistic">How this is measured</a>
+        Advanced = the drug was later tested in a higher phase. <a href="#/methods#map-statistic">How this is measured</a>
       </p>
     </section>
   );

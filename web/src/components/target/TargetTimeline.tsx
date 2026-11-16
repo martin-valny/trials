@@ -10,6 +10,8 @@ interface Props {
   marks: PipelineMark[];
   disease: string | null;
   onOpen: (nct: string, el: Element) => void;
+  /** The registry snapshot time the header badge shows (meta.data_timestamp); falls back to the export date. */
+  asOf?: string;
 }
 
 const Y0_MIN = 2000;
@@ -25,6 +27,18 @@ function yearFraction(iso: string): number {
   if (Number.isNaN(d.getTime())) return new Date().getFullYear() + 0.85;
   const start = Date.UTC(d.getUTCFullYear(), 0, 1);
   return d.getUTCFullYear() + (d.getTime() - start) / (365 * 864e5);
+}
+
+/** The axis ends a year past the later of the rule and the last expected end (capped). */
+function axisEnd(marks: PipelineMark[], asof: number): number {
+  let end = Math.ceil(asof);
+  for (const m of marks) if (m.y !== null && m.est && m.y2 !== null) end = Math.max(end, m.y2);
+  return Math.min(Y_CAP, end + 1);
+}
+
+/** The day the rule marks: the registry snapshot when known, else the export date (YYYY-MM-DD). */
+function asOfDay(registryAt: string | undefined, generatedFor: string): string {
+  return (registryAt ?? generatedFor).slice(0, 10);
 }
 
 export function asOfText(iso: string): string {
@@ -88,20 +102,18 @@ function pack(marks: PipelineMark[]): { placed: Placed[]; tracks: number } {
   return { placed, tracks: ends.length };
 }
 
-export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
+export function TargetTimeline({ file, label, marks, disease, onOpen, asOf: registryAt }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const width = useWidth(box);
   const narrow = width < NARROW;
   const [tip, setTip] = useState<{ x: number; y: number; m: PipelineMark } | null>(null);
   const [list, setList] = useState(false);
-  const asof = yearFraction(file.generated_for);
+  // The rule and its label sit at the registry date the header badge shows; the export date only when that is unknown.
+  const day = asOfDay(registryAt, file.generated_for);
+  const asof = yearFraction(day);
 
   const lanes = useMemo(() => drugLanes(marks, label), [marks, label]);
-  const y1 = useMemo(() => {
-    let end = Math.ceil(asof);
-    for (const m of marks) if (m.y !== null && m.est && m.y2 !== null) end = Math.max(end, m.y2);
-    return Math.min(Y_CAP, end + 1);
-  }, [marks, asof]);
+  const y1 = axisEnd(marks, asof);
   /** The axis starts at the five-year mark before the earliest start (never before 2000). */
   const y0 = useMemo(() => axisStart(marks), [marks]);
   const undated = marks.filter((m) => m.y === null).length;
@@ -124,7 +136,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
   const bottom = y;
   const H = bottom + 22;
   const nowX = X(asof);
-  const asOfLabel = `Data as of ${asOfText(file.generated_for)}`;
+  const asOfLabel = `Registry data from ${asOfText(day)}`;
   const asOfAt = asOfPlacement(nowX, W, narrow, asOfLabel);
   const ticks: number[] = [];
   for (let t = y0; t <= y1; t += 5) ticks.push(t);
@@ -252,7 +264,7 @@ export function TargetTimeline({ file, label, marks, disease, onOpen }: Props) {
           <svg width="18" height="8" aria-hidden="true">
             <line x1="1" x2="16" y1="4" y2="4" stroke="var(--fin)" strokeWidth="3" strokeLinecap="round" />
           </svg>
-          Finished, no follow-on
+          Finished, not advanced
         </span>
         {undated > 0 && <span className="tl-undated">{undated} undated {undated === 1 ? "trial is" : "trials are"} not drawn</span>}
       </div>
