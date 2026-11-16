@@ -32,7 +32,8 @@ script = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = script  # dataclasses resolve their module through sys.modules
 _SPEC.loader.exec_module(script)
 
-V1_DIR = Path(__file__).resolve().parents[3] / "config" / "risk"
+V1_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "risk_v1"
+"""The published v1 artefacts, frozen (config/risk now holds v2)."""
 CONFIG = Path(__file__).resolve().parents[3] / "config" / "area.yaml"
 
 

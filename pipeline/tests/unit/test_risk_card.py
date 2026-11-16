@@ -15,6 +15,8 @@ from trialradar.risk.artefacts import Card
 from trialradar.risk.evaluate import metrics
 
 RISK_DIR = Path(__file__).resolve().parents[3] / "config" / "risk"
+V1_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "risk_v1"
+"""The published v1 artefacts, frozen when v2 replaced them in config/risk."""
 pytestmark = pytest.mark.skipif(
     not (RISK_DIR / "card.json").exists(), reason="no committed risk card yet (Task 5)"
 )
@@ -62,12 +64,22 @@ def test_shipped_main_is_not_degenerate() -> None:
     assert shipped_auc >= eval_auc - 0.02
 
 
-def test_card_v2_validates_and_v1_card_still_loads() -> None:
-    """The v2 fields are optional: the committed v1 card validates unchanged and reads as v1."""
-    raw = json.loads((RISK_DIR / "card.json").read_text())
+def test_committed_card_is_v2_and_ships() -> None:
+    """The committed card is the shipped v2: it validates, round-trips and passed its bar."""
+    card = Card.model_validate_json((RISK_DIR / "card.json").read_text())
+    assert card.feature_set == "v2" and card.max_start_year is None
+    assert card.comparison is not None and card.comparison.v2_ships is True
+    assert card.data_source is not None
+    assert Card.model_validate_json(card.model_dump_json()) == card
+
+
+def test_v1_card_still_loads_and_v2_fields_validate() -> None:
+    """The v2 fields are optional: the frozen published v1 card validates unchanged as v1."""
+    raw = json.loads((V1_DIR / "card.json").read_text())
     v1 = Card.model_validate_json(json.dumps(raw))
     assert v1.feature_set == "v1" and v1.comparison is None and v1.data_source is None
     assert isinstance(v1.max_start_year, int)
+    assert artefacts.load(V1_DIR).card == v1
 
     m = raw["metrics"]["boosted"]
     comparison = {
