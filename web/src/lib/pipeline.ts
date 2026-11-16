@@ -455,16 +455,11 @@ export function marginNotes(
 
   for (const rule of rules) {
     if (!rule.on || notes.size >= MAX_NOTES) continue;
-    let best: RowView | null = null;
-    let bestScore = 0;
-    for (const v of views) {
-      if (notes.has(v.row.id)) continue;
-      const sc = rule.score(v);
-      if (sc >= rule.min && sc > bestScore) {
-        best = v;
-        bestScore = sc;
-      }
-    }
+    // A superlative is true only for a row at the top: the leader gets it, or a row tied with the leader that has
+    // no note yet; when every leader already carries a note, the rule shows nothing.
+    const top = Math.max(0, ...views.map(rule.score));
+    if (top < rule.min || top <= 0) continue;
+    const best = views.find((v) => rule.score(v) === top && !notes.has(v.row.id));
     if (best) notes.set(best.row.id, { kicker: rule.kicker, text: rule.text(best) });
   }
   return notes;
@@ -508,16 +503,11 @@ export function yearNotes(views: RowView[], s: FigureState, thisYear: number): M
   ];
   for (const rule of rules) {
     if (notes.size >= MAX_NOTES) break;
-    let best: RowView | null = null;
-    let bestScore = 0;
-    for (const v of views) {
-      if (notes.has(v.row.id)) continue;
-      const sc = rule.score(v);
-      if (sc >= rule.min && sc > bestScore) {
-        best = v;
-        bestScore = sc;
-      }
-    }
+    // A superlative is true only for a row at the top: the leader gets it, or a row tied with the leader that has
+    // no note yet; when every leader already carries a note, the rule shows nothing.
+    const top = Math.max(0, ...views.map(rule.score));
+    if (top < rule.min || top <= 0) continue;
+    const best = views.find((v) => rule.score(v) === top && !notes.has(v.row.id));
     if (best) notes.set(best.row.id, { kicker: rule.kicker, text: rule.text(best) });
   }
   return notes;
@@ -673,12 +663,12 @@ export function approvalText(row: PipelineRow, code: string, label: string): str
 
 const SOURCE_LABEL: Record<"chembl" | "fda_label", string> = { chembl: "ChEMBL", fda_label: "FDA label" };
 
-/** Where an approval comes from: "ChEMBL · FDA label", or for a hand row "{reg} {y} · hand". */
+/** Where an approval comes from: "ChEMBL · FDA label", or for a hand row "{reg} {y} · hand-curated". */
 export function sourceText(a: PipelineApproval): string {
   const auto = (["chembl", "fda_label"] as const).filter((s) => a.src.includes(s)).map((s) => SOURCE_LABEL[s]);
   if (auto.length) return auto.join(" · ");
   const head = [a.reg, a.y].filter((x) => x !== undefined && x !== "").join(" ");
-  return head ? `${head} · hand` : "hand";
+  return head ? `${head} · hand-curated` : "hand-curated";
 }
 
 /** True when the refresh read approvals.csv (even with no lines); false when the file was missing or bad. */

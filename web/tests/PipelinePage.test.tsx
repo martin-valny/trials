@@ -592,3 +592,12 @@ test("kicker uses the area label from meta", async () => {
   await screen.findByRole("heading", { level: 1 });
   await waitFor(() => expect(container.querySelector(".kicker")!.textContent).toBe(`${meta.area_label} · drug pipeline`));
 });
+
+test("each row's stat names its units: running trials and companies running", async () => {
+  stubFetch();
+  const { container } = renderPage();
+  await screen.findByRole("heading", { level: 1 });
+  const stats = [...container.querySelectorAll(".stat")].map((e) => e.textContent ?? "");
+  expect(stats.length).toBeGreaterThan(0);
+  for (const t of stats) expect(t).toMatch(/^\d+ of \d+ running\d+ (company|companies) running$/);
+});
