@@ -34,7 +34,7 @@ CATEGORIES: tuple[str, ...] = (
 )
 """MeSH top-level disease categories, matched against condition-browse mesh/ancestor terms."""
 
-_PLACEBO_ARMS = {"PLACEBO_COMPARATOR", "SHAM_COMPARATOR"}
+PLACEBO_ARMS = frozenset({"PLACEBO_COMPARATOR", "SHAM_COMPARATOR"})
 
 _PARANEOPLASTIC = frozenset(
     {"Paraneoplastic Syndromes", "Paraneoplastic Syndromes, Nervous System"}
@@ -80,6 +80,14 @@ class RiskFields:
     "Neoplasms" reached only through the paraneoplastic-syndromes chain is left out."""
 
 
+def categories_from(meshes: set[str], ancestors: set[str]) -> tuple[str, ...]:
+    """CATEGORIES among direct mesh and ancestor terms, sorted (paraneoplastic rule applied)."""
+    terms = meshes | ancestors
+    if _neoplasms_only_via_paraneoplastic(meshes, ancestors):
+        terms = terms - {"Neoplasms"}
+    return tuple(sorted(terms & set(CATEGORIES)))
+
+
 def risk_fields(study: dict[str, Any]) -> RiskFields:
     """Read the raw risk fields; missing modules give None / False / empty, never an error."""
     proto = study.get("protocolSection") or {}
@@ -95,13 +103,9 @@ def risk_fields(study: dict[str, Any]) -> RiskFields:
             if isinstance(t, dict) and isinstance(t.get("term"), str)
         }
 
-    meshes, ancestors = read("meshes"), read("ancestors")
-    terms = meshes | ancestors
-    if _neoplasms_only_via_paraneoplastic(meshes, ancestors):
-        terms.discard("Neoplasms")
     return RiskFields(
         nct_id=nct_id,
         n_arms=len(groups) if groups else None,
-        placebo_arm=any(g.get("type") in _PLACEBO_ARMS for g in groups or []),
-        categories=tuple(sorted(terms & set(CATEGORIES))),
+        placebo_arm=any(g.get("type") in PLACEBO_ARMS for g in groups or []),
+        categories=categories_from(read("meshes"), read("ancestors")),
     )

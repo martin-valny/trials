@@ -26,6 +26,7 @@ dev = [
     "mypy",
     "types-PyYAML",
     "pip-audit",
+    "truststore>=0.10.5",
 ]
 
 [build-system]

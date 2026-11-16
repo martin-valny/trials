@@ -11,7 +11,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -51,8 +51,15 @@ def fit(
     *,
     seed: int = 42,
     explain: bool = True,
+    sample_weight: np.ndarray | None = None,
+    baseline_features: Sequence[str] = BASELINE_FEATURES,
+    groups: np.ndarray | None = None,
 ) -> Fitted:
-    """Fit one model. The baseline sees BASELINE_FEATURES only; a missing one is an error.
+    """Fit one model. The baseline sees `baseline_features` only; a missing one is an error.
+
+    `sample_weight` reaches every estimator (the logistic step, the calibrated booster and the
+    explanation booster). With `groups` (v2: several rows per trial) the boosted fit's
+    calibration folds keep a trial's rows together so out-of-fold scores do not leak.
 
     A boosted fit also keeps an uncalibrated booster for factor explanations unless
     `explain` is False. That booster is a full-data refit while the calibrated predictor
@@ -62,10 +69,10 @@ def fit(
     if X.shape[1] != len(cols):
         raise ValueError(f"X has {X.shape[1]} columns but {len(cols)} names were given")
     if recipe == "baseline":
-        missing = [c for c in BASELINE_FEATURES if c not in cols]
+        missing = [c for c in baseline_features if c not in cols]
         if missing:
             raise ValueError(f"baseline feature column(s) missing: {', '.join(missing)}")
-        idx = tuple(cols.index(c) for c in BASELINE_FEATURES)
+        idx = tuple(cols.index(c) for c in baseline_features)
         est = Pipeline(
             [
                 ("impute", SimpleImputer(strategy="median", keep_empty_features=True)),
@@ -73,7 +80,7 @@ def fit(
                 ("lr", LogisticRegression(max_iter=1000)),
             ]
         )
-        est.fit(X[:, list(idx)], y)
+        est.fit(X[:, list(idx)], y, lr__sample_weight=sample_weight)
         return Fitted("baseline", est, idx)
     idx = tuple(range(len(cols)))
     # ensemble=False keeps one booster refit on all rows (isotonic map learned on the 5 folds'
@@ -81,14 +88,25 @@ def fit(
     # The folds must be shuffled: training rows arrive ordered by start year, so plain
     # `cv=5` holds out whole year blocks whose out-of-fold scores carry no rank signal, and
     # the isotonic map learned on them is flat over the refit booster's score range.
-    folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    if groups is None:
+        folds: Any = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    else:
+        folds = list(
+            StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed).split(X, y, groups)
+        )
+        if any(len(np.unique(y[test])) < 2 for _, test in folds):
+            raise ValueError("a grouped calibration fold lacks one of the classes; too few trials")
     est = CalibratedClassifierCV(
         HistGradientBoostingClassifier(random_state=seed),
         method="isotonic",
         cv=folds,
         ensemble=False,
-    ).fit(X, y)
-    booster = HistGradientBoostingClassifier(random_state=seed).fit(X, y) if explain else None
+    ).fit(X, y, sample_weight=sample_weight)
+    booster = (
+        HistGradientBoostingClassifier(random_state=seed).fit(X, y, sample_weight=sample_weight)
+        if explain
+        else None
+    )
     return Fitted("boosted", est, idx, booster)
 
 
@@ -126,15 +144,45 @@ def fit_ensemble(
     *,
     n_boot: int = 20,
     seed: int = 42,
+    sample_weight: np.ndarray | None = None,
+    groups: np.ndarray | None = None,
+    baseline_features: Sequence[str] = BASELINE_FEATURES,
 ) -> Ensemble:
     """Fit the main model on all rows and `n_boot` refits on bootstrap resamples.
 
+    With `groups`, a resample draws whole groups (trials) with replacement and takes all their
+    rows, so the range reflects trial-level uncertainty; rows of a group drawn twice appear twice.
+
     Only `main` keeps a booster for explanations; the members need none.
     """
-    main = fit(recipe, X, y, columns, seed=seed)
+    kw: dict[str, Any] = {"baseline_features": baseline_features}
+    main = fit(recipe, X, y, columns, seed=seed, sample_weight=sample_weight, groups=groups, **kw)
     rng = np.random.default_rng(seed)
     members = []
+    if groups is not None:
+        uniq, inverse = np.unique(groups, return_inverse=True)
+        by_group = [np.flatnonzero(inverse == g) for g in range(len(uniq))]
     for i in range(n_boot):
-        rows = rng.integers(0, len(y), len(y))
-        members.append(fit(recipe, X[rows], y[rows], columns, seed=seed + i + 1, explain=False))
+        if groups is None:
+            rows = rng.integers(0, len(y), len(y))
+            g_rows = None
+        else:
+            drawn = rng.integers(0, len(uniq), len(uniq))
+            rows = np.concatenate([by_group[g] for g in drawn])
+            # original trial ids: every copy of a drawn-twice trial stays in one calibration fold
+            g_rows = groups[rows]
+        w = None if sample_weight is None else sample_weight[rows]
+        members.append(
+            fit(
+                recipe,
+                X[rows],
+                y[rows],
+                columns,
+                seed=seed + i + 1,
+                explain=False,
+                sample_weight=w,
+                groups=g_rows,
+                **kw,
+            )
+        )
     return Ensemble(recipe, tuple(columns), main, tuple(members))

@@ -1,10 +1,40 @@
 # Trial Radar — Handoff for the next agent
 
-Read section 00 (session 14, 2026-11-12) first: it is the current state. Older blocks below it are history, newest first; sections 0 to 8 date from 2026-11-05 to 11-07 and describe the project's foundations. Repository: `martin-valny/trials`, **public**, default branch **`main`**.
+Read section 00 (session 15, 2026-11-16) first: it is the current state. Older blocks below it are history, newest first; sections 0 to 8 date from 2026-11-05 to 11-07 and describe the project's foundations. Repository: `martin-valny/trials`, **public**, default branch **`main`**.
 
 ---
 
-## 00. Current state — session 14 (2026-11-12): diligence agent LIVE on the public site, read this first
+## 00. Current state — session 15 (2026-11-16): stop-risk model v2 built, trained and shipping, read this first
+
+**Where things stand — start here:**
+- **Branch:** `feat/stop-risk-v2` (off `origin/main` at `20ff055`), commits `20ff055..HEAD` (34 commits): design, plan, the build (subagent-driven, every task reviewed), the real training run's artefacts, and this docs commit. **Nothing pushed.** Spec `docs/superpowers/specs/2026-11-15-stop-risk-v2-design.md` (approved 2026-11-15, amendments 2026-11-16 at its end); plan `docs/superpowers/plans/2026-11-15-stop-risk-v2.md`; controller ledger and reports in `.superpowers/sdd/2026-11-15-stop-risk-v2/` (git-ignored).
+- **What v2 is:** the stop-risk model retrained on **point-in-time** registry records. AACT's monthly archives of ClinicalTrials.gov are folded into a quarterly panel (30 snapshots, 2018-12 to 2026-01, git-ignored under `pipeline/.cache/aact/`); training rows are trials as they looked while still running, so planned enrollment, status, trial age, planned duration, months past primary completion and months since the last update are now features, and start year (and v1's 2019 clamp) is gone. Cutoff C = 2021-12-01: train on trials ended by C (11,651 trials, 55,953 rows), test on the 12,154 trials running at C (2,874 stopped by 2026-01). The daily run computes the same features from the live record (as-of = run date); no new network calls.
+- **Built:** `pipeline/src/trialradar/aact/` (archive range reader, AACT→`Tables` adapter, panel), `risk/features_v2.py`, `risk/split_v2.py`, `risk/history_v2.py` (edit-history research arm), scripts `build_aact_panel.py`, `check_risk_parity.py`, `train_stop_risk_v2.py`; the `stop_risk` stage scores v2; new factor labels; Methods gains the before/after table, the split in words, the leakage notes and the AACT/CTTI credit line.
+- **Results (all from `config/risk/card.json`):**
+
+  | Model | Test set | AUC | Brier |
+  |---|---|---|---|
+  | v1 recipe (chosen boosted) | full, 12,154 | 0.643 | 0.1757 |
+  | **v2 boosted (shipped)** | full | **0.693** | **0.1682** |
+  | v2 baseline | full | 0.550 | 0.1831 |
+  | v2 without sites | full | 0.693 | 0.1692 |
+  | v2 + edit history (not shipped) | full | 0.697 | 0.1672 |
+  | published v1 | started ≥2020, 6,524 | 0.688 | 0.1785 |
+  | v2 boosted | same subset | 0.716 | 0.1755 |
+  | v2 / v1 recipe in-area | 97 (29 stopped) | 0.650 / 0.557 | 0.1997 / 0.2166 |
+
+  Both gates passed (≥ +0.02 AUC and Brier no worse vs the v1 recipe on the full test set, and vs the published v1 on its own subset; the second gate is Martin's 2026-11-16 decision, made after the first run's numbers were read and fixed before v2 was scored on the subset). Parity on 500 unchanged trials (live CT.gov vs AACT 2026-01): every shippable feature ≤ 0.2% mismatch, sponsor features (exempt) 1.2–1.6%; 140 unchanged records were no longer running live (CT.gov flips lapsed records to UNKNOWN) and were left out. Typical stop rates change with the model: 19.7% overall (v1 showed 15.1%).
+- **Artefacts:** `config/risk/` now holds v2 (model.joblib lzma, about 12 MB). The published v1 is frozen in `pipeline/tests/fixtures/risk_v1/` (extracted byte-for-byte from `origin/main`); the trainer's tests and the v1-card test read it. A future retrain passes `--v1-dir` explicitly (`config/risk/README.md`, Retrain).
+- **Gates at the artefacts commit plus docs:** pipeline 1203 passed (3 deselected), ruff and mypy clean; web vitest 877 passed, build clean; e2e 110 passed, 6 skipped (`PW_PORT=4185`). Not yet run on Linux CI.
+
+**How to push (blocked from this Mac):** `git bundle create stop-risk-v2.bundle origin/main..feat/stop-risk-v2`, Martin uploads it into a Codespace, `git bundle verify stop-risk-v2.bundle`, `git fetch ./stop-risk-v2.bundle feat/stop-risk-v2:feat/stop-risk-v2 && git push -u origin feat/stop-risk-v2`, then `gh pr create` (works locally).
+
+**Next:**
+1. Martin: push via bundle and open the PR; check CI.
+2. After the merge, the site changes only on a `daily.yml` run (`gh workflow run daily.yml --ref main -f force=true` to force one). Watch it: the `stop_risk` stage should score with `stop-risk-v2-20261116`; check the Watchlist count, a target page's factors ("Started N months ago", "Planned enrollment: N") and the Methods before/after table.
+3. Optional, for later: have the daily run keep per-trial values of the tracked fields (primary completion date, enrollment, status) so edit-history features become servable in a year or two.
+
+## 00. Previous state — session 14 (2026-11-12): diligence agent LIVE on the public site
 
 **Where things stand — start here:**
 - **Live:** https://martin-valny.github.io/trials/ runs in the **live** release state. Target pages have a Run button; `/diligence` lists 18 recorded memos plus the "Any target" picker; the Watchlist ranks 237 running trials (per-trial estimates are **on** again, `risk.per_trial: true`).

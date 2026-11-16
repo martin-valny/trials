@@ -16,6 +16,7 @@ from trialradar.risk import artefacts
 from trialradar.risk.artefacts import Card, Metrics, RiskArtefactError
 from trialradar.risk.explain import HIDDEN_FEATURES
 from trialradar.risk.features import FEATURES
+from trialradar.risk.features_v2 import FEATURES_V2, NEW_FEATURES
 from trialradar.risk.model import fit_ensemble
 
 REPO = Path(__file__).resolve().parents[3]
@@ -77,13 +78,15 @@ def _save(tmp_path: Path, card: Card) -> None:
 def test_save_load_roundtrip(tmp_path: Path) -> None:
     card = _card()
     _save(tmp_path, card)
+    # joblib's "lzma" (LZMA-alone, magic 5d 00 00): ~5x smaller than zlib on v2; load is agnostic
+    assert (tmp_path / "model.joblib").read_bytes()[:3] == b"]\x00\x00"
     loaded = artefacts.load(tmp_path)
     assert loaded.card == card
     x, _ = make_data(20)
     np.testing.assert_allclose(loaded.eval.predict(x)[0], loaded.shipped.predict(x)[0])
     assert loaded.sponsor_table["sponsor"].to_list() == ["A"]
     assert loaded.sponsor_table["as_of"].dtype == pl.Date
-    assert set(loaded.factor_labels) == set(FEATURES) - HIDDEN_FEATURES
+    assert set(loaded.factor_labels) == (set(FEATURES) | set(NEW_FEATURES)) - HIDDEN_FEATURES
 
 
 def test_load_rejects_minor_version_mismatch(tmp_path: Path) -> None:
@@ -140,8 +143,10 @@ def test_typical_rate_split_rule() -> None:
 
 def test_factor_labels_cover_features() -> None:
     labels = artefacts.read_factor_labels(REPO / "config" / "risk" / "factor_labels.csv")
-    shown = [f for f in FEATURES if f not in HIDDEN_FEATURES]
+    shown = [f for f in (*FEATURES, *FEATURES_V2) if f not in HIDDEN_FEATURES]
     assert set(shown) <= set(labels)
+    # A status that does not hold is never a reason (shown only when 1).
+    assert all(labels[f].kind == "category" for f in shown if f.startswith("status_"))
     assert not HIDDEN_FEATURES & set(labels)  # a label for a hidden feature would be dead copy
     assert all(labels[f].kind == "category" for f in shown if f.startswith("cat_"))
     assert all(labels[f].kind == "sponsor" for f in shown if f.startswith("sponsor_prior"))
@@ -159,3 +164,59 @@ def test_factor_labels_reject_unknown_kind_and_missing_text(tmp_path: Path) -> N
     bad.write_text("feature,up,down\nn_sites,Many,Few\n")
     with pytest.raises(artefacts.RiskArtefactError, match="expected columns"):
         artefacts.read_factor_labels(bad)
+
+
+def test_load_reads_optional_v2_card(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    """<dir>/v2/card.json (committed when v2 does not ship) is optional; when present but
+    invalid (or not a v2 card) it is logged and ignored, so the live v1 scores still load."""
+    _save(tmp_path, _card())
+    assert artefacts.load(tmp_path).v2_card is None
+    (tmp_path / "v2").mkdir()
+    v2 = _card(feature_set="v2", max_start_year=None, data_source="AACT")
+    (tmp_path / "v2" / "card.json").write_text(v2.model_dump_json())
+    assert artefacts.load(tmp_path).v2_card == v2
+    caplog.set_level("WARNING", logger="trialradar.risk.artefacts")
+    (tmp_path / "v2" / "card.json").write_text("{}")
+    loaded = artefacts.load(tmp_path)
+    assert loaded.v2_card is None and loaded.card == _card()
+    assert "v2/card.json" in caplog.text and "invalid" in caplog.text
+    caplog.clear()
+    (tmp_path / "v2" / "card.json").write_text(_card().model_dump_json())  # a v1 card
+    assert artefacts.load(tmp_path).v2_card is None
+    assert "feature_set 'v1'" in caplog.text
+
+
+def _comparison(ships: bool) -> artefacts.Comparison:
+    m = _metrics()
+    return artefacts.Comparison(
+        cutoff="2021-12-01", outcome_snapshot="2026-01-01", v1_recipe=m, v1_committed=None,
+        v2_baseline=m, v2=m, v2_history=m, v2_no_sites=m, test_exclusions={}, train_trials=1,
+        train_rows=1, train_age_mix={}, calibration_by_age={}, parity=None, v2_ships=ships,
+        reason="r",
+    )  # fmt: skip
+
+
+def test_load_refuses_unshipped_v2_card_as_live_card(tmp_path: Path) -> None:
+    """A v2 card is the live card only when its comparison passed the shipping bar; otherwise
+    (no comparison, or v2_ships false) load refuses it and points at config/risk/v2/."""
+    for comparison in (None, _comparison(False)):
+        live = _card(feature_set="v2", max_start_year=None, comparison=comparison)
+        _save(tmp_path, live)
+        with pytest.raises(RiskArtefactError, match=r"shipping bar.*config/risk/v2/card\.json"):
+            artefacts.load(tmp_path)
+    shipped = _card(feature_set="v2", max_start_year=None, comparison=_comparison(True))
+    _save(tmp_path, shipped)
+    assert artefacts.load(tmp_path).card == shipped
+
+
+def test_comparison_v1_published_auc_is_optional() -> None:
+    m = _metrics()
+    base = {
+        "cutoff": "2021-12-01", "outcome_snapshot": "2026-01-01", "v1_recipe": m,
+        "v1_committed": None, "v2_baseline": m, "v2": m, "v2_history": m, "v2_no_sites": m,
+        "test_exclusions": {}, "train_trials": 1, "train_rows": 1, "train_age_mix": {},
+        "calibration_by_age": {}, "parity": None, "v2_ships": False, "reason": "r",
+    }  # fmt: skip
+    assert artefacts.Comparison.model_validate(base).v1_published_auc is None
+    c = artefacts.Comparison.model_validate({**base, "v1_published_auc": 0.682})
+    assert c.v1_published_auc == 0.682

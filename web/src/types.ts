@@ -419,6 +419,41 @@ export interface RiskModelInfo {
   n_train: number;
   n_test: number;
   per_trial: boolean;
+  /** Present only on a v2 card ("v1" cards leave it out). */
+  feature_set?: "v2";
+  /** v2's before/after block (pipeline `Comparison`): on a v2 card, or on a v1 card when v2 did not ship. */
+  comparison?: RiskComparison;
+  /** The card's credit line, "ClinicalTrials.gov via AACT (…), snapshots {iso}–{iso}, processed {iso}". */
+  data_source?: string;
+}
+
+/** Metrics as the comparison block holds them: AUC is null when a subset has one outcome only. */
+export type RiskComparisonMetrics = Omit<RiskMetrics, "auc"> & { auc: number | null };
+
+/** Mirrors pipeline/src/trialradar/risk/artefacts.py `Comparison`: every model on the same held-out
+ * trials, those running at the cutoff snapshot, labelled from the outcome snapshot. */
+export interface RiskComparison {
+  cutoff: string;
+  outcome_snapshot: string;
+  v1_recipe: RiskComparisonMetrics;
+  v1_committed: RiskComparisonMetrics | null;
+  v2_baseline: RiskComparisonMetrics;
+  v2: RiskComparisonMetrics;
+  v2_history: RiskComparisonMetrics;
+  v2_no_sites: RiskComparisonMetrics;
+  /** Test trials left out, by reason: running, unknown, withdrawn, suspended, missing, other. */
+  test_exclusions: Record<string, number>;
+  train_trials: number;
+  train_rows: number;
+  train_age_mix: Record<string, number>;
+  calibration_by_age: Record<string, { p: number; observed: number; n: number }[]>;
+  parity: Record<string, number> | null;
+  v2_ships: boolean;
+  reason: string;
+  /** v1's previously published held-out AUC (measured on final records); null or absent when unknown. */
+  v1_published_auc?: number | null;
+  /** v2's chosen model on exactly v1_committed's trials (the second shipping gate); absent on older cards. */
+  v2_on_v1_subset?: RiskComparisonMetrics | null;
 }
 
 export interface RiskFactor {
