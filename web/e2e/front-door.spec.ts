@@ -177,10 +177,10 @@ test("clicking f in the strip marks f current once the scroll has settled", asyn
   await page.goto("/#/target/cd20");
   const strip = page.getByRole("navigation", { name: "Panels on this page" });
   await expect(page.getByRole("heading", { name: "Running trials, estimated chance of stopping early" })).toBeAttached();
-  await strip.getByRole("link", { name: /^f Stop chance/ }).click();
+  await strip.getByRole("link", { name: /^f Stop risk/ }).click();
   await expect(page).toHaveURL(/panel=f/);
   await page.waitForTimeout(1200);
-  await expect(strip.getByRole("link", { name: /^f Stop chance/ })).toHaveAttribute("aria-current", "location");
+  await expect(strip.getByRole("link", { name: /^f Stop risk/ })).toHaveAttribute("aria-current", "location");
   await expect(strip.locator('[aria-current="location"]')).toHaveCount(1);
 });
 

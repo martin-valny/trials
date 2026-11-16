@@ -498,7 +498,7 @@ export function Methods() {
             <h3 id="not-yet-categorised">Not yet categorised</h3>
             <p>
               A trial that lands in none of the approaches above is not yet categorised. It is not an
-              approach to open, so the Approaches page leaves it out of the rail and notes how many
+              approach to open, so the Treatments page leaves it out of the rail and notes how many
               there are; on the map it stays a filter value, last in every list.
             </p>
             <ul>

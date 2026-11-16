@@ -1,16 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 import { noRecordedDiligence } from "./isolate";
 
-const NOTE = /^Statistical estimate from public registry data\. Not a statement about any sponsor or trial\./;
+const NOTE = /^A statistical pattern from similar past trials, read from the registry record alone\./;
 const overflows = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 
 
 test.beforeEach(({ page }) => noRecordedDiligence(page));
 
-test("the Watchlist loads: the first row has an estimate, and the note is shown", async ({ page }) => {
-  await page.goto("/#/watchlist");
-  await expect(page.getByRole("heading", { level: 1, name: "Watchlist" })).toBeVisible();
+test("the Stop risk page loads: the first row has an estimate, and the note is shown", async ({ page }) => {
+  await page.goto("/#/stop-risk");
+  await expect(page.getByRole("heading", { level: 1, name: "Stop risk" })).toBeVisible();
   const table = page.getByRole("table", { name: /Running trials ranked/ });
   await expect(table).toBeVisible();
   const first = table.locator("tbody tr").first();
@@ -21,9 +21,10 @@ test("the Watchlist loads: the first row has an estimate, and the note is shown"
   expect(await overflows(page)).toBe(false);
 });
 
-test("the Watchlist sort is kept in the URL", async ({ page }) => {
+test("the Stop risk sort is kept in the URL, and old /watchlist links land there", async ({ page }) => {
   await page.goto("/#/watchlist");
-  await page.getByRole("button", { name: "Above typical by most" }).click();
+  await expect(page).toHaveURL(/#\/stop-risk/);
+  await page.getByRole("button", { name: "Furthest above typical" }).click();
   await expect(page).toHaveURL(/sort=difference/);
   await expect(page.getByRole("table", { name: /ranked by difference from typical/ })).toBeVisible();
 });

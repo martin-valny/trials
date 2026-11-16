@@ -70,7 +70,7 @@ test("front door: the full source text moves to the footer, above the advanced l
   const full = foot.firstElementChild!;
   expect(full.textContent).toMatch(/^8 of 14 trials test a targeted drug in one of these \d+ classes?; 1 more targeted-drug trials sit in smaller classes/);
   expect(full.textContent).toContain("ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials.");
-  expect(within(full as HTMLElement).getByRole("link", { name: "see all in Approaches" })).toHaveAttribute("href", "/approaches");
+  expect(within(full as HTMLElement).getByRole("link", { name: "see all in Treatments" })).toHaveAttribute("href", "/approaches");
   expect(full.nextElementSibling!.textContent).toMatch(/^.Advanced. means the drug has a later-phase trial/);
   // Nothing above the figure repeats the long caveat.
   expect(container.querySelectorAll(".pipeline > p.source")).toHaveLength(2);

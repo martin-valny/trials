@@ -242,7 +242,7 @@ function DiligenceLine() {
   );
 }
 
-const SEE_ALL = "see all in Approaches";
+const SEE_ALL = "see all in Treatments";
 function Source({ text }: { text: string }) {
   const i = text.indexOf(SEE_ALL);
   if (i < 0) return <>{text}</>;

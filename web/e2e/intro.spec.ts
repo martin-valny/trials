@@ -42,18 +42,18 @@ test("the tour moves from All to Pipeline", async ({ page }) => {
   await expect(caption(page)).toContainText("Pipeline", { timeout: 5000 });
 });
 
-test("hovering Changes holds the tour", async ({ page }, info) => {
+test("hovering Registry changes holds the tour", async ({ page }, info) => {
   test.skip(info.project.name === "mobile", "hover is a desktop gesture");
   await open(page, { width: 1280, height: 720 });
-  await page.locator(".intro-list a", { hasText: "Changes" }).hover();
-  await expect(caption(page)).toContainText("Changes");
+  await page.locator(".intro-list a", { hasText: "Registry changes" }).hover();
+  await expect(caption(page)).toContainText("Registry changes");
   await page.waitForTimeout(6000);
-  await expect(caption(page)).toContainText("Changes");
+  await expect(caption(page)).toContainText("Registry changes");
 });
 
-test("clicking Approaches opens the approaches page", async ({ page }) => {
+test("clicking Treatments opens the approaches page", async ({ page }) => {
   await open(page, { width: 1280, height: 720 });
-  const btn = page.locator(".intro-list a", { hasText: "Approaches" });
+  const btn = page.locator(".intro-list a", { hasText: "Treatments" });
   await btn.click();
   await expect(page).toHaveURL(/#\/approaches\//);
 });

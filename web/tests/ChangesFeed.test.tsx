@@ -125,7 +125,7 @@ test("the head states the counts for the window in view", async () => {
   stubFetch();
   renderAt(<ChangesFeed />);
   await screen.findByRole("table");
-  expect(screen.getByRole("heading", { level: 1, name: "Changes" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Registry changes" })).toBeInTheDocument();
   expect(
     screen.getByText(`${seven.changes.length} changes to tracked trials in the last 7 days; ${notable.length} notable.`),
   ).toBeInTheDocument();

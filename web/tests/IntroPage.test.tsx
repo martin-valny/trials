@@ -47,11 +47,11 @@ test("six lettered items when a memo is recorded", async () => {
   expect(rows).toEqual([["a", "Pipeline"], ["b", "Diligence"], ["c", "Stop risk"], ["d", "Treatments"], ["e", "Registry changes"], ["f", "Trials"]]);
   const lines = within(list).getAllByRole("listitem").map((li) => li.querySelector(".ln")?.textContent);
   expect(lines).toEqual([
-    "Which targets are in trials, and how far they got",
-    "AI memos on a target, every claim checked",
-    "Running trials most likely to stop early",
-    "Every trial by how its treatment works",
-    "What sponsors changed in the registry this week",
+    "Targets, and how far they got",
+    "AI memos, every claim checked",
+    "Running trials likely to stop early",
+    "Trials by how the treatment works",
+    "This week's registry edits",
     "Search and open any trial",
   ]);
 });
@@ -219,7 +219,7 @@ test("the Trials key says how many trials have no start date", async () => {
   show();
   const list = await screen.findByRole("list", { name: "The views" });
   await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(6));
-  fireEvent.mouseEnter(within(list).getByRole("link", { name: /Trials/ }));
+  fireEvent.mouseEnter(within(list).getByRole("link", { name: /^fTrials/ }));
   expect(screen.getByText("1 trial without a start date is not shown")).toBeInTheDocument();
 });
 

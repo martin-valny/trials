@@ -11,7 +11,7 @@ async function navTo(page: Page, name: string) {
 test("feed -> trial -> methods", async ({ page }) => {
   await page.goto("/#/pipeline");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("targeted-drug trials");
-  await navTo(page, "Changes");
+  await navTo(page, "Registry changes");
   await expect(page).toHaveURL(/#\/changes$/);
   const firstRow = page.locator("table.changes tbody tr").first();
   await expect(firstRow).toBeVisible();
@@ -332,7 +332,7 @@ test("Mechanisms: Cell & transplant opens a kind and its trial", async ({ page }
     await route.fulfill({ response: res, json: f });
   });
   await page.goto("/#/pipeline");
-  await navTo(page, "Approaches");
+  await navTo(page, "Treatments");
   await expect(page).toHaveURL(/#\/approaches\/targeted$/);
   const rail = page.getByRole("navigation", { name: /Approaches/ });
   const chip = rail.getByRole("button", { name: /^Cell & transplant/ });
@@ -432,7 +432,7 @@ test("Mechanisms: a drug the node cap left out is found, explained and handed to
   await page.goto("/#/approaches/targeted");
   await expect(page.getByRole("img", { name: /^Mechanism graph of 2 drugs/ })).toBeVisible();
   await expect(
-    page.getByText("Showing 2 of 3 drugs: every drug credited with a success and those in 4 or more trials."),
+    page.getByText("Showing 2 of 3 drugs: every drug credited with an advance and those in 4 or more trials."),
   ).toBeVisible();
   await page.getByRole("combobox", { name: "Find a drug, target or pathway" }).fill("rare");
   await page.getByRole("option", { name: /rare drug/ }).click();

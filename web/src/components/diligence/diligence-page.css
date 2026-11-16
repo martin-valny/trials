@@ -1,6 +1,6 @@
 /* The Diligence page on the Figure Plate (spec section 6.3). Root ".page.dp": .page gives the site's gutters, the head
    is the shared PageHead. Below it a column held to 64rem on the head's left edge: plainly headed sections (h2 on an
-   ink rule, as Methods), three steps on rule lines, the Watchlist's hairline table, and the front door's key-number
+   ink rule, as Methods), three steps on rule lines, the Stop risk page's hairline table, and the front door's key-number
    figures. Flat, no cards, no shadows; plate tokens only, no colours of its own (no red: nothing here "advanced"). */
 .dp-label { margin: 0; font-size: var(--fs-meta); line-height: var(--lh-meta); color: var(--muted); }
 /* The label stays under the sentence at every width, on the column's left edge, not out at the head's right. */

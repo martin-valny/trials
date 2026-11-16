@@ -522,7 +522,7 @@ export function sourceLine(f: PipelineFile, views: RowView[]): string {
   return (
     `${n(shown.size)} of ${n(f.counts.trials)} trials test a targeted drug in one of these ${views.length} classes; ` +
     `${n(f.counts.targeted_not_rowed)} more targeted-drug trials sit in smaller classes (Methods); ` +
-    "the rest are care, cell transplant, plasma treatments and others (see all in Approaches). " +
+    "the rest are care, cell transplant, plasma treatments and others (see all in Treatments). " +
     "ClinicalTrials.gov registered trials only: no preclinical programmes, company pipeline disclosures or EU-only trials."
   );
 }

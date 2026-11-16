@@ -9,6 +9,7 @@ import { claimCounts } from "../src/lib/diligence";
 import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 import type { PipelineFile, RunRecord } from "../src/types";
 import { readFixture, stubFetch } from "./helpers";
+import { OLD } from "./oldWords";
 
 const cd20 = JSON.parse(readFileSync(join(__dirname, "fixtures", "diligence", "cd20__MS.json"), "utf-8")) as RunRecord;
 const btk: RunRecord = { ...cd20, target: "btk", run_id: "b1" };
@@ -163,4 +164,12 @@ test("picker in live state lists every pipeline row", async () => {
   await userEvent.selectOptions(disease, "MS");
   await userEvent.click(screen.getByRole("button", { name: "Open memo →" }));
   expect(screen.getByTestId("where").textContent).toBe("/target/cd20?disease=MS&panel=a");
+});
+
+test("the diligence page uses none of the retired words", async () => {
+  serve({ "index.json": INDEX, "cd20__MS.json": cd20, "btk__MS.json": btk, "report.json": REPORT });
+  go();
+  await table();
+  const text = document.body.textContent ?? "";
+  for (const [name, re] of OLD) expect(re.test(text), `old wording "${name}" is on the page`).toBe(false);
 });

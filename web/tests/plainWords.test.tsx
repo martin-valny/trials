@@ -9,50 +9,13 @@ import { Methods } from "../src/components/Methods";
 import { TargetPage } from "../src/components/target/TargetPage";
 import { TrialDetail } from "../src/components/TrialDetail";
 import { WatchlistPage } from "../src/components/watchlist/WatchlistPage";
+import { IntroPage } from "../src/components/intro/IntroPage";
+import { ChangesFeed } from "../src/components/ChangesFeed";
 import type { ExplorerFile } from "../src/types";
 import { readFixture, renderAt, stubFetch } from "./helpers";
+import { __resetDiligenceIndex } from "../src/lib/diligenceRelease";
 
-/** The old words (spec section 8, left column; copy-clarity spec 2026-11-16). "Approach" and "Mechanism graph" stay in body text; the nav says Treatments. */
-const OLD: [string, RegExp][] = [
-  ["Succeeded (drug moved to a later phase)", /Succeeded \(drug moved/],
-  ["Completed, outcome unknown", /Completed, outcome unknown/],
-  ["Succeeded via another drug", /Succeeded via/i],
-  ["credited to the drug that moved on", /credited to the drug that moved on/],
-  ["Share that succeeded", /Share that succeeded/],
-  ["success pool", /success pool/i],
-  ["Acts on", /Acts on/],
-  ["binding agent", /binding agent/],
-  ["Embedding of", /Embedding of/],
-  ["cluster no more than chance", /cluster no more than chance/],
-  ["shuffled labels", /shuffled labels/],
-  ["Unclassified", /Unclassified/],
-  ["Not yet sorted", /Not yet sorted/],
-  ["proposed", /\bproposed\b/],
-  ["Reactome pathway", /Reactome pathway/],
-  ["GO term", /GO term/],
-  ["Hollow", /Hollow:/],
-  ["panel d", /panel d\b/],
-  ["Click a dot in a", /Click a dot in/],
-  ["Data may be stale", /Data may be stale/],
-  ["Watchlist", /Watchlist/],
-  ["Stop chance", /Stop chance/],
-  ["Not a statement about any sponsor or trial", /Not a statement about any sponsor or trial/i],
-  ["No target row", /No target row/],
-  ["moved on", /moved on/i],
-  ["succeeded", /\bsucceeded\b/i],
-  ["success share", /success share/i],
-  ["successes", /successes/i],
-  ["no follow-on", /no follow-on/i],
-  ["without a known result", /without a known result/i],
-  ["that count", /trials that count/i],
-  ["pool trials", /pool trials/i],
-  ["could succeed", /could succeed/i],
-  ["neuroimmunology", /neuroimmunology/i],
-  ["Figure 1 |", /Figure 1 \|/],
-  ["Figure 2 |", /Figure 2 \|/],
-  ["past the data date", /past the data date/],
-  ["further investment", /further investment/i],
-];
+import { OLD } from "./oldWords";
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */
 const noMapWords = () => {
@@ -284,4 +247,25 @@ test("the stop-risk panel and the trial-page estimate never say failure or troub
   );
   await screen.findByRole("region", { name: "Chance of stopping early" });
   noBannedWords();
+});
+
+test("the front door and the registry changes page use no old wording", async () => {
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => fakeContext()) as unknown as HTMLCanvasElement["getContext"]);
+  __resetDiligenceIndex();
+  stubFetch({ "/diligence/index.json": { runs: [{ target: "cd20", disease: "MS" }] } });
+  const { unmount } = render(
+    <MemoryRouter initialEntries={["/"]}>
+      <IntroPage />
+    </MemoryRouter>,
+  );
+  await waitFor(() => expect(within(screen.getByRole("list", { name: "The views" })).getAllByRole("listitem")).toHaveLength(6));
+  noOldWords();
+  unmount();
+  render(
+    <MemoryRouter initialEntries={["/changes"]}>
+      <ChangesFeed />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { level: 1 });
+  noOldWords();
 });

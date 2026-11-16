@@ -54,7 +54,7 @@ test("no example link while the example has no recording (R47: no dead end)", as
 // ---- The centrepiece: front-door band, nav item and /diligence page (spec sections 4 to 6) ----
 // Closed = the index is absent (the preview server answers 404 for it). Recorded = the synthetic index below.
 const INDEX = readFileSync(join(fileURLToPath(new URL(".", import.meta.url)), "..", "tests", "fixtures", "diligence", "index.json"), "utf-8");
-const NAV_ORDER = ["Pipeline", "Diligence", "Watchlist", "Approaches", "Changes", "Trials", "Methods"];
+const NAV_ORDER = ["Pipeline", "Diligence", "Stop risk", "Treatments", "Registry changes", "Trials", "Methods"];
 
 async function record(page: Page) {
   await page.route("**/diligence/index.json", (r) => r.fulfill({ status: 200, contentType: "application/json", body: INDEX }));
