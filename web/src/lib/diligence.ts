@@ -240,7 +240,7 @@ export type StripView =
   | { kind: "capped" };
 
 /** A judgement's stance in the site's words (the header strip, the Diligence page). */
-export const STRIP_STANCE = { favours: "favours further investment", mixed: "mixed", against: "argues against further investment" } as const;
+export const STRIP_STANCE = { favours: "favours further development", mixed: "mixed", against: "argues against further development" } as const;
 
 /** What the header strip shows for a run state (spec section 5). */
 export function stripView(

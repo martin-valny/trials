@@ -51,6 +51,7 @@ const OLD: [string, RegExp][] = [
   ["Figure 1 |", /Figure 1 \|/],
   ["Figure 2 |", /Figure 2 \|/],
   ["past the data date", /past the data date/],
+  ["further investment", /further investment/i],
 ];
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */

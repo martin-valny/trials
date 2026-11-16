@@ -40,7 +40,7 @@
 }
 .dp-table td { vertical-align: top; padding: 11px 20px 12px 0; border-bottom: 1px solid var(--rule); overflow-wrap: anywhere; }
 .dp-table th:last-child, .dp-table td:last-child { padding-right: 0; text-align: right; }
-/* The AI read takes the slack: a stance and its confidence ("favours further investment, high confidence") hold one
+/* The AI read takes the slack: a stance and its confidence ("favours further development, high confidence") hold one
    line at 1280; the short columns keep only what their head and values need. */
 .dp-c-t { width: 11%; }
 .dp-c-d { width: 15%; }

@@ -323,8 +323,8 @@ describe("stripView", () => {
   it("maps every stance to its words", () => {
     const rec = (stance: "favours" | "mixed" | "against"): RunRecord => ({ ...record, memo: { ...record.memo!, judgement: { ...record.memo!.judgement, stance } } });
     const stance = (s: "favours" | "mixed" | "against") => (stripView({ ...base, shown: shown({ rec: rec(s) }) }) as { stance: string }).stance;
-    expect(stance("favours")).toBe("favours further investment");
-    expect(stance("against")).toBe("argues against further investment");
+    expect(stance("favours")).toBe("favours further development");
+    expect(stance("against")).toBe("argues against further development");
   });
   it("a null memo has no stance", () => {
     expect(stripView({ ...base, shown: shown({ rec: { ...record, memo: null } }) })).toMatchObject({ stance: null, confidence: null });
