@@ -113,6 +113,8 @@ class Comparison(_Strict):
     v2_ships: bool
     reason: str
     v1_published_auc: float | None = None  # the v1 card's shipped-kind test AUC (Methods)
+    # v2's chosen model (main fit) on exactly v1_committed's trials: the second shipping gate
+    v2_on_v1_subset: Metrics | None = None
 
 
 class Card(_Strict):
@@ -207,7 +209,7 @@ def save(
     joblib.dump(
         {"version": card.version, "eval": eval_ens, "shipped": shipped},
         dir / "model.joblib",
-        compress=3,
+        compress=("lzma", 6),  # ~5x smaller than zlib 3 on the real v2 ensembles
     )
     (dir / "card.json").write_text(card.model_dump_json(indent=2) + "\n")
     heldout.write_parquet(dir / "heldout.parquet")

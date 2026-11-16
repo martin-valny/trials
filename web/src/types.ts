@@ -452,6 +452,8 @@ export interface RiskComparison {
   reason: string;
   /** v1's previously published held-out AUC (measured on final records); null or absent when unknown. */
   v1_published_auc?: number | null;
+  /** v2's chosen model on exactly v1_committed's trials (the second shipping gate); absent on older cards. */
+  v2_on_v1_subset?: RiskComparisonMetrics | null;
 }
 
 export interface RiskFactor {

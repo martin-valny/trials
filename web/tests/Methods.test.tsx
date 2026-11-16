@@ -416,6 +416,12 @@ test("stop-risk v2: the before/after table renders each model's AUC and Brier fr
   const row = (key: string) => flat(table.querySelector(`tr[data-row='${key}']`));
   expect(row("v1_recipe")).toMatch(/Earlier model \(v1\), same trials.*1,000.*0\.600.*0\.150/);
   expect(row("v1_committed")).toMatch(/400.*0\.610.*0\.155/);
+  expect(row("v2_on_v1_subset")).toMatch(
+    /New model \(v2\), on the same trials as the published earlier model \(subset\).*400.*0\.640.*0\.150/,
+  );
+  // the subset rows sit together, right after the published model's row
+  const keys = [...table.querySelectorAll("tr[data-row]")].map((r) => r.getAttribute("data-row"));
+  expect(keys.indexOf("v2_on_v1_subset")).toBe(keys.indexOf("v1_committed") + 1);
   expect(row("v2_baseline")).toMatch(/0\.580.*0\.152/);
   expect(row("v2")).toMatch(/New model \(v2\), used on the site.*0\.650.*0\.140/);
   expect(row("v2_no_sites")).toMatch(/0\.640.*0\.141/);
@@ -521,7 +527,7 @@ test("stop-risk v2: v1's published AUC is quoted, called higher only when it is,
   renderAt(<Methods />, "/methods#stop-risk");
   text = flat(await section());
   expect(text).not.toMatch(/published AUC/);
-  expect(text).toMatch(/The subset row is the earlier model exactly as published/);
+  expect(text).toMatch(/The two subset rows are the earlier model exactly as published and the new model/);
 });
 
 test("stop-risk v2: a v1 card has no before/after table and no credit line", async () => {
@@ -805,4 +811,26 @@ test("Methods: without a visitor scroll, a late data file re-scrolls to the arri
   release();
   await screen.findByText(/min_cluster_size 25/);
   expect(scroll.mock.contexts).toContain(document.getElementById("limitations"));
+});
+
+test("stop-risk v2: the second gate against the published model is shown and described when the card has it", async () => {
+  stubFetch({ "risk.json": riskV2() });
+  const { unmount } = renderAt(<Methods />, "/methods#stop-risk");
+  let text = flat(await section());
+  expect(text).toMatch(
+    /no worse, it does the same against the earlier model as published on the test trials that model never saw, and its features/,
+  );
+  unmount();
+  // an older card without the field: no subset row for v2, no second-gate clause, the single-subset note
+  const cmp = readFixture<RiskFile>("../risk-variants/risk-v2.json").model.comparison!;
+  const older = { ...cmp };
+  delete older.v2_on_v1_subset;
+  stubFetch({ "risk.json": riskV2({ comparison: older }) });
+  renderAt(<Methods />, "/methods#stop-risk");
+  const s = await section();
+  text = flat(s);
+  expect(s.querySelector("tr[data-row='v2_on_v1_subset']")).toBeNull();
+  expect(text).not.toMatch(/as published on the test trials that model never saw/);
+  expect(text).toMatch(/no worse, and its features come out the same/);
+  expect(text).toMatch(/The subset row is the earlier model exactly as published/);
 });

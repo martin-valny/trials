@@ -189,6 +189,9 @@ function BeforeAfter({ model, cmp, area }: { model: RiskModelInfo; cmp: RiskComp
     ...(cmp.v1_committed
       ? [{ key: "v1_committed", label: "Earlier model as published, subset: test trials it never saw", m: cmp.v1_committed }]
       : []),
+    ...(cmp.v2_on_v1_subset
+      ? [{ key: "v2_on_v1_subset", label: "New model (v2), on the same trials as the published earlier model (subset)", m: cmp.v2_on_v1_subset }]
+      : []),
     { key: "v2_baseline", label: `New baseline: phase, sponsor type and trial age${used === "baseline" ? ", used on the site" : ""}`, m: cmp.v2_baseline },
     { key: "v2", label: `New model (v2)${used === "boosted" ? ", used on the site" : ""}`, m: cmp.v2 },
     { key: "v2_no_sites", label: "v2 without site and country features", m: cmp.v2_no_sites },
@@ -228,9 +231,11 @@ function BeforeAfter({ model, cmp, area }: { model: RiskModelInfo; cmp: RiskComp
             ? `The earlier model's published AUC of ${pub.toFixed(3)} was higher because it was measured on each trial's final record, which can carry edits made after the trial ended (sites, countries, arms) that hint at how it ended. Here it reads each record as it stood in ${cut}, as the new model does.`
             : `The earlier model's published AUC of ${pub.toFixed(3)} was measured on each trial's final record; here it reads each record as it stood in ${cut}, as the new model does.`}
         {pub !== null && cmp.v1_committed ? " " : null}
-        {cmp.v1_committed
-          ? "The subset row is the earlier model exactly as published, scored only on the test trials that started after its own training years, so it covers fewer trials."
-          : null}
+        {cmp.v1_committed && cmp.v2_on_v1_subset
+          ? "The two subset rows are the earlier model exactly as published and the new model, both scored only on the test trials that started after the earlier model's own training years, so they cover fewer trials."
+          : cmp.v1_committed
+            ? "The subset row is the earlier model exactly as published, scored only on the test trials that started after its own training years, so it covers fewer trials."
+            : null}
       </p>
       )}
       {isV2 ? (
@@ -419,8 +424,12 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       {v2 ? (
         <p>
           The new model replaces the earlier one only if, on these test trials, its AUC beats the earlier
-          model&apos;s by at least 0.02, its Brier score is no worse, and its features come out the same when
-          computed from today&apos;s registry as from the snapshots (a parity check). Within the new model, boosted
+          model&apos;s by at least 0.02, its Brier score is no worse,
+          {v2.v2_on_v1_subset !== undefined
+            ? " it does the same against the earlier model as published on the test trials that model never saw,"
+            : null}{" "}
+          and its features come out the same when computed from today&apos;s registry as from the snapshots (a
+          parity check). Within the new model, boosted
           trees are used over the baseline on the same 0.02 rule. This time the {MODEL_LABEL[model.shipped]} is
           used: {model.shipped_reason}.{" "}
           {v2.v2_ships
@@ -436,8 +445,11 @@ function RiskMethodsBody({ model, area }: { model: RiskModelInfo; area: string |
       {cmp && !v2 ? (
         <p>
           The new model would replace it only if, on the test trials above, its AUC beat the earlier model&apos;s by at
-          least 0.02, its Brier score were no worse, and its features came out the same from today&apos;s registry as
-          from the snapshots (a parity check). It does not pass ({cmp.reason}), so the earlier model stays on the
+          least 0.02, its Brier score were no worse,
+          {cmp.v2_on_v1_subset !== undefined
+            ? " it did the same against the earlier model as published on the test trials that model never saw,"
+            : null}{" "}
+          and its features came out the same from today&apos;s registry as from the snapshots (a parity check). It does not pass ({cmp.reason}), so the earlier model stays on the
           site.
         </p>
       ) : null}

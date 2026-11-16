@@ -43,6 +43,10 @@ def _m(auc: float, brier: float) -> Metrics:
 SHIPPABLE = [f for f in FEATURES_V2 if f not in script.SPONSOR_FEATURES]
 
 
+GATE_OK: dict[str, Any] = {"v1_committed": _m(0.60, 0.20), "v2_on_v1_subset": _m(0.80, 0.10)}
+"""A passing second gate (v2 on the published v1's subset well ahead of the published v1)."""
+
+
 def _par(**over: float) -> dict[str, float]:
     """A parity result with every shippable feature at 0 mismatch, then `over`."""
     return {**dict.fromkeys(SHIPPABLE, 0.0), **over}
@@ -90,7 +94,7 @@ def trained(panel: tuple[Path, list[SynthTrial]], tmp_path_factory: pytest.TempP
 )
 def test_bar_rule(v2: Metrics, v1: Metrics, parity: dict[str, float] | None, ships: bool) -> None:
     base = _m(0.60, 0.20)  # boosted clearly beats the v2 baseline
-    d = script.decide(base, v2, v1, parity)
+    d = script.decide(base, v2, v1, parity, **GATE_OK)
     assert d.recipe == "boosted"
     assert d.v2_ships is ships
     assert ("v2 replaces v1" if ships else "v1 stays live") in d.reason
@@ -100,16 +104,43 @@ def test_bar_rule(v2: Metrics, v1: Metrics, parity: dict[str, float] | None, shi
 
 def test_bar_within_v2_falls_back_to_baseline_and_compares_it() -> None:
     base, boost = _m(0.70, 0.15), _m(0.719, 0.14)  # boosted +0.019 only
-    d = script.decide(base, boost, _m(0.60, 0.20), _par())
+    d = script.decide(base, boost, _m(0.60, 0.20), _par(), **GATE_OK)
     assert d.recipe == "baseline"
     assert d.v2_ships is True  # the v2 baseline itself beats v1-recipe
     assert "0.700" in d.reason and "0.600" in d.reason
 
 
+@pytest.mark.parametrize(
+    ("sub", "pub", "ships", "text"),
+    [
+        (_m(0.72, 0.15), _m(0.70, 0.15), True, "at least 0.02 AUC better"),  # pass, Brier equal
+        (_m(0.73, 0.14), _m(0.71, 0.15), True, "at least 0.02 AUC better"),  # +0.02 in floats
+        (_m(0.719, 0.14), _m(0.70, 0.15), False, "not 0.02 AUC better"),  # AUC short
+        (_m(0.75, 0.1501), _m(0.70, 0.15), False, "not 0.02 AUC better"),  # Brier worse
+        (_m(0.75, 0.10), None, False, "published v1 not scored"),  # v1 dir missing
+    ],
+)
+def test_second_gate_against_published_v1(
+    sub: Metrics, pub: Metrics | None, ships: bool, text: str
+) -> None:
+    # the first gate and parity pass comfortably; only the published-v1 gate varies
+    d = script.decide(
+        _m(0.60, 0.20), _m(0.80, 0.10), _m(0.60, 0.20), _par(),
+        v1_committed=pub, v2_on_v1_subset=sub,
+    )  # fmt: skip
+    assert d.v2_ships is ships
+    assert text in d.reason
+    assert ("v2 replaces v1" if ships else "v1 stays live") in d.reason
+    assert "v1-recipe AUC 0.600" in d.reason  # both comparisons are named with their numbers
+    if pub is not None:
+        assert f"published v1 AUC {pub.auc:.3f}, Brier {pub.brier:.4f}" in d.reason
+        assert f"v2 AUC {sub.auc:.3f}, Brier {sub.brier:.4f}" in d.reason
+
+
 def test_parity_missing_feature_fails() -> None:
     parity = _par()
     del parity["months_since_update"], parity["n_sites"]
-    d = script.decide(_m(0.6, 0.2), _m(0.9, 0.05), _m(0.6, 0.2), parity)
+    d = script.decide(_m(0.6, 0.2), _m(0.9, 0.05), _m(0.6, 0.2), parity, **GATE_OK)
     assert d.v2_ships is False
     assert "parity missing n_sites, months_since_update" in d.reason
 
@@ -237,6 +268,12 @@ def test_end_to_end_writes_artefacts(trained: Path) -> None:
     assert c is not None
     assert c.cutoff == CUTOFF_SNAP.isoformat() and c.outcome_snapshot == FINAL.isoformat()
     assert c.v1_committed is not None  # synthetic trials started 2020+ are running at C
+    assert c.v2_on_v1_subset is not None
+    assert (c.v2_on_v1_subset.n, c.v2_on_v1_subset.positives) == (
+        c.v1_committed.n,
+        c.v1_committed.positives,
+    )
+    assert "published v1" in c.reason
     # the published v1 AUC Methods quotes: the committed v1 card's shipped kind
     v1_card = artefacts.Card.model_validate_json((V1_DIR / "card.json").read_text())
     assert c.v1_published_auc == getattr(v1_card.metrics, v1_card.shipped).auc
@@ -259,7 +296,14 @@ def test_end_to_end_writes_artefacts(trained: Path) -> None:
     assert card.filter["typical_v1"] == [t.model_dump() for t in v1_typical]
     assert {"phase", "sponsor", "rate", "n"} == set(card.filter["typical_v1"][0])
     # the card's decision is exactly the bar applied to the card's own numbers
-    d = script.decide(c.v2_baseline, c.v2, c.v1_recipe, c.parity)
+    d = script.decide(
+        c.v2_baseline,
+        c.v2,
+        c.v1_recipe,
+        c.parity,
+        v1_committed=c.v1_committed,
+        v2_on_v1_subset=c.v2_on_v1_subset,
+    )
     assert (d.recipe, d.v2_ships, d.reason) == (card.shipped, c.v2_ships, c.reason)
     assert card.metrics.boosted == c.v2 and card.metrics.baseline == c.v2_baseline
     assert {t.phase for t in card.typical} >= {"all", "phase 1", "phase 2", "phase 3"}

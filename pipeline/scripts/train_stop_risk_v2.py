@@ -343,15 +343,42 @@ def parity_result(parity: dict[str, float] | None) -> tuple[bool, str]:
     return True, f"parity passes (no shippable feature above {PARITY_MAX:.0%} mismatch)"
 
 
+def published_gate(
+    v2_on_v1_subset: Metrics | None, v1_committed: Metrics | None
+) -> tuple[bool, str]:
+    """Second gate (Martin, 2026-11-16, fixed before computing): on the held-out trials the
+    published v1 never saw (start >= 2020-01-01), v2's chosen model needs AUC at least 0.02
+    above the published v1's and Brier no worse. No published-v1 score means no ship."""
+    if v1_committed is None or v2_on_v1_subset is None:
+        return False, "published v1 not scored"
+    if v1_committed.auc is None or v2_on_v1_subset.auc is None:
+        return False, "published v1 subset has one outcome only, no AUC"
+    ok = _beats(v2_on_v1_subset, v1_committed)
+    return ok, (
+        f"on the published v1's subset (n {v1_committed.n}) v2 AUC {v2_on_v1_subset.auc:.3f}, "
+        f"Brier {v2_on_v1_subset.brier:.4f} vs published v1 AUC {v1_committed.auc:.3f}, Brier "
+        f"{v1_committed.brier:.4f}: "
+        + ("at least" if ok else "not")
+        + f" {MARGIN} AUC better with no worse Brier"
+    )
+
+
 def decide(
-    v2_baseline: Metrics, v2: Metrics, v1_recipe: Metrics, parity: dict[str, float] | None
+    v2_baseline: Metrics,
+    v2: Metrics,
+    v1_recipe: Metrics,
+    parity: dict[str, float] | None,
+    *,
+    v1_committed: Metrics | None,
+    v2_on_v1_subset: Metrics | None,
 ) -> Decision:
     """The frozen shipping bar (spec 7.3), on each ensemble's main fit.
 
     Within v2, boosted is the v2 model only if its AUC is at least 0.02 above v2-baseline and
     its Brier no worse. v2 replaces v1 only if that model's AUC is at least 0.02 above
-    `v1_recipe` (the v1-recipe model v1's own rule picked), its Brier no worse, and parity
-    passes (``parity_result``)."""
+    `v1_recipe` (the v1-recipe model v1's own rule picked), its Brier no worse, parity passes
+    (``parity_result``), and the second gate against the published v1 passes
+    (``published_gate``; `v2_on_v1_subset` must be the chosen v2 model's score)."""
     recipe, recipe_reason = pick_recipe(v2_baseline, v2, "v2")
     chosen = v2 if recipe == "boosted" else v2_baseline
     assert chosen.auc is not None and v1_recipe.auc is not None
@@ -362,9 +389,12 @@ def decide(
         + ("at least" if accuracy else "not")
         + f" {MARGIN} AUC better with no worse Brier"
     )
+    gate_ok, gate_text = published_gate(v2_on_v1_subset, v1_committed)
     parity_ok, parity_text = parity_result(parity)
-    ships = accuracy and parity_ok
-    reason = f"{head}; {parity_text}; " + ("v2 replaces v1" if ships else "v1 stays live")
+    ships = accuracy and gate_ok and parity_ok
+    reason = f"{head}; {gate_text}; {parity_text}; " + (
+        "v2 replaces v1" if ships else "v1 stays live"
+    )
     return Decision(recipe, recipe_reason, ships, reason)
 
 
@@ -513,12 +543,17 @@ def v1_published_auc(card: Card) -> float | None:
     return shipped.auc
 
 
+def v1_subset_mask(v1_test: pl.DataFrame) -> np.ndarray:
+    """Held-out rows the published v1 is scored on: start date on or after 2020-01-01."""
+    return (v1_test["start_date"] >= V1_COMMITTED_START).fill_null(False).to_numpy()
+
+
 def _v1_committed(
     loaded: artefacts.Loaded | None, v1_test: pl.DataFrame, y: np.ndarray
 ) -> Metrics | None:
     if loaded is None:
         return None
-    mask = (v1_test["start_date"] >= V1_COMMITTED_START).fill_null(False).to_numpy()
+    mask = v1_subset_mask(v1_test)
     if not mask.any():
         return None
     frame = v1_test.filter(pl.Series(mask))
@@ -635,9 +670,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     parity = read_parity(args.parity) if args.parity else None
     parity_meta = read_parity_meta(args.parity) if args.parity else None
-    d = decide(m_base, m_boost, m_v1, parity)
+    # v2's chosen model (the within-v2 rule) on exactly the published v1's subset.
+    v2_recipe, _ = pick_recipe(m_base, m_boost, "v2")
+    p_eval = p_boost if v2_recipe == "boosted" else p_base
+    v1_mask = v1_subset_mask(v1_test)
+    m_v2_sub = _metrics(yte[v1_mask], p_eval[v1_mask]) if v1_mask.any() else None
+    d = decide(m_base, m_boost, m_v1, parity, v1_committed=m_v1c, v2_on_v1_subset=m_v2_sub)
+    assert d.recipe == v2_recipe
     eval_ens: Ensemble = ens_boost if d.recipe == "boosted" else ens_base
-    p_eval = p_boost if d.recipe == "boosted" else p_base
 
     area = in_area_ids(args.panel, col.cut.date, test["nct_id"].to_list(), cfg)
     mask = test["nct_id"].is_in(list(area)).to_numpy()
@@ -670,6 +710,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         outcome_snapshot=col.final.date.isoformat(),
         v1_recipe=m_v1,
         v1_committed=m_v1c,
+        v2_on_v1_subset=m_v2_sub,
         v2_baseline=m_base,
         v2=m_boost,
         v2_history=m_hist,
@@ -767,6 +808,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"  v1-recipe {other:<8}{_fmt(m_v1s[other])}")
     print(f"  v1-recipe in area {_fmt(v1_in_area)}")
     print(f"  v1-committed      {_fmt(m_v1c)}")
+    print(f"  v2 on v1 subset   {_fmt(m_v2_sub)}")
     print(f"  v2-baseline       {_fmt(m_base)}")
     print(f"  v2 (boosted)      {_fmt(m_boost)}")
     print(f"  v2 no sites       {_fmt(m_nosite)}  leak flag: {card.site_leak_flag}")

@@ -78,6 +78,8 @@ def _save(tmp_path: Path, card: Card) -> None:
 def test_save_load_roundtrip(tmp_path: Path) -> None:
     card = _card()
     _save(tmp_path, card)
+    # joblib's "lzma" (LZMA-alone, magic 5d 00 00): ~5x smaller than zlib on v2; load is agnostic
+    assert (tmp_path / "model.joblib").read_bytes()[:3] == b"]\x00\x00"
     loaded = artefacts.load(tmp_path)
     assert loaded.card == card
     x, _ = make_data(20)
