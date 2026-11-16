@@ -162,3 +162,13 @@ Copy follows v1's wording rules. Visual changes stay within the existing Figure 
 - Survival / time-to-stop model with censored running trials.
 - Including WITHDRAWN in the label (changes the headline).
 - Later cutoffs as more years of outcomes arrive (re-freeze before reading).
+
+## Amendments (2026-11-16)
+
+Made during the build. Everything above stays as approved; where it conflicts, this section wins.
+
+- **Second shipping gate (§7.3), Martin's decision, fixed before any test number was computed.** v2 replaces v1 only if, in addition to the v1-recipe gate, the chosen v2 model also beats the **published v1** on that model's own subset (held-out trials started 2020-01-01 or later, C records): test AUC at least 0.02 higher and Brier no worse, both models scored on exactly the same trials. v1-committed is therefore a gate, not report only (§7.2). Parity (§6.4) is still required.
+- **Unshipped card path (§8).** When v2 does not ship, its card is committed as `config/risk/v2/card.json`, not `card-v2.json`. The loader refuses a v2 card that did not pass the gates in `config/risk/`. An unshipped card's numbers are not recomputed in CI (its model and held-out table are not committed).
+- **Condition categories from the final snapshot's MeSH (Ruling 14).** The older archives hold only direct MeSH terms, without ancestors. Condition categories for every snapshot are therefore computed from the 2026-01 snapshot's MeSH terms and ancestors. A category can reflect a condition edit made after a snapshot; v2 and the v1 recipe use the same categories, so the comparison is unaffected, and live scoring uses the current tree. Named in the leakage notes (`config/risk/README.md`, Methods).
+- **Age wording (§8).** The age factor reads "Started N months ago", true for every running status (a not-yet-recruiting trial is not "running").
+- **Model compression.** `model.joblib` is lzma-compressed (level 6), about 12 MB for the v2 ensembles; zlib would be about five times larger.
