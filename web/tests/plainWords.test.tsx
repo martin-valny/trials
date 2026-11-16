@@ -47,6 +47,10 @@ const OLD: [string, RegExp][] = [
   ["that count", /trials that count/i],
   ["pool trials", /pool trials/i],
   ["could succeed", /could succeed/i],
+  ["neuroimmunology", /neuroimmunology/i],
+  ["Figure 1 |", /Figure 1 \|/],
+  ["Figure 2 |", /Figure 2 \|/],
+  ["past the data date", /past the data date/],
 ];
 
 /** Explore is retired from the nav: no other page sends people "to the map" (Methods and Explore itself may). */

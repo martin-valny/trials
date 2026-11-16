@@ -646,3 +646,10 @@ test("the lede is balanced on a 100ch measure at 1100px and up, and avoids a wid
   expect(lede(wide)).toMatch(/text-wrap:\s*balance/);
   expect(lede(phone)).toMatch(/text-wrap:\s*pretty/);
 });
+
+test("the mechanism panel is called Mechanism, and the timeline legend says planned", async () => {
+  stubFetch();
+  renderPage();
+  expect(await screen.findByRole("heading", { level: 3, name: "Mechanism" })).toBeInTheDocument();
+  expect(screen.getByText("Line = start to (expected) end · thicker = later phase · dashed = planned, not yet reached")).toBeInTheDocument();
+});

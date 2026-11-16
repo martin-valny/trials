@@ -91,7 +91,7 @@ export function TargetChain({ file, row, marks, disease, phone = false, letter }
       <div className="sec-h">
         <span className="ltr" aria-hidden="true">{letter}</span>
         <h3 id={`p${letter}`} tabIndex={-1}>
-          How it works
+          Mechanism
         </h3>
         {graphLink && !phone && <p>{graphLink}</p>}
       </div>

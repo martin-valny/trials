@@ -326,6 +326,6 @@ describe("mechanismsLink for Not yet categorised trials", () => {
       trial({ nct_id: "C", approaches: ["unclassified"], unsorted: [] }),
       trial({ nct_id: "D", approaches: ["cell"], unsorted: ["z"] }),
     ];
-    expect(uncategorised(ts)).toEqual({ n: 3, u: 2, d: 1 });
+    expect(uncategorised(ts)).toEqual({ n: 3, named: 2, d: 1 });
   });
 });

@@ -140,7 +140,7 @@ function ClusterKey({ labels }: { labels: string[] }) {
 function Title({ area }: { area: string | null }) {
   return (
     <h1 className="plate-title">
-      <b>Figure 1 |</b> The {area ? `${area} ` : ""}trial landscape, laid out by what each trial
+      The {area ? `${area} ` : ""}trial landscape, laid out by what each trial
       studies, with outcomes painted on top.
     </h1>
   );
@@ -295,7 +295,7 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
 
   return (
     <div className="explore">
-      <Title area={meta?.area ?? null} />
+      <Title area={meta?.area_label ?? null} />
       <Toolbar
         trials={file.trials}
         filters={filters}
@@ -396,8 +396,8 @@ function Plate({ file, meta }: { file: ExplorerFile; meta: Meta | null }) {
           <p className="panel-note plate-caption">
             Dot size: enrollment. Position uses only what a trial studies; outcome is colour only.{" "}
             {coarse
-              ? "Pinch to zoom; drag to turn, or to pan when zoomed. Tap to open."
-              : "Scroll to zoom; drag to turn, or to pan when zoomed (Shift-drag turns). Hover for details, click to open."}
+              ? "Pinch to zoom; drag to rotate, or to pan when zoomed. Tap to open."
+              : "Scroll to zoom; drag to rotate, or to pan when zoomed (Shift-drag rotates). Hover for details, click to open."}
           </p>
           <p className="visually-hidden" aria-live="polite">
             {announced}

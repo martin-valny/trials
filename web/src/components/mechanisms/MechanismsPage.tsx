@@ -54,13 +54,13 @@ type State =
 /** mechanisms.json: undefined while loading, null when missing or unreadable (the graph waits for an update). */
 type GraphState = GraphFile | null | undefined;
 
-/** The figure's title in the shared page head: "Figure 2 |" in 800, the claim in 500 (mechanisms.css). */
+/** The figure's title in the shared page head (mechanisms.css). */
 function Title() {
   return (
     <PageHead
       title={
         <>
-          <b>Figure 2 |</b> Approaches: every trial by how its treatment works, from drugs with a molecular target to
+          Approaches: every trial by how its treatment works, from drugs with a molecular target to
           the approaches without one.
         </>
       }

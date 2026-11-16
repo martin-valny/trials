@@ -8,7 +8,7 @@ const file = readFixture<PipelineFile>("pipeline.json");
 const row = file.rows.find((r) => r.id === "cd20")!;
 
 /** The figure at a given container width (ResizeObserver reports it once). */
-function draw(width: number) {
+function draw(width: number, asOf?: string) {
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -22,7 +22,7 @@ function draw(width: number) {
   const cw = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientWidth");
   Object.defineProperty(HTMLElement.prototype, "clientWidth", { configurable: true, get: () => width });
   try {
-    return render(<TargetTimeline file={file} label={row.label} marks={row.marks} disease={null} onOpen={() => {}} />);
+    return render(<TargetTimeline file={file} label={row.label} marks={row.marks} disease={null} onOpen={() => {}} asOf={asOf} />);
   } finally {
     if (cw) Object.defineProperty(HTMLElement.prototype, "clientWidth", cw);
   }
@@ -42,7 +42,7 @@ test.each([1200, 343])("every SVG text size is on the type scale at %ipx; 11px o
     if (size === 11) expect(t.textContent).toMatch(/^\d{4}$/);
     else expect(SCALE.has(size), `${t.textContent}: ${size}px`).toBe(true);
   }
-  const asOf = texts.find((t) => t.textContent?.startsWith("Data as of"))!;
+  const asOf = texts.find((t) => t.textContent?.startsWith("Registry data from"))!;
   expect(asOf.getAttribute("font-size")).toBe("12");
 });
 
@@ -51,4 +51,10 @@ test("the Data as of label is set to the left of the rule when it would overrun 
   expect(asOfPlacement(600, 1200, false, text)).toEqual({ x: 606, anchor: "start" });
   expect(asOfPlacement(1150, 1200, false, text)).toEqual({ x: 1144, anchor: "end" });
   expect(asOfPlacement(300, 343, true, text)).toEqual({ x: 296, anchor: "end" });
+});
+
+test("the rule's label is the registry date the header shows", () => {
+  const { container } = draw(1200, "2026-11-13T05:12:00");
+  const texts = [...container.querySelectorAll("svg[role=img] text")].map((t) => t.textContent);
+  expect(texts).toContain("Registry data from 13 Nov 2026");
 });

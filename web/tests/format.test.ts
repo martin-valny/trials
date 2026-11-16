@@ -156,3 +156,13 @@ test("keepWhole keeps dates, statuses and numbers whole, and lets long values wr
   expect(keepWhole("Active, not recruiting")).toBe(true);
   expect(keepWhole("Change from baseline in EDSS at week 96 (96 weeks)")).toBe(false);
 });
+
+describe("formatDelta in years", () => {
+  it("reads a slip of a year or more in years", () => {
+    expect(formatDelta(121)).toBe("slipped 121 days");
+    expect(formatDelta(1218)).toBe("slipped 3.3 years");
+    expect(formatDelta(-400)).toBe("pulled in 1.1 years");
+    expect(formatDelta(365)).toBe("slipped 1 year");
+    expect(formatDelta(364)).toBe("slipped 364 days");
+  });
+});

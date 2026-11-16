@@ -275,25 +275,23 @@ export function mechanismsLink(
   return kind === undefined ? `/approaches/${approach}` : `/approaches/${approach}?kind=${encodeURIComponent(kind)}`;
 }
 
-/** The footnote under the rail: trials in no approach yet, split into unsorted names and not-a-treatment. */
+/** The footnote under the rail: trials in no approach yet, split into those with an unsorted name and not-a-treatment. */
 export interface Uncategorised {
   /** Trials in Unclassified. */
   n: number;
-  /** Distinct names nothing sorts yet. */
-  u: number;
+  /** Trials with at least one name nothing sorts yet (so named + d === n). */
+  named: number;
   /** Trials with no unsorted name: diagnostics, sampling, or no treatment at all. */
   d: number;
 }
 
 export function uncategorised(trials: ExplorerTrial[]): Uncategorised {
-  const names = new Set<string>();
   let n = 0;
   let d = 0;
   for (const t of trials) {
     if (!t.approaches.includes(UNCLASSIFIED)) continue;
     n += 1;
     if (t.unsorted.length === 0) d += 1;
-    for (const x of t.unsorted) names.add(x);
   }
-  return { n, u: names.size, d };
+  return { n, named: n - d, d };
 }
